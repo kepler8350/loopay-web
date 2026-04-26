@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, g, send_from_directory
+from flask import Flask, request, jsonify, make_response, g, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import check_password_hash
@@ -18,7 +18,13 @@ def index():
 
 @app.route('/admin')
 def admin():
-    return send_from_directory(STATIC_DIR, 'admin.html')
+    import os
+    path = os.path.join(STATIC_DIR, 'admin.html')
+    with open(path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    resp = make_response(content)
+    resp.headers['Content-Type'] = 'text/html; charset=utf-8'
+    return resp
 
 def price_table(bar_type):
     if bar_type == 'bronze': return BRONZE_PRICES
