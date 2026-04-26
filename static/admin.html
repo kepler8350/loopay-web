@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LOOPAY 관리자</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--bg2:#1a1d27;--bg3:#242838;--border:#2e3347;
+  --text:#e8eaf0;--text2:#8b92a9;--blue:#3b7ff5;--green:#2ecc71;
+  --red:#e74c3c;--yellow:#f39c12;--purple:#9b59b6;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.login-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:40px 36px;width:360px}
+.login-logo{font-size:28px;font-weight:800;color:var(--blue);text-align:center;letter-spacing:2px;margin-bottom:6px}
+.login-sub{text-align:center;color:var(--text2);font-size:13px;margin-bottom:28px}
+.login-card input{width:100%;padding:11px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none;margin-bottom:12px}
+.login-card input:focus{border-color:var(--blue)}
+.login-btn{width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
+.login-btn:hover{background:#2d6ed6}
+.login-err{color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:18px}
+#app{display:none;min-height:100vh}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+.sidebar-logo{padding:22px 20px 18px;font-size:20px;font-weight:800;color:var(--blue);letter-spacing:1px;border-bottom:1px solid var(--border)}
+.sidebar-logo span{font-size:11px;font-weight:400;color:var(--text2);margin-left:6px}
+nav{flex:1;padding:12px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;color:var(--text2);cursor:pointer;font-size:14px;font-weight:500;transition:all .15s}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:rgba(59,127,245,.12);color:var(--blue);border-right:3px solid var(--blue)}
+.nav-item .icon{font-size:16px;width:20px;text-align:center}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border)}
+.logout-btn{width:100%;padding:9px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer}
+.logout-btn:hover{color:var(--red);border-color:var(--red)}
+.main{margin-left:220px;padding:28px 32px;min-height:100vh}
+.page{display:none}.page.active{display:block}
+.page-title{font-size:22px;font-weight:700;margin-bottom:6px}
+.page-sub{color:var(--text2);font-size:13px;margin-bottom:24px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px}
+.stat-label{font-size:12px;color:var(--text2);margin-bottom:8px}
+.stat-val{font-size:28px;font-weight:700}
+.stat-val.blue{color:var(--blue)}.stat-val.green{color:var(--green)}
+.stat-val.yellow{color:var(--yellow)}.stat-val.purple{color:var(--purple)}
+.stat-change{font-size:11px;color:var(--text2);margin-top:4px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:15px;font-weight:600}
+.card-actions{display:flex;gap:8px}
+.btn{padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:#2d6ed6}
+.btn-success{background:var(--green);color:#fff}.btn-success:hover{background:#27ae60}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{background:#c0392b}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--blue);color:var(--blue)}
+.btn-sm{padding:5px 10px;font-size:12px}.btn-xs{padding:3px 8px;font-size:11px;border-radius:5px}
+table{width:100%;border-collapse:collapse}
+thead tr{border-bottom:1px solid var(--border)}
+th{padding:11px 16px;text-align:left;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+td{padding:12px 16px;font-size:13px}
+.badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-pending{background:rgba(243,156,18,.15);color:var(--yellow)}
+.badge-confirmed{background:rgba(46,204,113,.15);color:var(--green)}
+.badge-failed{background:rgba(231,76,60,.15);color:var(--red)}
+.badge-lv1{background:rgba(139,92,246,.15);color:#a78bfa}
+.badge-lv2{background:rgba(59,130,246,.15);color:#60a5fa}
+.badge-lv3{background:rgba(16,185,129,.15);color:#34d399}
+.badge-lv4{background:rgba(245,158,11,.15);color:#fbbf24}
+.badge-lv5{background:rgba(239,68,68,.15);color:#f87171}
+.search-wrap{position:relative;display:inline-block}
+.search-wrap::before{content:'🔍';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
+.search-bar{padding:8px 12px 8px 34px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;width:220px}
+.search-bar:focus{border-color:var(--blue)}
+.filter-bar{display:flex;gap:8px;margin-bottom:16px}
+.empty-state{text-align:center;padding:48px;color:var(--text2)}
+.empty-state .icon{font-size:40px;margin-bottom:12px}
+.refresh-btn{background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;padding:4px 8px;border-radius:6px}
+.refresh-btn:hover{background:var(--bg3);color:var(--text)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px;width:440px;max-width:95vw}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:18px}
+.modal-body{margin-bottom:20px}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end}
+.info-row{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.info-row:last-child{border-bottom:none}
+.info-label{color:var(--text2);font-size:12px;width:110px;flex-shrink:0}
+.info-val{font-size:13px;font-weight:500}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.match-box{background:var(--bg3);border-radius:10px;padding:20px;margin-bottom:20px}
+.match-result{background:var(--bg3);border-radius:8px;padding:14px;margin-top:14px}
+.match-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.match-row:last-child{border-bottom:none}
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;z-index:1000;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;max-width:320px}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{background:var(--green);color:#fff}
+.toast.error{background:var(--red);color:#fff}
+.toast.info{background:var(--blue);color:#fff}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">LOOPAY</div>
+    <div class="login-sub">관리자 대시보드</div>
+    <input id="adm-user" placeholder="관리자 아이디" autocomplete="username">
+    <input id="adm-pass" type="password" placeholder="비밀번호" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">로그인</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">LOOPAY <span>Admin</span></div>
+    <nav>
+      <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard',this)">
+        <span class="icon">📊</span><span>대시보드</span>
+      </div>
+      <div class="nav-item" data-page="users" onclick="showPage('users',this)">
+        <span class="icon">👥</span><span>회원 관리</span>
+      </div>
+      <div class="nav-item" data-page="charges" onclick="showPage('charges',this)">
+        <span class="icon">💳</span><span>충전 관리</span>
+      </div>
+      <div class="nav-item" data-page="reservations" onclick="showPage('reservations',this)">
+        <span class="icon">📦</span><span>예약 현황</span>
+      </div>
+      <div class="nav-item" data-page="matching" onclick="showPage('matching',this)">
+        <span class="icon">⚡</span><span>매칭 실행</span>
+      </div>
+      <div class="nav-item" data-page="penalties" onclick="showPage('penalties',this)">
+        <span class="icon">⚠️</span><span>패널티 관리</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="doLogout()">🚪 로그아웃</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- 대시보드 -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-title">대시보드</div>
+      <div class="page-sub">LOOPAY 플랫폼 전체 현황</div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">총 회원수</div><div class="stat-val blue" id="st-users">-</div><div class="stat-change">전체 가입자</div></div>
+        <div class="stat-card"><div class="stat-label">총 아이템</div><div class="stat-val green" id="st-items">-</div><div class="stat-change">유통 중인 바</div></div>
+        <div class="stat-card"><div class="stat-label">대기 충전</div><div class="stat-val yellow" id="st-charges">-</div><div class="stat-change">승인 대기</div></div>
+        <div class="stat-card"><div class="stat-label">오늘 예약</div><div class="stat-val purple" id="st-reserves">-</div><div class="stat-change">금일 매칭</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📋 최근 충전 요청</div>
+            <button class="btn btn-primary btn-sm" onclick="showPage('charges',document.querySelector('[data-page=charges]'))">전체 보기</button>
+          </div>
+          <div id="dash-charges"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👤 최근 가입 회원</div>
+            <button class="btn btn-secondary btn-sm" onclick="showPage('users',document.querySelector('[data-page=users]'))">전체 보기</button>
+          </div>
+          <div id="dash-users"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 회원 관리 -->
+    <div id="page-users" class="page">
+      <div class="page-title">회원 관리</div>
+      <div class="page-sub">전체 회원 목록 및 정보</div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">전체 회원</div>
+          <div class="card-actions">
+            <div class="search-wrap">
+              <input class="search-bar" id="user-search" placeholder="닉네임/이메일 검색" oninput="filterUsers()">
+            </div>
+            <button class="refresh-btn" onclick="loadUsers()">🔄</button>
+          </div>
+        </div>
+        <div id="users-wrap"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
+      </div>
+    </div>
+
+    <!-- 충전 관리 -->
+    <div id="page-charges" class="page">
+      <div class="page-title">충전 관리</div>
+      <div class="page-sub">포인트 충전 요청 승인 및 이력</div>
+      <div class="filter-bar">
+        <button class="btn btn-primary" id="f-all" onclick="filterCharges('all',this)">전체</button>
+        <button class="btn btn-secondary" id="f-pending" onclick="filterCharges('pending',this)">대기 중</button>
+        <button class="btn btn-secondary" id="f-confirmed" onclick="filterCharges('confirmed',this)">승인됨</button>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">충전 요청 목록</div>
+          <button class="refresh-btn" onclick="loadCharges()">🔄</button>
+        </div>
+        <div id="charges-wrap"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
+      </div>
+    </div>
+
+    <!-- 예약 현황 -->
+    <div id="page-reservations" class="page">
+      <div class="page-title">예약 현황</div>
+      <div class="page-sub">회원별 아이템 보유 현황</div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">회원별 보유 아이템</div>
+          <button class="refresh-btn" onclick="loadReservations()">🔄</button>
+        </div>
+        <div id="reservations-wrap"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
+      </div>
+    </div>
+
+    <!-- 매칭 실행 -->
+    <div id="page-matching" class="page">
+      <div class="page-title">매칭 실행</div>
+      <div class="page-sub">예약된 주문 처리 및 매칭 수행</div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><div class="card-title">⚡ 매칭 실행</div></div>
+          <div style="padding:24px">
+            <div class="match-box">
+              <div style="font-size:14px;color:var(--text2);margin-bottom:10px">매칭 실행 시 처리 내용</div>
+              <div style="font-size:13px;line-height:2.2">
+                ✅ 예약된 주문의 바 매핑 처리<br>
+                ✅ 구매가 → 판매가 단계 업데이트<br>
+                ✅ 회원 포인트 차감 및 수익 계산<br>
+                ✅ 완료 시 레벨업 체크<br>
+                ✅ 다음 예약 자동 생성
+              </div>
+            </div>
+            <button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(event)">
+              🚀 매칭 실행하기
+            </button>
+            <div id="match-result" style="margin-top:16px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">📅 매칭 스케줄</div></div>
+          <div style="padding:16px;font-size:13px;line-height:2.4" id="schedule-info">
+            <div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 패널티 관리 -->
+    <div id="page-penalties" class="page">
+      <div class="page-title">패널티 관리</div>
+      <div class="page-sub">회원별 패널티 현황 및 정책</div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><div class="card-title">패널티 정책</div></div>
+          <div style="padding:16px">
+            <table>
+              <thead><tr><th>횟수</th><th>정지 기간</th><th>차감 포인트</th></tr></thead>
+              <tbody>
+                <tr><td>1회</td><td>3일</td><td style="color:var(--red)">1,000P</td></tr>
+                <tr><td>2회</td><td>7일</td><td style="color:var(--red)">3,000P</td></tr>
+                <tr><td>3회</td><td>20일</td><td style="color:var(--red)">6,000P</td></tr>
+                <tr><td>4회</td><td>50일</td><td style="color:var(--red)">15,000P</td></tr>
+                <tr><td>5회</td><td>120일</td><td style="color:var(--red)">30,000P</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">패널티 대상 회원</div>
+            <button class="refresh-btn" onclick="loadPenalties()">🔄</button>
+          </div>
+          <div id="penalty-list"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 회원 상세 모달 -->
+<div class="modal-overlay" id="user-modal" onclick="if(event.target===this)closeModal('user-modal')">
+  <div class="modal">
+    <div class="modal-title">👤 회원 상세 정보</div>
+    <div class="modal-body" id="user-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('user-modal')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 충전 상세 모달 -->
+<div class="modal-overlay" id="charge-modal" onclick="if(event.target===this)closeModal('charge-modal')">
+  <div class="modal" style="width:380px">
+    <div class="modal-title">💳 충전 상세</div>
+    <div class="modal-body" id="charge-modal-body"></div>
+    <div class="modal-footer" id="charge-modal-footer"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://loopay-api-production.up.railway.app/api';
+let token = '';
+let allUsers = [], allCharges = [], chargeFilter = 'all';
+
+async function doLogin() {
+  const u = document.getElementById('adm-user').value.trim();
+  const p = document.getElementById('adm-pass').value;
+  document.getElementById('login-err').textContent = '';
+  if (!u || !p) { document.getElementById('login-err').textContent = '아이디와 비밀번호를 입력하세요'; return; }
+  try {
+    const r = await fetch(API + '/auth/admin-login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username:u, password:p})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || '로그인 실패');
+    token = d.token;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadDashboard();
+  } catch(e) {
+    document.getElementById('login-err').textContent = e.message;
+  }
+}
+
+function doLogout() {
+  token = '';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('adm-pass').value = '';
+}
+
+async function api(path, opts={}) {
+  const r = await fetch(API + path, {
+    ...opts,
+    headers: {'Content-Type':'application/json','Authorization':'Bearer '+token,...(opts.headers||{})}
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || '오류 발생');
+  return d;
+}
+
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  const fn = {dashboard:loadDashboard, users:loadUsers, charges:loadCharges, reservations:loadReservations, matching:loadSchedule, penalties:loadPenalties};
+  fn[id]?.();
+}
+
+function toast(msg, type='info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast show '+type;
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+async function loadDashboard() {
+  try {
+    const s = await api('/admin/stats');
+    document.getElementById('st-users').textContent = (s.total_users||0).toLocaleString();
+    document.getElementById('st-items').textContent = (s.total_items||0).toLocaleString();
+    document.getElementById('st-charges').textContent = (s.pending_charges||0).toLocaleString();
+    document.getElementById('st-reserves').textContent = (s.today_reserves||0).toLocaleString();
+  } catch(e) {}
+  try {
+    const d = await api('/admin/charges');
+    const list = d.charges.slice(0,5);
+    document.getElementById('dash-charges').innerHTML = list.length ? `<table><thead><tr><th>회원</th><th>금액</th><th>포인트</th><th>상태</th><th></th></tr></thead><tbody>${list.map(c=>`<tr><td>${c.nickname}</td><td>${(c.amount||0).toLocaleString()}원</td><td><b style="color:var(--blue)">${(c.points||0).toLocaleString()}P</b></td><td><span class="badge ${c.status==='pending'?'badge-pending':'badge-confirmed'}">${c.status==='pending'?'대기':'승인'}</span></td><td>${c.status==='pending'?`<button class="btn btn-success btn-xs" onclick="confirmCharge(${c.id})">승인</button>`:''}</td></tr>`).join('')}</tbody></table>` : '<div class="empty-state"><div class="icon">✅</div><div>대기 충전 없음</div></div>';
+  } catch(e) {}
+  try {
+    const d = await api('/admin/users');
+    const list = d.users.slice(-5).reverse();
+    document.getElementById('dash-users').innerHTML = `<table><thead><tr><th>닉네임</th><th>레벨</th><th>총포인트</th></tr></thead><tbody>${list.map(u=>`<tr><td>${u.nickname}</td><td><span class="badge badge-lv${u.level}">${u.level}레벨</span></td><td>${((u.charge_points||0)+(u.exchange_points||0)).toLocaleString()}P</td></tr>`).join('')}</tbody></table>`;
+  } catch(e) {}
+}
+
+async function loadUsers() {
+  document.getElementById('users-wrap').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div>';
+  try {
+    const d = await api('/admin/users');
+    allUsers = d.users;
+    renderUsers(allUsers);
+  } catch(e) {
+    document.getElementById('users-wrap').innerHTML = `<div class="empty-state"><div class="icon">❌</div><div>${e.message}</div></div>`;
+  }
+}
+
+function filterUsers() {
+  const q = document.getElementById('user-search').value.toLowerCase();
+  renderUsers(allUsers.filter(u => (u.nickname||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q)));
+}
+
+function renderUsers(users) {
+  if (!users.length) { document.getElementById('users-wrap').innerHTML = '<div class="empty-state"><div class="icon">🔍</div><div>검색 결과 없음</div></div>'; return; }
+  document.getElementById('users-wrap').innerHTML = `<table><thead><tr><th>ID</th><th>닉네임</th><th>이메일</th><th>레벨</th><th>충전P</th><th>전환P</th><th>누적예약</th><th>가입일</th><th></th></tr></thead><tbody>${users.map(u=>`<tr><td style="color:var(--text2)">#${u.id}</td><td><b>${u.nickname}</b></td><td style="color:var(--text2)">${u.email||'-'}</td><td><span class="badge badge-lv${u.level}">${u.level}레벨</span></td><td>${(u.charge_points||0).toLocaleString()}P</td><td>${(u.exchange_points||0).toLocaleString()}P</td><td>${(u.cumulative_count||0).toLocaleString()}회</td><td style="color:var(--text2)">${(u.created_at||'').slice(0,10)}</td><td><button class="btn btn-secondary btn-xs" onclick="showUserDetail(${u.id})">상세</button></td></tr>`).join('')}</tbody></table><div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">총 ${users.length}명</div>`;
+}
+
+function showUserDetail(uid) {
+  const u = allUsers.find(x => x.id===uid); if (!u) return;
+  document.getElementById('user-modal-body').innerHTML = `<div class="info-row"><span class="info-label">ID</span><span class="info-val">#${u.id}</span></div><div class="info-row"><span class="info-label">닉네임</span><span class="info-val">${u.nickname}</span></div><div class="info-row"><span class="info-label">이메일</span><span class="info-val">${u.email||'-'}</span></div><div class="info-row"><span class="info-label">레벨</span><span class="info-val"><span class="badge badge-lv${u.level}">${u.level}레벨</span></span></div><div class="info-row"><span class="info-label">충전 포인트</span><span class="info-val" style="color:var(--blue)">${(u.charge_points||0).toLocaleString()} P</span></div><div class="info-row"><span class="info-label">전환 포인트</span><span class="info-val" style="color:var(--green)">${(u.exchange_points||0).toLocaleString()} P</span></div><div class="info-row"><span class="info-label">총 포인트</span><span class="info-val" style="color:var(--yellow);font-weight:700">${((u.charge_points||0)+(u.exchange_points||0)).toLocaleString()} P</span></div><div class="info-row"><span class="info-label">누적 예약</span><span class="info-val">${(u.cumulative_count||0).toLocaleString()} 회</span></div><div class="info-row"><span class="info-label">가입일</span><span class="info-val">${(u.created_at||'').slice(0,19)}</span></div>`;
+  openModal('user-modal');
+}
+
+async function loadCharges() {
+  document.getElementById('charges-wrap').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div>';
+  try {
+    const d = await api('/admin/charges');
+    allCharges = d.charges;
+    filterCharges(chargeFilter, document.getElementById('f-'+chargeFilter));
+  } catch(e) {
+    document.getElementById('charges-wrap').innerHTML = `<div class="empty-state"><div class="icon">❌</div><div>${e.message}</div></div>`;
+  }
+}
+
+function filterCharges(type, el) {
+  chargeFilter = type;
+  document.querySelectorAll('.filter-bar .btn').forEach(b => { b.className = 'btn btn-secondary'; });
+  el.className = 'btn btn-primary';
+  const list = type==='all' ? allCharges : allCharges.filter(c=>c.status===type);
+  renderCharges(list);
+}
+
+function renderCharges(charges) {
+  if (!charges.length) { document.getElementById('charges-wrap').innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>해당 항목 없음</div></div>'; return; }
+  document.getElementById('charges-wrap').innerHTML = `<table><thead><tr><th>ID</th><th>회원</th><th>금액</th><th>포인트</th><th>상태</th><th>요청일</th><th>작업</th></tr></thead><tbody>${charges.map(c=>`<tr><td style="color:var(--text2)">#${c.id}</td><td><b>${c.nickname}</b></td><td>${(c.amount||0).toLocaleString()}원</td><td><b style="color:var(--blue)">${(c.points||0).toLocaleString()}P</b></td><td><span class="badge ${c.status==='pending'?'badge-pending':'badge-confirmed'}">${c.status==='pending'?'대기':'승인'}</span></td><td style="color:var(--text2)">${(c.created_at||'').slice(0,16).replace('T',' ')}</td><td>${c.status==='pending'?`<button class="btn btn-success btn-xs" onclick="confirmCharge(${c.id})" style="margin-right:4px">✅ 승인</button><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(${c.id})">상세</button>`:`<button class="btn btn-secondary btn-xs" onclick="showChargeDetail(${c.id})">상세</button>`}</td></tr>`).join('')}</tbody></table><div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">총 ${charges.length}건 | ${charges.reduce((s,c)=>s+(c.amount||0),0).toLocaleString()}원 / ${charges.reduce((s,c)=>s+(c.points||0),0).toLocaleString()}P</div>`;
+}
+
+function showChargeDetail(cid) {
+  const c = allCharges.find(x=>x.id===cid); if (!c) return;
+  document.getElementById('charge-modal-body').innerHTML = `<div class="info-row"><span class="info-label">충전 ID</span><span class="info-val">#${c.id}</span></div><div class="info-row"><span class="info-label">요청 회원</span><span class="info-val">${c.nickname}</span></div><div class="info-row"><span class="info-label">충전 금액</span><span class="info-val">${(c.amount||0).toLocaleString()}원</span></div><div class="info-row"><span class="info-label">지급 포인트</span><span class="info-val" style="color:var(--blue);font-weight:700">${(c.points||0).toLocaleString()} P</span></div><div class="info-row"><span class="info-label">상태</span><span class="info-val"><span class="badge ${c.status==='pending'?'badge-pending':'badge-confirmed'}">${c.status==='pending'?'대기 중':'승인 완료'}</span></span></div><div class="info-row"><span class="info-label">요청일시</span><span class="info-val">${(c.created_at||'').slice(0,19).replace('T',' ')}</span></div>`;
+  document.getElementById('charge-modal-footer').innerHTML = `<button class="btn btn-secondary" onclick="closeModal('charge-modal')">닫기</button>${c.status==='pending'?`<button class="btn btn-success" onclick="confirmCharge(${c.id});closeModal('charge-modal')">✅ 승인하기</button>":''}`;
+  openModal('charge-modal');
+}
+
+async function confirmCharge(id) {
+  try {
+    const d = await api('/admin/charge/confirm/'+id, {method:'POST'});
+    toast(d.message || '충전 승인 완료!', 'success');
+    loadCharges(); loadDashboard();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function loadReservations() {
+  document.getElementById('reservations-wrap').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div>';
+  try {
+    const d = await api('/admin/users');
+    document.getElementById('reservations-wrap').innerHTML = `<table><thead><tr><th>회원</th><th>레벨</th><th>충전P</th><th>전환P</th><th>총포인트</th><th>누적예약</th><th></th></tr></thead><tbody>${d.users.map(u=>`<tr><td><b>${u.nickname}</b></td><td><span class="badge badge-lv${u.level}">${u.level}레벨</span></td><td>${(u.charge_points||0).toLocaleString()}P</td><td>${(u.exchange_points||0).toLocaleString()}P</td><td><b style="color:var(--yellow)">${((u.charge_points||0)+(u.exchange_points||0)).toLocaleString()}P</b></td><td>${(u.cumulative_count||0).toLocaleString()}회</td><td><button class="btn btn-secondary btn-xs" onclick="showUserDetail(${u.id})">상세</button></td></tr>`).join('')}</tbody></table><div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">총 ${d.users.length}명</div>`;
+  } catch(e) {
+    document.getElementById('reservations-wrap').innerHTML = `<div class="empty-state"><div class="icon">❌</div><div>${e.message}</div></div>`;
+  }
+}
+
+async function loadSchedule() {
+  try {
+    const d = await fetch(API + '/schedule').then(r=>r.json());
+    const sessions = d.sessions || [];
+    document.getElementById('schedule-info').innerHTML = sessions.length
+      ? sessions.map(s=>`<div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)"><span style="background:var(--blue);color:#fff;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap">${s.time||s.label||s}</span><span style="color:var(--text2)">${s.desc||''}</span></div>`).join('')
+      : `<div style="line-height:2.2">📅 <b>매칭 스케줄</b><br>🌅 05:00 ~ 오전 예약 마감<br>☀️ 13:00 ~ 1회차 정산<br>🌇 14:00 ~ 오후 예약 시작<br>🌆 15:00 ~ 오후 매칭<br>🌃 19:00 ~ 2회차 정산</div>`;
+  } catch(e) {
+    document.getElementById('schedule-info').innerHTML = '<div style="color:var(--text2)">스케줄 정보를 불러올 수 없습니다.</div>';
+  }
+}
+
+async function runMatching(e) {
+  const btn = e.target; btn.disabled = true; btn.textContent = '⏳ 실행 중...';
+  try {
+    const d = await api('/admin/run-matching', {method:'POST'});
+    toast(d.message || '매칭 실행 완료!', 'success');
+    document.getElementById('match-result').innerHTML = `<div class="match-result"><div style="font-weight:600;color:var(--green);margin-bottom:8px">✅ 매칭 완료</div><div class="match-row"><span>처리된 예약</span><span><b>${d.matched||0}</b>건</span></div><div class="match-row"><span>완료 시각</span><span>${new Date().toLocaleTimeString('ko-KR')}</span></div>${d.message?`<div style="margin-top:8px;font-size:12px;color:var(--text2)">${d.message}</div>`:''}</div>`;
+  } catch(e) {
+    toast(e.message, 'error');
+    document.getElementById('match-result').innerHTML = `<div class="match-result" style="border:1px solid var(--red)"><div style="font-weight:600;color:var(--red)">❌ 실패</div><div style="font-size:12px;color:var(--text2);margin-top:6px">${e.message}</div></div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '🚀 매칭 실행하기';
+  }
+}
+
+async function loadPenalties() {
+  document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div>';
+  try {
+    const d = await api('/admin/users');
+    const penalized = d.users.filter(u => u.penalty_count > 0);
+    document.getElementById('penalty-list').innerHTML = penalized.length
+      ? `<table><thead><tr><th>회원</th><th>레벨</th><th>패널티</th></tr></thead><tbody>${penalized.map(u=>`<tr><td><b>${u.nickname}</b></td><td><span class="badge badge-lv${u.level}">${u.level}레벨</span></td><td><span class="badge badge-failed">${u.penalty_count}회</span></td></tr>`).join('')}</tbody></table>`
+      : '<div class="empty-state"><div class="icon">✅</div><div>패널티 회원 없음</div></div>';
+  } catch(e) {
+    document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>패널티 없음</div></div>';
+  }
+}
+
+document.getElementById('adm-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('adm-pass').focus(); });
+</script>
+</body>
+</html>
