@@ -42,16 +42,16 @@ def days_since(purchase_date_str):
 
 def item_status_label(status, purchase_date):
     d = days_since(purchase_date)
-    if status == 'sold': return 'Ã­ÂÂÃ«Â§Â¤Ã¬ÂÂÃ«Â£Â'
-    if status == 'matched': return 'Ã«Â§Â¤Ã¬Â¹Â­Ã¬Â¤Â'
-    if d < 3: return 'Ã«ÂÂÃªÂ¸Â°Ã¬Â¤Â'
-    return 'Ã«Â§Â¤Ã¬Â¹Â­Ã¬ÂÂÃ¬ÂÂ½ÃªÂ°ÂÃ«ÂÂ¥'
+    if status == 'sold': return '판매완료'
+    if status == 'matched': return '매칭중'
+    if d < 3: return '대기중'
+    return '매칭예약가능'
 
 @app.route('/api/auth/kakao-login', methods=['POST'])
 def kakao_login():
     data = request.json or {}
     kakao_id = data.get('kakao_id')
-    nickname = data.get('nickname', 'Ã¬ÂÂ¬Ã¬ÂÂ©Ã¬ÂÂ')
+    nickname = data.get('nickname', '사용자')
     email = data.get('email', '')
     if not kakao_id:
         return jsonify(error='kakao_id required'), 400
@@ -95,9 +95,9 @@ def get_me():
     bronze = [fmt_item(i) for i in items if i['bar_type']=='bronze']
     silver = [fmt_item(i) for i in items if i['bar_type']=='silver']
     gold   = [fmt_item(i) for i in items if i['bar_type']=='gold']
-    reservable_bz = sum(1 for i in bronze if i['status_label']=='Ã«Â§Â¤Ã¬Â¹Â­Ã¬ÂÂÃ¬ÂÂ½ÃªÂ°ÂÃ«ÂÂ¥')
-    reservable_sv = sum(1 for i in silver if i['status_label']=='Ã«Â§Â¤Ã¬Â¹Â­Ã¬ÂÂÃ¬ÂÂ½ÃªÂ°ÂÃ«ÂÂ¥')
-    reservable_gd = sum(1 for i in gold   if i['status_label']=='Ã«Â§Â¤Ã¬Â¹Â­Ã¬ÂÂÃ¬ÂÂ½ÃªÂ°ÂÃ«ÂÂ¥')
+    reservable_bz = sum(1 for i in bronze if i['status_label']=='매칭예약가능')
+    reservable_sv = sum(1 for i in silver if i['status_label']=='매칭예약가능')
+    reservable_gd = sum(1 for i in gold   if i['status_label']=='매칭예약가능')
     db.close()
     return jsonify(id=u['id'],nickname=u['nickname'],level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd})
 
@@ -113,7 +113,7 @@ def reservation_preview():
     cfg = LEVEL_CONFIG[lv]
     if bz < cfg['bz_min'] or bz > cfg['bz_max']:
         db.close()
-        return jsonify(error=f'Ã«Â¸ÂÃ«Â¡Â Ã¬Â¦Â Ã¬ÂÂÃ¬ÂÂ½Ã¬ÂÂÃ«ÂÂ {cfg["bz_min"]}~{cfg["bz_max"]}ÃªÂ°Â Ã«Â²ÂÃ¬ÂÂÃ¬ÂÂ¬Ã¬ÂÂ¼ Ã­ÂÂ©Ã«ÂÂÃ«ÂÂ¤'), 400
+        return jsonify(error=f'브론즈 예약수는 {cfg["bz_min"]}~{cfg["bz_max"]}개 범위여야 합니다'), 400
     sv = get_sv_count(bz) if lv == 3 else cfg['sv_min']
     gd = get_gd_count(sv) if lv == 3 else cfg['gd_min']
     total = bz + sv + gd
@@ -133,7 +133,7 @@ def create_reservation():
     cfg = LEVEL_CONFIG[lv]
     if bz < cfg['bz_min'] or bz > cfg['bz_max']:
         db.close()
-        return jsonify(error='Ã¬ÂÂÃ¬ÂÂ½ Ã¬ÂÂÃ«ÂÂ Ã«Â²ÂÃ¬ÂÂ Ã¬Â´ÂÃªÂ³Â¼'), 400
+        return jsonify(error='예약 수량 범위 초과'), 400
     sv = get_sv_count(bz) if lv == 3 else cfg['sv_min']
     gd = get_gd_count(sv) if lv == 3 else cfg['gd_min']
     total = bz + sv + gd
@@ -141,7 +141,7 @@ def create_reservation():
     total_pts = u['charge_points'] + u['exchange_points']
     if total_pts < cost:
         db.close()
-        return jsonify(error=f'Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸ Ã«Â¶ÂÃ¬Â¡Â±. Ã­ÂÂÃ¬ÂÂ: {cost}P, Ã«Â³Â´Ã¬ÂÂ : {total_pts}P'), 400
+        return jsonify(error=f'포인트 부족. 필요: {cost}P, 보유: {total_pts}P'), 400
     today = datetime.date.today().isoformat()
     counts = {'bronze': bz, 'silver': sv, 'gold': gd}
     for bar_type, cnt in counts.items():
@@ -153,7 +153,7 @@ def create_reservation():
     db.execute("UPDATE users SET exchange_points=exchange_points-?, charge_points=charge_points-?, cumulative_count=cumulative_count+? WHERE id=?", (ex_use,ch_use,total,uid))
     db.commit()
     db.close()
-    return jsonify(success=True,message=f'Ã«Â§Â¤Ã¬Â¹Â­Ã¬ÂÂÃ¬ÂÂ½ Ã¬ÂÂÃ«Â£Â! Ã¬Â´Â {total}Ã­ÂÂ, {cost}P Ã¬Â°Â¨ÃªÂ°Â',bronze=bz,silver=sv,gold=gd)
+    return jsonify(success=True,message=f'매칭예약 완료! 총 {total}회, {cost}P 차감',bronze=bz,silver=sv,gold=gd)
 
 @app.route('/api/items', methods=['GET'])
 @jwt_required()
@@ -185,17 +185,17 @@ def charge_request():
     data = request.json or {}
     amount = int(data.get('amount', 0))
     if amount < 1000:
-        return jsonify(error='Ã¬ÂµÂÃ¬ÂÂ 1,000Ã¬ÂÂ Ã¬ÂÂ´Ã¬ÂÂ Ã¬Â¶Â©Ã¬Â Â ÃªÂ°ÂÃ«ÂÂ¥'), 400
+        return jsonify(error='최소 1,000원 이상 충전 가능'), 400
     points = amount // 120
     db = get_db()
     db.execute("INSERT INTO charge_requests(user_id,amount,points) VALUES(?,?,?)", (uid,amount,points))
     db.commit()
     db.close()
-    return jsonify(success=True,amount=amount,points=points,message=f'{amount:,}Ã¬ÂÂ Ã¢ÂÂ {points}P Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ¬Â²Â­ Ã¬ÂÂÃ«Â£Â')
+    return jsonify(success=True,amount=amount,points=points,message=f'{amount:,}원 → {points}P 충전 요청 완료')
 
 @app.route('/api/levels', methods=['GET'])
 def get_levels():
-    return jsonify(levels=LEVEL_CONFIG,cum_thresholds={'1Ã¢ÂÂ2':150,'2Ã¢ÂÂ3':450,'3Ã¢ÂÂ4':960,'4Ã¢ÂÂ5':1740,'5Ã¢ÂÂ6':2850,'6Ã¢ÂÂ7':4350,'7Ã¢ÂÂ8':6450,'8Ã¢ÂÂ9':9450,'9Ã¢ÂÂ10':12450})
+    return jsonify(levels=LEVEL_CONFIG,cum_thresholds={'1→2':150,'2→3':450,'3→4':960,'4→5':1740,'5→6':2850,'6→7':4350,'7→8':6450,'8→9':9450,'9→10':12450})
 
 @app.route('/api/penalties', methods=['GET'])
 def get_penalty_table():
@@ -233,7 +233,7 @@ def admin_confirm_charge(charge_id):
     db.execute("UPDATE users SET charge_points=charge_points+? WHERE id=?", (cr['points'],cr['user_id']))
     db.commit()
     db.close()
-    return jsonify(success=True,message=f'{cr["points"]}P Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ«Â£Â')
+    return jsonify(success=True,message=f'{cr["points"]}P 충전 완료')
 
 @app.route('/api/admin/run-matching', methods=['POST'])
 @jwt_required()
@@ -249,7 +249,7 @@ def admin_run_matching():
         matched += 1
     db.commit()
     db.close()
-    return jsonify(success=True,matched=matched,message=f'Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂ¤Ã­ÂÂ Ã¬ÂÂÃ«Â£Â: {matched}ÃªÂ±Â´')
+    return jsonify(success=True,matched=matched,message=f'매칭 실행 완료: {matched}건')
 
 @app.route('/api/admin/stats', methods=['GET'])
 @jwt_required()
@@ -267,7 +267,7 @@ def admin_stats():
 
 @app.route('/api/schedule', methods=['GET'])
 def get_schedule():
-    return jsonify(schedule=[{'time':'05:00~13:00','label':'ÃªÂµÂ¬Ã«Â§Â¤ÃÂ·Ã­ÂÂÃ«Â§Â¤ Ã¬ÂÂÃ¬ÂÂ½','detail':'1Ã¬Â°Â¨ÃÂ·2Ã¬Â°Â¨ Ã¬ÂÂÃ¬ÂÂ½ Ã«ÂªÂ¨Ã«ÂÂ Ã¬ÂÂ´ Ã¬ÂÂÃªÂ°ÂÃ¬ÂÂ ÃªÂ°ÂÃ«ÂÂ¥'},{'time':'13:00~14:00','label':'1Ã¬Â°Â¨ Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂÃªÂ¸Â','detail':'Ã«Â§Â¤Ã¬Â¹Â­ÃªÂ¸ÂÃ¬ÂÂ¡ Ã¬ÂÂÃªÂ¸Â Ã­ÂÂ Ã¬ÂÂ¡ÃªÂ¸ÂÃ¬ÂÂÃ«Â£Â Ã«Â²ÂÃ­ÂÂ¼ Ã­ÂÂ´Ã«Â¦Â­'},{'time':'14:00~15:00','label':'2Ã¬Â°Â¨ Ã«Â§Â¤Ã¬Â¹Â­','detail':'ÃªÂ´ÂÃ«Â¦Â¬Ã¬ÂÂ Ã«ÂªÂ¨Ã«ÂÂÃ¬ÂÂÃ¬ÂÂ Ã¬ÂÂ¤Ã­ÂÂ'},{'time':'15:00~19:00','label':'2Ã¬Â°Â¨ Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂÃªÂ¸Â','detail':'19Ã¬ÂÂ Ã¬ÂÂ´Ã­ÂÂ Ã«Â²ÂÃ­ÂÂ¼ Ã«Â¹ÂÃ­ÂÂÃ¬ÂÂ±Ã­ÂÂ'},{'time':'19:00~20:00','label':'2Ã¬Â°Â¨ Ã«Â¯Â¸Ã¬ÂÂÃªÂ¸Â Ã­ÂÂÃ¬ÂÂ¸','detail':'Ã­ÂÂÃ«Â§Â¤Ã¬ÂÂ Ã¬ÂÂÃªÂ¸ÂÃ­ÂÂÃ¬ÂÂ¸ Ã«ÂÂÃ«ÂÂ Ã«Â¯Â¸Ã¬ÂÂÃªÂ¸Â Ã«Â²ÂÃ­ÂÂ¼'},{'time':'20:00~13:00','label':'Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂ¤Ã­ÂÂ','detail':'ÃªÂ´ÂÃ«Â¦Â¬Ã¬ÂÂ Ã«ÂªÂ¨Ã«ÂÂÃ¬ÂÂÃ¬ÂÂ Ã¬ÂÂ¤Ã­ÂÂ'}])
+    return jsonify(schedule=[{'time':'05:00~13:00','label':'구매·판매 예약','detail':'1차·2차 예약 모두 이 시간에 가능'},{'time':'13:00~14:00','label':'1차 매칭 입금','detail':'매칭금액 입금 후 송금완료 버튼 클릭'},{'time':'14:00~15:00','label':'2차 매칭','detail':'관리자 모드에서 실행'},{'time':'15:00~19:00','label':'2차 매칭 입금','detail':'19시 이후 버튼 비활성화'},{'time':'19:00~20:00','label':'2차 미입금 확인','detail':'판매자 입금확인 또는 미입금 버튼'},{'time':'20:00~13:00','label':'매칭 실행','detail':'관리자 모드에서 실행'}])
 
 @app.route('/api/admin/matching-status', methods=['GET'])
 @jwt_required()
@@ -278,29 +278,29 @@ def admin_matching_status():
     today = datetime.date.today().isoformat()
 
     def get_round_data(round_num):
-        # 구매 예약 수 (reservations where match_round=round_num, status=pending)
+        # l� }  (reservations where match_round=round_num, status=pending)
         buy_count = db.execute(
             "SELECT COUNT(*) as c FROM reservations WHERE match_round=? AND reserve_date=? AND status='pending'",
             (round_num, today)
         ).fetchone()['c']
 
-        # 판매 예약 수 (items where status='reservable')
+        # � }  (items where status='reservable')
         sell_count = db.execute(
             "SELECT COUNT(*) as c FROM items WHERE status='reservable'"
         ).fetchone()['c']
 
-        # 매칭율
+        # �m(
         if sell_count > 0:
             rate = round(min(buy_count, sell_count) / max(buy_count, sell_count) * 100, 1)
         else:
             rate = 0.0
 
-        # 아이템별 판매예약 수
+        # Dt\� �} 
         by_type = db.execute(
             "SELECT bar_type, COUNT(*) as cnt FROM items WHERE status='reservable' GROUP BY bar_type"
         ).fetchall()
 
-        # 아이템 단계별 판매예약 수
+        # Dt\ ��� �} 
         by_stage = db.execute(
             "SELECT bar_type, stage, COUNT(*) as cnt FROM items WHERE status='reservable' GROUP BY bar_type, stage ORDER BY bar_type, stage"
         ).fetchall()
