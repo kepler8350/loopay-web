@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LOOPAY ê´ë¦¬ì</title>
+<title>LOOPAY ÃªÂ´ÂÃ«Â¦Â¬Ã¬ÂÂ</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -73,7 +73,7 @@ td{padding:12px 16px;font-size:13px}
 .badge-lv5{background:rgba(239,68,68,.15);color:#f87171}
 .search-wrap{position:relative;display:inline-block}
 .search-bar{padding:8px 12px 8px 36px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;width:220px}
-.search-wrap::before{content:'ð';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
+.search-wrap::before{content:'Ã°ÂÂÂ';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
 .search-bar:focus{border-color:var(--blue)}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
@@ -112,11 +112,11 @@ td{padding:12px 16px;font-size:13px}
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">LOOPAY</div>
-    <div class="login-sub">ê´ë¦¬ì ëìë³´ë</div>
-    <input id="adm-user" placeholder="ê´ë¦¬ì ìì´ë" autocomplete="username">
-    <input id="adm-pass" type="password" placeholder="ë¹ë°ë²í¸" autocomplete="current-password"
+    <div class="login-sub">ÃªÂ´ÂÃ«Â¦Â¬Ã¬ÂÂ Ã«ÂÂÃ¬ÂÂÃ«Â³Â´Ã«ÂÂ</div>
+    <input id="adm-user" placeholder="ÃªÂ´ÂÃ«Â¦Â¬Ã¬ÂÂ Ã¬ÂÂÃ¬ÂÂ´Ã«ÂÂ" autocomplete="username">
+    <input id="adm-pass" type="password" placeholder="Ã«Â¹ÂÃ«Â°ÂÃ«Â²ÂÃ­ÂÂ¸" autocomplete="current-password"
       onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="login-btn" onclick="doLogin()">ë¡ê·¸ì¸</button>
+    <button class="login-btn" onclick="doLogin()">Ã«Â¡ÂÃªÂ·Â¸Ã¬ÂÂ¸</button>
     <div class="login-err" id="login-err"></div>
   </div>
 </div>
@@ -126,26 +126,26 @@ td{padding:12px 16px;font-size:13px}
     <div class="sidebar-logo">LOOPAY <span>Admin</span></div>
     <nav>
       <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard',this)">
-        <span class="icon">ð</span><span>ëìë³´ë</span>
+        <span class="icon">Ã°ÂÂÂ</span><span>Ã«ÂÂÃ¬ÂÂÃ«Â³Â´Ã«ÂÂ</span>
       </div>
       <div class="nav-item" data-page="users" onclick="showPage('users',this)">
-        <span class="icon">ð¥</span><span>íì ê´ë¦¬</span>
+        <span class="icon">Ã°ÂÂÂ¥</span><span>Ã­ÂÂÃ¬ÂÂ ÃªÂ´ÂÃ«Â¦Â¬</span>
       </div>
       <div class="nav-item" data-page="charges" onclick="showPage('charges',this)">
-        <span class="icon">ð³</span><span>ì¶©ì  ê´ë¦¬</span>
+        <span class="icon">Ã°ÂÂÂ³</span><span>Ã¬Â¶Â©Ã¬Â Â ÃªÂ´ÂÃ«Â¦Â¬</span>
       </div>
       <div class="nav-item" data-page="reservations" onclick="showPage('reservations',this)">
-        <span class="icon">ð¦</span><span>ìì½ íí©</span>
+        <span class="icon">Ã°ÂÂÂ¦</span><span>Ã¬ÂÂÃ¬ÂÂ½ Ã­ÂÂÃ­ÂÂ©</span>
       </div>
       <div class="nav-item" data-page="matching" onclick="showPage('matching',this)">
-        <span class="icon">â¡</span><span>ë§¤ì¹­ ì¤í</span>
+        <span class="icon">Ã¢ÂÂ¡</span><span>Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂ¤Ã­ÂÂ</span>
       </div>
       <div class="nav-item" data-page="penalties" onclick="showPage('penalties',this)">
-        <span class="icon">â ï¸</span><span>í¨ëí° ê´ë¦¬</span>
+        <span class="icon">Ã¢ÂÂ Ã¯Â¸Â</span><span>Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° ÃªÂ´ÂÃ«Â¦Â¬</span>
       </div>
     </nav>
     <div class="sidebar-footer">
-      <button class="logout-btn" onclick="doLogout()">ðª ë¡ê·¸ìì</button>
+      <button class="logout-btn" onclick="doLogout()">Ã°ÂÂÂª Ã«Â¡ÂÃªÂ·Â¸Ã¬ÂÂÃ¬ÂÂ</button>
     </div>
   </div>
 
@@ -153,78 +153,78 @@ td{padding:12px 16px;font-size:13px}
 
     <!-- DASHBOARD -->
     <div id="page-dashboard" class="page active">
-      <div class="page-title">ëìë³´ë</div>
-      <div class="page-sub">LOOPAY íë«í¼ ì ì²´ íí©</div>
+      <div class="page-title">Ã«ÂÂÃ¬ÂÂÃ«Â³Â´Ã«ÂÂ</div>
+      <div class="page-sub">LOOPAY Ã­ÂÂÃ«ÂÂ«Ã­ÂÂ¼ Ã¬Â ÂÃ¬Â²Â´ Ã­ÂÂÃ­ÂÂ©</div>
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">ì´ íìì</div><div class="stat-val blue" id="st-users">-</div><div class="stat-change">ì ì²´ ê°ìì</div></div>
-        <div class="stat-card"><div class="stat-label">ì´ ë³´ì  ìì´í</div><div class="stat-val green" id="st-items">-</div><div class="stat-change">íì¬ ì íµ ì¤ì¸ ë°</div></div>
-        <div class="stat-card"><div class="stat-label">ëê¸° ì¤ ì¶©ì </div><div class="stat-val yellow" id="st-charges">-</div><div class="stat-change">ì¹ì¸ ëê¸°</div></div>
-        <div class="stat-card"><div class="stat-label">ì¤ë ìì½</div><div class="stat-val purple" id="st-reserves">-</div><div class="stat-change">ê¸ì¼ ë§¤ì¹­ ìì½</div></div>
+        <div class="stat-card"><div class="stat-label">Ã¬Â´Â Ã­ÂÂÃ¬ÂÂÃ¬ÂÂ</div><div class="stat-val blue" id="st-users">-</div><div class="stat-change">Ã¬Â ÂÃ¬Â²Â´ ÃªÂ°ÂÃ¬ÂÂÃ¬ÂÂ</div></div>
+        <div class="stat-card"><div class="stat-label">Ã¬Â´Â Ã«Â³Â´Ã¬ÂÂ  Ã¬ÂÂÃ¬ÂÂ´Ã­ÂÂ</div><div class="stat-val green" id="st-items">-</div><div class="stat-change">Ã­ÂÂÃ¬ÂÂ¬ Ã¬ÂÂ Ã­ÂÂµ Ã¬Â¤ÂÃ¬ÂÂ¸ Ã«Â°Â</div></div>
+        <div class="stat-card"><div class="stat-label">Ã«ÂÂÃªÂ¸Â° Ã¬Â¤Â Ã¬Â¶Â©Ã¬Â Â</div><div class="stat-val yellow" id="st-charges">-</div><div class="stat-change">Ã¬ÂÂ¹Ã¬ÂÂ¸ Ã«ÂÂÃªÂ¸Â°</div></div>
+        <div class="stat-card"><div class="stat-label">Ã¬ÂÂ¤Ã«ÂÂ Ã¬ÂÂÃ¬ÂÂ½</div><div class="stat-val purple" id="st-reserves">-</div><div class="stat-change">ÃªÂ¸ÂÃ¬ÂÂ¼ Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂÃ¬ÂÂ½</div></div>
       </div>
       <div class="two-col">
         <div class="table-card">
           <div class="table-header">
-            <div class="table-title">ð ìµê·¼ ì¶©ì  ìì²­</div>
-            <button class="btn btn-primary btn-sm" onclick="showPage('charges',document.querySelector('[data-page=charges]'))">ì ì²´ ë³´ê¸°</button>
+            <div class="table-title">Ã°ÂÂÂ Ã¬ÂµÂÃªÂ·Â¼ Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ¬Â²Â­</div>
+            <button class="btn btn-primary btn-sm" onclick="showPage('charges',document.querySelector('[data-page=charges]'))">Ã¬Â ÂÃ¬Â²Â´ Ã«Â³Â´ÃªÂ¸Â°</button>
           </div>
-          <div id="dash-charges"><div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div></div>
+          <div id="dash-charges"><div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div></div>
         </div>
         <div class="table-card">
           <div class="table-header">
-            <div class="table-title">ð¤ ìµê·¼ ê°ì íì</div>
-            <button class="btn btn-secondary btn-sm" onclick="showPage('users',document.querySelector('[data-page=users]'))">ì ì²´ ë³´ê¸°</button>
+            <div class="table-title">Ã°ÂÂÂ¤ Ã¬ÂµÂÃªÂ·Â¼ ÃªÂ°ÂÃ¬ÂÂ Ã­ÂÂÃ¬ÂÂ</div>
+            <button class="btn btn-secondary btn-sm" onclick="showPage('users',document.querySelector('[data-page=users]'))">Ã¬Â ÂÃ¬Â²Â´ Ã«Â³Â´ÃªÂ¸Â°</button>
           </div>
-          <div id="dash-users"><div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div></div>
+          <div id="dash-users"><div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div></div>
         </div>
       </div>
     </div>
 
     <!-- USERS -->
     <div id="page-users" class="page">
-      <div class="page-title">íì ê´ë¦¬</div>
-      <div class="page-sub">ì ì²´ íì ëª©ë¡ ë° ì ë³´ ê´ë¦¬</div>
+      <div class="page-title">Ã­ÂÂÃ¬ÂÂ ÃªÂ´ÂÃ«Â¦Â¬</div>
+      <div class="page-sub">Ã¬Â ÂÃ¬Â²Â´ Ã­ÂÂÃ¬ÂÂ Ã«ÂªÂ©Ã«Â¡Â Ã«Â°Â Ã¬Â ÂÃ«Â³Â´ ÃªÂ´ÂÃ«Â¦Â¬</div>
       <div class="table-card">
         <div class="table-header">
-          <div class="table-title">ì ì²´ íì</div>
+          <div class="table-title">Ã¬Â ÂÃ¬Â²Â´ Ã­ÂÂÃ¬ÂÂ</div>
           <div class="table-actions">
             <div class="search-wrap">
-              <input class="search-bar" id="user-search" placeholder="ì´ë¦/ì´ë©ì¼ ê²ì" oninput="filterUsers()">
+              <input class="search-bar" id="user-search" placeholder="Ã¬ÂÂ´Ã«Â¦Â/Ã¬ÂÂ´Ã«Â©ÂÃ¬ÂÂ¼ ÃªÂ²ÂÃ¬ÂÂ" oninput="filterUsers()">
             </div>
-            <button class="refresh-btn" onclick="loadUsers()">ð</button>
+            <button class="refresh-btn" onclick="loadUsers()">Ã°ÂÂÂ</button>
           </div>
         </div>
-        <div id="users-table-wrap"><div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div></div>
+        <div id="users-table-wrap"><div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div></div>
       </div>
     </div>
 
     <!-- CHARGES -->
     <div id="page-charges" class="page">
-      <div class="page-title">ì¶©ì  ê´ë¦¬</div>
-      <div class="page-sub">í¬ì¸í¸ ì¶©ì  ìì²­ ì¹ì¸ ë° ì´ë ¥</div>
+      <div class="page-title">Ã¬Â¶Â©Ã¬Â Â ÃªÂ´ÂÃ«Â¦Â¬</div>
+      <div class="page-sub">Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸ Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ¬Â²Â­ Ã¬ÂÂ¹Ã¬ÂÂ¸ Ã«Â°Â Ã¬ÂÂ´Ã«Â Â¥</div>
       <div style="display:flex;gap:10px;margin-bottom:16px">
-        <button class="btn btn-secondary" id="filter-all" onclick="filterCharges('all',this)">ì ì²´</button>
-        <button class="btn btn-primary" id="filter-pending" onclick="filterCharges('pending',this)">ëê¸° ì¤</button>
-        <button class="btn btn-secondary" id="filter-confirmed" onclick="filterCharges('confirmed',this)">ì¹ì¸ë¨</button>
+        <button class="btn btn-secondary" id="filter-all" onclick="filterCharges('all',this)">Ã¬Â ÂÃ¬Â²Â´</button>
+        <button class="btn btn-primary" id="filter-pending" onclick="filterCharges('pending',this)">Ã«ÂÂÃªÂ¸Â° Ã¬Â¤Â</button>
+        <button class="btn btn-secondary" id="filter-confirmed" onclick="filterCharges('confirmed',this)">Ã¬ÂÂ¹Ã¬ÂÂ¸Ã«ÂÂ¨</button>
       </div>
       <div class="table-card">
         <div class="table-header">
-          <div class="table-title">ì¶©ì  ìì²­ ëª©ë¡</div>
-          <button class="refresh-btn" onclick="loadCharges()">ð</button>
+          <div class="table-title">Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ¬Â²Â­ Ã«ÂªÂ©Ã«Â¡Â</div>
+          <button class="refresh-btn" onclick="loadCharges()">Ã°ÂÂÂ</button>
         </div>
-        <div id="charges-table-wrap"><div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div></div>
+        <div id="charges-table-wrap"><div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div></div>
       </div>
     </div>
 
     <!-- RESERVATIONS -->
     <div id="page-reservations" class="page">
-      <div class="page-title">ìì½ íí©</div>
-      <div class="page-sub">íìë³ ë§¤ì¹­ ìì½ íí© ë° ë³´ì  ìì´í</div>
+      <div class="page-title">Ã¬ÂÂÃ¬ÂÂ½ Ã­ÂÂÃ­ÂÂ©</div>
+      <div class="page-sub">Ã­ÂÂÃ¬ÂÂÃ«Â³Â Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂÃ¬ÂÂ½ Ã­ÂÂÃ­ÂÂ© Ã«Â°Â Ã«Â³Â´Ã¬ÂÂ  Ã¬ÂÂÃ¬ÂÂ´Ã­ÂÂ</div>
       <div class="table-card">
         <div class="table-header">
-          <div class="table-title">íìë³ ë³´ì  ìì´í</div>
-          <button class="refresh-btn" onclick="loadReservations()">ð</button>
+          <div class="table-title">Ã­ÂÂÃ¬ÂÂÃ«Â³Â Ã«Â³Â´Ã¬ÂÂ  Ã¬ÂÂÃ¬ÂÂ´Ã­ÂÂ</div>
+          <button class="refresh-btn" onclick="loadReservations()">Ã°ÂÂÂ</button>
         </div>
-        <div id="reservations-table-wrap"><div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div></div>
+        <div id="reservations-table-wrap"><div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div></div>
       </div>
     </div>
 
@@ -271,30 +271,30 @@ td{padding:12px 16px;font-size:13px}
 
     <!-- PENALTIES -->
     <div id="page-penalties" class="page">
-      <div class="page-title">í¨ëí° ê´ë¦¬</div>
-      <div class="page-sub">íìë³ í¨ëí° íí© ë° ì ì±</div>
+      <div class="page-title">Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° ÃªÂ´ÂÃ«Â¦Â¬</div>
+      <div class="page-sub">Ã­ÂÂÃ¬ÂÂÃ«Â³Â Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° Ã­ÂÂÃ­ÂÂ© Ã«Â°Â Ã¬Â ÂÃ¬Â±Â</div>
       <div class="two-col">
         <div class="table-card">
-          <div class="table-header"><div class="table-title">í¨ëí° ì ì±</div></div>
+          <div class="table-header"><div class="table-title">Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° Ã¬Â ÂÃ¬Â±Â</div></div>
           <div style="padding:16px">
             <table>
-              <thead><tr><th>íì</th><th>ì ì§ ê¸°ê°</th><th>ì°¨ê° í¬ì¸í¸</th></tr></thead>
+              <thead><tr><th>Ã­ÂÂÃ¬ÂÂ</th><th>Ã¬Â ÂÃ¬Â§Â ÃªÂ¸Â°ÃªÂ°Â</th><th>Ã¬Â°Â¨ÃªÂ°Â Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</th></tr></thead>
               <tbody>
-                <tr><td>1í</td><td>3ì¼</td><td style="color:var(--red)">1,000P</td></tr>
-                <tr><td>2í</td><td>7ì¼</td><td style="color:var(--red)">3,000P</td></tr>
-                <tr><td>3í</td><td>20ì¼</td><td style="color:var(--red)">6,000P</td></tr>
-                <tr><td>4í</td><td>50ì¼</td><td style="color:var(--red)">15,000P</td></tr>
-                <tr><td>5í</td><td>120ì¼</td><td style="color:var(--red)">30,000P</td></tr>
+                <tr><td>1Ã­ÂÂ</td><td>3Ã¬ÂÂ¼</td><td style="color:var(--red)">1,000P</td></tr>
+                <tr><td>2Ã­ÂÂ</td><td>7Ã¬ÂÂ¼</td><td style="color:var(--red)">3,000P</td></tr>
+                <tr><td>3Ã­ÂÂ</td><td>20Ã¬ÂÂ¼</td><td style="color:var(--red)">6,000P</td></tr>
+                <tr><td>4Ã­ÂÂ</td><td>50Ã¬ÂÂ¼</td><td style="color:var(--red)">15,000P</td></tr>
+                <tr><td>5Ã­ÂÂ</td><td>120Ã¬ÂÂ¼</td><td style="color:var(--red)">30,000P</td></tr>
               </tbody>
             </table>
           </div>
         </div>
         <div class="table-card">
           <div class="table-header">
-            <div class="table-title">í¨ëí° ëì íì</div>
-            <button class="refresh-btn" onclick="loadPenalties()">ð</button>
+            <div class="table-title">Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° Ã«ÂÂÃ¬ÂÂ Ã­ÂÂÃ¬ÂÂ</div>
+            <button class="refresh-btn" onclick="loadPenalties()">Ã°ÂÂÂ</button>
           </div>
-          <div id="penalty-list"><div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div></div>
+          <div id="penalty-list"><div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div></div>
         </div>
       </div>
     </div>
@@ -305,17 +305,17 @@ td{padding:12px 16px;font-size:13px}
 <!-- MODALS -->
 <div class="modal-overlay" id="user-modal" onclick="if(event.target===this)closeModal('user-modal')">
   <div class="modal">
-    <div class="modal-title">ð¤ íì ìì¸ ì ë³´</div>
+    <div class="modal-title">Ã°ÂÂÂ¤ Ã­ÂÂÃ¬ÂÂ Ã¬ÂÂÃ¬ÂÂ¸ Ã¬Â ÂÃ«Â³Â´</div>
     <div class="modal-body" id="user-modal-body"></div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('user-modal')">ë«ê¸°</button>
+      <button class="btn btn-secondary" onclick="closeModal('user-modal')">Ã«ÂÂ«ÃªÂ¸Â°</button>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="charge-modal" onclick="if(event.target===this)closeModal('charge-modal')">
   <div class="modal" style="width:380px">
-    <div class="modal-title">ð³ ì¶©ì  ìì¸</div>
+    <div class="modal-title">Ã°ÂÂÂ³ Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ¬ÂÂ¸</div>
     <div class="modal-body" id="charge-modal-body"></div>
     <div class="modal-footer" id="charge-modal-footer"></div>
   </div>
@@ -335,7 +335,7 @@ async function doLogin() {
   const p = document.getElementById('adm-pass').value;
   document.getElementById('login-err').textContent = '';
   if (!u || !p) {
-    document.getElementById('login-err').textContent = 'ìì´ëì ë¹ë°ë²í¸ë¥¼ ìë ¥íì¸ì';
+    document.getElementById('login-err').textContent = 'Ã¬ÂÂÃ¬ÂÂ´Ã«ÂÂÃ¬ÂÂ Ã«Â¹ÂÃ«Â°ÂÃ«Â²ÂÃ­ÂÂ¸Ã«Â¥Â¼ Ã¬ÂÂÃ«Â Â¥Ã­ÂÂÃ¬ÂÂ¸Ã¬ÂÂ';
     return;
   }
   try {
@@ -345,7 +345,7 @@ async function doLogin() {
       body: JSON.stringify({username: u, password: p})
     });
     const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'ë¡ê·¸ì¸ ì¤í¨');
+    if (!r.ok) throw new Error(d.error || 'Ã«Â¡ÂÃªÂ·Â¸Ã¬ÂÂ¸ Ã¬ÂÂ¤Ã­ÂÂ¨');
     adminToken = d.token;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
@@ -368,7 +368,7 @@ async function apiAdmin(path, opts) {
     headers: Object.assign({'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken}, opts.headers || {})
   }));
   const d = await r.json();
-  if (!r.ok) throw new Error(d.error || 'ì¤ë¥ ë°ì');
+  if (!r.ok) throw new Error(d.error || 'Ã¬ÂÂ¤Ã«Â¥Â Ã«Â°ÂÃ¬ÂÂ');
   return d;
 }
 
@@ -411,14 +411,14 @@ async function loadDashboard() {
     if (charges.length) {
       let rows = '';
       charges.forEach(function(c) {
-        rows += '<tr><td>' + c.nickname + '</td><td>' + (c.amount || 0).toLocaleString() + 'ì</td>';
+        rows += '<tr><td>' + c.nickname + '</td><td>' + (c.amount || 0).toLocaleString() + 'Ã¬ÂÂ</td>';
         rows += '<td><strong style="color:var(--blue)">' + (c.points || 0).toLocaleString() + 'P</strong></td>';
-        rows += '<td><span class="badge ' + (c.status === 'pending' ? 'badge-pending">ëê¸°' : 'badge-confirmed">ì¹ì¸') + '</span></td>';
-        rows += '<td>' + (c.status === 'pending' ? '<button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')">ì¹ì¸</button>' : '') + '</td></tr>';
+        rows += '<td><span class="badge ' + (c.status === 'pending' ? 'badge-pending">Ã«ÂÂÃªÂ¸Â°' : 'badge-confirmed">Ã¬ÂÂ¹Ã¬ÂÂ¸') + '</span></td>';
+        rows += '<td>' + (c.status === 'pending' ? '<button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')">Ã¬ÂÂ¹Ã¬ÂÂ¸</button>' : '') + '</td></tr>';
       });
-      document.getElementById('dash-charges').innerHTML = '<table><thead><tr><th>íì</th><th>ê¸ì¡</th><th>í¬ì¸í¸</th><th>ìí</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+      document.getElementById('dash-charges').innerHTML = '<table><thead><tr><th>Ã­ÂÂÃ¬ÂÂ</th><th>ÃªÂ¸ÂÃ¬ÂÂ¡</th><th>Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</th><th>Ã¬ÂÂÃ­ÂÂ</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
     } else {
-      document.getElementById('dash-charges').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>ëê¸° ì¤ì¸ ì¶©ì  ìì</div></div>';
+      document.getElementById('dash-charges').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>Ã«ÂÂÃªÂ¸Â° Ã¬Â¤ÂÃ¬ÂÂ¸ Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ¬ÂÂ</div></div>';
     }
   } catch(e) {}
 
@@ -428,21 +428,21 @@ async function loadDashboard() {
     let rows = '';
     users.forEach(function(u) {
       rows += '<tr><td>' + u.nickname + '</td>';
-      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'ë ë²¨</span></td>';
+      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'Ã«Â ÂÃ«Â²Â¨</span></td>';
       rows += '<td>' + ((u.charge_points || 0) + (u.exchange_points || 0)).toLocaleString() + 'P</td></tr>';
     });
-    document.getElementById('dash-users').innerHTML = '<table><thead><tr><th>ëë¤ì</th><th>ë ë²¨</th><th>í¬ì¸í¸</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    document.getElementById('dash-users').innerHTML = '<table><thead><tr><th>Ã«ÂÂÃ«ÂÂ¤Ã¬ÂÂ</th><th>Ã«Â ÂÃ«Â²Â¨</th><th>Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</th></tr></thead><tbody>' + rows + '</tbody></table>';
   } catch(e) {}
 }
 
 async function loadUsers() {
-  document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div>';
+  document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div>';
   try {
     const d = await apiAdmin('/admin/users');
     allUsers = d.users;
     renderUsers(allUsers);
   } catch(e) {
-    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>' + e.message + '</div></div>';
+    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>' + e.message + '</div></div>';
   }
 }
 
@@ -456,7 +456,7 @@ function filterUsers() {
 
 function renderUsers(users) {
   if (!users.length) {
-    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ð</div><div>ê²ì ê²°ê³¼ ìì</div></div>';
+    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã°ÂÂÂ</div><div>ÃªÂ²ÂÃ¬ÂÂ ÃªÂ²Â°ÃªÂ³Â¼ Ã¬ÂÂÃ¬ÂÂ</div></div>';
     return;
   }
   let rows = '';
@@ -465,17 +465,17 @@ function renderUsers(users) {
     rows += '<td style="color:var(--text2)">#' + u.id + '</td>';
     rows += '<td><strong>' + u.nickname + '</strong></td>';
     rows += '<td style="color:var(--text2)">' + (u.email || '-') + '</td>';
-    rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'ë ë²¨</span></td>';
+    rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'Ã«Â ÂÃ«Â²Â¨</span></td>';
     rows += '<td>' + (u.charge_points || 0).toLocaleString() + 'P</td>';
     rows += '<td>' + (u.exchange_points || 0).toLocaleString() + 'P</td>';
-    rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + 'í</td>';
+    rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + 'Ã­ÂÂ</td>';
     rows += '<td style="color:var(--text2)">' + (u.created_at || '').slice(0, 10) + '</td>';
-    rows += '<td><button class="btn btn-secondary btn-xs" onclick="showUserDetail(' + u.id + ')">ìì¸</button></td>';
+    rows += '<td><button class="btn btn-secondary btn-xs" onclick="showUserDetail(' + u.id + ')">Ã¬ÂÂÃ¬ÂÂ¸</button></td>';
     rows += '</tr>';
   });
   document.getElementById('users-table-wrap').innerHTML =
-    '<table><thead><tr><th>ID</th><th>ëë¤ì</th><th>ì´ë©ì¼</th><th>ë ë²¨</th><th>ì¶©ì P</th><th>ì íP</th><th>ëì ìì½</th><th>ê°ìì¼</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>' +
-    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">ì´ ' + users.length + 'ëª</div>';
+    '<table><thead><tr><th>ID</th><th>Ã«ÂÂÃ«ÂÂ¤Ã¬ÂÂ</th><th>Ã¬ÂÂ´Ã«Â©ÂÃ¬ÂÂ¼</th><th>Ã«Â ÂÃ«Â²Â¨</th><th>Ã¬Â¶Â©Ã¬Â ÂP</th><th>Ã¬Â ÂÃ­ÂÂP</th><th>Ã«ÂÂÃ¬Â ÂÃ¬ÂÂÃ¬ÂÂ½</th><th>ÃªÂ°ÂÃ¬ÂÂÃ¬ÂÂ¼</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">Ã¬Â´Â ' + users.length + 'Ã«ÂªÂ</div>';
 }
 
 function showUserDetail(uid) {
@@ -484,20 +484,20 @@ function showUserDetail(uid) {
   const total = (u.charge_points || 0) + (u.exchange_points || 0);
   let html = '';
   html += '<div class="info-row"><span class="info-label">ID</span><span class="info-val">#' + u.id + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">ëë¤ì</span><span class="info-val">' + u.nickname + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">ì´ë©ì¼</span><span class="info-val">' + (u.email || '-') + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">ë ë²¨</span><span class="info-val"><span class="badge badge-lv' + u.level + '">' + u.level + 'ë ë²¨</span></span></div>';
-  html += '<div class="info-row"><span class="info-label">ì¶©ì  í¬ì¸í¸</span><span class="info-val" style="color:var(--blue)">' + (u.charge_points || 0).toLocaleString() + ' P</span></div>';
-  html += '<div class="info-row"><span class="info-label">ì í í¬ì¸í¸</span><span class="info-val" style="color:var(--green)">' + (u.exchange_points || 0).toLocaleString() + ' P</span></div>';
-  html += '<div class="info-row"><span class="info-label">ì´ í¬ì¸í¸</span><span class="info-val" style="color:var(--yellow);font-weight:700">' + total.toLocaleString() + ' P</span></div>';
-  html += '<div class="info-row"><span class="info-label">ëì  ìì½</span><span class="info-val">' + (u.cumulative_count || 0).toLocaleString() + ' í</span></div>';
-  html += '<div class="info-row"><span class="info-label">ê°ìì¼</span><span class="info-val">' + (u.created_at || '').slice(0, 19) + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">Ã«ÂÂÃ«ÂÂ¤Ã¬ÂÂ</span><span class="info-val">' + u.nickname + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">Ã¬ÂÂ´Ã«Â©ÂÃ¬ÂÂ¼</span><span class="info-val">' + (u.email || '-') + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">Ã«Â ÂÃ«Â²Â¨</span><span class="info-val"><span class="badge badge-lv' + u.level + '">' + u.level + 'Ã«Â ÂÃ«Â²Â¨</span></span></div>';
+  html += '<div class="info-row"><span class="info-label">Ã¬Â¶Â©Ã¬Â Â Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</span><span class="info-val" style="color:var(--blue)">' + (u.charge_points || 0).toLocaleString() + ' P</span></div>';
+  html += '<div class="info-row"><span class="info-label">Ã¬Â ÂÃ­ÂÂ Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</span><span class="info-val" style="color:var(--green)">' + (u.exchange_points || 0).toLocaleString() + ' P</span></div>';
+  html += '<div class="info-row"><span class="info-label">Ã¬Â´Â Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</span><span class="info-val" style="color:var(--yellow);font-weight:700">' + total.toLocaleString() + ' P</span></div>';
+  html += '<div class="info-row"><span class="info-label">Ã«ÂÂÃ¬Â Â Ã¬ÂÂÃ¬ÂÂ½</span><span class="info-val">' + (u.cumulative_count || 0).toLocaleString() + ' Ã­ÂÂ</span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃªÂ°ÂÃ¬ÂÂÃ¬ÂÂ¼</span><span class="info-val">' + (u.created_at || '').slice(0, 19) + '</span></div>';
   document.getElementById('user-modal-body').innerHTML = html;
   openModal('user-modal');
 }
 
 async function loadCharges() {
-  document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div>';
+  document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div>';
   try {
     const d = await apiAdmin('/admin/charges');
     allCharges = d.charges;
@@ -505,7 +505,7 @@ async function loadCharges() {
     if (activeBtn) filterCharges(chargeFilter, activeBtn);
     else filterCharges('pending', document.getElementById('filter-pending'));
   } catch(e) {
-    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>' + e.message + '</div></div>';
+    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>' + e.message + '</div></div>';
   }
 }
 
@@ -523,7 +523,7 @@ function filterCharges(type, el) {
 
 function renderCharges(charges) {
   if (!charges.length) {
-    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>í´ë¹ í­ëª© ìì</div></div>';
+    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>Ã­ÂÂ´Ã«ÂÂ¹ Ã­ÂÂ­Ã«ÂªÂ© Ã¬ÂÂÃ¬ÂÂ</div></div>';
     return;
   }
   let rows = '';
@@ -531,40 +531,40 @@ function renderCharges(charges) {
     rows += '<tr>';
     rows += '<td style="color:var(--text2)">#' + c.id + '</td>';
     rows += '<td><strong>' + c.nickname + '</strong></td>';
-    rows += '<td>' + (c.amount || 0).toLocaleString() + 'ì</td>';
+    rows += '<td>' + (c.amount || 0).toLocaleString() + 'Ã¬ÂÂ</td>';
     rows += '<td><strong style="color:var(--blue)">' + (c.points || 0).toLocaleString() + 'P</strong></td>';
-    const badge = c.status === 'pending' ? 'badge-pending">ëê¸°' : (c.status === 'confirmed' ? 'badge-confirmed">ì¹ì¸' : 'badge-failed">ê±°ì ');
+    const badge = c.status === 'pending' ? 'badge-pending">Ã«ÂÂÃªÂ¸Â°' : (c.status === 'confirmed' ? 'badge-confirmed">Ã¬ÂÂ¹Ã¬ÂÂ¸' : 'badge-failed">ÃªÂ±Â°Ã¬Â Â');
     rows += '<td><span class="badge ' + badge + '</span></td>';
     rows += '<td style="color:var(--text2)">' + (c.created_at || '').slice(0, 16).replace('T', ' ') + '</td>';
     if (c.status === 'pending') {
-      rows += '<td><button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')" style="margin-right:4px">â ì¹ì¸</button><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">ìì¸</button></td>';
+      rows += '<td><button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')" style="margin-right:4px">Ã¢ÂÂ Ã¬ÂÂ¹Ã¬ÂÂ¸</button><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">Ã¬ÂÂÃ¬ÂÂ¸</button></td>';
     } else {
-      rows += '<td><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">ìì¸</button></td>';
+      rows += '<td><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">Ã¬ÂÂÃ¬ÂÂ¸</button></td>';
     }
     rows += '</tr>';
   });
   const total_amt = charges.reduce(function(s, c) { return s + (c.amount || 0); }, 0);
   const total_pts = charges.reduce(function(s, c) { return s + (c.points || 0); }, 0);
   document.getElementById('charges-table-wrap').innerHTML =
-    '<table><thead><tr><th>ID</th><th>íì</th><th>ê¸ì¡</th><th>í¬ì¸í¸</th><th>ìí</th><th>ìì²­ì¼</th><th>ìì</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">ì´ ' + charges.length + 'ê±´ | ' + total_amt.toLocaleString() + 'ì / ' + total_pts.toLocaleString() + 'P</div>';
+    '<table><thead><tr><th>ID</th><th>Ã­ÂÂÃ¬ÂÂ</th><th>ÃªÂ¸ÂÃ¬ÂÂ¡</th><th>Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</th><th>Ã¬ÂÂÃ­ÂÂ</th><th>Ã¬ÂÂÃ¬Â²Â­Ã¬ÂÂ¼</th><th>Ã¬ÂÂÃ¬ÂÂ</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">Ã¬Â´Â ' + charges.length + 'ÃªÂ±Â´ | ' + total_amt.toLocaleString() + 'Ã¬ÂÂ / ' + total_pts.toLocaleString() + 'P</div>';
 }
 
 function showChargeDetail(cid) {
   const c = allCharges.find(function(x) { return x.id === cid; });
   if (!c) return;
   let html = '';
-  html += '<div class="info-row"><span class="info-label">ì¶©ì  ID</span><span class="info-val">#' + c.id + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">ìì²­ íì</span><span class="info-val">' + c.nickname + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">ì¶©ì  ê¸ì¡</span><span class="info-val">' + (c.amount || 0).toLocaleString() + 'ì</span></div>';
-  html += '<div class="info-row"><span class="info-label">ì§ê¸ í¬ì¸í¸</span><span class="info-val" style="color:var(--blue);font-weight:700">' + (c.points || 0).toLocaleString() + ' P</span></div>';
-  const badge = c.status === 'pending' ? 'badge-pending">ì¹ì¸ ëê¸°' : 'badge-confirmed">ì¹ì¸ ìë£';
-  html += '<div class="info-row"><span class="info-label">ìí</span><span class="info-val"><span class="badge ' + badge + '</span></span></div>';
-  html += '<div class="info-row"><span class="info-label">ìì²­ì¼ì</span><span class="info-val">' + (c.created_at || '').slice(0, 19).replace('T', ' ') + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">Ã¬Â¶Â©Ã¬Â Â ID</span><span class="info-val">#' + c.id + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">Ã¬ÂÂÃ¬Â²Â­ Ã­ÂÂÃ¬ÂÂ</span><span class="info-val">' + c.nickname + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">Ã¬Â¶Â©Ã¬Â Â ÃªÂ¸ÂÃ¬ÂÂ¡</span><span class="info-val">' + (c.amount || 0).toLocaleString() + 'Ã¬ÂÂ</span></div>';
+  html += '<div class="info-row"><span class="info-label">Ã¬Â§ÂÃªÂ¸Â Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</span><span class="info-val" style="color:var(--blue);font-weight:700">' + (c.points || 0).toLocaleString() + ' P</span></div>';
+  const badge = c.status === 'pending' ? 'badge-pending">Ã¬ÂÂ¹Ã¬ÂÂ¸ Ã«ÂÂÃªÂ¸Â°' : 'badge-confirmed">Ã¬ÂÂ¹Ã¬ÂÂ¸ Ã¬ÂÂÃ«Â£Â';
+  html += '<div class="info-row"><span class="info-label">Ã¬ÂÂÃ­ÂÂ</span><span class="info-val"><span class="badge ' + badge + '</span></span></div>';
+  html += '<div class="info-row"><span class="info-label">Ã¬ÂÂÃ¬Â²Â­Ã¬ÂÂ¼Ã¬ÂÂ</span><span class="info-val">' + (c.created_at || '').slice(0, 19).replace('T', ' ') + '</span></div>';
   document.getElementById('charge-modal-body').innerHTML = html;
-  let footer = '<button class="btn btn-secondary" onclick="closeModal(\'charge-modal\')">ë«ê¸°</button>';
+  let footer = '<button class="btn btn-secondary" onclick="closeModal(\'charge-modal\')">Ã«ÂÂ«ÃªÂ¸Â°</button>';
   if (c.status === 'pending') {
-    footer += '<button class="btn btn-success" onclick="confirmCharge(' + c.id + ');closeModal(\'charge-modal\')">â ì¹ì¸íê¸°</button>';
+    footer += '<button class="btn btn-success" onclick="confirmCharge(' + c.id + ');closeModal(\'charge-modal\')">Ã¢ÂÂ Ã¬ÂÂ¹Ã¬ÂÂ¸Ã­ÂÂÃªÂ¸Â°</button>';
   }
   document.getElementById('charge-modal-footer').innerHTML = footer;
   openModal('charge-modal');
@@ -573,7 +573,7 @@ function showChargeDetail(cid) {
 async function confirmCharge(id) {
   try {
     const d = await apiAdmin('/admin/charge/confirm/' + id, {method: 'POST'});
-    toast(d.message || 'ì¶©ì  ì¹ì¸ ìë£!', 'success');
+    toast(d.message || 'Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂ¹Ã¬ÂÂ¸ Ã¬ÂÂÃ«Â£Â!', 'success');
     loadCharges();
     loadDashboard();
   } catch(e) {
@@ -582,23 +582,23 @@ async function confirmCharge(id) {
 }
 
 async function loadReservations() {
-  document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div>';
+  document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div>';
   try {
     const d = await apiAdmin('/admin/users');
     let rows = '';
     d.users.forEach(function(u) {
       rows += '<tr>';
       rows += '<td><strong>' + u.nickname + '</strong></td>';
-      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'ë ë²¨</span></td>';
+      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'Ã«Â ÂÃ«Â²Â¨</span></td>';
       rows += '<td>' + ((u.charge_points || 0) + (u.exchange_points || 0)).toLocaleString() + 'P</td>';
-      rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + 'í</td>';
+      rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + 'Ã­ÂÂ</td>';
       rows += '</tr>';
     });
     document.getElementById('reservations-table-wrap').innerHTML =
-      '<table><thead><tr><th>íì</th><th>ë ë²¨</th><th>ì´í¬ì¸í¸</th><th>ëì ìì½</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-      '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">ì´ ' + d.users.length + 'ëª</div>';
+      '<table><thead><tr><th>Ã­ÂÂÃ¬ÂÂ</th><th>Ã«Â ÂÃ«Â²Â¨</th><th>Ã¬Â´ÂÃ­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</th><th>Ã«ÂÂÃ¬Â ÂÃ¬ÂÂÃ¬ÂÂ½</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">Ã¬Â´Â ' + d.users.length + 'Ã«ÂªÂ</div>';
   } catch(e) {
-    document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>' + e.message + '</div></div>';
+    document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>' + e.message + '</div></div>';
   }
 }
 
@@ -667,21 +667,21 @@ async function runMatching(roundNum){
 }
 
 async function loadPenalties() {
-  document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div>';
+  document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div>';
   try {
     const d = await apiAdmin('/admin/users');
     const penalized = d.users.filter(function(u) { return u.penalty_count > 0; });
     if (!penalized.length) {
-      document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>í¨ëí° íì ìì</div></div>';
+      document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° Ã­ÂÂÃ¬ÂÂ Ã¬ÂÂÃ¬ÂÂ</div></div>';
     } else {
       let rows = '';
       penalized.forEach(function(u) {
-        rows += '<tr><td>' + u.nickname + '</td><td><span class="badge badge-failed">' + u.penalty_count + 'í</span></td><td style="color:var(--red)">-</td></tr>';
+        rows += '<tr><td>' + u.nickname + '</td><td><span class="badge badge-failed">' + u.penalty_count + 'Ã­ÂÂ</span></td><td style="color:var(--red)">-</td></tr>';
       });
-      document.getElementById('penalty-list').innerHTML = '<table><thead><tr><th>íì</th><th>í¨ëí°</th><th>ì ì§ê¹ì§</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      document.getElementById('penalty-list').innerHTML = '<table><thead><tr><th>Ã­ÂÂÃ¬ÂÂ</th><th>Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ°</th><th>Ã¬Â ÂÃ¬Â§ÂÃªÂ¹ÂÃ¬Â§Â</th></tr></thead><tbody>' + rows + '</tbody></table>';
     }
   } catch(e) {
-    document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>í¨ëí° íí© ìì</div></div>';
+    document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° Ã­ÂÂÃ­ÂÂ© Ã¬ÂÂÃ¬ÂÂ</div></div>';
   }
 }
 
