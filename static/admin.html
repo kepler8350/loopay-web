@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LOOPAY ê´ë¦¬ì</title>
+<title>LOOPAY 관리자</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -73,7 +73,7 @@ td{padding:12px 16px;font-size:13px}
 .badge-lv5{background:rgba(239,68,68,.15);color:#f87171}
 .search-wrap{position:relative;display:inline-block}
 .search-bar{padding:8px 12px 8px 36px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;width:220px}
-.search-wrap::before{content:'ð';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
+.search-wrap::before{content:'🔍';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
 .search-bar:focus{border-color:var(--blue)}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
@@ -112,11 +112,11 @@ td{padding:12px 16px;font-size:13px}
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">LOOPAY</div>
-    <div class="login-sub">ê´ë¦¬ì ëìë³´ë</div>
-    <input id="adm-user" placeholder="ê´ë¦¬ì ìì´ë" autocomplete="username">
-    <input id="adm-pass" type="password" placeholder="ë¹ë°ë²í¸" autocomplete="current-password"
+    <div class="login-sub">관리자 대시보드</div>
+    <input id="adm-user" placeholder="관리자 아이디" autocomplete="username">
+    <input id="adm-pass" type="password" placeholder="비밀번호" autocomplete="current-password"
       onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="login-btn" onclick="doLogin()">ë¡ê·¸ì¸</button>
+    <button class="login-btn" onclick="doLogin()">로그인</button>
     <div class="login-err" id="login-err"></div>
   </div>
 </div>
@@ -126,26 +126,26 @@ td{padding:12px 16px;font-size:13px}
     <div class="sidebar-logo">LOOPAY <span>Admin</span></div>
     <nav>
       <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard',this)">
-        <span class="icon">ð</span><span>ëìë³´ë</span>
+        <span class="icon">📊</span><span>대시보드</span>
       </div>
       <div class="nav-item" data-page="users" onclick="showPage('users',this)">
-        <span class="icon">ð¥</span><span>íì ê´ë¦¬</span>
+        <span class="icon">👥</span><span>회원 관리</span>
       </div>
       <div class="nav-item" data-page="charges" onclick="showPage('charges',this)">
-        <span class="icon">ð³</span><span>ì¶©ì  ê´ë¦¬</span>
+        <span class="icon">💳</span><span>충전 관리</span>
       </div>
       <div class="nav-item" data-page="reservations" onclick="showPage('reservations',this)">
-        <span class="icon">ð¦</span><span>ìì½ íí©</span>
+        <span class="icon">📦</span><span>예약 현황</span>
       </div>
       <div class="nav-item" data-page="matching" onclick="showPage('matching',this)">
-        <span class="icon">â¡</span><span>ë§¤ì¹­ ì¤í</span>
+        <span class="icon">⚡</span><span>매칭 실행</span>
       </div>
       <div class="nav-item" data-page="penalties" onclick="showPage('penalties',this)">
-        <span class="icon">â ï¸</span><span>í¨ëí° ê´ë¦¬</span>
+        <span class="icon">⚠️</span><span>패널티 관리</span>
       </div>
     </nav>
     <div class="sidebar-footer">
-      <button class="logout-btn" onclick="doLogout()">ðª ë¡ê·¸ìì</button>
+      <button class="logout-btn" onclick="doLogout()">🚪 로그아웃</button>
     </div>
   </div>
 
@@ -153,148 +153,148 @@ td{padding:12px 16px;font-size:13px}
 
     <!-- DASHBOARD -->
     <div id="page-dashboard" class="page active">
-      <div class="page-title">ëìë³´ë</div>
-      <div class="page-sub">LOOPAY íë«í¼ ì ì²´ íí©</div>
+      <div class="page-title">대시보드</div>
+      <div class="page-sub">LOOPAY 플랫폼 전체 현황</div>
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">ì´ íìì</div><div class="stat-val blue" id="st-users">-</div><div class="stat-change">ì ì²´ ê°ìì</div></div>
-        <div class="stat-card"><div class="stat-label">ì´ ë³´ì  ìì´í</div><div class="stat-val green" id="st-items">-</div><div class="stat-change">íì¬ ì íµ ì¤ì¸ ë°</div></div>
-        <div class="stat-card"><div class="stat-label">ëê¸° ì¤ ì¶©ì </div><div class="stat-val yellow" id="st-charges">-</div><div class="stat-change">ì¹ì¸ ëê¸°</div></div>
-        <div class="stat-card"><div class="stat-label">ì¤ë ìì½</div><div class="stat-val purple" id="st-reserves">-</div><div class="stat-change">ê¸ì¼ ë§¤ì¹­ ìì½</div></div>
+        <div class="stat-card"><div class="stat-label">총 회원수</div><div class="stat-val blue" id="st-users">-</div><div class="stat-change">전체 가입자</div></div>
+        <div class="stat-card"><div class="stat-label">총 보유 아이템</div><div class="stat-val green" id="st-items">-</div><div class="stat-change">현재 유통 중인 바</div></div>
+        <div class="stat-card"><div class="stat-label">대기 중 충전</div><div class="stat-val yellow" id="st-charges">-</div><div class="stat-change">승인 대기</div></div>
+        <div class="stat-card"><div class="stat-label">오늘 예약</div><div class="stat-val purple" id="st-reserves">-</div><div class="stat-change">금일 매칭 예약</div></div>
       </div>
       <div class="two-col">
         <div class="table-card">
           <div class="table-header">
-            <div class="table-title">ð ìµê·¼ ì¶©ì  ìì²­</div>
-            <button class="btn btn-primary btn-sm" onclick="showPage('charges',document.querySelector('[data-page=charges]'))">ì ì²´ ë³´ê¸°</button>
+            <div class="table-title">📋 최근 충전 요청</div>
+            <button class="btn btn-primary btn-sm" onclick="showPage('charges',document.querySelector('[data-page=charges]'))">전체 보기</button>
           </div>
-          <div id="dash-charges"><div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div></div>
+          <div id="dash-charges"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
         </div>
         <div class="table-card">
           <div class="table-header">
-            <div class="table-title">ð¤ ìµê·¼ ê°ì íì</div>
-            <button class="btn btn-secondary btn-sm" onclick="showPage('users',document.querySelector('[data-page=users]'))">ì ì²´ ë³´ê¸°</button>
+            <div class="table-title">👤 최근 가입 회원</div>
+            <button class="btn btn-secondary btn-sm" onclick="showPage('users',document.querySelector('[data-page=users]'))">전체 보기</button>
           </div>
-          <div id="dash-users"><div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div></div>
+          <div id="dash-users"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
         </div>
       </div>
     </div>
 
     <!-- USERS -->
     <div id="page-users" class="page">
-      <div class="page-title">íì ê´ë¦¬</div>
-      <div class="page-sub">ì ì²´ íì ëª©ë¡ ë° ì ë³´ ê´ë¦¬</div>
+      <div class="page-title">회원 관리</div>
+      <div class="page-sub">전체 회원 목록 및 정보 관리</div>
       <div class="table-card">
         <div class="table-header">
-          <div class="table-title">ì ì²´ íì</div>
+          <div class="table-title">전체 회원</div>
           <div class="table-actions">
             <div class="search-wrap">
-              <input class="search-bar" id="user-search" placeholder="ì´ë¦/ì´ë©ì¼ ê²ì" oninput="filterUsers()">
+              <input class="search-bar" id="user-search" placeholder="이름/이메일 검색" oninput="filterUsers()">
             </div>
-            <button class="refresh-btn" onclick="loadUsers()">ð</button>
+            <button class="refresh-btn" onclick="loadUsers()">🔄</button>
           </div>
         </div>
-        <div id="users-table-wrap"><div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div></div>
+        <div id="users-table-wrap"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
       </div>
     </div>
 
     <!-- CHARGES -->
     <div id="page-charges" class="page">
-      <div class="page-title">ì¶©ì  ê´ë¦¬</div>
-      <div class="page-sub">í¬ì¸í¸ ì¶©ì  ìì²­ ì¹ì¸ ë° ì´ë ¥</div>
+      <div class="page-title">충전 관리</div>
+      <div class="page-sub">포인트 충전 요청 승인 및 이력</div>
       <div style="display:flex;gap:10px;margin-bottom:16px">
-        <button class="btn btn-secondary" id="filter-all" onclick="filterCharges('all',this)">ì ì²´</button>
-        <button class="btn btn-primary" id="filter-pending" onclick="filterCharges('pending',this)">ëê¸° ì¤</button>
-        <button class="btn btn-secondary" id="filter-confirmed" onclick="filterCharges('confirmed',this)">ì¹ì¸ë¨</button>
+        <button class="btn btn-secondary" id="filter-all" onclick="filterCharges('all',this)">전체</button>
+        <button class="btn btn-primary" id="filter-pending" onclick="filterCharges('pending',this)">대기 중</button>
+        <button class="btn btn-secondary" id="filter-confirmed" onclick="filterCharges('confirmed',this)">승인됨</button>
       </div>
       <div class="table-card">
         <div class="table-header">
-          <div class="table-title">ì¶©ì  ìì²­ ëª©ë¡</div>
-          <button class="refresh-btn" onclick="loadCharges()">ð</button>
+          <div class="table-title">충전 요청 목록</div>
+          <button class="refresh-btn" onclick="loadCharges()">🔄</button>
         </div>
-        <div id="charges-table-wrap"><div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div></div>
+        <div id="charges-table-wrap"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
       </div>
     </div>
 
     <!-- RESERVATIONS -->
     <div id="page-reservations" class="page">
-      <div class="page-title">ìì½ íí©</div>
-      <div class="page-sub">íìë³ ë§¤ì¹­ ìì½ íí© ë° ë³´ì  ìì´í</div>
+      <div class="page-title">예약 현황</div>
+      <div class="page-sub">회원별 매칭 예약 현황 및 보유 아이템</div>
       <div class="table-card">
         <div class="table-header">
-          <div class="table-title">íìë³ ë³´ì  ìì´í</div>
-          <button class="refresh-btn" onclick="loadReservations()">ð</button>
+          <div class="table-title">회원별 보유 아이템</div>
+          <button class="refresh-btn" onclick="loadReservations()">🔄</button>
         </div>
-        <div id="reservations-table-wrap"><div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div></div>
+        <div id="reservations-table-wrap"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
       </div>
     </div>
 
     <!-- MATCHING -->
     <div id="page-matching" class="page">
-      <div class="page-title">매칭 실행</div>
-      <div class="page-sub" id="matching-date-sub">오늘의 매칭 현황 및 실행</div>
+      <div class="page-title">�m �</div>
+      <div class="page-sub" id="matching-date-sub">$�X �m i  �</div>
       <div style="display:flex;gap:10px;margin-bottom:20px">
-        <button class="btn btn-primary" id="round-tab-1" onclick="switchRound(1,this)">1차 매칭</button>
-        <button class="btn btn-secondary" id="round-tab-2" onclick="switchRound(2,this)">2차 매칭</button>
-        <button class="refresh-btn" onclick="loadMatchingStatus()" style="margin-left:auto">&#x1F504; 새로고침</button>
+        <button class="btn btn-primary" id="round-tab-1" onclick="switchRound(1,this)">1( �m</button>
+        <button class="btn btn-secondary" id="round-tab-2" onclick="switchRound(2,this)">2( �m</button>
+        <button class="refresh-btn" onclick="loadMatchingStatus()" style="margin-left:auto">&#x1F504; �\�h</button>
       </div>
       <div id="round-panel-1">
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
-          <div class="stat-card"><div class="stat-label">구매 예약 수</div><div class="stat-val blue" id="r1-buy">-</div><div class="stat-change">오늘 1차 구매 대기</div></div>
-          <div class="stat-card"><div class="stat-label">판매 예약 수</div><div class="stat-val green" id="r1-sell">-</div><div class="stat-change">매칭 가능 아이템</div></div>
-          <div class="stat-card"><div class="stat-label">매칭율</div><div class="stat-val yellow" id="r1-rate">-</div><div class="stat-change">구매/판매 비율</div></div>
+          <div class="stat-card"><div class="stat-label">l� } </div><div class="stat-val blue" id="r1-buy">-</div><div class="stat-change">$� 1( l�  0</div></div>
+          <div class="stat-card"><div class="stat-label">� } </div><div class="stat-val green" id="r1-sell">-</div><div class="stat-change">�m  � Dt\</div></div>
+          <div class="stat-card"><div class="stat-label">�m(</div><div class="stat-val yellow" id="r1-rate">-</div><div class="stat-change">l�/� D(</div></div>
         </div>
         <div class="two-col">
-          <div class="table-card"><div class="table-header"><div class="table-title">아이템별 판매예약</div></div><div id="r1-by-type"><div class="empty-state"><div class="icon">&#x23F3;</div><div>로딩 중...</div></div></div></div>
-          <div class="table-card"><div class="table-header"><div class="table-title">단계별 판매예약</div></div><div id="r1-by-stage"><div class="empty-state"><div class="icon">&#x23F3;</div><div>로딩 중...</div></div></div></div>
+          <div class="table-card"><div class="table-header"><div class="table-title">Dt\� �}</div></div><div id="r1-by-type"><div class="empty-state"><div class="icon">&#x23F3;</div><div>\) ...</div></div></div></div>
+          <div class="table-card"><div class="table-header"><div class="table-title">��� �}</div></div><div id="r1-by-stage"><div class="empty-state"><div class="icon">&#x23F3;</div><div>\) ...</div></div></div></div>
         </div>
         <div class="table-card" style="margin-top:16px">
-          <div class="table-header"><div class="table-title">1차 매칭 실행</div></div>
-          <div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(1)">&#x1F680; 1차 매칭 실행하기</button><div id="match-result-1" style="margin-top:14px"></div></div>
+          <div class="table-header"><div class="table-title">1( �m �</div></div>
+          <div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(1)">&#x1F680; 1( �m �X0</button><div id="match-result-1" style="margin-top:14px"></div></div>
         </div>
       </div>
       <div id="round-panel-2" style="display:none">
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
-          <div class="stat-card"><div class="stat-label">구매 예약 수</div><div class="stat-val blue" id="r2-buy">-</div><div class="stat-change">오늘 2차 구매 대기</div></div>
-          <div class="stat-card"><div class="stat-label">판매 예약 수</div><div class="stat-val green" id="r2-sell">-</div><div class="stat-change">매칭 가능 아이템</div></div>
-          <div class="stat-card"><div class="stat-label">매칭율</div><div class="stat-val yellow" id="r2-rate">-</div><div class="stat-change">구매/판매 비율</div></div>
+          <div class="stat-card"><div class="stat-label">l� } </div><div class="stat-val blue" id="r2-buy">-</div><div class="stat-change">$� 2( l�  0</div></div>
+          <div class="stat-card"><div class="stat-label">� } </div><div class="stat-val green" id="r2-sell">-</div><div class="stat-change">�m  � Dt\</div></div>
+          <div class="stat-card"><div class="stat-label">�m(</div><div class="stat-val yellow" id="r2-rate">-</div><div class="stat-change">l�/� D(</div></div>
         </div>
         <div class="two-col">
-          <div class="table-card"><div class="table-header"><div class="table-title">아이템별 판매예약</div></div><div id="r2-by-type"><div class="empty-state"><div class="icon">&#x23F3;</div><div>로딩 중...</div></div></div></div>
-          <div class="table-card"><div class="table-header"><div class="table-title">단계별 판매예약</div></div><div id="r2-by-stage"><div class="empty-state"><div class="icon">&#x23F3;</div><div>로딩 중...</div></div></div></div>
+          <div class="table-card"><div class="table-header"><div class="table-title">Dt\� �}</div></div><div id="r2-by-type"><div class="empty-state"><div class="icon">&#x23F3;</div><div>\) ...</div></div></div></div>
+          <div class="table-card"><div class="table-header"><div class="table-title">��� �}</div></div><div id="r2-by-stage"><div class="empty-state"><div class="icon">&#x23F3;</div><div>\) ...</div></div></div></div>
         </div>
         <div class="table-card" style="margin-top:16px">
-          <div class="table-header"><div class="table-title">2차 매칭 실행</div></div>
-          <div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(2)">&#x1F680; 2차 매칭 실행하기</button><div id="match-result-2" style="margin-top:14px"></div></div>
+          <div class="table-header"><div class="table-title">2( �m �</div></div>
+          <div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(2)">&#x1F680; 2( �m �X0</button><div id="match-result-2" style="margin-top:14px"></div></div>
         </div>
       </div>
     </div>
 
     <!-- PENALTIES -->
     <div id="page-penalties" class="page">
-      <div class="page-title">í¨ëí° ê´ë¦¬</div>
-      <div class="page-sub">íìë³ í¨ëí° íí© ë° ì ì±</div>
+      <div class="page-title">패널티 관리</div>
+      <div class="page-sub">회원별 패널티 현황 및 정책</div>
       <div class="two-col">
         <div class="table-card">
-          <div class="table-header"><div class="table-title">í¨ëí° ì ì±</div></div>
+          <div class="table-header"><div class="table-title">패널티 정책</div></div>
           <div style="padding:16px">
             <table>
-              <thead><tr><th>íì</th><th>ì ì§ ê¸°ê°</th><th>ì°¨ê° í¬ì¸í¸</th></tr></thead>
+              <thead><tr><th>횟수</th><th>정지 기간</th><th>차감 포인트</th></tr></thead>
               <tbody>
-                <tr><td>1í</td><td>3ì¼</td><td style="color:var(--red)">1,000P</td></tr>
-                <tr><td>2í</td><td>7ì¼</td><td style="color:var(--red)">3,000P</td></tr>
-                <tr><td>3í</td><td>20ì¼</td><td style="color:var(--red)">6,000P</td></tr>
-                <tr><td>4í</td><td>50ì¼</td><td style="color:var(--red)">15,000P</td></tr>
-                <tr><td>5í</td><td>120ì¼</td><td style="color:var(--red)">30,000P</td></tr>
+                <tr><td>1회</td><td>3일</td><td style="color:var(--red)">1,000P</td></tr>
+                <tr><td>2회</td><td>7일</td><td style="color:var(--red)">3,000P</td></tr>
+                <tr><td>3회</td><td>20일</td><td style="color:var(--red)">6,000P</td></tr>
+                <tr><td>4회</td><td>50일</td><td style="color:var(--red)">15,000P</td></tr>
+                <tr><td>5회</td><td>120일</td><td style="color:var(--red)">30,000P</td></tr>
               </tbody>
             </table>
           </div>
         </div>
         <div class="table-card">
           <div class="table-header">
-            <div class="table-title">í¨ëí° ëì íì</div>
-            <button class="refresh-btn" onclick="loadPenalties()">ð</button>
+            <div class="table-title">패널티 대상 회원</div>
+            <button class="refresh-btn" onclick="loadPenalties()">🔄</button>
           </div>
-          <div id="penalty-list"><div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div></div>
+          <div id="penalty-list"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
         </div>
       </div>
     </div>
@@ -305,17 +305,17 @@ td{padding:12px 16px;font-size:13px}
 <!-- MODALS -->
 <div class="modal-overlay" id="user-modal" onclick="if(event.target===this)closeModal('user-modal')">
   <div class="modal">
-    <div class="modal-title">ð¤ íì ìì¸ ì ë³´</div>
+    <div class="modal-title">👤 회원 상세 정보</div>
     <div class="modal-body" id="user-modal-body"></div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('user-modal')">ë«ê¸°</button>
+      <button class="btn btn-secondary" onclick="closeModal('user-modal')">닫기</button>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="charge-modal" onclick="if(event.target===this)closeModal('charge-modal')">
   <div class="modal" style="width:380px">
-    <div class="modal-title">ð³ ì¶©ì  ìì¸</div>
+    <div class="modal-title">💳 충전 상세</div>
     <div class="modal-body" id="charge-modal-body"></div>
     <div class="modal-footer" id="charge-modal-footer"></div>
   </div>
@@ -335,7 +335,7 @@ async function doLogin() {
   const p = document.getElementById('adm-pass').value;
   document.getElementById('login-err').textContent = '';
   if (!u || !p) {
-    document.getElementById('login-err').textContent = 'ìì´ëì ë¹ë°ë²í¸ë¥¼ ìë ¥íì¸ì';
+    document.getElementById('login-err').textContent = '아이디와 비밀번호를 입력하세요';
     return;
   }
   try {
@@ -345,7 +345,7 @@ async function doLogin() {
       body: JSON.stringify({username: u, password: p})
     });
     const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'ë¡ê·¸ì¸ ì¤í¨');
+    if (!r.ok) throw new Error(d.error || '로그인 실패');
     adminToken = d.token;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
@@ -368,7 +368,7 @@ async function apiAdmin(path, opts) {
     headers: Object.assign({'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken}, opts.headers || {})
   }));
   const d = await r.json();
-  if (!r.ok) throw new Error(d.error || 'ì¤ë¥ ë°ì');
+  if (!r.ok) throw new Error(d.error || '오류 발생');
   return d;
 }
 
@@ -411,14 +411,14 @@ async function loadDashboard() {
     if (charges.length) {
       let rows = '';
       charges.forEach(function(c) {
-        rows += '<tr><td>' + c.nickname + '</td><td>' + (c.amount || 0).toLocaleString() + 'ì</td>';
+        rows += '<tr><td>' + c.nickname + '</td><td>' + (c.amount || 0).toLocaleString() + '원</td>';
         rows += '<td><strong style="color:var(--blue)">' + (c.points || 0).toLocaleString() + 'P</strong></td>';
-        rows += '<td><span class="badge ' + (c.status === 'pending' ? 'badge-pending">ëê¸°' : 'badge-confirmed">ì¹ì¸') + '</span></td>';
-        rows += '<td>' + (c.status === 'pending' ? '<button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')">ì¹ì¸</button>' : '') + '</td></tr>';
+        rows += '<td><span class="badge ' + (c.status === 'pending' ? 'badge-pending">대기' : 'badge-confirmed">승인') + '</span></td>';
+        rows += '<td>' + (c.status === 'pending' ? '<button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')">승인</button>' : '') + '</td></tr>';
       });
-      document.getElementById('dash-charges').innerHTML = '<table><thead><tr><th>íì</th><th>ê¸ì¡</th><th>í¬ì¸í¸</th><th>ìí</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+      document.getElementById('dash-charges').innerHTML = '<table><thead><tr><th>회원</th><th>금액</th><th>포인트</th><th>상태</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
     } else {
-      document.getElementById('dash-charges').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>ëê¸° ì¤ì¸ ì¶©ì  ìì</div></div>';
+      document.getElementById('dash-charges').innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>대기 중인 충전 없음</div></div>';
     }
   } catch(e) {}
 
@@ -428,21 +428,21 @@ async function loadDashboard() {
     let rows = '';
     users.forEach(function(u) {
       rows += '<tr><td>' + u.nickname + '</td>';
-      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'ë ë²¨</span></td>';
+      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + '레벨</span></td>';
       rows += '<td>' + ((u.charge_points || 0) + (u.exchange_points || 0)).toLocaleString() + 'P</td></tr>';
     });
-    document.getElementById('dash-users').innerHTML = '<table><thead><tr><th>ëë¤ì</th><th>ë ë²¨</th><th>í¬ì¸í¸</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    document.getElementById('dash-users').innerHTML = '<table><thead><tr><th>닉네임</th><th>레벨</th><th>포인트</th></tr></thead><tbody>' + rows + '</tbody></table>';
   } catch(e) {}
 }
 
 async function loadUsers() {
-  document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div>';
+  document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div>';
   try {
     const d = await apiAdmin('/admin/users');
     allUsers = d.users;
     renderUsers(allUsers);
   } catch(e) {
-    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>' + e.message + '</div></div>';
+    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">❌</div><div>' + e.message + '</div></div>';
   }
 }
 
@@ -456,7 +456,7 @@ function filterUsers() {
 
 function renderUsers(users) {
   if (!users.length) {
-    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ð</div><div>ê²ì ê²°ê³¼ ìì</div></div>';
+    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">🔍</div><div>검색 결과 없음</div></div>';
     return;
   }
   let rows = '';
@@ -465,17 +465,17 @@ function renderUsers(users) {
     rows += '<td style="color:var(--text2)">#' + u.id + '</td>';
     rows += '<td><strong>' + u.nickname + '</strong></td>';
     rows += '<td style="color:var(--text2)">' + (u.email || '-') + '</td>';
-    rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'ë ë²¨</span></td>';
+    rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + '레벨</span></td>';
     rows += '<td>' + (u.charge_points || 0).toLocaleString() + 'P</td>';
     rows += '<td>' + (u.exchange_points || 0).toLocaleString() + 'P</td>';
-    rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + 'í</td>';
+    rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + '회</td>';
     rows += '<td style="color:var(--text2)">' + (u.created_at || '').slice(0, 10) + '</td>';
-    rows += '<td><button class="btn btn-secondary btn-xs" onclick="showUserDetail(' + u.id + ')">ìì¸</button></td>';
+    rows += '<td><button class="btn btn-secondary btn-xs" onclick="showUserDetail(' + u.id + ')">상세</button></td>';
     rows += '</tr>';
   });
   document.getElementById('users-table-wrap').innerHTML =
-    '<table><thead><tr><th>ID</th><th>ëë¤ì</th><th>ì´ë©ì¼</th><th>ë ë²¨</th><th>ì¶©ì P</th><th>ì íP</th><th>ëì ìì½</th><th>ê°ìì¼</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>' +
-    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">ì´ ' + users.length + 'ëª</div>';
+    '<table><thead><tr><th>ID</th><th>닉네임</th><th>이메일</th><th>레벨</th><th>충전P</th><th>전환P</th><th>누적예약</th><th>가입일</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">총 ' + users.length + '명</div>';
 }
 
 function showUserDetail(uid) {
@@ -484,20 +484,20 @@ function showUserDetail(uid) {
   const total = (u.charge_points || 0) + (u.exchange_points || 0);
   let html = '';
   html += '<div class="info-row"><span class="info-label">ID</span><span class="info-val">#' + u.id + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">ëë¤ì</span><span class="info-val">' + u.nickname + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">ì´ë©ì¼</span><span class="info-val">' + (u.email || '-') + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">ë ë²¨</span><span class="info-val"><span class="badge badge-lv' + u.level + '">' + u.level + 'ë ë²¨</span></span></div>';
-  html += '<div class="info-row"><span class="info-label">ì¶©ì  í¬ì¸í¸</span><span class="info-val" style="color:var(--blue)">' + (u.charge_points || 0).toLocaleString() + ' P</span></div>';
-  html += '<div class="info-row"><span class="info-label">ì í í¬ì¸í¸</span><span class="info-val" style="color:var(--green)">' + (u.exchange_points || 0).toLocaleString() + ' P</span></div>';
-  html += '<div class="info-row"><span class="info-label">ì´ í¬ì¸í¸</span><span class="info-val" style="color:var(--yellow);font-weight:700">' + total.toLocaleString() + ' P</span></div>';
-  html += '<div class="info-row"><span class="info-label">ëì  ìì½</span><span class="info-val">' + (u.cumulative_count || 0).toLocaleString() + ' í</span></div>';
-  html += '<div class="info-row"><span class="info-label">ê°ìì¼</span><span class="info-val">' + (u.created_at || '').slice(0, 19) + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">닉네임</span><span class="info-val">' + u.nickname + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">이메일</span><span class="info-val">' + (u.email || '-') + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">레벨</span><span class="info-val"><span class="badge badge-lv' + u.level + '">' + u.level + '레벨</span></span></div>';
+  html += '<div class="info-row"><span class="info-label">충전 포인트</span><span class="info-val" style="color:var(--blue)">' + (u.charge_points || 0).toLocaleString() + ' P</span></div>';
+  html += '<div class="info-row"><span class="info-label">전환 포인트</span><span class="info-val" style="color:var(--green)">' + (u.exchange_points || 0).toLocaleString() + ' P</span></div>';
+  html += '<div class="info-row"><span class="info-label">총 포인트</span><span class="info-val" style="color:var(--yellow);font-weight:700">' + total.toLocaleString() + ' P</span></div>';
+  html += '<div class="info-row"><span class="info-label">누적 예약</span><span class="info-val">' + (u.cumulative_count || 0).toLocaleString() + ' 회</span></div>';
+  html += '<div class="info-row"><span class="info-label">가입일</span><span class="info-val">' + (u.created_at || '').slice(0, 19) + '</span></div>';
   document.getElementById('user-modal-body').innerHTML = html;
   openModal('user-modal');
 }
 
 async function loadCharges() {
-  document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div>';
+  document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div>';
   try {
     const d = await apiAdmin('/admin/charges');
     allCharges = d.charges;
@@ -505,7 +505,7 @@ async function loadCharges() {
     if (activeBtn) filterCharges(chargeFilter, activeBtn);
     else filterCharges('pending', document.getElementById('filter-pending'));
   } catch(e) {
-    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>' + e.message + '</div></div>';
+    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">❌</div><div>' + e.message + '</div></div>';
   }
 }
 
@@ -523,7 +523,7 @@ function filterCharges(type, el) {
 
 function renderCharges(charges) {
   if (!charges.length) {
-    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>í´ë¹ í­ëª© ìì</div></div>';
+    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>해당 항목 없음</div></div>';
     return;
   }
   let rows = '';
@@ -531,40 +531,40 @@ function renderCharges(charges) {
     rows += '<tr>';
     rows += '<td style="color:var(--text2)">#' + c.id + '</td>';
     rows += '<td><strong>' + c.nickname + '</strong></td>';
-    rows += '<td>' + (c.amount || 0).toLocaleString() + 'ì</td>';
+    rows += '<td>' + (c.amount || 0).toLocaleString() + '원</td>';
     rows += '<td><strong style="color:var(--blue)">' + (c.points || 0).toLocaleString() + 'P</strong></td>';
-    const badge = c.status === 'pending' ? 'badge-pending">ëê¸°' : (c.status === 'confirmed' ? 'badge-confirmed">ì¹ì¸' : 'badge-failed">ê±°ì ');
+    const badge = c.status === 'pending' ? 'badge-pending">대기' : (c.status === 'confirmed' ? 'badge-confirmed">승인' : 'badge-failed">거절');
     rows += '<td><span class="badge ' + badge + '</span></td>';
     rows += '<td style="color:var(--text2)">' + (c.created_at || '').slice(0, 16).replace('T', ' ') + '</td>';
     if (c.status === 'pending') {
-      rows += '<td><button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')" style="margin-right:4px">â ì¹ì¸</button><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">ìì¸</button></td>';
+      rows += '<td><button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')" style="margin-right:4px">✅ 승인</button><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">상세</button></td>';
     } else {
-      rows += '<td><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">ìì¸</button></td>';
+      rows += '<td><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">상세</button></td>';
     }
     rows += '</tr>';
   });
   const total_amt = charges.reduce(function(s, c) { return s + (c.amount || 0); }, 0);
   const total_pts = charges.reduce(function(s, c) { return s + (c.points || 0); }, 0);
   document.getElementById('charges-table-wrap').innerHTML =
-    '<table><thead><tr><th>ID</th><th>íì</th><th>ê¸ì¡</th><th>í¬ì¸í¸</th><th>ìí</th><th>ìì²­ì¼</th><th>ìì</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">ì´ ' + charges.length + 'ê±´ | ' + total_amt.toLocaleString() + 'ì / ' + total_pts.toLocaleString() + 'P</div>';
+    '<table><thead><tr><th>ID</th><th>회원</th><th>금액</th><th>포인트</th><th>상태</th><th>요청일</th><th>작업</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">총 ' + charges.length + '건 | ' + total_amt.toLocaleString() + '원 / ' + total_pts.toLocaleString() + 'P</div>';
 }
 
 function showChargeDetail(cid) {
   const c = allCharges.find(function(x) { return x.id === cid; });
   if (!c) return;
   let html = '';
-  html += '<div class="info-row"><span class="info-label">ì¶©ì  ID</span><span class="info-val">#' + c.id + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">ìì²­ íì</span><span class="info-val">' + c.nickname + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">ì¶©ì  ê¸ì¡</span><span class="info-val">' + (c.amount || 0).toLocaleString() + 'ì</span></div>';
-  html += '<div class="info-row"><span class="info-label">ì§ê¸ í¬ì¸í¸</span><span class="info-val" style="color:var(--blue);font-weight:700">' + (c.points || 0).toLocaleString() + ' P</span></div>';
-  const badge = c.status === 'pending' ? 'badge-pending">ì¹ì¸ ëê¸°' : 'badge-confirmed">ì¹ì¸ ìë£';
-  html += '<div class="info-row"><span class="info-label">ìí</span><span class="info-val"><span class="badge ' + badge + '</span></span></div>';
-  html += '<div class="info-row"><span class="info-label">ìì²­ì¼ì</span><span class="info-val">' + (c.created_at || '').slice(0, 19).replace('T', ' ') + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">충전 ID</span><span class="info-val">#' + c.id + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">요청 회원</span><span class="info-val">' + c.nickname + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">충전 금액</span><span class="info-val">' + (c.amount || 0).toLocaleString() + '원</span></div>';
+  html += '<div class="info-row"><span class="info-label">지급 포인트</span><span class="info-val" style="color:var(--blue);font-weight:700">' + (c.points || 0).toLocaleString() + ' P</span></div>';
+  const badge = c.status === 'pending' ? 'badge-pending">승인 대기' : 'badge-confirmed">승인 완료';
+  html += '<div class="info-row"><span class="info-label">상태</span><span class="info-val"><span class="badge ' + badge + '</span></span></div>';
+  html += '<div class="info-row"><span class="info-label">요청일시</span><span class="info-val">' + (c.created_at || '').slice(0, 19).replace('T', ' ') + '</span></div>';
   document.getElementById('charge-modal-body').innerHTML = html;
-  let footer = '<button class="btn btn-secondary" onclick="closeModal(\'charge-modal\')">ë«ê¸°</button>';
+  let footer = '<button class="btn btn-secondary" onclick="closeModal(\'charge-modal\')">닫기</button>';
   if (c.status === 'pending') {
-    footer += '<button class="btn btn-success" onclick="confirmCharge(' + c.id + ');closeModal(\'charge-modal\')">â ì¹ì¸íê¸°</button>';
+    footer += '<button class="btn btn-success" onclick="confirmCharge(' + c.id + ');closeModal(\'charge-modal\')">✅ 승인하기</button>';
   }
   document.getElementById('charge-modal-footer').innerHTML = footer;
   openModal('charge-modal');
@@ -573,7 +573,7 @@ function showChargeDetail(cid) {
 async function confirmCharge(id) {
   try {
     const d = await apiAdmin('/admin/charge/confirm/' + id, {method: 'POST'});
-    toast(d.message || 'ì¶©ì  ì¹ì¸ ìë£!', 'success');
+    toast(d.message || '충전 승인 완료!', 'success');
     loadCharges();
     loadDashboard();
   } catch(e) {
@@ -582,23 +582,23 @@ async function confirmCharge(id) {
 }
 
 async function loadReservations() {
-  document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div>';
+  document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div>';
   try {
     const d = await apiAdmin('/admin/users');
     let rows = '';
     d.users.forEach(function(u) {
       rows += '<tr>';
       rows += '<td><strong>' + u.nickname + '</strong></td>';
-      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'ë ë²¨</span></td>';
+      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + '레벨</span></td>';
       rows += '<td>' + ((u.charge_points || 0) + (u.exchange_points || 0)).toLocaleString() + 'P</td>';
-      rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + 'í</td>';
+      rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + '회</td>';
       rows += '</tr>';
     });
     document.getElementById('reservations-table-wrap').innerHTML =
-      '<table><thead><tr><th>íì</th><th>ë ë²¨</th><th>ì´í¬ì¸í¸</th><th>ëì ìì½</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-      '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">ì´ ' + d.users.length + 'ëª</div>';
+      '<table><thead><tr><th>회원</th><th>레벨</th><th>총포인트</th><th>누적예약</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">총 ' + d.users.length + '명</div>';
   } catch(e) {
-    document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>' + e.message + '</div></div>';
+    document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">❌</div><div>' + e.message + '</div></div>';
   }
 }
 
@@ -613,69 +613,69 @@ function switchRound(num, el) {
 async function loadMatchingStatus() {
   try {
     const d = await apiAdmin('/admin/matching-status');
-    document.getElementById('matching-date-sub').textContent = (d.date||'') + ' 매칭 현황 및 실행';
+    document.getElementById('matching-date-sub').textContent = (d.date||'') + ' �m i  �';
     function renderRound(r, prefix) {
       document.getElementById(prefix+'-buy').textContent = (r.buy_count||0).toLocaleString();
       document.getElementById(prefix+'-sell').textContent = (r.sell_count||0).toLocaleString();
       document.getElementById(prefix+'-rate').textContent = (r.match_rate||0) + '%';
       const typeEl = document.getElementById(prefix+'-by-type');
       if (r.by_type && r.by_type.length) {
-        const tM={'수정':'수정',bronze:'수정','루비':'루비',silver:'루비','다이아':'다이아',gold:'다이아'};
+        const tM={'':'',bronze:'','�D':'�D',silver:'�D','�tD':'�tD',gold:'�tD'};
         const cM={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
         let rows='';
         r.by_type.forEach(function(t){
           const label = tM[t.bar_type]||t.bar_type;
           rows+='<tr><td><strong style="color:'+(cM[t.bar_type]||'#fff')+'">'+label+'</strong></td><td style="font-size:18px;font-weight:700;color:var(--green)">'+t.count+'</td><td style="color:var(--text2)">'+(r.sell_count>0?Math.round(t.count/r.sell_count*100):0)+'%</td></tr>';
         });
-        typeEl.innerHTML='<table><thead><tr><th>아이템</th><th>판매예약</th><th>비중</th></tr></thead><tbody>'+rows+'</tbody></table>';
-      } else { typeEl.innerHTML='<div class="empty-state"><div class="icon">&#x1F4E6;</div><div>판매 예약 없음</div></div>'; }
+        typeEl.innerHTML='<table><thead><tr><th>Dt\</th><th>�}</th><th>D</th></tr></thead><tbody>'+rows+'</tbody></table>';
+      } else { typeEl.innerHTML='<div class="empty-state"><div class="icon">&#x1F4E6;</div><div>� } �L</div></div>'; }
       const stageEl = document.getElementById(prefix+'-by-stage');
       if (r.by_stage && r.by_stage.length) {
-        const tM={bronze:'수정',silver:'루비',gold:'다이아'};
+        const tM={bronze:'',silver:'�D',gold:'�tD'};
         const cM={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
         let rows='';
         r.by_stage.forEach(function(s){
-          rows+='<tr><td><span style="color:'+(cM[s.bar_type]||'#fff')+';font-weight:600">'+(tM[s.bar_type]||s.bar_type)+'</span></td><td style="text-align:center"><strong>'+s.stage+'단계</strong></td><td style="text-align:center;font-weight:700;color:var(--green)">'+s.count+'개</td></tr>';
+          rows+='<tr><td><span style="color:'+(cM[s.bar_type]||'#fff')+';font-weight:600">'+(tM[s.bar_type]||s.bar_type)+'</span></td><td style="text-align:center"><strong>'+s.stage+'��</strong></td><td style="text-align:center;font-weight:700;color:var(--green)">'+s.count+'</td></tr>';
         });
-        stageEl.innerHTML='<table><thead><tr><th>종류</th><th>단계</th><th>수량</th></tr></thead><tbody>'+rows+'</tbody></table>';
-      } else { stageEl.innerHTML='<div class="empty-state"><div class="icon">&#x1F522;</div><div>단계별 데이터 없음</div></div>'; }
+        stageEl.innerHTML='<table><thead><tr><th>�X</th><th>��</th><th>�</th></tr></thead><tbody>'+rows+'</tbody></table>';
+      } else { stageEl.innerHTML='<div class="empty-state"><div class="icon">&#x1F522;</div><div>��� pt0 �L</div></div>'; }
     }
     renderRound(d.round1,'r1'); renderRound(d.round2,'r2');
-  } catch(e) { toast('매칭 현황 로드 실패: '+e.message,'error'); }
+  } catch(e) { toast('�m i \� �(: '+e.message,'error'); }
 }
 async function runMatching(roundNum) {
   roundNum = roundNum||1;
   const btn = event.target;
-  btn.disabled = true; btn.textContent = '⏳ 실행 중...';
+  btn.disabled = true; btn.textContent = '� � ...';
   const resultId = 'match-result-' + roundNum;
   try {
     const d = await apiAdmin('/admin/run-matching', {method:'POST', body:JSON.stringify({round:roundNum})});
-    toast(d.message||roundNum+'차 매칭 완료!', 'success');
-    document.getElementById(resultId).innerHTML = '<div class="match-result"><div style="font-weight:600;margin-bottom:8px;color:var(--green)">&#x2705; '+roundNum+'차 매칭 완료</div><div class="match-row"><span>처리된 예약</span><span><strong>'+(d.matched||0)+'</strong>건</span></div><div class="match-row"><span>완료 시각</span><span>'+new Date().toLocaleTimeString('ko-KR')+'</span></div></div>';
+    toast(d.message||roundNum+'( �m D�!', 'success');
+    document.getElementById(resultId).innerHTML = '<div class="match-result"><div style="font-weight:600;margin-bottom:8px;color:var(--green)">&#x2705; '+roundNum+'( �m D�</div><div class="match-row"><span>�� }</span><span><strong>'+(d.matched||0)+'</strong>t</span></div><div class="match-row"><span>D� �</span><span>'+new Date().toLocaleTimeString('ko-KR')+'</span></div></div>';
     loadMatchingStatus();
   } catch(e) {
     toast(e.message,'error');
-    document.getElementById(resultId).innerHTML = '<div class="match-result" style="border-color:var(--red)"><div style="font-weight:600;color:var(--red)">&#x274C; 매칭 실패</div><div style="font-size:12px;color:var(--text2);margin-top:6px">'+e.message+'</div></div>';
+    document.getElementById(resultId).innerHTML = '<div class="match-result" style="border-color:var(--red)"><div style="font-weight:600;color:var(--red)">&#x274C; �m �(</div><div style="font-size:12px;color:var(--text2);margin-top:6px">'+e.message+'</div></div>';
   }
-  btn.disabled=false; btn.textContent='�DE80 '+roundNum+'차 매칭 실행하기';
+  btn.disabled=false; btn.textContent='�DE80 '+roundNum+'( �m �X0';
 }
 
 async function loadPenalties() {
-  document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">â³</div><div>ë¡ë© ì¤...</div></div>';
+  document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div>';
   try {
     const d = await apiAdmin('/admin/users');
     const penalized = d.users.filter(function(u) { return u.penalty_count > 0; });
     if (!penalized.length) {
-      document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>í¨ëí° íì ìì</div></div>';
+      document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>패널티 회원 없음</div></div>';
     } else {
       let rows = '';
       penalized.forEach(function(u) {
-        rows += '<tr><td>' + u.nickname + '</td><td><span class="badge badge-failed">' + u.penalty_count + 'í</span></td><td style="color:var(--red)">-</td></tr>';
+        rows += '<tr><td>' + u.nickname + '</td><td><span class="badge badge-failed">' + u.penalty_count + '회</span></td><td style="color:var(--red)">-</td></tr>';
       });
-      document.getElementById('penalty-list').innerHTML = '<table><thead><tr><th>íì</th><th>í¨ëí°</th><th>ì ì§ê¹ì§</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      document.getElementById('penalty-list').innerHTML = '<table><thead><tr><th>회원</th><th>패널티</th><th>정지까지</th></tr></thead><tbody>' + rows + '</tbody></table>';
     }
   } catch(e) {
-    document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">â</div><div>í¨ëí° íí© ìì</div></div>';
+    document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>패널티 현황 없음</div></div>';
   }
 }
 
