@@ -620,16 +620,16 @@ async function loadMatchingStatus() {
       document.getElementById(prefix+'-rate').textContent = (r.match_rate||0) + '%';
       const typeEl = document.getElementById(prefix+'-by-type');
       if (r.by_type && r.by_type.length) {
-        const tM={'bronze':'>I `ï¿½','silver':'>H ï¿½','gold':'>G ï¿½ï¿½'};
-        const cM={'bronze':'#cd7f32','silver':'#a8a9ad','gold':'#ffd700'};
+        const tM={'bronze':'>I `ï¿½','silver':'루비','gold':'다이아'};
+        const cM={'bronze':'#cd7f32','silver':'루비','gold':'다이아'};
         let rows='';
         r.by_type.forEach(function(t){ rows+='<tr><td><strong style="color:'+(cM[t.bar_type]||'#fff')+'">'+(tM[t.bar_type]||t.bar_type)+'</strong></td><td style="font-size:18px;font-weight:700;color:var(--green)">'+t.count+'</td><td style="color:var(--text2)">'+(r.sell_count>0?Math.round(t.count/r.sell_count*100):0)+'%</td></tr>'; });
         typeEl.innerHTML='<table><thead><tr><th>Dt\</th><th>ï¿½}</th><th>D</th></tr></thead><tbody>'+rows+'</tbody></table>';
       } else { typeEl.innerHTML='<div class="empty-state"><div class="icon">=ï¿½</div><div>ï¿½ } ï¿½L</div></div>'; }
       const stageEl = document.getElementById(prefix+'-by-stage');
       if (r.by_stage && r.by_stage.length) {
-        const tM={'bronze':'`ï¿½','silver':'ï¿½','gold':'ï¿½ï¿½'};
-        const cM={'bronze':'#cd7f32','silver':'#a8a9ad','gold':'#ffd700'};
+        const tM={'bronze':'`ï¿½','silver':'루비','gold':'다이아'};
+        const cM={'bronze':'#cd7f32','silver':'루비','gold':'다이아'};
         let rows='';
         r.by_stage.forEach(function(s){ rows+='<tr><td><span style="color:'+(cM[s.bar_type]||'#fff')+';font-weight:600">'+(tM[s.bar_type]||s.bar_type)+'</span></td><td style="text-align:center"><strong>'+s.stage+'ï¿½ï¿½</strong></td><td style="text-align:center;font-weight:700;color:var(--green)">'+s.count+'</td></tr>'; });
         stageEl.innerHTML='<table><thead><tr><th>ï¿½X</th><th>ï¿½ï¿½</th><th>ï¿½</th></tr></thead><tbody>'+rows+'</tbody></table>';
