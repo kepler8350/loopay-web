@@ -3,692 +3,163 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LOOPAY 관리자</title>
+<title>LOOPAY &#44288;&#47532;&#51088;</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0f1117;--bg2:#1a1d27;--bg3:#242838;--border:#2e3347;
-  --text:#e8eaf0;--text2:#8b92a9;--blue:#3b7ff5;--green:#2ecc71;
-  --red:#e74c3c;--yellow:#f39c12;--purple:#9b59b6;--radius:10px;
-}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
-#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh}
-.login-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:40px 36px;width:360px}
-.login-logo{font-size:28px;font-weight:800;color:var(--blue);text-align:center;letter-spacing:2px;margin-bottom:6px}
-.login-sub{text-align:center;color:var(--text2);font-size:13px;margin-bottom:28px}
-.login-card input{width:100%;padding:11px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none;margin-bottom:12px}
-.login-card input:focus{border-color:var(--blue)}
-.login-btn{width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
-.login-btn:hover{background:#2d6ed6}
-.login-err{color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:18px}
-#app{display:none;min-height:100vh}
-.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--bg2);border-right:1px solid var(--border);z-index:100;display:flex;flex-direction:column}
-.sidebar-logo{padding:22px 20px 18px;font-size:20px;font-weight:800;color:var(--blue);letter-spacing:1px;border-bottom:1px solid var(--border)}
-.sidebar-logo span{font-size:11px;font-weight:400;color:var(--text2);margin-left:6px}
-nav{flex:1;padding:12px 0}
-.nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;color:var(--text2);cursor:pointer;font-size:14px;font-weight:500;transition:all .15s}
-.nav-item:hover{background:var(--bg3);color:var(--text)}
-.nav-item.active{background:rgba(59,127,245,.12);color:var(--blue);border-right:3px solid var(--blue)}
-.nav-item .icon{font-size:16px;width:20px;text-align:center}
-.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border)}
-.logout-btn{width:100%;padding:9px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer}
-.logout-btn:hover{color:var(--red);border-color:var(--red)}
-.main{margin-left:220px;padding:28px 32px;min-height:100vh}
-.page{display:none}.page.active{display:block}
-.page-title{font-size:22px;font-weight:700;margin-bottom:6px}
-.page-sub{color:var(--text2);font-size:13px;margin-bottom:24px}
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
-.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
-.stat-label{font-size:12px;color:var(--text2);margin-bottom:8px}
-.stat-val{font-size:28px;font-weight:700}
-.stat-val.blue{color:var(--blue)}.stat-val.green{color:var(--green)}.stat-val.yellow{color:var(--yellow)}.stat-val.purple{color:var(--purple)}
-.stat-change{font-size:11px;color:var(--text2);margin-top:4px}
-.table-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:24px}
-.table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.table-title{font-size:15px;font-weight:600}
-.table-actions{display:flex;gap:8px}
-.btn{padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s}
-.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:#2d6ed6}
-.btn-success{background:var(--green);color:#fff}.btn-success:hover{background:#27ae60}
-.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{background:#c0392b}
-.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
-.btn-secondary:hover{border-color:var(--blue);color:var(--blue)}
-.btn-sm{padding:5px 10px;font-size:12px}
-.btn-xs{padding:3px 8px;font-size:11px;border-radius:5px}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#0f1117;color:#e8eaf6;min-height:100vh}
+.app{display:flex;min-height:100vh}
+#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-height:100vh;background:#0f1117}
+.login-box{background:#1a1d2e;border-radius:16px;padding:40px;width:320px;text-align:center}
+.login-logo{font-size:28px;font-weight:900;color:#4fc3f7;letter-spacing:2px;margin-bottom:8px}
+.login-sub{font-size:13px;color:#7986cb;margin-bottom:28px}
+.login-input{width:100%;padding:12px;background:#0f1117;border:1px solid #2a2d3e;border-radius:8px;color:#e8eaf6;font-size:14px;margin-bottom:12px}
+.login-btn{width:100%;padding:13px;background:#4fc3f7;border:none;border-radius:8px;color:#0f1117;font-size:15px;font-weight:700;cursor:pointer}
+.login-btn:hover{background:#81d4fa}
+.sidebar{width:176px;background:#1a1d2e;border-right:1px solid #2a2d3e;display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-header{padding:20px 16px 16px;border-bottom:1px solid #2a2d3e}
+.sidebar-logo{font-size:18px;font-weight:900;color:#4fc3f7;letter-spacing:1px}
+.sidebar-role{font-size:11px;color:#7986cb;margin-top:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;font-size:13px;color:#9fa8da;border-left:3px solid transparent;transition:all .2s}
+.nav-item:hover{background:#232640;color:#e8eaf6}
+.nav-item.active{background:#232640;color:#4fc3f7;border-left-color:#4fc3f7;font-weight:600}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid #2a2d3e}
+.logout-btn{width:100%;padding:10px;background:#1e2235;border:1px solid #2a2d3e;border-radius:8px;color:#9fa8da;font-size:13px;cursor:pointer}
+.logout-btn:hover{background:#2a2d3e;color:#e8eaf6}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.page{display:none;flex-direction:column;flex:1;padding:28px;overflow-y:auto}
+.page.active{display:flex}
+.page-title{font-size:24px;font-weight:700;margin-bottom:4px}
+.page-sub{font-size:13px;color:#7986cb;margin-bottom:24px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:#1a1d2e;border-radius:12px;padding:20px;border:1px solid #2a2d3e}
+.stat-label{font-size:12px;color:#7986cb;margin-bottom:8px}
+.stat-val{font-size:28px;font-weight:700;margin-bottom:4px}
+.stat-val.blue{color:#4fc3f7}.stat-val.green{color:#66bb6a}.stat-val.yellow{color:#ffa726}.stat-val.red{color:#ef5350}
+.stat-change{font-size:11px;color:#546e7a}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.table-card{background:#1a1d2e;border-radius:12px;border:1px solid #2a2d3e;overflow:hidden}
+.table-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #2a2d3e}
+.table-title{font-size:14px;font-weight:600}
 table{width:100%;border-collapse:collapse}
-thead tr{border-bottom:1px solid var(--border)}
-th{padding:11px 16px;text-align:left;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
-tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
-tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:rgba(255,255,255,.03)}
-td{padding:12px 16px;font-size:13px}
-.badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
-.badge-pending{background:rgba(243,156,18,.15);color:var(--yellow)}
-.badge-confirmed{background:rgba(46,204,113,.15);color:var(--green)}
-.badge-failed{background:rgba(231,76,60,.15);color:var(--red)}
-.badge-lv1{background:rgba(139,92,246,.15);color:#a78bfa}
-.badge-lv2{background:rgba(59,130,246,.15);color:#60a5fa}
-.badge-lv3{background:rgba(16,185,129,.15);color:#34d399}
-.badge-lv4{background:rgba(245,158,11,.15);color:#fbbf24}
-.badge-lv5{background:rgba(239,68,68,.15);color:#f87171}
-.search-wrap{position:relative;display:inline-block}
-.search-bar{padding:8px 12px 8px 36px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;width:220px}
-.search-wrap::before{content:'🔍';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
-.search-bar:focus{border-color:var(--blue)}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center}
-.modal-overlay.open{display:flex}
-.modal{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px;width:480px;max-width:95vw}
-.modal-title{font-size:17px;font-weight:700;margin-bottom:18px}
-.modal-body{margin-bottom:20px}
-.modal-footer{display:flex;gap:10px;justify-content:flex-end}
-.form-group{margin-bottom:14px}
-.form-label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block}
-.form-input,.form-select{width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none}
-.form-input:focus,.form-select:focus{border-color:var(--blue)}
-.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;z-index:1000;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;max-width:320px}
-.toast.show{opacity:1;transform:translateY(0)}
-.toast.success{background:var(--green);color:#fff}
-.toast.error{background:var(--red);color:#fff}
-.toast.info{background:var(--blue);color:#fff}
-.empty-state{text-align:center;padding:48px;color:var(--text2)}
-.empty-state .icon{font-size:40px;margin-bottom:12px}
-.refresh-btn{background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;padding:4px 8px;border-radius:6px}
-.refresh-btn:hover{background:var(--bg3);color:var(--text)}
-.info-row{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
-.info-row:last-child{border-bottom:none}
-.info-label{color:var(--text2);font-size:12px;width:110px;flex-shrink:0}
-.info-val{font-size:13px;font-weight:500}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.match-result{background:var(--bg3);border-radius:10px;padding:16px;margin-top:14px}
-.match-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+th,td{padding:12px 20px;text-align:left;font-size:13px;border-bottom:1px solid #2a2d3e}
+th{color:#7986cb;font-weight:500;font-size:12px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#1e2235}
+.badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-success{background:rgba(102,187,106,.15);color:#66bb6a}
+.badge-warning{background:rgba(255,167,38,.15);color:#ffa726}
+.badge-info{background:rgba(79,195,247,.15);color:#4fc3f7}
+.badge-red{background:rgba(239,83,80,.15);color:#ef5350}
+.btn{padding:8px 16px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary{background:#4fc3f7;color:#0f1117}.btn-primary:hover{background:#81d4fa}
+.btn-secondary{background:#2a2d3e;color:#e8eaf6}.btn-secondary:hover{background:#363a52}
+.btn-success{background:#66bb6a;color:#fff}.btn-success:hover{background:#81c784}
+.btn-danger{background:#ef5350;color:#fff}.btn-danger:hover{background:#e53935}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:#546e7a;gap:8px}
+.match-result{background:#1e2235;border-radius:8px;padding:16px;border:1px solid #2a2d3e}
+.match-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #1a1d2e}
 .match-row:last-child{border-bottom:none}
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:var(--bg2)}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.refresh-btn{background:none;border:1px solid #2a2d3e;color:#7986cb;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer}
+.refresh-btn:hover{background:#2a2d3e;color:#e8eaf6}
+input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color:#e8eaf6;padding:8px 12px;font-size:13px}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1d2e;border:1px solid #2a2d3e;border-radius:10px;padding:14px 20px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;max-width:320px}
+.toast.show{opacity:1}.toast.success{border-color:#66bb6a;color:#66bb6a}.toast.error{border-color:#ef5350;color:#ef5350}
 </style>
-</head>
-<body>
-
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-logo">LOOPAY</div>
-    <div class="login-sub">관리자 대시보드</div>
-    <input id="adm-user" placeholder="관리자 아이디" autocomplete="username">
-    <input id="adm-pass" type="password" placeholder="비밀번호" autocomplete="current-password"
-      onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="login-btn" onclick="doLogin()">로그인</button>
-    <div class="login-err" id="login-err"></div>
-  </div>
+</head><body>
+<div id="login-screen"><div class="login-box">
+<div class="login-logo">LOOPAY</div>
+<div class="login-sub">&#44288;&#47532;&#51088; &#45824;&#49884;&#48372;&#46300;</div>
+<input id="adm-user" class="login-input" type="text" placeholder="ID" value="admin">
+<input id="adm-pass" class="login-input" type="password" placeholder="PW" value="admin1234">
+<button class="login-btn" onclick="doLogin()">&#47196;&#44536;&#51064;</button>
+</div></div>
+<div class="app" id="admin-app" style="display:none">
+<div class="sidebar">
+<div class="sidebar-header"><div class="sidebar-logo">LOOPAY</div><div class="sidebar-role">Admin</div></div>
+<nav>
+<div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard',this)"><span class="nav-icon">&#128200;</span>&#45824;&#49884;&#48372;&#46300;</div>
+<div class="nav-item" data-page="users" onclick="showPage('users',this)"><span class="nav-icon">&#128100;</span>&#54924;&#50896; &#44288;&#47532;</div>
+<div class="nav-item" data-page="charges" onclick="showPage('charges',this)"><span class="nav-icon">&#128179;</span>&#52636;&#51204; &#44288;&#47532;</div>
+<div class="nav-item" data-page="reservations" onclick="showPage('reservations',this)"><span class="nav-icon">&#128203;</span>&#50696;&#50557; &#54788;&#54889;</div>
+<div class="nav-item" data-page="matching" onclick="showPage('matching',this)"><span class="nav-icon">&#9889;</span>&#47588;&#52825; &#49892;&#54665;</div>
+<div class="nav-item" data-page="penalties" onclick="showPage('penalties',this)"><span class="nav-icon">&#9888;</span>&#54328;&#45110;&#54000; &#44288;&#47532;</div>
+</nav>
+<div class="sidebar-footer"><button class="logout-btn" onclick="doAdminLogout()">&#128682; &#47196;&#44536;&#50500;&#50883;</button></div>
 </div>
-
-<div id="app">
-  <div class="sidebar">
-    <div class="sidebar-logo">LOOPAY <span>Admin</span></div>
-    <nav>
-      <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard',this)">
-        <span class="icon">📊</span><span>대시보드</span>
-      </div>
-      <div class="nav-item" data-page="users" onclick="showPage('users',this)">
-        <span class="icon">👥</span><span>회원 관리</span>
-      </div>
-      <div class="nav-item" data-page="charges" onclick="showPage('charges',this)">
-        <span class="icon">💳</span><span>충전 관리</span>
-      </div>
-      <div class="nav-item" data-page="reservations" onclick="showPage('reservations',this)">
-        <span class="icon">📦</span><span>예약 현황</span>
-      </div>
-      <div class="nav-item" data-page="matching" onclick="showPage('matching',this)">
-        <span class="icon">⚡</span><span>매칭 실행</span>
-      </div>
-      <div class="nav-item" data-page="penalties" onclick="showPage('penalties',this)">
-        <span class="icon">⚠️</span><span>패널티 관리</span>
-      </div>
-    </nav>
-    <div class="sidebar-footer">
-      <button class="logout-btn" onclick="doLogout()">🚪 로그아웃</button>
-    </div>
-  </div>
-
-  <div class="main">
-
-    <!-- DASHBOARD -->
-    <div id="page-dashboard" class="page active">
-      <div class="page-title">대시보드</div>
-      <div class="page-sub">LOOPAY 플랫폼 전체 현황</div>
-      <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">총 회원수</div><div class="stat-val blue" id="st-users">-</div><div class="stat-change">전체 가입자</div></div>
-        <div class="stat-card"><div class="stat-label">총 보유 아이템</div><div class="stat-val green" id="st-items">-</div><div class="stat-change">현재 유통 중인 바</div></div>
-        <div class="stat-card"><div class="stat-label">대기 중 충전</div><div class="stat-val yellow" id="st-charges">-</div><div class="stat-change">승인 대기</div></div>
-        <div class="stat-card"><div class="stat-label">오늘 예약</div><div class="stat-val purple" id="st-reserves">-</div><div class="stat-change">금일 매칭 예약</div></div>
-      </div>
-      <div class="two-col">
-        <div class="table-card">
-          <div class="table-header">
-            <div class="table-title">📋 최근 충전 요청</div>
-            <button class="btn btn-primary btn-sm" onclick="showPage('charges',document.querySelector('[data-page=charges]'))">전체 보기</button>
-          </div>
-          <div id="dash-charges"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
-        </div>
-        <div class="table-card">
-          <div class="table-header">
-            <div class="table-title">👤 최근 가입 회원</div>
-            <button class="btn btn-secondary btn-sm" onclick="showPage('users',document.querySelector('[data-page=users]'))">전체 보기</button>
-          </div>
-          <div id="dash-users"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- USERS -->
-    <div id="page-users" class="page">
-      <div class="page-title">회원 관리</div>
-      <div class="page-sub">전체 회원 목록 및 정보 관리</div>
-      <div class="table-card">
-        <div class="table-header">
-          <div class="table-title">전체 회원</div>
-          <div class="table-actions">
-            <div class="search-wrap">
-              <input class="search-bar" id="user-search" placeholder="이름/이메일 검색" oninput="filterUsers()">
-            </div>
-            <button class="refresh-btn" onclick="loadUsers()">🔄</button>
-          </div>
-        </div>
-        <div id="users-table-wrap"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
-      </div>
-    </div>
-
-    <!-- CHARGES -->
-    <div id="page-charges" class="page">
-      <div class="page-title">충전 관리</div>
-      <div class="page-sub">포인트 충전 요청 승인 및 이력</div>
-      <div style="display:flex;gap:10px;margin-bottom:16px">
-        <button class="btn btn-secondary" id="filter-all" onclick="filterCharges('all',this)">전체</button>
-        <button class="btn btn-primary" id="filter-pending" onclick="filterCharges('pending',this)">대기 중</button>
-        <button class="btn btn-secondary" id="filter-confirmed" onclick="filterCharges('confirmed',this)">승인됨</button>
-      </div>
-      <div class="table-card">
-        <div class="table-header">
-          <div class="table-title">충전 요청 목록</div>
-          <button class="refresh-btn" onclick="loadCharges()">🔄</button>
-        </div>
-        <div id="charges-table-wrap"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
-      </div>
-    </div>
-
-    <!-- RESERVATIONS -->
-    <div id="page-reservations" class="page">
-      <div class="page-title">예약 현황</div>
-      <div class="page-sub">회원별 매칭 예약 현황 및 보유 아이템</div>
-      <div class="table-card">
-        <div class="table-header">
-          <div class="table-title">회원별 보유 아이템</div>
-          <button class="refresh-btn" onclick="loadReservations()">🔄</button>
-        </div>
-        <div id="reservations-table-wrap"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
-      </div>
-    </div>
-
-    <!-- MATCHING -->
-    <div id="page-matching" class="page">
-      <div class="page-title">&#47588;&#52825; &#49892;&#54665;</div>
-      <div class="page-sub" id="matching-date-sub">&#50724;&#45212;&#51032; &#47588;&#52825; &#54788;&#54889; &#48143; &#49892;&#54665;</div>
-      <div style="display:flex;gap:10px;margin-bottom:20px">
-        <button class="btn btn-primary" id="round-tab-1" onclick="switchRound(1,this)">1&#52264; &#47588;&#52825;</button>
-        <button class="btn btn-secondary" id="round-tab-2" onclick="switchRound(2,this)">2&#52264; &#47588;&#52825;</button>
-        <button class="refresh-btn" onclick="loadMatchingStatus()" style="margin-left:auto">&#128504; &#49352;&#47196;&#44256;&#52768;</button>
-      </div>
-      <div id="round-panel-1">
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
-          <div class="stat-card"><div class="stat-label">&#44396;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val blue" id="r1-buy">-</div><div class="stat-change">&#50724;&#45212; 1&#52264; &#44396;&#47588; &#45824;&#44592;</div></div>
-          <div class="stat-card"><div class="stat-label">&#54032;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val green" id="r1-sell">-</div><div class="stat-change">&#47588;&#52825; &#44032;&#45733; &#50500;&#51060;&#53596;</div></div>
-          <div class="stat-card"><div class="stat-label">&#47588;&#52825;&#51728;</div><div class="stat-val yellow" id="r1-rate">-</div><div class="stat-change">&#44396;&#47588;/&#54032;&#47588; &#48708;&#51728;</div></div>
-        </div>
-        <div class="two-col">
-          <div class="table-card"><div class="table-header"><div class="table-title">&#50500;&#51060;&#53596;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r1-by-type"><div class="empty-state"><div class="icon">&#9203;</div><div>&#47196;&#46377; &#51473;...</div></div></div></div>
-          <div class="table-card"><div class="table-header"><div class="table-title">&#45800;&#44228;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r1-by-stage"><div class="empty-state"><div class="icon">&#9203;</div><div>&#47196;&#46377; &#51473;...</div></div></div></div>
-        </div>
-        <div class="table-card" style="margin-top:16px">
-          <div class="table-header"><div class="table-title">&#9889; 1&#52264; &#47588;&#52825; &#49892;&#54665;</div></div>
-          <div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(1)">&#128640; 1&#52264; &#47588;&#52825; &#49892;&#54665;&#54616;&#44592;</button><div id="match-result-1" style="margin-top:14px"></div></div>
-        </div>
-      </div>
-      <div id="round-panel-2" style="display:none">
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
-          <div class="stat-card"><div class="stat-label">&#44396;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val blue" id="r2-buy">-</div><div class="stat-change">&#50724;&#45212; 2&#52264; &#44396;&#47588; &#45824;&#44592;</div></div>
-          <div class="stat-card"><div class="stat-label">&#54032;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val green" id="r2-sell">-</div><div class="stat-change">&#47588;&#52825; &#44032;&#45733; &#50500;&#51060;&#53596;</div></div>
-          <div class="stat-card"><div class="stat-label">&#47588;&#52825;&#51728;</div><div class="stat-val yellow" id="r2-rate">-</div><div class="stat-change">&#44396;&#47588;/&#54032;&#47588; &#48708;&#51728;</div></div>
-        </div>
-        <div class="two-col">
-          <div class="table-card"><div class="table-header"><div class="table-title">&#50500;&#51060;&#53596;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r2-by-type"><div class="empty-state"><div class="icon">&#9203;</div><div>&#47196;&#46377; &#51473;...</div></div></div></div>
-          <div class="table-card"><div class="table-header"><div class="table-title">&#45800;&#44228;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r2-by-stage"><div class="empty-state"><div class="icon">&#9203;</div><div>&#47196;&#46377; &#51473;...</div></div></div></div>
-        </div>
-        <div class="table-card" style="margin-top:16px">
-          <div class="table-header"><div class="table-title">&#9889; 2&#52264; &#47588;&#52825; &#49892;&#54665;</div></div>
-          <div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(2)">&#128640; 2&#52264; &#47588;&#52825; &#49892;&#54665;&#54616;&#44592;</button><div id="match-result-2" style="margin-top:14px"></div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PENALTIES -->
-    <div id="page-penalties" class="page">
-      <div class="page-title">패널티 관리</div>
-      <div class="page-sub">회원별 패널티 현황 및 정책</div>
-      <div class="two-col">
-        <div class="table-card">
-          <div class="table-header"><div class="table-title">패널티 정책</div></div>
-          <div style="padding:16px">
-            <table>
-              <thead><tr><th>횟수</th><th>정지 기간</th><th>차감 포인트</th></tr></thead>
-              <tbody>
-                <tr><td>1회</td><td>3일</td><td style="color:var(--red)">1,000P</td></tr>
-                <tr><td>2회</td><td>7일</td><td style="color:var(--red)">3,000P</td></tr>
-                <tr><td>3회</td><td>20일</td><td style="color:var(--red)">6,000P</td></tr>
-                <tr><td>4회</td><td>50일</td><td style="color:var(--red)">15,000P</td></tr>
-                <tr><td>5회</td><td>120일</td><td style="color:var(--red)">30,000P</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="table-card">
-          <div class="table-header">
-            <div class="table-title">패널티 대상 회원</div>
-            <button class="refresh-btn" onclick="loadPenalties()">🔄</button>
-          </div>
-          <div id="penalty-list"><div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div></div>
-        </div>
-      </div>
-    </div>
-
-  </div>
+<div class="main">
+<div id="page-dashboard" class="page active">
+<div class="page-title">&#45824;&#49884;&#48372;&#46300;</div><div class="page-sub">LOOPAY &#54540;&#47131;&#54253; &#51204;&#52404; &#54788;&#54889;</div>
+<div class="stat-grid">
+<div class="stat-card"><div class="stat-label">&#53509; &#54924;&#50896;&#49688;</div><div class="stat-val blue" id="s-users">-</div><div class="stat-change">&#51204;&#52404; &#44032;&#51077;&#51088;</div></div>
+<div class="stat-card"><div class="stat-label">&#53509; &#48372;&#50976; &#50500;&#51060;&#53596;</div><div class="stat-val green" id="s-items">-</div><div class="stat-change">&#54788;&#51116; &#50976;&#53685; &#51473;&#51064; &#48148;</div></div>
+<div class="stat-card"><div class="stat-label">&#45824;&#44592; &#51473; &#52636;&#51204;</div><div class="stat-val yellow" id="s-charges">-</div><div class="stat-change">&#49849;&#51064; &#45824;&#44592;</div></div>
+<div class="stat-card"><div class="stat-label">&#50724;&#45212; &#50696;&#50557;</div><div class="stat-val red" id="s-reservations">-</div><div class="stat-change">&#44552;&#51068; &#47588;&#52825; &#50696;&#50557;</div></div>
 </div>
-
-<!-- MODALS -->
-<div class="modal-overlay" id="user-modal" onclick="if(event.target===this)closeModal('user-modal')">
-  <div class="modal">
-    <div class="modal-title">👤 회원 상세 정보</div>
-    <div class="modal-body" id="user-modal-body"></div>
-    <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('user-modal')">닫기</button>
-    </div>
-  </div>
+<div class="two-col">
+<div class="table-card"><div class="table-header"><div class="table-title">&#128179; &#52572;&#44540; &#52636;&#51204; &#50836;&#52397;</div><button class="btn btn-secondary" onclick="showPage('charges',document.querySelector('[data-page=charges]'))" style="font-size:12px;padding:6px 12px">&#51204;&#52404; &#48372;&#44592;</button></div><div id="dash-charges"><div class="empty-state"><div>&#47196;&#46377; &#51473;...</div></div></div></div>
+<div class="table-card"><div class="table-header"><div class="table-title">&#128100; &#52572;&#44540; &#44032;&#51077; &#54924;&#50896;</div></div><table><thead><tr><th>&#45803;&#45348;&#51076;</th><th>&#47808;&#48292;</th><th>&#54252;&#51064;&#53944;</th></tr></thead><tbody id="dash-users"></tbody></table></div>
+</div></div>
+<div id="page-users" class="page"><div class="page-title">&#54924;&#50896; &#44288;&#47532;</div><div class="page-sub">&#51204;&#52404; &#54924;&#50896; &#47785;&#47197;</div>
+<div class="table-card"><div class="table-header"><div class="table-title">&#54924;&#50896; &#47785;&#47197;</div></div>
+<table><thead><tr><th>ID</th><th>&#45803;&#45348;&#51076;</th><th>&#47808;&#48292;</th><th>&#52356;&#51204;P</th><th>&#51204;&#54872;P</th><th>&#50696;&#50557;</th></tr></thead><tbody id="admin-users"></tbody></table></div></div>
+<div id="page-charges" class="page"><div class="page-title">&#52636;&#51204; &#44288;&#47532;</div><div class="page-sub">&#52636;&#51204; &#50836;&#52397; &#49849;&#51064; &#48143; &#44288;&#47532;</div>
+<div class="table-card"><div class="table-header"><div class="table-title">&#52636;&#51204; &#50836;&#52397; &#47785;&#47197;</div></div>
+<table><thead><tr><th>ID</th><th>&#45803;&#45348;&#51076;</th><th>&#44552;&#50529;</th><th>&#49345;&#53468;</th><th>&#49884;&#44033;</th><th>&#52376;&#47532;</th></tr></thead><tbody id="admin-charges"></tbody></table></div></div>
+<div id="page-reservations" class="page"><div class="page-title">&#50696;&#50557; &#54788;&#54889;</div><div class="page-sub">&#51204;&#52404; &#50696;&#50557; &#54788;&#54889;</div>
+<div class="table-card"><div class="table-header"><div class="table-title">&#50696;&#50557; &#47785;&#47197;</div></div><div id="admin-reservations"><div class="empty-state"><div>&#44592;&#45731; &#44060;&#48156; &#51473;</div></div></div></div></div>
+<div id="page-matching" class="page">
+<div class="page-title">&#47588;&#52825; &#49892;&#54665;</div>
+<div class="page-sub" id="matching-date-sub">&#50724;&#45212;&#51032; &#47588;&#52825; &#54788;&#54889; &#48143; &#49892;&#54665;</div>
+<div style="display:flex;gap:10px;margin-bottom:20px">
+<button class="btn btn-primary" id="round-tab-1" onclick="switchRound(1,this)">1&#52264; &#47588;&#52825;</button>
+<button class="btn btn-secondary" id="round-tab-2" onclick="switchRound(2,this)">2&#52264; &#47588;&#52825;</button>
+<button class="refresh-btn" onclick="loadMatchingStatus()" style="margin-left:auto">&#128504; &#49352;&#47196;&#44256;&#52768;</button>
 </div>
-
-<div class="modal-overlay" id="charge-modal" onclick="if(event.target===this)closeModal('charge-modal')">
-  <div class="modal" style="width:380px">
-    <div class="modal-title">💳 충전 상세</div>
-    <div class="modal-body" id="charge-modal-body"></div>
-    <div class="modal-footer" id="charge-modal-footer"></div>
-  </div>
+<div id="round-panel-1">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
+<div class="stat-card"><div class="stat-label">&#44396;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val blue" id="r1-buy">-</div><div class="stat-change">&#50724;&#45212; 1&#52264; &#44396;&#47588; &#45824;&#44592;</div></div>
+<div class="stat-card"><div class="stat-label">&#54032;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val green" id="r1-sell">-</div><div class="stat-change">&#47588;&#52825; &#44032;&#45733; &#50500;&#51060;&#53596;</div></div>
+<div class="stat-card"><div class="stat-label">&#47588;&#52825;&#51728;</div><div class="stat-val yellow" id="r1-rate">-</div><div class="stat-change">&#44396;&#47588;/&#54032;&#47588; &#48708;&#51728;</div></div>
 </div>
-
+<div class="two-col">
+<div class="table-card"><div class="table-header"><div class="table-title">&#50500;&#51060;&#53596;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r1-by-type"><div class="empty-state"><div>&#47196;&#46377; &#51473;...</div></div></div></div>
+<div class="table-card"><div class="table-header"><div class="table-title">&#45800;&#44228;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r1-by-stage"><div class="empty-state"><div>&#47196;&#46377; &#51473;...</div></div></div></div>
+</div>
+<div class="table-card" style="margin-top:16px"><div class="table-header"><div class="table-title">&#9889; 1&#52264; &#47588;&#52825; &#49892;&#54665;</div></div>
+<div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(1)">&#128640; 1&#52264; &#47588;&#52825; &#49892;&#54665;&#54616;&#44592;</button><div id="match-result-1" style="margin-top:14px"></div></div></div>
+</div>
+<div id="round-panel-2" style="display:none">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
+<div class="stat-card"><div class="stat-label">&#44396;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val blue" id="r2-buy">-</div><div class="stat-change">&#50724;&#45212; 2&#52264; &#44396;&#47588; &#45824;&#44592;</div></div>
+<div class="stat-card"><div class="stat-label">&#54032;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val green" id="r2-sell">-</div><div class="stat-change">&#47588;&#52825; &#44032;&#45733; &#50500;&#51060;&#53596;</div></div>
+<div class="stat-card"><div class="stat-label">&#47588;&#52825;&#51728;</div><div class="stat-val yellow" id="r2-rate">-</div><div class="stat-change">&#44396;&#47588;/&#54032;&#47588; &#48708;&#51728;</div></div>
+</div>
+<div class="two-col">
+<div class="table-card"><div class="table-header"><div class="table-title">&#50500;&#51060;&#53596;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r2-by-type"><div class="empty-state"><div>&#47196;&#46377; &#51473;...</div></div></div></div>
+<div class="table-card"><div class="table-header"><div class="table-title">&#45800;&#44228;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r2-by-stage"><div class="empty-state"><div>&#47196;&#46377; &#51473;...</div></div></div></div>
+</div>
+<div class="table-card" style="margin-top:16px"><div class="table-header"><div class="table-title">&#9889; 2&#52264; &#47588;&#52825; &#49892;&#54665;</div></div>
+<div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(2)">&#128640; 2&#52264; &#47588;&#52825; &#49892;&#54665;&#54616;&#44592;</button><div id="match-result-2" style="margin-top:14px"></div></div></div>
+</div></div>
+<div id="page-penalties" class="page"><div class="page-title">&#54328;&#45110;&#54000; &#44288;&#47532;</div><div class="page-sub">&#54328;&#45110;&#54000; &#45236;&#50669; &#54869;&#51064;</div>
+<div class="table-card"><div class="table-header"><div class="table-title">&#54328;&#45110;&#54000; &#47785;&#47197;</div></div>
+<table><thead><tr><th>ID</th><th>&#45803;&#45348;&#51076;</th><th>&#49324;&#50976;</th><th>&#54252;&#51064;&#53944;</th><th>&#45216;&#51247;</th></tr></thead><tbody id="admin-penalties"></tbody></table></div></div>
+</div></div>
 <div class="toast" id="toast"></div>
-
 <script>
-const API = 'https://loopay-api-production.up.railway.app/api';
-let adminToken = '';
-let allUsers = [];
-let allCharges = [];
-let chargeFilter = 'pending';
-
-async function doLogin() {
-  const u = document.getElementById('adm-user').value.trim();
-  const p = document.getElementById('adm-pass').value;
-  document.getElementById('login-err').textContent = '';
-  if (!u || !p) {
-    document.getElementById('login-err').textContent = '아이디와 비밀번호를 입력하세요';
-    return;
-  }
-  try {
-    const r = await fetch(API + '/auth/admin-login', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({username: u, password: p})
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || '로그인 실패');
-    adminToken = d.token;
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    loadDashboard();
-  } catch(e) {
-    document.getElementById('login-err').textContent = e.message;
-  }
-}
-
-function doLogout() {
-  adminToken = '';
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('adm-pass').value = '';
-}
-
-async function apiAdmin(path, opts) {
-  opts = opts || {};
-  const r = await fetch(API + path, Object.assign({}, opts, {
-    headers: Object.assign({'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken}, opts.headers || {})
-  }));
-  const d = await r.json();
-  if (!r.ok) throw new Error(d.error || '오류 발생');
-  return d;
-}
-
-function showPage(id, el) {
-  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-  document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
-  document.getElementById('page-' + id).classList.add('active');
-  el.classList.add('active');
-  if (id === 'dashboard') loadDashboard();
-  else if (id === 'users') loadUsers();
-  else if (id === 'charges') loadCharges();
-  else if (id === 'reservations') loadReservations();
-  else if (id === 'matching') loadMatchingStatus();
-  else if (id === 'penalties') loadPenalties();
-}
-
-function toast(msg, type) {
-  type = type || 'info';
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'toast show ' + type;
-  setTimeout(function() { el.classList.remove('show'); }, 2800);
-}
-
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-async function loadDashboard() {
-  try {
-    const stats = await apiAdmin('/admin/stats');
-    document.getElementById('st-users').textContent = (stats.total_users || 0).toLocaleString();
-    document.getElementById('st-items').textContent = (stats.total_items || 0).toLocaleString();
-    document.getElementById('st-charges').textContent = (stats.pending_charges || 0).toLocaleString();
-    document.getElementById('st-reserves').textContent = (stats.today_reserves || 0).toLocaleString();
-  } catch(e) {}
-
-  try {
-    const d = await apiAdmin('/admin/charges');
-    const charges = d.charges.slice(0, 5);
-    if (charges.length) {
-      let rows = '';
-      charges.forEach(function(c) {
-        rows += '<tr><td>' + c.nickname + '</td><td>' + (c.amount || 0).toLocaleString() + '원</td>';
-        rows += '<td><strong style="color:var(--blue)">' + (c.points || 0).toLocaleString() + 'P</strong></td>';
-        rows += '<td><span class="badge ' + (c.status === 'pending' ? 'badge-pending">대기' : 'badge-confirmed">승인') + '</span></td>';
-        rows += '<td>' + (c.status === 'pending' ? '<button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')">승인</button>' : '') + '</td></tr>';
-      });
-      document.getElementById('dash-charges').innerHTML = '<table><thead><tr><th>회원</th><th>금액</th><th>포인트</th><th>상태</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
-    } else {
-      document.getElementById('dash-charges').innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>대기 중인 충전 없음</div></div>';
-    }
-  } catch(e) {}
-
-  try {
-    const d = await apiAdmin('/admin/users');
-    const users = d.users.slice(-5).reverse();
-    let rows = '';
-    users.forEach(function(u) {
-      rows += '<tr><td>' + u.nickname + '</td>';
-      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + '레벨</span></td>';
-      rows += '<td>' + ((u.charge_points || 0) + (u.exchange_points || 0)).toLocaleString() + 'P</td></tr>';
-    });
-    document.getElementById('dash-users').innerHTML = '<table><thead><tr><th>닉네임</th><th>레벨</th><th>포인트</th></tr></thead><tbody>' + rows + '</tbody></table>';
-  } catch(e) {}
-}
-
-async function loadUsers() {
-  document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div>';
-  try {
-    const d = await apiAdmin('/admin/users');
-    allUsers = d.users;
-    renderUsers(allUsers);
-  } catch(e) {
-    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">❌</div><div>' + e.message + '</div></div>';
-  }
-}
-
-function filterUsers() {
-  const q = document.getElementById('user-search').value.toLowerCase();
-  const filtered = allUsers.filter(function(u) {
-    return (u.nickname || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q);
-  });
-  renderUsers(filtered);
-}
-
-function renderUsers(users) {
-  if (!users.length) {
-    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">🔍</div><div>검색 결과 없음</div></div>';
-    return;
-  }
-  let rows = '';
-  users.forEach(function(u) {
-    rows += '<tr>';
-    rows += '<td style="color:var(--text2)">#' + u.id + '</td>';
-    rows += '<td><strong>' + u.nickname + '</strong></td>';
-    rows += '<td style="color:var(--text2)">' + (u.email || '-') + '</td>';
-    rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + '레벨</span></td>';
-    rows += '<td>' + (u.charge_points || 0).toLocaleString() + 'P</td>';
-    rows += '<td>' + (u.exchange_points || 0).toLocaleString() + 'P</td>';
-    rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + '회</td>';
-    rows += '<td style="color:var(--text2)">' + (u.created_at || '').slice(0, 10) + '</td>';
-    rows += '<td><button class="btn btn-secondary btn-xs" onclick="showUserDetail(' + u.id + ')">상세</button></td>';
-    rows += '</tr>';
-  });
-  document.getElementById('users-table-wrap').innerHTML =
-    '<table><thead><tr><th>ID</th><th>닉네임</th><th>이메일</th><th>레벨</th><th>충전P</th><th>전환P</th><th>누적예약</th><th>가입일</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>' +
-    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">총 ' + users.length + '명</div>';
-}
-
-function showUserDetail(uid) {
-  const u = allUsers.find(function(x) { return x.id === uid; });
-  if (!u) return;
-  const total = (u.charge_points || 0) + (u.exchange_points || 0);
-  let html = '';
-  html += '<div class="info-row"><span class="info-label">ID</span><span class="info-val">#' + u.id + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">닉네임</span><span class="info-val">' + u.nickname + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">이메일</span><span class="info-val">' + (u.email || '-') + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">레벨</span><span class="info-val"><span class="badge badge-lv' + u.level + '">' + u.level + '레벨</span></span></div>';
-  html += '<div class="info-row"><span class="info-label">충전 포인트</span><span class="info-val" style="color:var(--blue)">' + (u.charge_points || 0).toLocaleString() + ' P</span></div>';
-  html += '<div class="info-row"><span class="info-label">전환 포인트</span><span class="info-val" style="color:var(--green)">' + (u.exchange_points || 0).toLocaleString() + ' P</span></div>';
-  html += '<div class="info-row"><span class="info-label">총 포인트</span><span class="info-val" style="color:var(--yellow);font-weight:700">' + total.toLocaleString() + ' P</span></div>';
-  html += '<div class="info-row"><span class="info-label">누적 예약</span><span class="info-val">' + (u.cumulative_count || 0).toLocaleString() + ' 회</span></div>';
-  html += '<div class="info-row"><span class="info-label">가입일</span><span class="info-val">' + (u.created_at || '').slice(0, 19) + '</span></div>';
-  document.getElementById('user-modal-body').innerHTML = html;
-  openModal('user-modal');
-}
-
-async function loadCharges() {
-  document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div>';
-  try {
-    const d = await apiAdmin('/admin/charges');
-    allCharges = d.charges;
-    const activeBtn = document.getElementById('filter-' + chargeFilter);
-    if (activeBtn) filterCharges(chargeFilter, activeBtn);
-    else filterCharges('pending', document.getElementById('filter-pending'));
-  } catch(e) {
-    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">❌</div><div>' + e.message + '</div></div>';
-  }
-}
-
-function filterCharges(type, el) {
-  chargeFilter = type;
-  document.querySelectorAll('#page-charges .btn').forEach(function(b) {
-    b.classList.remove('btn-primary');
-    b.classList.add('btn-secondary');
-  });
-  el.classList.remove('btn-secondary');
-  el.classList.add('btn-primary');
-  const filtered = type === 'all' ? allCharges : allCharges.filter(function(c) { return c.status === type; });
-  renderCharges(filtered);
-}
-
-function renderCharges(charges) {
-  if (!charges.length) {
-    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>해당 항목 없음</div></div>';
-    return;
-  }
-  let rows = '';
-  charges.forEach(function(c) {
-    rows += '<tr>';
-    rows += '<td style="color:var(--text2)">#' + c.id + '</td>';
-    rows += '<td><strong>' + c.nickname + '</strong></td>';
-    rows += '<td>' + (c.amount || 0).toLocaleString() + '원</td>';
-    rows += '<td><strong style="color:var(--blue)">' + (c.points || 0).toLocaleString() + 'P</strong></td>';
-    const badge = c.status === 'pending' ? 'badge-pending">대기' : (c.status === 'confirmed' ? 'badge-confirmed">승인' : 'badge-failed">거절');
-    rows += '<td><span class="badge ' + badge + '</span></td>';
-    rows += '<td style="color:var(--text2)">' + (c.created_at || '').slice(0, 16).replace('T', ' ') + '</td>';
-    if (c.status === 'pending') {
-      rows += '<td><button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')" style="margin-right:4px">✅ 승인</button><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">상세</button></td>';
-    } else {
-      rows += '<td><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">상세</button></td>';
-    }
-    rows += '</tr>';
-  });
-  const total_amt = charges.reduce(function(s, c) { return s + (c.amount || 0); }, 0);
-  const total_pts = charges.reduce(function(s, c) { return s + (c.points || 0); }, 0);
-  document.getElementById('charges-table-wrap').innerHTML =
-    '<table><thead><tr><th>ID</th><th>회원</th><th>금액</th><th>포인트</th><th>상태</th><th>요청일</th><th>작업</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">총 ' + charges.length + '건 | ' + total_amt.toLocaleString() + '원 / ' + total_pts.toLocaleString() + 'P</div>';
-}
-
-function showChargeDetail(cid) {
-  const c = allCharges.find(function(x) { return x.id === cid; });
-  if (!c) return;
-  let html = '';
-  html += '<div class="info-row"><span class="info-label">충전 ID</span><span class="info-val">#' + c.id + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">요청 회원</span><span class="info-val">' + c.nickname + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">충전 금액</span><span class="info-val">' + (c.amount || 0).toLocaleString() + '원</span></div>';
-  html += '<div class="info-row"><span class="info-label">지급 포인트</span><span class="info-val" style="color:var(--blue);font-weight:700">' + (c.points || 0).toLocaleString() + ' P</span></div>';
-  const badge = c.status === 'pending' ? 'badge-pending">승인 대기' : 'badge-confirmed">승인 완료';
-  html += '<div class="info-row"><span class="info-label">상태</span><span class="info-val"><span class="badge ' + badge + '</span></span></div>';
-  html += '<div class="info-row"><span class="info-label">요청일시</span><span class="info-val">' + (c.created_at || '').slice(0, 19).replace('T', ' ') + '</span></div>';
-  document.getElementById('charge-modal-body').innerHTML = html;
-  let footer = '<button class="btn btn-secondary" onclick="closeModal(\'charge-modal\')">닫기</button>';
-  if (c.status === 'pending') {
-    footer += '<button class="btn btn-success" onclick="confirmCharge(' + c.id + ');closeModal(\'charge-modal\')">✅ 승인하기</button>';
-  }
-  document.getElementById('charge-modal-footer').innerHTML = footer;
-  openModal('charge-modal');
-}
-
-async function confirmCharge(id) {
-  try {
-    const d = await apiAdmin('/admin/charge/confirm/' + id, {method: 'POST'});
-    toast(d.message || '충전 승인 완료!', 'success');
-    loadCharges();
-    loadDashboard();
-  } catch(e) {
-    toast(e.message, 'error');
-  }
-}
-
-async function loadReservations() {
-  document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div>';
-  try {
-    const d = await apiAdmin('/admin/users');
-    let rows = '';
-    d.users.forEach(function(u) {
-      rows += '<tr>';
-      rows += '<td><strong>' + u.nickname + '</strong></td>';
-      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + '레벨</span></td>';
-      rows += '<td>' + ((u.charge_points || 0) + (u.exchange_points || 0)).toLocaleString() + 'P</td>';
-      rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + '회</td>';
-      rows += '</tr>';
-    });
-    document.getElementById('reservations-table-wrap').innerHTML =
-      '<table><thead><tr><th>회원</th><th>레벨</th><th>총포인트</th><th>누적예약</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-      '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">총 ' + d.users.length + '명</div>';
-  } catch(e) {
-    document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">❌</div><div>' + e.message + '</div></div>';
-  }
-}
-
-function switchRound(num,el){
-  document.querySelectorAll('#page-matching .btn').forEach(function(b){
-    if(b.id&&b.id.startsWith('round-tab-')){b.classList.remove('btn-primary');b.classList.add('btn-secondary');}
-  });
-  el.classList.remove('btn-secondary');el.classList.add('btn-primary');
-  document.getElementById('round-panel-1').style.display=num===1?'block':'none';
-  document.getElementById('round-panel-2').style.display=num===2?'block':'none';
-}
-async function loadMatchingStatus(){
-  try{
-    const d=await apiAdmin('/admin/matching-status');
-    const sub=document.getElementById('matching-date-sub');
-    if(sub) sub.textContent=(d.date||'')+' &#47588;&#52825; &#54788;&#54889; &#48143; &#49892;&#54665;';
-    function renderRound(r,prefix){
-      document.getElementById(prefix+'-buy').textContent=(r.buy_count||0).toLocaleString();
-      document.getElementById(prefix+'-sell').textContent=(r.sell_count||0).toLocaleString();
-      document.getElementById(prefix+'-rate').textContent=(r.match_rate||0)+'%';
-      const typeEl=document.getElementById(prefix+'-by-type');
-      if(r.by_type&&r.by_type.length){
-        const tM={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
-        const cM={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
-        let rows='';
-        r.by_type.forEach(function(t){
-          rows+='<tr><td><strong style="color:'+(cM[t.bar_type]||'#fff')+'">'+(tM[t.bar_type]||t.bar_type)+'</strong></td>'
-               +'<td style="font-size:18px;font-weight:700;color:var(--green)">'+t.count+'</td>'
-               +'<td style="color:var(--text2)">'+(r.sell_count>0?Math.round(t.count/r.sell_count*100):0)+'%</td></tr>';
-        });
-        typeEl.innerHTML='<table><thead><tr><th>&#50500;&#51060;&#53596;</th><th>&#54032;&#47588;&#50696;&#50557;</th><th>&#48708;&#51728;</th></tr></thead><tbody>'+rows+'</tbody></table>';
-      }else{typeEl.innerHTML='<div class="empty-state"><div class="icon">&#128230;</div><div>&#54032;&#47588; &#50696;&#50557; &#50630;&#51020;</div></div>';}
-      const stEl=document.getElementById(prefix+'-by-stage');
-      if(r.by_stage&&r.by_stage.length){
-        const tM={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
-        const cM={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
-        let rows='';
-        r.by_stage.forEach(function(s){
-          rows+='<tr><td><span style="color:'+(cM[s.bar_type]||'#fff')+';font-weight:600">'+(tM[s.bar_type]||s.bar_type)+'</span></td>'
-               +'<td style="text-align:center"><strong>'+s.stage+'&#45800;&#44228;</strong></td>'
-               +'<td style="text-align:center;font-weight:700;color:var(--green)">'+ s.count+'&#44060;</td></tr>';
-        });
-        stEl.innerHTML='<table><thead><tr><th>&#51333;&#47448;</th><th>&#45800;&#44228;</th><th>&#49688;&#47049;</th></tr></thead><tbody>'+rows+'</tbody></table>';
-      }else{stEl.innerHTML='<div class="empty-state"><div class="icon">&#128290;</div><div>&#45800;&#44228;&#48324; &#45936;&#51060;&#53552; &#50630;&#51020;</div></div>';}
-    }
-    renderRound(d.round1,'r1');renderRound(d.round2,'r2');
-  }catch(e){toast('&#47588;&#52825; &#54788;&#54889; &#47196;&#46300; &#49892;&#54036;: '+e.message,'error');}
-}
-async function runMatching(roundNum){
-  roundNum=roundNum||1;
-  const btn=event.target;
-  btn.disabled=true;btn.textContent='&#9203; &#49892;&#54665; &#51473;...';
-  const resultId='match-result-'+roundNum;
-  try{
-    const d=await apiAdmin('/admin/run-matching',{method:'POST',body:JSON.stringify({round:roundNum})});
-    toast(d.message||roundNum+'&#52264; &#47588;&#52825; &#50756;&#47308;!','success');
-    document.getElementById(resultId).innerHTML='<div class="match-result"><div style="font-weight:600;margin-bottom:8px;color:var(--green)">&#9989; '+roundNum+'&#52264; &#47588;&#52825; &#50756;&#47308;</div>'
-      +'<div class="match-row"><span>&#52376;&#47532;&#46108; &#50696;&#50557;</span><span><strong>'+(d.matched||0)+'</strong>&#44148;</span></div>'
-      +'<div class="match-row"><span>&#50756;&#47308; &#49884;&#44033;</span><span>'+new Date().toLocaleTimeString('ko-KR')+'</span></div></div>';
-    loadMatchingStatus();
-  }catch(e){
-    toast(e.message,'error');
-    document.getElementById(resultId).innerHTML='<div class="match-result" style="border-color:var(--red)"><div style="font-weight:600;color:var(--red)">&#10060; &#47588;&#52825; &#49892;&#54036;</div>'
-      +'<div style="font-size:12px;color:var(--text2);margin-top:6px">'+e.message+'</div></div>';
-  }
-  btn.disabled=false;btn.textContent='&#128640; '+roundNum+'&#52264; &#47588;&#52825; &#49892;&#54665;&#54616;&#44592;';
-}
-
-async function loadPenalties() {
-  document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>로딩 중...</div></div>';
-  try {
-    const d = await apiAdmin('/admin/users');
-    const penalized = d.users.filter(function(u) { return u.penalty_count > 0; });
-    if (!penalized.length) {
-      document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>패널티 회원 없음</div></div>';
-    } else {
-      let rows = '';
-      penalized.forEach(function(u) {
-        rows += '<tr><td>' + u.nickname + '</td><td><span class="badge badge-failed">' + u.penalty_count + '회</span></td><td style="color:var(--red)">-</td></tr>';
-      });
-      document.getElementById('penalty-list').innerHTML = '<table><thead><tr><th>회원</th><th>패널티</th><th>정지까지</th></tr></thead><tbody>' + rows + '</tbody></table>';
-    }
-  } catch(e) {
-    document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>패널티 현황 없음</div></div>';
-  }
-}
-
-document.getElementById('adm-user').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') document.getElementById('adm-pass').focus();
-});
-</script>
-</body>
-</html>
+const API='';let adminToken=null;
+function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'info');setTimeout(()=>t.classList.remove('show'),3000);}
+async function apiAdmin(path,opts){opts=opts||{};const res=await fetch(API+'/api'+path,Object.assign({},opts,{headers:Object.assign({'Content-Type':'application/json','Authorization':'Bearer '+adminToken},opts.headers||{})}));if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||res.statusText);}return res.json();}
+async function doLogin(){const u=document.getElementById('adm-user').value,p=document.getElementById('adm-pass').value;try{const res=await fetch(API+'/api/auth/admin-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});const j=await res.json();if(!res.ok)throw new Error(j.error||'&#47196;&#44536;&#51064; &#49892;&#54036;');adminToken=j.token;document.getElementById('login-screen').style.display='none';document.getElementById('admin-app').style.display='flex';loadDashboard();}catch(e){toast(e.message,'error');}}
+function doAdminLogout(){adminToken=null;document.getElementById('admin-app').style.display='none';document.getElementById('login-screen').style.display='flex';}
+function showPage(name,el){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));if(el)el.classList.add('active');const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');if(name==='dashboard')loadDashboard();else if(name==='users')loadUsers();else if(name==='charges')loadCharges();else if(name==='matching')loadMatchingStatus();else if(name==='penalties')loadPenalties();}
+async function loadDashboard(){try{const s=await apiAdmin('/admin/stats');document.getElementById('s-users').textContent=s.total_users||0;document.getElementById('s-items').textContent=s.total_items||0;document.getElementById('s-charges').textContent=s.pending_charges||0;document.getElementById('s-reservations').textContent=s.today_reservations||0;const charges=await apiAdmin('/admin/charges');const pending=(charges.charges||[]).filter(c=>c.status==='pending').slice(0,5);const dc=document.getElementById('dash-charges');if(pending.length){dc.innerHTML='<table><thead><tr><th>&#45803;&#45348;&#51076;</th><th>&#44552;&#50529;</th><th>&#49345;&#53468;</th></tr></thead><tbody>'+pending.map(c=>'<tr><td>'+c.nickname+'</td><td>'+(c.amount||0).toLocaleString()+'P</td><td><span class="badge badge-warning">&#45824;&#44592;</span></td></tr>').join('')+'</tbody></table>';}else{dc.innerHTML='<div class="empty-state"><div>&#45824;&#44592; &#51473;&#51064; &#52636;&#51204; &#50630;&#51020;</div></div>';}const users=await apiAdmin('/admin/users');document.getElementById('dash-users').innerHTML=(users.users||[]).slice(0,5).map(u=>'<tr><td>'+u.nickname+'</td><td><span class="badge badge-info">'+(u.level||1)+'&#47808;&#48292;</span></td><td>'+(u.charge_points||0).toLocaleString()+'P</td></tr>').join('')||'<tr><td colspan="3">&#54924;&#50896; &#50630;&#51020;</td></tr>';}catch(e){toast('&#45824;&#49884;&#48372;&#46300; &#49892;&#54036;: '+e.message,'error');}}
+async function loadUsers(){try{const d=await apiAdmin('/admin/users');const tbody=document.getElementById('admin-users');const users=d.users||[];if(!users.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div>&#54924;&#50896; &#50630;&#51020;</div></div></td></tr>';return;}tbody.innerHTML=users.map(u=>'<tr><td>'+u.id+'</td><td>'+u.nickname+'</td><td><span class="badge badge-info">'+(u.level||1)+'&#47808;&#48292;</span></td><td>'+(u.charge_points||0).toLocaleString()+'P</td><td>'+(u.exchange_points||0).toLocaleString()+'P</td><td>'+(u.reservation_count||0)+'&#54924;</td></tr>').join('');}catch(e){toast('&#54924;&#50896; &#49892;&#54036;: '+e.message,'error');}}
+async function loadCharges(){try{const d=await apiAdmin('/admin/charges');const tbody=document.getElementById('admin-charges');const charges=d.charges||[];if(!charges.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div>&#52636;&#51204; &#50836;&#52397; &#50630;&#51020;</div></div></td></tr>';return;}const sM={pending:'&#45824;&#44592;',confirmed:'&#49849;&#51064;',rejected:'&#44144;&#51208;'};const bM={pending:'badge-warning',confirmed:'badge-success',rejected:'badge-red'};tbody.innerHTML=charges.map(c=>'<tr><td>'+c.id+'</td><td>'+c.nickname+'</td><td>'+(c.amount||0).toLocaleString()+'P</td><td><span class="badge '+(bM[c.status]||'')+'">&#x200B;'+(sM[c.status]||c.status)+'</span></td><td>'+(c.created_at||'-')+'</td><td>'+(c.status==='pending'?'<button class="btn btn-success" style="font-size:11px;padding:4px 10px" onclick="confirmCharge('+c.id+')">&#49849;&#51064;</button>':'&#51204;&#47532;&#47308;')+'</td></tr>').join('');}catch(e){toast('&#52636;&#51204; &#49892;&#54036;: '+e.message,'error');}}
+async function confirmCharge(id){try{await apiAdmin('/admin/charge/confirm/'+id,{method:'POST'});toast('&#52636;&#51204; &#49849;&#51064; &#50756;&#47308;','success');loadCharges();}catch(e){toast(e.message,'error');}}
+function loadPenalties(){document.getElementById('admin-penalties').innerHTML='<tr><td colspan="5"><div class="empty-state" style="padding:20px"><div>&#44592;&#45731; &#44060;&#48156; &#51473;</div></div></td></tr>';}
+function switchRound(num,el){document.querySelectorAll('#page-matching .btn').forEach(function(b){if(b.id&&b.id.startsWith('round-tab-')){b.classList.remove('btn-primary');b.classList.add('btn-secondary');}});el.classList.remove('btn-secondary');el.classList.add('btn-primary');document.getElementById('round-panel-1').style.display=num===1?'block':'none';document.getElementById('round-panel-2').style.display=num===2?'block':'none';}
+async function loadMatchingStatus(){try{const d=await apiAdmin('/admin/matching-status');const sub=document.getElementById('matching-date-sub');if(sub)sub.textContent=(d.date||'')+' &#47588;&#52825; &#54788;&#54889; &#48143; &#49892;&#54665;';function renderRound(r,prefix){document.getElementById(prefix+'-buy').textContent=(r.buy_count||0).toLocaleString();document.getElementById(prefix+'-sell').textContent=(r.sell_count||0).toLocaleString();document.getElementById(prefix+'-rate').textContent=(r.match_rate||0)+'%';const typeEl=document.getElementById(prefix+'-by-type');const tMt={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};const cM={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};if(r.by_type&&r.by_type.length){let rows='';r.by_type.forEach(function(t){rows+='<tr><td><strong style="color:'+(cM[t.bar_type]||'#fff')+'">'+(tMt[t.bar_type]||t.bar_type)+'</strong></td><td style="font-weight:700;color:#66bb6a">'+t.count+'</td><td style="color:#546e7a">'+(r.sell_count>0?Math.round(t.count/r.sell_count*100):0)+'%</td></tr>';});typeEl.innerHTML='<table><thead><tr><th>&#50500;&#51060;&#53596;</th><th>&#54032;&#47588;&#50696;&#50557;</th><th>&#48708;&#51728;</th></tr></thead><tbody>'+rows+'</tbody></table>';}else{typeEl.innerHTML='<div class="empty-state"><div>&#54032;&#47588; &#50696;&#50557; &#50630;&#51020;</div></div>';}const stEl=document.getElementById(prefix+'-by-stage');if(r.by_stage&&r.by_stage.length){const tMs={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};let rows='';r.by_stage.forEach(function(s){rows+='<tr><td><span style="color:'+(cM[s.bar_type]||'#fff')+';font-weight:600">'+(tMs[s.bar_type]||s.bar_type)+'</span></td><td style="text-align:center"><strong>'+s.stage+'&#45800;&#44228;</strong></td><td style="text-align:center;font-weight:700;color:#66bb6a">'+s.count+'&#44060;</td></tr>';});stEl.innerHTML='<table><thead><tr><th>&#51333;&#47448;</th><th>&#45800;&#44228;</th><th>&#49688;&#47049;</th></tr></thead><tbody>'+rows+'</tbody></table>';}else{stEl.innerHTML='<div class="empty-state"><div>&#45800;&#44228;&#48324; &#45936;&#51060;&#53552; &#50630;&#51020;</div></div>';}}renderRound(d.round1,'r1');renderRound(d.round2,'r2');}catch(e){toast('&#47588;&#52825; &#47196;&#46300; &#49892;&#54036;: '+e.message,'error');}}
+async function runMatching(roundNum){roundNum=roundNum||1;const btn=event.target;btn.disabled=true;btn.textContent='&#9203; &#49892;&#54665; &#51473;...';const resultId='match-result-'+roundNum;try{const d=await apiAdmin('/admin/run-matching',{method:'POST',body:JSON.stringify({round:roundNum})});toast(d.message||roundNum+'&#52264; &#47588;&#52825; &#50756;&#47308;!','success');document.getElementById(resultId).innerHTML='<div class="match-result"><div style="font-weight:600;margin-bottom:8px;color:#66bb6a">&#9989; '+roundNum+'&#52264; &#47588;&#52825; &#50756;&#47308;</div><div class="match-row"><span>&#52376;&#47532;&#46108; &#50696;&#50557;</span><span><strong>'+(d.matched||0)+'</strong>&#44148;</span></div><div class="match-row"><span>&#50756;&#47308; &#49884;&#44033;</span><span>'+new Date().toLocaleTimeString('ko-KR')+'</span></div></div>';loadMatchingStatus();}catch(e){toast(e.message,'error');document.getElementById(resultId).innerHTML='<div class="match-result" style="border-color:#ef5350"><div style="font-weight:600;color:#ef5350">&#10060; &#47588;&#52825; &#49892;&#54036;</div><div style="font-size:12px;color:#546e7a;margin-top:6px">'+e.message+'</div></div>';}btn.disabled=false;btn.textContent='&#128640; '+roundNum+'&#52264; &#47588;&#52825; &#49892;&#54665;&#54616;&#44592;';}
+</script></body></html>
