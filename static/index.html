@@ -257,7 +257,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
                 <button class="cnt-btn" id="r-bz-p" onclick="changeRes('bz',1)">+</button>
               </div>
             </div>
-            <div class="auto-note" id="r-bz-note">브론즈 7~9개 → 실버 4개 / 10개 → 실버 5개</div>
+            <div class="auto-note" id="r-bz-note">수정 7~9개 → 루비 4개 / 10개 → 루비 5개</div>
           </div>
           <div class="divider"></div>
           <div class="r-wrap locked" id="r-sv-wrap">
@@ -270,7 +270,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
                 <button class="cnt-btn" disabled id="r-sv-p">+</button>
               </div>
             </div>
-            <div class="auto-note" id="r-sv-note">브론즈 예약 수에 따라 자동 결정</div>
+            <div class="auto-note" id="r-sv-note">수정 예약 수에 따라 자동 결정</div>
           </div>
           <div class="divider"></div>
           <div class="r-wrap locked" id="r-gd-wrap">
@@ -283,9 +283,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
                 <button class="cnt-btn" disabled id="r-gd-p">+</button>
               </div>
             </div>
-            <div class="auto-note" id="r-gd-note">실버 예약 수에 따라 자동 결정</div>
+            <div class="auto-note" id="r-gd-note">루비 예약 수에 따라 자동 결정</div>
           </div>
-          <div class="r-info" id="r-info">브론즈 수량 조절 시 실버·골드가 자동 변경됩니다.</div>
+          <div class="r-info" id="r-info">수정 수량 조절 시 루비·다이아가 자동 변경됩니다.</div>
           <button class="reserve-btn" onclick="submitReservation()">매칭예약하기 (40P × 매칭예약수)</button>
         </div>
 
@@ -317,8 +317,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="sec-title">레벨별 예약 수량</div>
         <div class="info-block" style="font-size:12px;margin-bottom:10px">
           <strong>3레벨 연동 규칙</strong><br>
-          브론즈 7~9개 → 실버 4개 자동 / 브론즈 10개 → 실버 5개 자동<br>
-          실버 4개 → 골드 2개 자동 / 실버 5개 → 골드 3개 자동
+          수정 7~9개 → 루비 4개 자동 / 수정 10개 → 루비 5개 자동<br>
+          루비 4개 → 다이아 2개 자동 / 루비 5개 → 다이아 3개 자동
         </div>
         <div style="overflow-x:auto">
         <table class="lv-table">
@@ -613,10 +613,10 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
   document.getElementById('r-sv-wrap').className='r-wrap locked';
   document.getElementById('r-gd-wrap').className='r-wrap locked';
-  document.getElementById('r-sv-note').textContent=`브론즈 ${bzCnt}개 → 실버 ${sv}개 자동 결정${bzCnt<10?' (10개시 5개)':''}`;
-  document.getElementById('r-gd-note').textContent=`실버 ${sv}개 → 골드 ${gd}개 자동 결정${sv<5?' (실버5개시 3개)':''}`;
+  document.getElementById('r-sv-note').textContent=`수정 ${bzCnt}개 → 루비 ${sv}개 자동 결정${bzCnt<10?' (10개시 5개)':''}`;
+  document.getElementById('r-gd-note').textContent=`루비 ${sv}개 → 다이아 ${gd}개 자동 결정${sv<5?' (루비5개시 3개)':''}`;
   const total=bzCnt+sv+gd, cost=total*40;
-  document.getElementById('r-info').innerHTML=`브론즈 <b>${bzCnt}</b> + 실버 <b>${sv}</b> + 골드 <b>${gd}</b> = 총 <b>${total}</b>회 / 차감 <b>${cost.toLocaleString()}P</b>`;
+  document.getElementById('r-info').innerHTML=`수정 <b>${bzCnt}</b> + 루비 <b>${sv}</b> + 다이아 <b>${gd}</b> = 총 <b>${total}</b>회 / 차감 <b>${cost.toLocaleString()}P</b>`;
 }
 
 function changeRes(type,delta){
@@ -635,7 +635,7 @@ async function submitReservation(){
   }catch(e){
     // demo fallback
     const total=bzCnt+sv+gd;
-    toast(`매칭예약 완료! 브론즈 ${bzCnt}+실버 ${sv}+골드 ${gd} = ${total}회, ${total*40}P 차감`);
+    toast(`매칭예약 완료! 수정 ${bzCnt}+루비 ${sv}+다이아 ${gd} = ${total}회, ${total*40}P 차감`);
     if(userData){
       userData.cumulative_count+=total;
       userData.total_points-=total*40;
