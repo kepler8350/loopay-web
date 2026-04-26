@@ -36,16 +36,16 @@ def days_since(purchase_date_str):
 
 def item_status_label(status, purchase_date):
     d = days_since(purchase_date)
-    if status == 'sold': return 'íë§¤ìë£'
-    if status == 'matched': return 'ë§¤ì¹­ì¤'
-    if d < 3: return 'ëê¸°ì¤'
-    return 'ë§¤ì¹­ìì½ê°ë¥'
+    if status == 'sold': return 'Ã­ÂÂÃ«Â§Â¤Ã¬ÂÂÃ«Â£Â'
+    if status == 'matched': return 'Ã«Â§Â¤Ã¬Â¹Â­Ã¬Â¤Â'
+    if d < 3: return 'Ã«ÂÂÃªÂ¸Â°Ã¬Â¤Â'
+    return 'Ã«Â§Â¤Ã¬Â¹Â­Ã¬ÂÂÃ¬ÂÂ½ÃªÂ°ÂÃ«ÂÂ¥'
 
 @app.route('/api/auth/kakao-login', methods=['POST'])
 def kakao_login():
     data = request.json or {}
     kakao_id = data.get('kakao_id')
-    nickname = data.get('nickname', 'ì¬ì©ì')
+    nickname = data.get('nickname', 'Ã¬ÂÂ¬Ã¬ÂÂ©Ã¬ÂÂ')
     email = data.get('email', '')
     if not kakao_id:
         return jsonify(error='kakao_id required'), 400
@@ -89,9 +89,9 @@ def get_me():
     bronze = [fmt_item(i) for i in items if i['bar_type']=='bronze']
     silver = [fmt_item(i) for i in items if i['bar_type']=='silver']
     gold   = [fmt_item(i) for i in items if i['bar_type']=='gold']
-    reservable_bz = sum(1 for i in bronze if i['status_label']=='ë§¤ì¹­ìì½ê°ë¥')
-    reservable_sv = sum(1 for i in silver if i['status_label']=='ë§¤ì¹­ìì½ê°ë¥')
-    reservable_gd = sum(1 for i in gold   if i['status_label']=='ë§¤ì¹­ìì½ê°ë¥')
+    reservable_bz = sum(1 for i in bronze if i['status_label']=='Ã«Â§Â¤Ã¬Â¹Â­Ã¬ÂÂÃ¬ÂÂ½ÃªÂ°ÂÃ«ÂÂ¥')
+    reservable_sv = sum(1 for i in silver if i['status_label']=='Ã«Â§Â¤Ã¬Â¹Â­Ã¬ÂÂÃ¬ÂÂ½ÃªÂ°ÂÃ«ÂÂ¥')
+    reservable_gd = sum(1 for i in gold   if i['status_label']=='Ã«Â§Â¤Ã¬Â¹Â­Ã¬ÂÂÃ¬ÂÂ½ÃªÂ°ÂÃ«ÂÂ¥')
     db.close()
     return jsonify(id=u['id'],nickname=u['nickname'],level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd})
 
@@ -107,7 +107,7 @@ def reservation_preview():
     cfg = LEVEL_CONFIG[lv]
     if bz < cfg['bz_min'] or bz > cfg['bz_max']:
         db.close()
-        return jsonify(error=f'ë¸ë¡ ì¦ ìì½ìë {cfg["bz_min"]}~{cfg["bz_max"]}ê° ë²ìì¬ì¼ í©ëë¤'), 400
+        return jsonify(error=f'Ã«Â¸ÂÃ«Â¡Â Ã¬Â¦Â Ã¬ÂÂÃ¬ÂÂ½Ã¬ÂÂÃ«ÂÂ {cfg["bz_min"]}~{cfg["bz_max"]}ÃªÂ°Â Ã«Â²ÂÃ¬ÂÂÃ¬ÂÂ¬Ã¬ÂÂ¼ Ã­ÂÂ©Ã«ÂÂÃ«ÂÂ¤'), 400
     sv = get_sv_count(bz) if lv == 3 else cfg['sv_min']
     gd = get_gd_count(sv) if lv == 3 else cfg['gd_min']
     total = bz + sv + gd
@@ -127,7 +127,7 @@ def create_reservation():
     cfg = LEVEL_CONFIG[lv]
     if bz < cfg['bz_min'] or bz > cfg['bz_max']:
         db.close()
-        return jsonify(error='ìì½ ìë ë²ì ì´ê³¼'), 400
+        return jsonify(error='Ã¬ÂÂÃ¬ÂÂ½ Ã¬ÂÂÃ«ÂÂ Ã«Â²ÂÃ¬ÂÂ Ã¬Â´ÂÃªÂ³Â¼'), 400
     sv = get_sv_count(bz) if lv == 3 else cfg['sv_min']
     gd = get_gd_count(sv) if lv == 3 else cfg['gd_min']
     total = bz + sv + gd
@@ -135,7 +135,7 @@ def create_reservation():
     total_pts = u['charge_points'] + u['exchange_points']
     if total_pts < cost:
         db.close()
-        return jsonify(error=f'í¬ì¸í¸ ë¶ì¡±. íì: {cost}P, ë³´ì : {total_pts}P'), 400
+        return jsonify(error=f'Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸ Ã«Â¶ÂÃ¬Â¡Â±. Ã­ÂÂÃ¬ÂÂ: {cost}P, Ã«Â³Â´Ã¬ÂÂ : {total_pts}P'), 400
     today = datetime.date.today().isoformat()
     counts = {'bronze': bz, 'silver': sv, 'gold': gd}
     for bar_type, cnt in counts.items():
@@ -147,7 +147,7 @@ def create_reservation():
     db.execute("UPDATE users SET exchange_points=exchange_points-?, charge_points=charge_points-?, cumulative_count=cumulative_count+? WHERE id=?", (ex_use,ch_use,total,uid))
     db.commit()
     db.close()
-    return jsonify(success=True,message=f'ë§¤ì¹­ìì½ ìë£! ì´ {total}í, {cost}P ì°¨ê°',bronze=bz,silver=sv,gold=gd)
+    return jsonify(success=True,message=f'Ã«Â§Â¤Ã¬Â¹Â­Ã¬ÂÂÃ¬ÂÂ½ Ã¬ÂÂÃ«Â£Â! Ã¬Â´Â {total}Ã­ÂÂ, {cost}P Ã¬Â°Â¨ÃªÂ°Â',bronze=bz,silver=sv,gold=gd)
 
 @app.route('/api/items', methods=['GET'])
 @jwt_required()
@@ -179,17 +179,17 @@ def charge_request():
     data = request.json or {}
     amount = int(data.get('amount', 0))
     if amount < 1000:
-        return jsonify(error='ìµì 1,000ì ì´ì ì¶©ì  ê°ë¥'), 400
+        return jsonify(error='Ã¬ÂµÂÃ¬ÂÂ 1,000Ã¬ÂÂ Ã¬ÂÂ´Ã¬ÂÂ Ã¬Â¶Â©Ã¬Â Â ÃªÂ°ÂÃ«ÂÂ¥'), 400
     points = amount // 120
     db = get_db()
     db.execute("INSERT INTO charge_requests(user_id,amount,points) VALUES(?,?,?)", (uid,amount,points))
     db.commit()
     db.close()
-    return jsonify(success=True,amount=amount,points=points,message=f'{amount:,}ì â {points}P ì¶©ì  ìì²­ ìë£')
+    return jsonify(success=True,amount=amount,points=points,message=f'{amount:,}Ã¬ÂÂ Ã¢ÂÂ {points}P Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ¬Â²Â­ Ã¬ÂÂÃ«Â£Â')
 
 @app.route('/api/levels', methods=['GET'])
 def get_levels():
-    return jsonify(levels=LEVEL_CONFIG,cum_thresholds={'1â2':150,'2â3':450,'3â4':960,'4â5':1740,'5â6':2850,'6â7':4350,'7â8':6450,'8â9':9450,'9â10':12450})
+    return jsonify(levels=LEVEL_CONFIG,cum_thresholds={'1Ã¢ÂÂ2':150,'2Ã¢ÂÂ3':450,'3Ã¢ÂÂ4':960,'4Ã¢ÂÂ5':1740,'5Ã¢ÂÂ6':2850,'6Ã¢ÂÂ7':4350,'7Ã¢ÂÂ8':6450,'8Ã¢ÂÂ9':9450,'9Ã¢ÂÂ10':12450})
 
 @app.route('/api/penalties', methods=['GET'])
 def get_penalty_table():
@@ -227,7 +227,7 @@ def admin_confirm_charge(charge_id):
     db.execute("UPDATE users SET charge_points=charge_points+? WHERE id=?", (cr['points'],cr['user_id']))
     db.commit()
     db.close()
-    return jsonify(success=True,message=f'{cr["points"]}P ì¶©ì  ìë£')
+    return jsonify(success=True,message=f'{cr["points"]}P Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ«Â£Â')
 
 @app.route('/api/admin/run-matching', methods=['POST'])
 @jwt_required()
@@ -243,7 +243,7 @@ def admin_run_matching():
         matched += 1
     db.commit()
     db.close()
-    return jsonify(success=True,matched=matched,message=f'ë§¤ì¹­ ì¤í ìë£: {matched}ê±´')
+    return jsonify(success=True,matched=matched,message=f'Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂ¤Ã­ÂÂ Ã¬ÂÂÃ«Â£Â: {matched}ÃªÂ±Â´')
 
 @app.route('/api/admin/stats', methods=['GET'])
 @jwt_required()
@@ -261,7 +261,60 @@ def admin_stats():
 
 @app.route('/api/schedule', methods=['GET'])
 def get_schedule():
-    return jsonify(schedule=[{'time':'05:00~13:00','label':'êµ¬ë§¤Â·íë§¤ ìì½','detail':'1ì°¨Â·2ì°¨ ìì½ ëª¨ë ì´ ìê°ì ê°ë¥'},{'time':'13:00~14:00','label':'1ì°¨ ë§¤ì¹­ ìê¸','detail':'ë§¤ì¹­ê¸ì¡ ìê¸ í ì¡ê¸ìë£ ë²í¼ í´ë¦­'},{'time':'14:00~15:00','label':'2ì°¨ ë§¤ì¹­','detail':'ê´ë¦¬ì ëª¨ëìì ì¤í'},{'time':'15:00~19:00','label':'2ì°¨ ë§¤ì¹­ ìê¸','detail':'19ì ì´í ë²í¼ ë¹íì±í'},{'time':'19:00~20:00','label':'2ì°¨ ë¯¸ìê¸ íì¸','detail':'íë§¤ì ìê¸íì¸ ëë ë¯¸ìê¸ ë²í¼'},{'time':'20:00~13:00','label':'ë§¤ì¹­ ì¤í','detail':'ê´ë¦¬ì ëª¨ëìì ì¤í'}])
+    return jsonify(schedule=[{'time':'05:00~13:00','label':'ÃªÂµÂ¬Ã«Â§Â¤ÃÂ·Ã­ÂÂÃ«Â§Â¤ Ã¬ÂÂÃ¬ÂÂ½','detail':'1Ã¬Â°Â¨ÃÂ·2Ã¬Â°Â¨ Ã¬ÂÂÃ¬ÂÂ½ Ã«ÂªÂ¨Ã«ÂÂ Ã¬ÂÂ´ Ã¬ÂÂÃªÂ°ÂÃ¬ÂÂ ÃªÂ°ÂÃ«ÂÂ¥'},{'time':'13:00~14:00','label':'1Ã¬Â°Â¨ Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂÃªÂ¸Â','detail':'Ã«Â§Â¤Ã¬Â¹Â­ÃªÂ¸ÂÃ¬ÂÂ¡ Ã¬ÂÂÃªÂ¸Â Ã­ÂÂ Ã¬ÂÂ¡ÃªÂ¸ÂÃ¬ÂÂÃ«Â£Â Ã«Â²ÂÃ­ÂÂ¼ Ã­ÂÂ´Ã«Â¦Â­'},{'time':'14:00~15:00','label':'2Ã¬Â°Â¨ Ã«Â§Â¤Ã¬Â¹Â­','detail':'ÃªÂ´ÂÃ«Â¦Â¬Ã¬ÂÂ Ã«ÂªÂ¨Ã«ÂÂÃ¬ÂÂÃ¬ÂÂ Ã¬ÂÂ¤Ã­ÂÂ'},{'time':'15:00~19:00','label':'2Ã¬Â°Â¨ Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂÃªÂ¸Â','detail':'19Ã¬ÂÂ Ã¬ÂÂ´Ã­ÂÂ Ã«Â²ÂÃ­ÂÂ¼ Ã«Â¹ÂÃ­ÂÂÃ¬ÂÂ±Ã­ÂÂ'},{'time':'19:00~20:00','label':'2Ã¬Â°Â¨ Ã«Â¯Â¸Ã¬ÂÂÃªÂ¸Â Ã­ÂÂÃ¬ÂÂ¸','detail':'Ã­ÂÂÃ«Â§Â¤Ã¬ÂÂ Ã¬ÂÂÃªÂ¸ÂÃ­ÂÂÃ¬ÂÂ¸ Ã«ÂÂÃ«ÂÂ Ã«Â¯Â¸Ã¬ÂÂÃªÂ¸Â Ã«Â²ÂÃ­ÂÂ¼'},{'time':'20:00~13:00','label':'Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂ¤Ã­ÂÂ','detail':'ÃªÂ´ÂÃ«Â¦Â¬Ã¬ÂÂ Ã«ÂªÂ¨Ã«ÂÂÃ¬ÂÂÃ¬ÂÂ Ã¬ÂÂ¤Ã­ÂÂ'}])
+
+@app.route('/api/admin/matching-status', methods=['GET'])
+@jwt_required()
+def admin_matching_status():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    today = datetime.date.today().isoformat()
+
+    def get_round_data(round_num):
+        # 구매 예약 수 (reservations where match_round=round_num, status=pending)
+        buy_count = db.execute(
+            "SELECT COUNT(*) as c FROM reservations WHERE match_round=? AND reserve_date=? AND status='pending'",
+            (round_num, today)
+        ).fetchone()['c']
+
+        # 판매 예약 수 (items where status='reservable')
+        sell_count = db.execute(
+            "SELECT COUNT(*) as c FROM items WHERE status='reservable'"
+        ).fetchone()['c']
+
+        # 매칭율
+        if sell_count > 0:
+            rate = round(min(buy_count, sell_count) / max(buy_count, sell_count) * 100, 1)
+        else:
+            rate = 0.0
+
+        # 아이템별 판매예약 수
+        by_type = db.execute(
+            "SELECT bar_type, COUNT(*) as cnt FROM items WHERE status='reservable' GROUP BY bar_type"
+        ).fetchall()
+
+        # 아이템 단계별 판매예약 수
+        by_stage = db.execute(
+            "SELECT bar_type, stage, COUNT(*) as cnt FROM items WHERE status='reservable' GROUP BY bar_type, stage ORDER BY bar_type, stage"
+        ).fetchall()
+
+        return {
+            'buy_count': buy_count,
+            'sell_count': sell_count,
+            'match_rate': rate,
+            'by_type': [{'bar_type': r['bar_type'], 'count': r['cnt']} for r in by_type],
+            'by_stage': [{'bar_type': r['bar_type'], 'stage': r['stage'], 'count': r['cnt']} for r in by_stage]
+        }
+
+    result = {
+        'round1': get_round_data(1),
+        'round2': get_round_data(2),
+        'date': today
+    }
+    db.close()
+    return jsonify(result)
+
 
 with app.app_context():
     init_db()
