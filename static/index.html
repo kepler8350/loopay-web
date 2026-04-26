@@ -164,8 +164,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .charge-btn{width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px}
 .charge-result{font-size:13px;color:var(--text2);text-align:center;min-height:20px}
 
-/* Admin badge */
-.admin-link{position:absolute;top:14px;right:14px;font-size:11px;color:rgba(255,255,255,.5);cursor:pointer}
+
 </style>
 </head>
 <body>
@@ -185,10 +184,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <!-- MAIN APP (hidden until login) -->
   <div id="main-app" style="display:none;flex-direction:column;height:100vh">
     <div class="header" style="position:relative">
-      <span class="admin-link" onclick="showAdminModal()">관리자</span>
+      
       <div class="header-top">
         <span class="logo">LOOPAY</span>
         <span class="level-badge" id="h-level">3레벨</span>
+        <button onclick="doLogout()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;margin-left:8px">로그아웃</button>
       </div>
       <div class="total-card">
         <div class="total-lbl">총 포인트 <span style="font-size:10px;opacity:.7">(1P = 120원)</span></div>
@@ -223,33 +223,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="sec-title">아이템 현황 (클릭하면 상세보기)</div>
         <div class="bar-row">
           <div class="bar-card bar-bronze" id="card-bronze" onclick="toggleDetail('bronze')">
-            <div class="bar-name">브론즈바</div>
+            <div class="bar-name">수정</div>
             <div class="bar-stat"><span>보유</span><span id="bz-hold">0개</span></div>
             <div class="bar-stat"><span>매칭예약가능</span><span id="bz-res">0개</span></div>
             <div class="bar-range" id="bz-range">구매예약: —</div>
           </div>
           <div class="bar-card bar-silver" id="card-silver" onclick="toggleDetail('silver')">
-            <div class="bar-name">실버바</div>
+            <div class="bar-name">루비</div>
             <div class="bar-stat"><span>보유</span><span id="sv-hold">0개</span></div>
             <div class="bar-stat"><span>매칭예약가능</span><span id="sv-res">0개</span></div>
             <div class="bar-range" id="sv-range">구매예약: —</div>
           </div>
           <div class="bar-card bar-gold" id="card-gold" onclick="toggleDetail('gold')">
-            <div class="bar-name">골드바</div>
+            <div class="bar-name">다이아</div>
             <div class="bar-stat"><span>보유</span><span id="gd-hold">0개</span></div>
             <div class="bar-stat"><span>매칭예약가능</span><span id="gd-res">0개</span></div>
             <div class="bar-range" id="gd-range">구매예약: —</div>
           </div>
         </div>
-        <div id="detail-bronze" style="display:none"><div class="detail-panel"><div class="detail-panel-title">브론즈바 보유 내역</div><div id="detail-bronze-items"><div class="loading">불러오는 중...</div></div></div></div>
-        <div id="detail-silver" style="display:none"><div class="detail-panel"><div class="detail-panel-title">실버바 보유 내역</div><div id="detail-silver-items"><div class="loading">불러오는 중...</div></div></div></div>
-        <div id="detail-gold" style="display:none"><div class="detail-panel"><div class="detail-panel-title">골드바 보유 내역</div><div id="detail-gold-items"><div class="loading">불러오는 중...</div></div></div></div>
+        <div id="detail-bronze" style="display:none"><div class="detail-panel"><div class="detail-panel-title">수정 보유 내역</div><div id="detail-bronze-items"><div class="loading">불러오는 중...</div></div></div></div>
+        <div id="detail-silver" style="display:none"><div class="detail-panel"><div class="detail-panel-title">루비 보유 내역</div><div id="detail-silver-items"><div class="loading">불러오는 중...</div></div></div></div>
+        <div id="detail-gold" style="display:none"><div class="detail-panel"><div class="detail-panel-title">다이아 보유 내역</div><div id="detail-gold-items"><div class="loading">불러오는 중...</div></div></div></div>
 
         <div class="reserve-box">
           <div class="reserve-title">오늘 매칭예약하기</div>
           <div class="r-wrap" id="r-bz-wrap">
             <div class="r-row">
-              <span class="r-lbl">브론즈바</span>
+              <span class="r-lbl">수정</span>
               <span class="r-range" id="r-bz-range">최소 7 / 최대 10</span>
               <div class="r-ctrl">
                 <button class="cnt-btn" id="r-bz-m" onclick="changeRes('bz',-1)">−</button>
@@ -262,7 +262,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div class="divider"></div>
           <div class="r-wrap locked" id="r-sv-wrap">
             <div class="r-row">
-              <span class="r-lbl">실버바</span>
+              <span class="r-lbl">루비</span>
               <span class="r-range" id="r-sv-range">4개 (자동)</span>
               <div class="r-ctrl">
                 <button class="cnt-btn" disabled id="r-sv-m">−</button>
@@ -275,7 +275,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div class="divider"></div>
           <div class="r-wrap locked" id="r-gd-wrap">
             <div class="r-row">
-              <span class="r-lbl">골드바</span>
+              <span class="r-lbl">다이아</span>
               <span class="r-range" id="r-gd-range">2개 (자동)</span>
               <div class="r-ctrl">
                 <button class="cnt-btn" disabled id="r-gd-m">−</button>
@@ -303,9 +303,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <!-- PRICE -->
       <div id="tab-price" class="tab">
         <div class="tab-sel">
-          <button class="on" onclick="showBarPrice('bronze',this)">브론즈바</button>
-          <button onclick="showBarPrice('silver',this)">실버바</button>
-          <button onclick="showBarPrice('gold',this)">골드바</button>
+          <button class="on" onclick="showBarPrice('bronze',this)">수정</button>
+          <button onclick="showBarPrice('silver',this)">루비</button>
+          <button onclick="showBarPrice('gold',this)">다이아</button>
         </div>
         <div id="price-bronze"></div>
         <div id="price-silver" style="display:none"></div>
@@ -581,7 +581,7 @@ function renderBars(d){
       const profitStr=it.profit>=0?`+${it.profit.toLocaleString()}`:`${it.profit.toLocaleString()}`;
       return `<div class="item-row">
         <div class="item-hd">
-          <span class="item-stage">${it.stage}단계 ${t==='bronze'?'브론즈':t==='silver'?'실버':'골드'}바</span>
+          <span class="item-stage">${it.stage}단계 ${t==='bronze'?'수정':t==='silver'?'루비':'다이아'}바</span>
           <span class="badge ${it.status_label==='대기중'?'badge-wait':'badge-match'}">${it.status_label}</span>
         </div>
         <div class="item-date">구매일: ${it.purchase_date} (${it.days}일째)${day4note}</div>
@@ -767,6 +767,13 @@ function closeAdminPanel(){document.getElementById('admin-panel').style.display=
 checkApiStatus();
 if(token){showMainApp();loadUserData();}
 loadPrices();
+
+function doLogout() {
+  localStorage.removeItem('lp_token');
+  localStorage.removeItem('lp_kakao_id');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
 </script>
 </body>
 </html>
