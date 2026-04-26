@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LOOPAY ÃªÂ´ÂÃ«Â¦Â¬Ã¬ÂÂ</title>
+<title>LOOPAY ÃÂªÃÂ´ÃÂÃÂ«ÃÂ¦ÃÂ¬ÃÂ¬ÃÂÃÂ</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -73,7 +73,7 @@ td{padding:12px 16px;font-size:13px}
 .badge-lv5{background:rgba(239,68,68,.15);color:#f87171}
 .search-wrap{position:relative;display:inline-block}
 .search-bar{padding:8px 12px 8px 36px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;width:220px}
-.search-wrap::before{content:'Ã°ÂÂÂ';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
+.search-wrap::before{content:'ÃÂ°ÃÂÃÂÃÂ';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
 .search-bar:focus{border-color:var(--blue)}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
@@ -112,11 +112,11 @@ td{padding:12px 16px;font-size:13px}
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">LOOPAY</div>
-    <div class="login-sub">ÃªÂ´ÂÃ«Â¦Â¬Ã¬ÂÂ Ã«ÂÂÃ¬ÂÂÃ«Â³Â´Ã«ÂÂ</div>
-    <input id="adm-user" placeholder="ÃªÂ´ÂÃ«Â¦Â¬Ã¬ÂÂ Ã¬ÂÂÃ¬ÂÂ´Ã«ÂÂ" autocomplete="username">
-    <input id="adm-pass" type="password" placeholder="Ã«Â¹ÂÃ«Â°ÂÃ«Â²ÂÃ­ÂÂ¸" autocomplete="current-password"
+    <div class="login-sub">ÃÂªÃÂ´ÃÂÃÂ«ÃÂ¦ÃÂ¬ÃÂ¬ÃÂÃÂ ÃÂ«ÃÂÃÂÃÂ¬ÃÂÃÂÃÂ«ÃÂ³ÃÂ´ÃÂ«ÃÂÃÂ</div>
+    <input id="adm-user" placeholder="ÃÂªÃÂ´ÃÂÃÂ«ÃÂ¦ÃÂ¬ÃÂ¬ÃÂÃÂ ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ´ÃÂ«ÃÂÃÂ" autocomplete="username">
+    <input id="adm-pass" type="password" placeholder="ÃÂ«ÃÂ¹ÃÂÃÂ«ÃÂ°ÃÂÃÂ«ÃÂ²ÃÂÃÂ­ÃÂÃÂ¸" autocomplete="current-password"
       onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="login-btn" onclick="doLogin()">Ã«Â¡ÂÃªÂ·Â¸Ã¬ÂÂ¸</button>
+    <button class="login-btn" onclick="doLogin()">ÃÂ«ÃÂ¡ÃÂÃÂªÃÂ·ÃÂ¸ÃÂ¬ÃÂÃÂ¸</button>
     <div class="login-err" id="login-err"></div>
   </div>
 </div>
@@ -126,26 +126,26 @@ td{padding:12px 16px;font-size:13px}
     <div class="sidebar-logo">LOOPAY <span>Admin</span></div>
     <nav>
       <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard',this)">
-        <span class="icon">Ã°ÂÂÂ</span><span>Ã«ÂÂÃ¬ÂÂÃ«Â³Â´Ã«ÂÂ</span>
+        <span class="icon">ÃÂ°ÃÂÃÂÃÂ</span><span>ÃÂ«ÃÂÃÂÃÂ¬ÃÂÃÂÃÂ«ÃÂ³ÃÂ´ÃÂ«ÃÂÃÂ</span>
       </div>
       <div class="nav-item" data-page="users" onclick="showPage('users',this)">
-        <span class="icon">Ã°ÂÂÂ¥</span><span>Ã­ÂÂÃ¬ÂÂ ÃªÂ´ÂÃ«Â¦Â¬</span>
+        <span class="icon">ÃÂ°ÃÂÃÂÃÂ¥</span><span>ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ ÃÂªÃÂ´ÃÂÃÂ«ÃÂ¦ÃÂ¬</span>
       </div>
       <div class="nav-item" data-page="charges" onclick="showPage('charges',this)">
-        <span class="icon">Ã°ÂÂÂ³</span><span>Ã¬Â¶Â©Ã¬Â Â ÃªÂ´ÂÃ«Â¦Â¬</span>
+        <span class="icon">ÃÂ°ÃÂÃÂÃÂ³</span><span>ÃÂ¬ÃÂ¶ÃÂ©ÃÂ¬ÃÂ ÃÂ ÃÂªÃÂ´ÃÂÃÂ«ÃÂ¦ÃÂ¬</span>
       </div>
       <div class="nav-item" data-page="reservations" onclick="showPage('reservations',this)">
-        <span class="icon">Ã°ÂÂÂ¦</span><span>Ã¬ÂÂÃ¬ÂÂ½ Ã­ÂÂÃ­ÂÂ©</span>
+        <span class="icon">ÃÂ°ÃÂÃÂÃÂ¦</span><span>ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ½ ÃÂ­ÃÂÃÂÃÂ­ÃÂÃÂ©</span>
       </div>
       <div class="nav-item" data-page="matching" onclick="showPage('matching',this)">
-        <span class="icon">Ã¢ÂÂ¡</span><span>Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂ¤Ã­ÂÂ</span>
+        <span class="icon">ÃÂ¢ÃÂÃÂ¡</span><span>ÃÂ«ÃÂ§ÃÂ¤ÃÂ¬ÃÂ¹ÃÂ­ ÃÂ¬ÃÂÃÂ¤ÃÂ­ÃÂÃÂ</span>
       </div>
       <div class="nav-item" data-page="penalties" onclick="showPage('penalties',this)">
-        <span class="icon">Ã¢ÂÂ Ã¯Â¸Â</span><span>Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° ÃªÂ´ÂÃ«Â¦Â¬</span>
+        <span class="icon">ÃÂ¢ÃÂÃÂ ÃÂ¯ÃÂ¸ÃÂ</span><span>ÃÂ­ÃÂÃÂ¨ÃÂ«ÃÂÃÂÃÂ­ÃÂÃÂ° ÃÂªÃÂ´ÃÂÃÂ«ÃÂ¦ÃÂ¬</span>
       </div>
     </nav>
     <div class="sidebar-footer">
-      <button class="logout-btn" onclick="doLogout()">Ã°ÂÂÂª Ã«Â¡ÂÃªÂ·Â¸Ã¬ÂÂÃ¬ÂÂ</button>
+      <button class="logout-btn" onclick="doLogout()">ÃÂ°ÃÂÃÂÃÂª ÃÂ«ÃÂ¡ÃÂÃÂªÃÂ·ÃÂ¸ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ</button>
     </div>
   </div>
 
@@ -153,148 +153,148 @@ td{padding:12px 16px;font-size:13px}
 
     <!-- DASHBOARD -->
     <div id="page-dashboard" class="page active">
-      <div class="page-title">Ã«ÂÂÃ¬ÂÂÃ«Â³Â´Ã«ÂÂ</div>
-      <div class="page-sub">LOOPAY Ã­ÂÂÃ«ÂÂ«Ã­ÂÂ¼ Ã¬Â ÂÃ¬Â²Â´ Ã­ÂÂÃ­ÂÂ©</div>
+      <div class="page-title">ÃÂ«ÃÂÃÂÃÂ¬ÃÂÃÂÃÂ«ÃÂ³ÃÂ´ÃÂ«ÃÂÃÂ</div>
+      <div class="page-sub">LOOPAY ÃÂ­ÃÂÃÂÃÂ«ÃÂÃÂ«ÃÂ­ÃÂÃÂ¼ ÃÂ¬ÃÂ ÃÂÃÂ¬ÃÂ²ÃÂ´ ÃÂ­ÃÂÃÂÃÂ­ÃÂÃÂ©</div>
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">Ã¬Â´Â Ã­ÂÂÃ¬ÂÂÃ¬ÂÂ</div><div class="stat-val blue" id="st-users">-</div><div class="stat-change">Ã¬Â ÂÃ¬Â²Â´ ÃªÂ°ÂÃ¬ÂÂÃ¬ÂÂ</div></div>
-        <div class="stat-card"><div class="stat-label">Ã¬Â´Â Ã«Â³Â´Ã¬ÂÂ  Ã¬ÂÂÃ¬ÂÂ´Ã­ÂÂ</div><div class="stat-val green" id="st-items">-</div><div class="stat-change">Ã­ÂÂÃ¬ÂÂ¬ Ã¬ÂÂ Ã­ÂÂµ Ã¬Â¤ÂÃ¬ÂÂ¸ Ã«Â°Â</div></div>
-        <div class="stat-card"><div class="stat-label">Ã«ÂÂÃªÂ¸Â° Ã¬Â¤Â Ã¬Â¶Â©Ã¬Â Â</div><div class="stat-val yellow" id="st-charges">-</div><div class="stat-change">Ã¬ÂÂ¹Ã¬ÂÂ¸ Ã«ÂÂÃªÂ¸Â°</div></div>
-        <div class="stat-card"><div class="stat-label">Ã¬ÂÂ¤Ã«ÂÂ Ã¬ÂÂÃ¬ÂÂ½</div><div class="stat-val purple" id="st-reserves">-</div><div class="stat-change">ÃªÂ¸ÂÃ¬ÂÂ¼ Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂÃ¬ÂÂ½</div></div>
+        <div class="stat-card"><div class="stat-label">ÃÂ¬ÃÂ´ÃÂ ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ</div><div class="stat-val blue" id="st-users">-</div><div class="stat-change">ÃÂ¬ÃÂ ÃÂÃÂ¬ÃÂ²ÃÂ´ ÃÂªÃÂ°ÃÂÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ</div></div>
+        <div class="stat-card"><div class="stat-label">ÃÂ¬ÃÂ´ÃÂ ÃÂ«ÃÂ³ÃÂ´ÃÂ¬ÃÂÃÂ  ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ´ÃÂ­ÃÂÃÂ</div><div class="stat-val green" id="st-items">-</div><div class="stat-change">ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ¬ ÃÂ¬ÃÂÃÂ ÃÂ­ÃÂÃÂµ ÃÂ¬ÃÂ¤ÃÂÃÂ¬ÃÂÃÂ¸ ÃÂ«ÃÂ°ÃÂ</div></div>
+        <div class="stat-card"><div class="stat-label">ÃÂ«ÃÂÃÂÃÂªÃÂ¸ÃÂ° ÃÂ¬ÃÂ¤ÃÂ ÃÂ¬ÃÂ¶ÃÂ©ÃÂ¬ÃÂ ÃÂ</div><div class="stat-val yellow" id="st-charges">-</div><div class="stat-change">ÃÂ¬ÃÂÃÂ¹ÃÂ¬ÃÂÃÂ¸ ÃÂ«ÃÂÃÂÃÂªÃÂ¸ÃÂ°</div></div>
+        <div class="stat-card"><div class="stat-label">ÃÂ¬ÃÂÃÂ¤ÃÂ«ÃÂÃÂ ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ½</div><div class="stat-val purple" id="st-reserves">-</div><div class="stat-change">ÃÂªÃÂ¸ÃÂÃÂ¬ÃÂÃÂ¼ ÃÂ«ÃÂ§ÃÂ¤ÃÂ¬ÃÂ¹ÃÂ­ ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ½</div></div>
       </div>
       <div class="two-col">
         <div class="table-card">
           <div class="table-header">
-            <div class="table-title">Ã°ÂÂÂ Ã¬ÂµÂÃªÂ·Â¼ Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ¬Â²Â­</div>
-            <button class="btn btn-primary btn-sm" onclick="showPage('charges',document.querySelector('[data-page=charges]'))">Ã¬Â ÂÃ¬Â²Â´ Ã«Â³Â´ÃªÂ¸Â°</button>
+            <div class="table-title">ÃÂ°ÃÂÃÂÃÂ ÃÂ¬ÃÂµÃÂÃÂªÃÂ·ÃÂ¼ ÃÂ¬ÃÂ¶ÃÂ©ÃÂ¬ÃÂ ÃÂ ÃÂ¬ÃÂÃÂÃÂ¬ÃÂ²ÃÂ­</div>
+            <button class="btn btn-primary btn-sm" onclick="showPage('charges',document.querySelector('[data-page=charges]'))">ÃÂ¬ÃÂ ÃÂÃÂ¬ÃÂ²ÃÂ´ ÃÂ«ÃÂ³ÃÂ´ÃÂªÃÂ¸ÃÂ°</button>
           </div>
-          <div id="dash-charges"><div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div></div>
+          <div id="dash-charges"><div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ³</div><div>ÃÂ«ÃÂ¡ÃÂÃÂ«ÃÂÃÂ© ÃÂ¬ÃÂ¤ÃÂ...</div></div></div>
         </div>
         <div class="table-card">
           <div class="table-header">
-            <div class="table-title">Ã°ÂÂÂ¤ Ã¬ÂµÂÃªÂ·Â¼ ÃªÂ°ÂÃ¬ÂÂ Ã­ÂÂÃ¬ÂÂ</div>
-            <button class="btn btn-secondary btn-sm" onclick="showPage('users',document.querySelector('[data-page=users]'))">Ã¬Â ÂÃ¬Â²Â´ Ã«Â³Â´ÃªÂ¸Â°</button>
+            <div class="table-title">ÃÂ°ÃÂÃÂÃÂ¤ ÃÂ¬ÃÂµÃÂÃÂªÃÂ·ÃÂ¼ ÃÂªÃÂ°ÃÂÃÂ¬ÃÂÃÂ ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ</div>
+            <button class="btn btn-secondary btn-sm" onclick="showPage('users',document.querySelector('[data-page=users]'))">ÃÂ¬ÃÂ ÃÂÃÂ¬ÃÂ²ÃÂ´ ÃÂ«ÃÂ³ÃÂ´ÃÂªÃÂ¸ÃÂ°</button>
           </div>
-          <div id="dash-users"><div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div></div>
+          <div id="dash-users"><div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ³</div><div>ÃÂ«ÃÂ¡ÃÂÃÂ«ÃÂÃÂ© ÃÂ¬ÃÂ¤ÃÂ...</div></div></div>
         </div>
       </div>
     </div>
 
     <!-- USERS -->
     <div id="page-users" class="page">
-      <div class="page-title">Ã­ÂÂÃ¬ÂÂ ÃªÂ´ÂÃ«Â¦Â¬</div>
-      <div class="page-sub">Ã¬Â ÂÃ¬Â²Â´ Ã­ÂÂÃ¬ÂÂ Ã«ÂªÂ©Ã«Â¡Â Ã«Â°Â Ã¬Â ÂÃ«Â³Â´ ÃªÂ´ÂÃ«Â¦Â¬</div>
+      <div class="page-title">ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ ÃÂªÃÂ´ÃÂÃÂ«ÃÂ¦ÃÂ¬</div>
+      <div class="page-sub">ÃÂ¬ÃÂ ÃÂÃÂ¬ÃÂ²ÃÂ´ ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ ÃÂ«ÃÂªÃÂ©ÃÂ«ÃÂ¡ÃÂ ÃÂ«ÃÂ°ÃÂ ÃÂ¬ÃÂ ÃÂÃÂ«ÃÂ³ÃÂ´ ÃÂªÃÂ´ÃÂÃÂ«ÃÂ¦ÃÂ¬</div>
       <div class="table-card">
         <div class="table-header">
-          <div class="table-title">Ã¬Â ÂÃ¬Â²Â´ Ã­ÂÂÃ¬ÂÂ</div>
+          <div class="table-title">ÃÂ¬ÃÂ ÃÂÃÂ¬ÃÂ²ÃÂ´ ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ</div>
           <div class="table-actions">
             <div class="search-wrap">
-              <input class="search-bar" id="user-search" placeholder="Ã¬ÂÂ´Ã«Â¦Â/Ã¬ÂÂ´Ã«Â©ÂÃ¬ÂÂ¼ ÃªÂ²ÂÃ¬ÂÂ" oninput="filterUsers()">
+              <input class="search-bar" id="user-search" placeholder="ÃÂ¬ÃÂÃÂ´ÃÂ«ÃÂ¦ÃÂ/ÃÂ¬ÃÂÃÂ´ÃÂ«ÃÂ©ÃÂÃÂ¬ÃÂÃÂ¼ ÃÂªÃÂ²ÃÂÃÂ¬ÃÂÃÂ" oninput="filterUsers()">
             </div>
-            <button class="refresh-btn" onclick="loadUsers()">Ã°ÂÂÂ</button>
+            <button class="refresh-btn" onclick="loadUsers()">ÃÂ°ÃÂÃÂÃÂ</button>
           </div>
         </div>
-        <div id="users-table-wrap"><div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div></div>
+        <div id="users-table-wrap"><div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ³</div><div>ÃÂ«ÃÂ¡ÃÂÃÂ«ÃÂÃÂ© ÃÂ¬ÃÂ¤ÃÂ...</div></div></div>
       </div>
     </div>
 
     <!-- CHARGES -->
     <div id="page-charges" class="page">
-      <div class="page-title">Ã¬Â¶Â©Ã¬Â Â ÃªÂ´ÂÃ«Â¦Â¬</div>
-      <div class="page-sub">Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸ Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ¬Â²Â­ Ã¬ÂÂ¹Ã¬ÂÂ¸ Ã«Â°Â Ã¬ÂÂ´Ã«Â Â¥</div>
+      <div class="page-title">ÃÂ¬ÃÂ¶ÃÂ©ÃÂ¬ÃÂ ÃÂ ÃÂªÃÂ´ÃÂÃÂ«ÃÂ¦ÃÂ¬</div>
+      <div class="page-sub">ÃÂ­ÃÂÃÂ¬ÃÂ¬ÃÂÃÂ¸ÃÂ­ÃÂÃÂ¸ ÃÂ¬ÃÂ¶ÃÂ©ÃÂ¬ÃÂ ÃÂ ÃÂ¬ÃÂÃÂÃÂ¬ÃÂ²ÃÂ­ ÃÂ¬ÃÂÃÂ¹ÃÂ¬ÃÂÃÂ¸ ÃÂ«ÃÂ°ÃÂ ÃÂ¬ÃÂÃÂ´ÃÂ«ÃÂ ÃÂ¥</div>
       <div style="display:flex;gap:10px;margin-bottom:16px">
-        <button class="btn btn-secondary" id="filter-all" onclick="filterCharges('all',this)">Ã¬Â ÂÃ¬Â²Â´</button>
-        <button class="btn btn-primary" id="filter-pending" onclick="filterCharges('pending',this)">Ã«ÂÂÃªÂ¸Â° Ã¬Â¤Â</button>
-        <button class="btn btn-secondary" id="filter-confirmed" onclick="filterCharges('confirmed',this)">Ã¬ÂÂ¹Ã¬ÂÂ¸Ã«ÂÂ¨</button>
+        <button class="btn btn-secondary" id="filter-all" onclick="filterCharges('all',this)">ÃÂ¬ÃÂ ÃÂÃÂ¬ÃÂ²ÃÂ´</button>
+        <button class="btn btn-primary" id="filter-pending" onclick="filterCharges('pending',this)">ÃÂ«ÃÂÃÂÃÂªÃÂ¸ÃÂ° ÃÂ¬ÃÂ¤ÃÂ</button>
+        <button class="btn btn-secondary" id="filter-confirmed" onclick="filterCharges('confirmed',this)">ÃÂ¬ÃÂÃÂ¹ÃÂ¬ÃÂÃÂ¸ÃÂ«ÃÂÃÂ¨</button>
       </div>
       <div class="table-card">
         <div class="table-header">
-          <div class="table-title">Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ¬Â²Â­ Ã«ÂªÂ©Ã«Â¡Â</div>
-          <button class="refresh-btn" onclick="loadCharges()">Ã°ÂÂÂ</button>
+          <div class="table-title">ÃÂ¬ÃÂ¶ÃÂ©ÃÂ¬ÃÂ ÃÂ ÃÂ¬ÃÂÃÂÃÂ¬ÃÂ²ÃÂ­ ÃÂ«ÃÂªÃÂ©ÃÂ«ÃÂ¡ÃÂ</div>
+          <button class="refresh-btn" onclick="loadCharges()">ÃÂ°ÃÂÃÂÃÂ</button>
         </div>
-        <div id="charges-table-wrap"><div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div></div>
+        <div id="charges-table-wrap"><div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ³</div><div>ÃÂ«ÃÂ¡ÃÂÃÂ«ÃÂÃÂ© ÃÂ¬ÃÂ¤ÃÂ...</div></div></div>
       </div>
     </div>
 
     <!-- RESERVATIONS -->
     <div id="page-reservations" class="page">
-      <div class="page-title">Ã¬ÂÂÃ¬ÂÂ½ Ã­ÂÂÃ­ÂÂ©</div>
-      <div class="page-sub">Ã­ÂÂÃ¬ÂÂÃ«Â³Â Ã«Â§Â¤Ã¬Â¹Â­ Ã¬ÂÂÃ¬ÂÂ½ Ã­ÂÂÃ­ÂÂ© Ã«Â°Â Ã«Â³Â´Ã¬ÂÂ  Ã¬ÂÂÃ¬ÂÂ´Ã­ÂÂ</div>
+      <div class="page-title">ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ½ ÃÂ­ÃÂÃÂÃÂ­ÃÂÃÂ©</div>
+      <div class="page-sub">ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂÃÂ«ÃÂ³ÃÂ ÃÂ«ÃÂ§ÃÂ¤ÃÂ¬ÃÂ¹ÃÂ­ ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ½ ÃÂ­ÃÂÃÂÃÂ­ÃÂÃÂ© ÃÂ«ÃÂ°ÃÂ ÃÂ«ÃÂ³ÃÂ´ÃÂ¬ÃÂÃÂ  ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ´ÃÂ­ÃÂÃÂ</div>
       <div class="table-card">
         <div class="table-header">
-          <div class="table-title">Ã­ÂÂÃ¬ÂÂÃ«Â³Â Ã«Â³Â´Ã¬ÂÂ  Ã¬ÂÂÃ¬ÂÂ´Ã­ÂÂ</div>
-          <button class="refresh-btn" onclick="loadReservations()">Ã°ÂÂÂ</button>
+          <div class="table-title">ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂÃÂ«ÃÂ³ÃÂ ÃÂ«ÃÂ³ÃÂ´ÃÂ¬ÃÂÃÂ  ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ´ÃÂ­ÃÂÃÂ</div>
+          <button class="refresh-btn" onclick="loadReservations()">ÃÂ°ÃÂÃÂÃÂ</button>
         </div>
-        <div id="reservations-table-wrap"><div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div></div>
+        <div id="reservations-table-wrap"><div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ³</div><div>ÃÂ«ÃÂ¡ÃÂÃÂ«ÃÂÃÂ© ÃÂ¬ÃÂ¤ÃÂ...</div></div></div>
       </div>
     </div>
 
     <!-- MATCHING -->
     <div id="page-matching" class="page">
-      <div class="page-title">매칭 실행</div>
-      <div class="page-sub" id="matching-date-sub">오늘의 매칭 현황 및 실행</div>
+      <div class="page-title">&#47588;&#52825; &#49892;&#54665;</div>
+      <div class="page-sub" id="matching-date-sub">&#50724;&#45212;&#51032; &#47588;&#52825; &#54788;&#54889; &#48143; &#49892;&#54665;</div>
       <div style="display:flex;gap:10px;margin-bottom:20px">
-        <button class="btn btn-primary" id="round-tab-1" onclick="switchRound(1,this)">1차 매칭</button>
-        <button class="btn btn-secondary" id="round-tab-2" onclick="switchRound(2,this)">2차 매칭</button>
-        <button class="refresh-btn" onclick="loadMatchingStatus()" style="margin-left:auto">&#x1F504; 새로고침</button>
+        <button class="btn btn-primary" id="round-tab-1" onclick="switchRound(1,this)">1&#52264; &#47588;&#52825;</button>
+        <button class="btn btn-secondary" id="round-tab-2" onclick="switchRound(2,this)">2&#52264; &#47588;&#52825;</button>
+        <button class="refresh-btn" onclick="loadMatchingStatus()" style="margin-left:auto">&#128504; &#49352;&#47196;&#44256;&#52768;</button>
       </div>
       <div id="round-panel-1">
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
-          <div class="stat-card"><div class="stat-label">구매 예약 수</div><div class="stat-val blue" id="r1-buy">-</div><div class="stat-change">오늘 1차 구매 대기</div></div>
-          <div class="stat-card"><div class="stat-label">판매 예약 수</div><div class="stat-val green" id="r1-sell">-</div><div class="stat-change">매칭 가능 아이템</div></div>
-          <div class="stat-card"><div class="stat-label">매칭율</div><div class="stat-val yellow" id="r1-rate">-</div><div class="stat-change">구매/판매 비율</div></div>
+          <div class="stat-card"><div class="stat-label">&#44396;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val blue" id="r1-buy">-</div><div class="stat-change">&#50724;&#45212; 1&#52264; &#44396;&#47588; &#45824;&#44592;</div></div>
+          <div class="stat-card"><div class="stat-label">&#54032;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val green" id="r1-sell">-</div><div class="stat-change">&#47588;&#52825; &#44032;&#45733; &#50500;&#51060;&#53596;</div></div>
+          <div class="stat-card"><div class="stat-label">&#47588;&#52825;&#51728;</div><div class="stat-val yellow" id="r1-rate">-</div><div class="stat-change">&#44396;&#47588;/&#54032;&#47588; &#48708;&#51728;</div></div>
         </div>
         <div class="two-col">
-          <div class="table-card"><div class="table-header"><div class="table-title">아이템별 판매예약</div></div><div id="r1-by-type"><div class="empty-state"><div class="icon">&#x23F3;</div><div>로딩 중...</div></div></div></div>
-          <div class="table-card"><div class="table-header"><div class="table-title">단계별 판매예약</div></div><div id="r1-by-stage"><div class="empty-state"><div class="icon">&#x23F3;</div><div>로딩 중...</div></div></div></div>
+          <div class="table-card"><div class="table-header"><div class="table-title">&#50500;&#51060;&#53596;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r1-by-type"><div class="empty-state"><div class="icon">&#9203;</div><div>&#47196;&#46377; &#51473;...</div></div></div></div>
+          <div class="table-card"><div class="table-header"><div class="table-title">&#45800;&#44228;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r1-by-stage"><div class="empty-state"><div class="icon">&#9203;</div><div>&#47196;&#46377; &#51473;...</div></div></div></div>
         </div>
         <div class="table-card" style="margin-top:16px">
-          <div class="table-header"><div class="table-title">&#x26A1; 1차 매칭 실행</div></div>
-          <div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(1)">&#x1F680; 1차 매칭 실행하기</button><div id="match-result-1" style="margin-top:14px"></div></div>
+          <div class="table-header"><div class="table-title">&#9889; 1&#52264; &#47588;&#52825; &#49892;&#54665;</div></div>
+          <div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(1)">&#128640; 1&#52264; &#47588;&#52825; &#49892;&#54665;&#54616;&#44592;</button><div id="match-result-1" style="margin-top:14px"></div></div>
         </div>
       </div>
       <div id="round-panel-2" style="display:none">
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
-          <div class="stat-card"><div class="stat-label">구매 예약 수</div><div class="stat-val blue" id="r2-buy">-</div><div class="stat-change">오늘 2차 구매 대기</div></div>
-          <div class="stat-card"><div class="stat-label">판매 예약 수</div><div class="stat-val green" id="r2-sell">-</div><div class="stat-change">매칭 가능 아이템</div></div>
-          <div class="stat-card"><div class="stat-label">매칭율</div><div class="stat-val yellow" id="r2-rate">-</div><div class="stat-change">구매/판매 비율</div></div>
+          <div class="stat-card"><div class="stat-label">&#44396;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val blue" id="r2-buy">-</div><div class="stat-change">&#50724;&#45212; 2&#52264; &#44396;&#47588; &#45824;&#44592;</div></div>
+          <div class="stat-card"><div class="stat-label">&#54032;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val green" id="r2-sell">-</div><div class="stat-change">&#47588;&#52825; &#44032;&#45733; &#50500;&#51060;&#53596;</div></div>
+          <div class="stat-card"><div class="stat-label">&#47588;&#52825;&#51728;</div><div class="stat-val yellow" id="r2-rate">-</div><div class="stat-change">&#44396;&#47588;/&#54032;&#47588; &#48708;&#51728;</div></div>
         </div>
         <div class="two-col">
-          <div class="table-card"><div class="table-header"><div class="table-title">아이템별 판매예약</div></div><div id="r2-by-type"><div class="empty-state"><div class="icon">&#x23F3;</div><div>로딩 중...</div></div></div></div>
-          <div class="table-card"><div class="table-header"><div class="table-title">단계별 판매예약</div></div><div id="r2-by-stage"><div class="empty-state"><div class="icon">&#x23F3;</div><div>로딩 중...</div></div></div></div>
+          <div class="table-card"><div class="table-header"><div class="table-title">&#50500;&#51060;&#53596;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r2-by-type"><div class="empty-state"><div class="icon">&#9203;</div><div>&#47196;&#46377; &#51473;...</div></div></div></div>
+          <div class="table-card"><div class="table-header"><div class="table-title">&#45800;&#44228;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r2-by-stage"><div class="empty-state"><div class="icon">&#9203;</div><div>&#47196;&#46377; &#51473;...</div></div></div></div>
         </div>
         <div class="table-card" style="margin-top:16px">
-          <div class="table-header"><div class="table-title">&#x26A1; 2차 매칭 실행</div></div>
-          <div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(2)">&#x1F680; 2차 매칭 실행하기</button><div id="match-result-2" style="margin-top:14px"></div></div>
+          <div class="table-header"><div class="table-title">&#9889; 2&#52264; &#47588;&#52825; &#49892;&#54665;</div></div>
+          <div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(2)">&#128640; 2&#52264; &#47588;&#52825; &#49892;&#54665;&#54616;&#44592;</button><div id="match-result-2" style="margin-top:14px"></div></div>
         </div>
       </div>
     </div>
 
     <!-- PENALTIES -->
     <div id="page-penalties" class="page">
-      <div class="page-title">Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° ÃªÂ´ÂÃ«Â¦Â¬</div>
-      <div class="page-sub">Ã­ÂÂÃ¬ÂÂÃ«Â³Â Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° Ã­ÂÂÃ­ÂÂ© Ã«Â°Â Ã¬Â ÂÃ¬Â±Â</div>
+      <div class="page-title">ÃÂ­ÃÂÃÂ¨ÃÂ«ÃÂÃÂÃÂ­ÃÂÃÂ° ÃÂªÃÂ´ÃÂÃÂ«ÃÂ¦ÃÂ¬</div>
+      <div class="page-sub">ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂÃÂ«ÃÂ³ÃÂ ÃÂ­ÃÂÃÂ¨ÃÂ«ÃÂÃÂÃÂ­ÃÂÃÂ° ÃÂ­ÃÂÃÂÃÂ­ÃÂÃÂ© ÃÂ«ÃÂ°ÃÂ ÃÂ¬ÃÂ ÃÂÃÂ¬ÃÂ±ÃÂ</div>
       <div class="two-col">
         <div class="table-card">
-          <div class="table-header"><div class="table-title">Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° Ã¬Â ÂÃ¬Â±Â</div></div>
+          <div class="table-header"><div class="table-title">ÃÂ­ÃÂÃÂ¨ÃÂ«ÃÂÃÂÃÂ­ÃÂÃÂ° ÃÂ¬ÃÂ ÃÂÃÂ¬ÃÂ±ÃÂ</div></div>
           <div style="padding:16px">
             <table>
-              <thead><tr><th>Ã­ÂÂÃ¬ÂÂ</th><th>Ã¬Â ÂÃ¬Â§Â ÃªÂ¸Â°ÃªÂ°Â</th><th>Ã¬Â°Â¨ÃªÂ°Â Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</th></tr></thead>
+              <thead><tr><th>ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ</th><th>ÃÂ¬ÃÂ ÃÂÃÂ¬ÃÂ§ÃÂ ÃÂªÃÂ¸ÃÂ°ÃÂªÃÂ°ÃÂ</th><th>ÃÂ¬ÃÂ°ÃÂ¨ÃÂªÃÂ°ÃÂ ÃÂ­ÃÂÃÂ¬ÃÂ¬ÃÂÃÂ¸ÃÂ­ÃÂÃÂ¸</th></tr></thead>
               <tbody>
-                <tr><td>1Ã­ÂÂ</td><td>3Ã¬ÂÂ¼</td><td style="color:var(--red)">1,000P</td></tr>
-                <tr><td>2Ã­ÂÂ</td><td>7Ã¬ÂÂ¼</td><td style="color:var(--red)">3,000P</td></tr>
-                <tr><td>3Ã­ÂÂ</td><td>20Ã¬ÂÂ¼</td><td style="color:var(--red)">6,000P</td></tr>
-                <tr><td>4Ã­ÂÂ</td><td>50Ã¬ÂÂ¼</td><td style="color:var(--red)">15,000P</td></tr>
-                <tr><td>5Ã­ÂÂ</td><td>120Ã¬ÂÂ¼</td><td style="color:var(--red)">30,000P</td></tr>
+                <tr><td>1ÃÂ­ÃÂÃÂ</td><td>3ÃÂ¬ÃÂÃÂ¼</td><td style="color:var(--red)">1,000P</td></tr>
+                <tr><td>2ÃÂ­ÃÂÃÂ</td><td>7ÃÂ¬ÃÂÃÂ¼</td><td style="color:var(--red)">3,000P</td></tr>
+                <tr><td>3ÃÂ­ÃÂÃÂ</td><td>20ÃÂ¬ÃÂÃÂ¼</td><td style="color:var(--red)">6,000P</td></tr>
+                <tr><td>4ÃÂ­ÃÂÃÂ</td><td>50ÃÂ¬ÃÂÃÂ¼</td><td style="color:var(--red)">15,000P</td></tr>
+                <tr><td>5ÃÂ­ÃÂÃÂ</td><td>120ÃÂ¬ÃÂÃÂ¼</td><td style="color:var(--red)">30,000P</td></tr>
               </tbody>
             </table>
           </div>
         </div>
         <div class="table-card">
           <div class="table-header">
-            <div class="table-title">Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° Ã«ÂÂÃ¬ÂÂ Ã­ÂÂÃ¬ÂÂ</div>
-            <button class="refresh-btn" onclick="loadPenalties()">Ã°ÂÂÂ</button>
+            <div class="table-title">ÃÂ­ÃÂÃÂ¨ÃÂ«ÃÂÃÂÃÂ­ÃÂÃÂ° ÃÂ«ÃÂÃÂÃÂ¬ÃÂÃÂ ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ</div>
+            <button class="refresh-btn" onclick="loadPenalties()">ÃÂ°ÃÂÃÂÃÂ</button>
           </div>
-          <div id="penalty-list"><div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div></div>
+          <div id="penalty-list"><div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ³</div><div>ÃÂ«ÃÂ¡ÃÂÃÂ«ÃÂÃÂ© ÃÂ¬ÃÂ¤ÃÂ...</div></div></div>
         </div>
       </div>
     </div>
@@ -305,17 +305,17 @@ td{padding:12px 16px;font-size:13px}
 <!-- MODALS -->
 <div class="modal-overlay" id="user-modal" onclick="if(event.target===this)closeModal('user-modal')">
   <div class="modal">
-    <div class="modal-title">Ã°ÂÂÂ¤ Ã­ÂÂÃ¬ÂÂ Ã¬ÂÂÃ¬ÂÂ¸ Ã¬Â ÂÃ«Â³Â´</div>
+    <div class="modal-title">ÃÂ°ÃÂÃÂÃÂ¤ ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ¸ ÃÂ¬ÃÂ ÃÂÃÂ«ÃÂ³ÃÂ´</div>
     <div class="modal-body" id="user-modal-body"></div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('user-modal')">Ã«ÂÂ«ÃªÂ¸Â°</button>
+      <button class="btn btn-secondary" onclick="closeModal('user-modal')">ÃÂ«ÃÂÃÂ«ÃÂªÃÂ¸ÃÂ°</button>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="charge-modal" onclick="if(event.target===this)closeModal('charge-modal')">
   <div class="modal" style="width:380px">
-    <div class="modal-title">Ã°ÂÂÂ³ Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ¬ÂÂ¸</div>
+    <div class="modal-title">ÃÂ°ÃÂÃÂÃÂ³ ÃÂ¬ÃÂ¶ÃÂ©ÃÂ¬ÃÂ ÃÂ ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ¸</div>
     <div class="modal-body" id="charge-modal-body"></div>
     <div class="modal-footer" id="charge-modal-footer"></div>
   </div>
@@ -335,7 +335,7 @@ async function doLogin() {
   const p = document.getElementById('adm-pass').value;
   document.getElementById('login-err').textContent = '';
   if (!u || !p) {
-    document.getElementById('login-err').textContent = 'Ã¬ÂÂÃ¬ÂÂ´Ã«ÂÂÃ¬ÂÂ Ã«Â¹ÂÃ«Â°ÂÃ«Â²ÂÃ­ÂÂ¸Ã«Â¥Â¼ Ã¬ÂÂÃ«Â Â¥Ã­ÂÂÃ¬ÂÂ¸Ã¬ÂÂ';
+    document.getElementById('login-err').textContent = 'ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ´ÃÂ«ÃÂÃÂÃÂ¬ÃÂÃÂ ÃÂ«ÃÂ¹ÃÂÃÂ«ÃÂ°ÃÂÃÂ«ÃÂ²ÃÂÃÂ­ÃÂÃÂ¸ÃÂ«ÃÂ¥ÃÂ¼ ÃÂ¬ÃÂÃÂÃÂ«ÃÂ ÃÂ¥ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ¸ÃÂ¬ÃÂÃÂ';
     return;
   }
   try {
@@ -345,7 +345,7 @@ async function doLogin() {
       body: JSON.stringify({username: u, password: p})
     });
     const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Ã«Â¡ÂÃªÂ·Â¸Ã¬ÂÂ¸ Ã¬ÂÂ¤Ã­ÂÂ¨');
+    if (!r.ok) throw new Error(d.error || 'ÃÂ«ÃÂ¡ÃÂÃÂªÃÂ·ÃÂ¸ÃÂ¬ÃÂÃÂ¸ ÃÂ¬ÃÂÃÂ¤ÃÂ­ÃÂÃÂ¨');
     adminToken = d.token;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
@@ -368,7 +368,7 @@ async function apiAdmin(path, opts) {
     headers: Object.assign({'Content-Type': 'application/json', 'Authorization': 'Bearer ' + adminToken}, opts.headers || {})
   }));
   const d = await r.json();
-  if (!r.ok) throw new Error(d.error || 'Ã¬ÂÂ¤Ã«Â¥Â Ã«Â°ÂÃ¬ÂÂ');
+  if (!r.ok) throw new Error(d.error || 'ÃÂ¬ÃÂÃÂ¤ÃÂ«ÃÂ¥ÃÂ ÃÂ«ÃÂ°ÃÂÃÂ¬ÃÂÃÂ');
   return d;
 }
 
@@ -411,14 +411,14 @@ async function loadDashboard() {
     if (charges.length) {
       let rows = '';
       charges.forEach(function(c) {
-        rows += '<tr><td>' + c.nickname + '</td><td>' + (c.amount || 0).toLocaleString() + 'Ã¬ÂÂ</td>';
+        rows += '<tr><td>' + c.nickname + '</td><td>' + (c.amount || 0).toLocaleString() + 'ÃÂ¬ÃÂÃÂ</td>';
         rows += '<td><strong style="color:var(--blue)">' + (c.points || 0).toLocaleString() + 'P</strong></td>';
-        rows += '<td><span class="badge ' + (c.status === 'pending' ? 'badge-pending">Ã«ÂÂÃªÂ¸Â°' : 'badge-confirmed">Ã¬ÂÂ¹Ã¬ÂÂ¸') + '</span></td>';
-        rows += '<td>' + (c.status === 'pending' ? '<button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')">Ã¬ÂÂ¹Ã¬ÂÂ¸</button>' : '') + '</td></tr>';
+        rows += '<td><span class="badge ' + (c.status === 'pending' ? 'badge-pending">ÃÂ«ÃÂÃÂÃÂªÃÂ¸ÃÂ°' : 'badge-confirmed">ÃÂ¬ÃÂÃÂ¹ÃÂ¬ÃÂÃÂ¸') + '</span></td>';
+        rows += '<td>' + (c.status === 'pending' ? '<button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')">ÃÂ¬ÃÂÃÂ¹ÃÂ¬ÃÂÃÂ¸</button>' : '') + '</td></tr>';
       });
-      document.getElementById('dash-charges').innerHTML = '<table><thead><tr><th>Ã­ÂÂÃ¬ÂÂ</th><th>ÃªÂ¸ÂÃ¬ÂÂ¡</th><th>Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</th><th>Ã¬ÂÂÃ­ÂÂ</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+      document.getElementById('dash-charges').innerHTML = '<table><thead><tr><th>ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ</th><th>ÃÂªÃÂ¸ÃÂÃÂ¬ÃÂÃÂ¡</th><th>ÃÂ­ÃÂÃÂ¬ÃÂ¬ÃÂÃÂ¸ÃÂ­ÃÂÃÂ¸</th><th>ÃÂ¬ÃÂÃÂÃÂ­ÃÂÃÂ</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
     } else {
-      document.getElementById('dash-charges').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>Ã«ÂÂÃªÂ¸Â° Ã¬Â¤ÂÃ¬ÂÂ¸ Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂÃ¬ÂÂ</div></div>';
+      document.getElementById('dash-charges').innerHTML = '<div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ</div><div>ÃÂ«ÃÂÃÂÃÂªÃÂ¸ÃÂ° ÃÂ¬ÃÂ¤ÃÂÃÂ¬ÃÂÃÂ¸ ÃÂ¬ÃÂ¶ÃÂ©ÃÂ¬ÃÂ ÃÂ ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ</div></div>';
     }
   } catch(e) {}
 
@@ -428,21 +428,21 @@ async function loadDashboard() {
     let rows = '';
     users.forEach(function(u) {
       rows += '<tr><td>' + u.nickname + '</td>';
-      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'Ã«Â ÂÃ«Â²Â¨</span></td>';
+      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'ÃÂ«ÃÂ ÃÂÃÂ«ÃÂ²ÃÂ¨</span></td>';
       rows += '<td>' + ((u.charge_points || 0) + (u.exchange_points || 0)).toLocaleString() + 'P</td></tr>';
     });
-    document.getElementById('dash-users').innerHTML = '<table><thead><tr><th>Ã«ÂÂÃ«ÂÂ¤Ã¬ÂÂ</th><th>Ã«Â ÂÃ«Â²Â¨</th><th>Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    document.getElementById('dash-users').innerHTML = '<table><thead><tr><th>ÃÂ«ÃÂÃÂÃÂ«ÃÂÃÂ¤ÃÂ¬ÃÂÃÂ</th><th>ÃÂ«ÃÂ ÃÂÃÂ«ÃÂ²ÃÂ¨</th><th>ÃÂ­ÃÂÃÂ¬ÃÂ¬ÃÂÃÂ¸ÃÂ­ÃÂÃÂ¸</th></tr></thead><tbody>' + rows + '</tbody></table>';
   } catch(e) {}
 }
 
 async function loadUsers() {
-  document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div>';
+  document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ³</div><div>ÃÂ«ÃÂ¡ÃÂÃÂ«ÃÂÃÂ© ÃÂ¬ÃÂ¤ÃÂ...</div></div>';
   try {
     const d = await apiAdmin('/admin/users');
     allUsers = d.users;
     renderUsers(allUsers);
   } catch(e) {
-    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>' + e.message + '</div></div>';
+    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ</div><div>' + e.message + '</div></div>';
   }
 }
 
@@ -456,7 +456,7 @@ function filterUsers() {
 
 function renderUsers(users) {
   if (!users.length) {
-    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã°ÂÂÂ</div><div>ÃªÂ²ÂÃ¬ÂÂ ÃªÂ²Â°ÃªÂ³Â¼ Ã¬ÂÂÃ¬ÂÂ</div></div>';
+    document.getElementById('users-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ÃÂ°ÃÂÃÂÃÂ</div><div>ÃÂªÃÂ²ÃÂÃÂ¬ÃÂÃÂ ÃÂªÃÂ²ÃÂ°ÃÂªÃÂ³ÃÂ¼ ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ</div></div>';
     return;
   }
   let rows = '';
@@ -465,17 +465,17 @@ function renderUsers(users) {
     rows += '<td style="color:var(--text2)">#' + u.id + '</td>';
     rows += '<td><strong>' + u.nickname + '</strong></td>';
     rows += '<td style="color:var(--text2)">' + (u.email || '-') + '</td>';
-    rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'Ã«Â ÂÃ«Â²Â¨</span></td>';
+    rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'ÃÂ«ÃÂ ÃÂÃÂ«ÃÂ²ÃÂ¨</span></td>';
     rows += '<td>' + (u.charge_points || 0).toLocaleString() + 'P</td>';
     rows += '<td>' + (u.exchange_points || 0).toLocaleString() + 'P</td>';
-    rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + 'Ã­ÂÂ</td>';
+    rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + 'ÃÂ­ÃÂÃÂ</td>';
     rows += '<td style="color:var(--text2)">' + (u.created_at || '').slice(0, 10) + '</td>';
-    rows += '<td><button class="btn btn-secondary btn-xs" onclick="showUserDetail(' + u.id + ')">Ã¬ÂÂÃ¬ÂÂ¸</button></td>';
+    rows += '<td><button class="btn btn-secondary btn-xs" onclick="showUserDetail(' + u.id + ')">ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ¸</button></td>';
     rows += '</tr>';
   });
   document.getElementById('users-table-wrap').innerHTML =
-    '<table><thead><tr><th>ID</th><th>Ã«ÂÂÃ«ÂÂ¤Ã¬ÂÂ</th><th>Ã¬ÂÂ´Ã«Â©ÂÃ¬ÂÂ¼</th><th>Ã«Â ÂÃ«Â²Â¨</th><th>Ã¬Â¶Â©Ã¬Â ÂP</th><th>Ã¬Â ÂÃ­ÂÂP</th><th>Ã«ÂÂÃ¬Â ÂÃ¬ÂÂÃ¬ÂÂ½</th><th>ÃªÂ°ÂÃ¬ÂÂÃ¬ÂÂ¼</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>' +
-    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">Ã¬Â´Â ' + users.length + 'Ã«ÂªÂ</div>';
+    '<table><thead><tr><th>ID</th><th>ÃÂ«ÃÂÃÂÃÂ«ÃÂÃÂ¤ÃÂ¬ÃÂÃÂ</th><th>ÃÂ¬ÃÂÃÂ´ÃÂ«ÃÂ©ÃÂÃÂ¬ÃÂÃÂ¼</th><th>ÃÂ«ÃÂ ÃÂÃÂ«ÃÂ²ÃÂ¨</th><th>ÃÂ¬ÃÂ¶ÃÂ©ÃÂ¬ÃÂ ÃÂP</th><th>ÃÂ¬ÃÂ ÃÂÃÂ­ÃÂÃÂP</th><th>ÃÂ«ÃÂÃÂÃÂ¬ÃÂ ÃÂÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ½</th><th>ÃÂªÃÂ°ÃÂÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ¼</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">ÃÂ¬ÃÂ´ÃÂ ' + users.length + 'ÃÂ«ÃÂªÃÂ</div>';
 }
 
 function showUserDetail(uid) {
@@ -484,20 +484,20 @@ function showUserDetail(uid) {
   const total = (u.charge_points || 0) + (u.exchange_points || 0);
   let html = '';
   html += '<div class="info-row"><span class="info-label">ID</span><span class="info-val">#' + u.id + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">Ã«ÂÂÃ«ÂÂ¤Ã¬ÂÂ</span><span class="info-val">' + u.nickname + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">Ã¬ÂÂ´Ã«Â©ÂÃ¬ÂÂ¼</span><span class="info-val">' + (u.email || '-') + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">Ã«Â ÂÃ«Â²Â¨</span><span class="info-val"><span class="badge badge-lv' + u.level + '">' + u.level + 'Ã«Â ÂÃ«Â²Â¨</span></span></div>';
-  html += '<div class="info-row"><span class="info-label">Ã¬Â¶Â©Ã¬Â Â Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</span><span class="info-val" style="color:var(--blue)">' + (u.charge_points || 0).toLocaleString() + ' P</span></div>';
-  html += '<div class="info-row"><span class="info-label">Ã¬Â ÂÃ­ÂÂ Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</span><span class="info-val" style="color:var(--green)">' + (u.exchange_points || 0).toLocaleString() + ' P</span></div>';
-  html += '<div class="info-row"><span class="info-label">Ã¬Â´Â Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</span><span class="info-val" style="color:var(--yellow);font-weight:700">' + total.toLocaleString() + ' P</span></div>';
-  html += '<div class="info-row"><span class="info-label">Ã«ÂÂÃ¬Â Â Ã¬ÂÂÃ¬ÂÂ½</span><span class="info-val">' + (u.cumulative_count || 0).toLocaleString() + ' Ã­ÂÂ</span></div>';
-  html += '<div class="info-row"><span class="info-label">ÃªÂ°ÂÃ¬ÂÂÃ¬ÂÂ¼</span><span class="info-val">' + (u.created_at || '').slice(0, 19) + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃÂ«ÃÂÃÂÃÂ«ÃÂÃÂ¤ÃÂ¬ÃÂÃÂ</span><span class="info-val">' + u.nickname + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃÂ¬ÃÂÃÂ´ÃÂ«ÃÂ©ÃÂÃÂ¬ÃÂÃÂ¼</span><span class="info-val">' + (u.email || '-') + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃÂ«ÃÂ ÃÂÃÂ«ÃÂ²ÃÂ¨</span><span class="info-val"><span class="badge badge-lv' + u.level + '">' + u.level + 'ÃÂ«ÃÂ ÃÂÃÂ«ÃÂ²ÃÂ¨</span></span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃÂ¬ÃÂ¶ÃÂ©ÃÂ¬ÃÂ ÃÂ ÃÂ­ÃÂÃÂ¬ÃÂ¬ÃÂÃÂ¸ÃÂ­ÃÂÃÂ¸</span><span class="info-val" style="color:var(--blue)">' + (u.charge_points || 0).toLocaleString() + ' P</span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃÂ¬ÃÂ ÃÂÃÂ­ÃÂÃÂ ÃÂ­ÃÂÃÂ¬ÃÂ¬ÃÂÃÂ¸ÃÂ­ÃÂÃÂ¸</span><span class="info-val" style="color:var(--green)">' + (u.exchange_points || 0).toLocaleString() + ' P</span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃÂ¬ÃÂ´ÃÂ ÃÂ­ÃÂÃÂ¬ÃÂ¬ÃÂÃÂ¸ÃÂ­ÃÂÃÂ¸</span><span class="info-val" style="color:var(--yellow);font-weight:700">' + total.toLocaleString() + ' P</span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃÂ«ÃÂÃÂÃÂ¬ÃÂ ÃÂ ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ½</span><span class="info-val">' + (u.cumulative_count || 0).toLocaleString() + ' ÃÂ­ÃÂÃÂ</span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃÂªÃÂ°ÃÂÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ¼</span><span class="info-val">' + (u.created_at || '').slice(0, 19) + '</span></div>';
   document.getElementById('user-modal-body').innerHTML = html;
   openModal('user-modal');
 }
 
 async function loadCharges() {
-  document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div>';
+  document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ³</div><div>ÃÂ«ÃÂ¡ÃÂÃÂ«ÃÂÃÂ© ÃÂ¬ÃÂ¤ÃÂ...</div></div>';
   try {
     const d = await apiAdmin('/admin/charges');
     allCharges = d.charges;
@@ -505,7 +505,7 @@ async function loadCharges() {
     if (activeBtn) filterCharges(chargeFilter, activeBtn);
     else filterCharges('pending', document.getElementById('filter-pending'));
   } catch(e) {
-    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>' + e.message + '</div></div>';
+    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ</div><div>' + e.message + '</div></div>';
   }
 }
 
@@ -523,7 +523,7 @@ function filterCharges(type, el) {
 
 function renderCharges(charges) {
   if (!charges.length) {
-    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>Ã­ÂÂ´Ã«ÂÂ¹ Ã­ÂÂ­Ã«ÂªÂ© Ã¬ÂÂÃ¬ÂÂ</div></div>';
+    document.getElementById('charges-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ</div><div>ÃÂ­ÃÂÃÂ´ÃÂ«ÃÂÃÂ¹ ÃÂ­ÃÂÃÂ­ÃÂ«ÃÂªÃÂ© ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ</div></div>';
     return;
   }
   let rows = '';
@@ -531,40 +531,40 @@ function renderCharges(charges) {
     rows += '<tr>';
     rows += '<td style="color:var(--text2)">#' + c.id + '</td>';
     rows += '<td><strong>' + c.nickname + '</strong></td>';
-    rows += '<td>' + (c.amount || 0).toLocaleString() + 'Ã¬ÂÂ</td>';
+    rows += '<td>' + (c.amount || 0).toLocaleString() + 'ÃÂ¬ÃÂÃÂ</td>';
     rows += '<td><strong style="color:var(--blue)">' + (c.points || 0).toLocaleString() + 'P</strong></td>';
-    const badge = c.status === 'pending' ? 'badge-pending">Ã«ÂÂÃªÂ¸Â°' : (c.status === 'confirmed' ? 'badge-confirmed">Ã¬ÂÂ¹Ã¬ÂÂ¸' : 'badge-failed">ÃªÂ±Â°Ã¬Â Â');
+    const badge = c.status === 'pending' ? 'badge-pending">ÃÂ«ÃÂÃÂÃÂªÃÂ¸ÃÂ°' : (c.status === 'confirmed' ? 'badge-confirmed">ÃÂ¬ÃÂÃÂ¹ÃÂ¬ÃÂÃÂ¸' : 'badge-failed">ÃÂªÃÂ±ÃÂ°ÃÂ¬ÃÂ ÃÂ');
     rows += '<td><span class="badge ' + badge + '</span></td>';
     rows += '<td style="color:var(--text2)">' + (c.created_at || '').slice(0, 16).replace('T', ' ') + '</td>';
     if (c.status === 'pending') {
-      rows += '<td><button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')" style="margin-right:4px">Ã¢ÂÂ Ã¬ÂÂ¹Ã¬ÂÂ¸</button><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">Ã¬ÂÂÃ¬ÂÂ¸</button></td>';
+      rows += '<td><button class="btn btn-success btn-xs" onclick="confirmCharge(' + c.id + ')" style="margin-right:4px">ÃÂ¢ÃÂÃÂ ÃÂ¬ÃÂÃÂ¹ÃÂ¬ÃÂÃÂ¸</button><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ¸</button></td>';
     } else {
-      rows += '<td><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">Ã¬ÂÂÃ¬ÂÂ¸</button></td>';
+      rows += '<td><button class="btn btn-secondary btn-xs" onclick="showChargeDetail(' + c.id + ')">ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ¸</button></td>';
     }
     rows += '</tr>';
   });
   const total_amt = charges.reduce(function(s, c) { return s + (c.amount || 0); }, 0);
   const total_pts = charges.reduce(function(s, c) { return s + (c.points || 0); }, 0);
   document.getElementById('charges-table-wrap').innerHTML =
-    '<table><thead><tr><th>ID</th><th>Ã­ÂÂÃ¬ÂÂ</th><th>ÃªÂ¸ÂÃ¬ÂÂ¡</th><th>Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</th><th>Ã¬ÂÂÃ­ÂÂ</th><th>Ã¬ÂÂÃ¬Â²Â­Ã¬ÂÂ¼</th><th>Ã¬ÂÂÃ¬ÂÂ</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">Ã¬Â´Â ' + charges.length + 'ÃªÂ±Â´ | ' + total_amt.toLocaleString() + 'Ã¬ÂÂ / ' + total_pts.toLocaleString() + 'P</div>';
+    '<table><thead><tr><th>ID</th><th>ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ</th><th>ÃÂªÃÂ¸ÃÂÃÂ¬ÃÂÃÂ¡</th><th>ÃÂ­ÃÂÃÂ¬ÃÂ¬ÃÂÃÂ¸ÃÂ­ÃÂÃÂ¸</th><th>ÃÂ¬ÃÂÃÂÃÂ­ÃÂÃÂ</th><th>ÃÂ¬ÃÂÃÂÃÂ¬ÃÂ²ÃÂ­ÃÂ¬ÃÂÃÂ¼</th><th>ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">ÃÂ¬ÃÂ´ÃÂ ' + charges.length + 'ÃÂªÃÂ±ÃÂ´ | ' + total_amt.toLocaleString() + 'ÃÂ¬ÃÂÃÂ / ' + total_pts.toLocaleString() + 'P</div>';
 }
 
 function showChargeDetail(cid) {
   const c = allCharges.find(function(x) { return x.id === cid; });
   if (!c) return;
   let html = '';
-  html += '<div class="info-row"><span class="info-label">Ã¬Â¶Â©Ã¬Â Â ID</span><span class="info-val">#' + c.id + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">Ã¬ÂÂÃ¬Â²Â­ Ã­ÂÂÃ¬ÂÂ</span><span class="info-val">' + c.nickname + '</span></div>';
-  html += '<div class="info-row"><span class="info-label">Ã¬Â¶Â©Ã¬Â Â ÃªÂ¸ÂÃ¬ÂÂ¡</span><span class="info-val">' + (c.amount || 0).toLocaleString() + 'Ã¬ÂÂ</span></div>';
-  html += '<div class="info-row"><span class="info-label">Ã¬Â§ÂÃªÂ¸Â Ã­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</span><span class="info-val" style="color:var(--blue);font-weight:700">' + (c.points || 0).toLocaleString() + ' P</span></div>';
-  const badge = c.status === 'pending' ? 'badge-pending">Ã¬ÂÂ¹Ã¬ÂÂ¸ Ã«ÂÂÃªÂ¸Â°' : 'badge-confirmed">Ã¬ÂÂ¹Ã¬ÂÂ¸ Ã¬ÂÂÃ«Â£Â';
-  html += '<div class="info-row"><span class="info-label">Ã¬ÂÂÃ­ÂÂ</span><span class="info-val"><span class="badge ' + badge + '</span></span></div>';
-  html += '<div class="info-row"><span class="info-label">Ã¬ÂÂÃ¬Â²Â­Ã¬ÂÂ¼Ã¬ÂÂ</span><span class="info-val">' + (c.created_at || '').slice(0, 19).replace('T', ' ') + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃÂ¬ÃÂ¶ÃÂ©ÃÂ¬ÃÂ ÃÂ ID</span><span class="info-val">#' + c.id + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃÂ¬ÃÂÃÂÃÂ¬ÃÂ²ÃÂ­ ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ</span><span class="info-val">' + c.nickname + '</span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃÂ¬ÃÂ¶ÃÂ©ÃÂ¬ÃÂ ÃÂ ÃÂªÃÂ¸ÃÂÃÂ¬ÃÂÃÂ¡</span><span class="info-val">' + (c.amount || 0).toLocaleString() + 'ÃÂ¬ÃÂÃÂ</span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃÂ¬ÃÂ§ÃÂÃÂªÃÂ¸ÃÂ ÃÂ­ÃÂÃÂ¬ÃÂ¬ÃÂÃÂ¸ÃÂ­ÃÂÃÂ¸</span><span class="info-val" style="color:var(--blue);font-weight:700">' + (c.points || 0).toLocaleString() + ' P</span></div>';
+  const badge = c.status === 'pending' ? 'badge-pending">ÃÂ¬ÃÂÃÂ¹ÃÂ¬ÃÂÃÂ¸ ÃÂ«ÃÂÃÂÃÂªÃÂ¸ÃÂ°' : 'badge-confirmed">ÃÂ¬ÃÂÃÂ¹ÃÂ¬ÃÂÃÂ¸ ÃÂ¬ÃÂÃÂÃÂ«ÃÂ£ÃÂ';
+  html += '<div class="info-row"><span class="info-label">ÃÂ¬ÃÂÃÂÃÂ­ÃÂÃÂ</span><span class="info-val"><span class="badge ' + badge + '</span></span></div>';
+  html += '<div class="info-row"><span class="info-label">ÃÂ¬ÃÂÃÂÃÂ¬ÃÂ²ÃÂ­ÃÂ¬ÃÂÃÂ¼ÃÂ¬ÃÂÃÂ</span><span class="info-val">' + (c.created_at || '').slice(0, 19).replace('T', ' ') + '</span></div>';
   document.getElementById('charge-modal-body').innerHTML = html;
-  let footer = '<button class="btn btn-secondary" onclick="closeModal(\'charge-modal\')">Ã«ÂÂ«ÃªÂ¸Â°</button>';
+  let footer = '<button class="btn btn-secondary" onclick="closeModal(\'charge-modal\')">ÃÂ«ÃÂÃÂ«ÃÂªÃÂ¸ÃÂ°</button>';
   if (c.status === 'pending') {
-    footer += '<button class="btn btn-success" onclick="confirmCharge(' + c.id + ');closeModal(\'charge-modal\')">Ã¢ÂÂ Ã¬ÂÂ¹Ã¬ÂÂ¸Ã­ÂÂÃªÂ¸Â°</button>';
+    footer += '<button class="btn btn-success" onclick="confirmCharge(' + c.id + ');closeModal(\'charge-modal\')">ÃÂ¢ÃÂÃÂ ÃÂ¬ÃÂÃÂ¹ÃÂ¬ÃÂÃÂ¸ÃÂ­ÃÂÃÂÃÂªÃÂ¸ÃÂ°</button>';
   }
   document.getElementById('charge-modal-footer').innerHTML = footer;
   openModal('charge-modal');
@@ -573,7 +573,7 @@ function showChargeDetail(cid) {
 async function confirmCharge(id) {
   try {
     const d = await apiAdmin('/admin/charge/confirm/' + id, {method: 'POST'});
-    toast(d.message || 'Ã¬Â¶Â©Ã¬Â Â Ã¬ÂÂ¹Ã¬ÂÂ¸ Ã¬ÂÂÃ«Â£Â!', 'success');
+    toast(d.message || 'ÃÂ¬ÃÂ¶ÃÂ©ÃÂ¬ÃÂ ÃÂ ÃÂ¬ÃÂÃÂ¹ÃÂ¬ÃÂÃÂ¸ ÃÂ¬ÃÂÃÂÃÂ«ÃÂ£ÃÂ!', 'success');
     loadCharges();
     loadDashboard();
   } catch(e) {
@@ -582,23 +582,23 @@ async function confirmCharge(id) {
 }
 
 async function loadReservations() {
-  document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div>';
+  document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ³</div><div>ÃÂ«ÃÂ¡ÃÂÃÂ«ÃÂÃÂ© ÃÂ¬ÃÂ¤ÃÂ...</div></div>';
   try {
     const d = await apiAdmin('/admin/users');
     let rows = '';
     d.users.forEach(function(u) {
       rows += '<tr>';
       rows += '<td><strong>' + u.nickname + '</strong></td>';
-      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'Ã«Â ÂÃ«Â²Â¨</span></td>';
+      rows += '<td><span class="badge badge-lv' + u.level + '">' + u.level + 'ÃÂ«ÃÂ ÃÂÃÂ«ÃÂ²ÃÂ¨</span></td>';
       rows += '<td>' + ((u.charge_points || 0) + (u.exchange_points || 0)).toLocaleString() + 'P</td>';
-      rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + 'Ã­ÂÂ</td>';
+      rows += '<td>' + (u.cumulative_count || 0).toLocaleString() + 'ÃÂ­ÃÂÃÂ</td>';
       rows += '</tr>';
     });
     document.getElementById('reservations-table-wrap').innerHTML =
-      '<table><thead><tr><th>Ã­ÂÂÃ¬ÂÂ</th><th>Ã«Â ÂÃ«Â²Â¨</th><th>Ã¬Â´ÂÃ­ÂÂ¬Ã¬ÂÂ¸Ã­ÂÂ¸</th><th>Ã«ÂÂÃ¬Â ÂÃ¬ÂÂÃ¬ÂÂ½</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-      '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">Ã¬Â´Â ' + d.users.length + 'Ã«ÂªÂ</div>';
+      '<table><thead><tr><th>ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ</th><th>ÃÂ«ÃÂ ÃÂÃÂ«ÃÂ²ÃÂ¨</th><th>ÃÂ¬ÃÂ´ÃÂÃÂ­ÃÂÃÂ¬ÃÂ¬ÃÂÃÂ¸ÃÂ­ÃÂÃÂ¸</th><th>ÃÂ«ÃÂÃÂÃÂ¬ÃÂ ÃÂÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ½</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div style="padding:10px 16px;font-size:12px;color:var(--text2);border-top:1px solid var(--border)">ÃÂ¬ÃÂ´ÃÂ ' + d.users.length + 'ÃÂ«ÃÂªÃÂ</div>';
   } catch(e) {
-    document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>' + e.message + '</div></div>';
+    document.getElementById('reservations-table-wrap').innerHTML = '<div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ</div><div>' + e.message + '</div></div>';
   }
 }
 
@@ -613,14 +613,15 @@ function switchRound(num,el){
 async function loadMatchingStatus(){
   try{
     const d=await apiAdmin('/admin/matching-status');
-    document.getElementById('matching-date-sub').textContent=(d.date||'')+' 매칭 현황 및 실행';
+    const sub=document.getElementById('matching-date-sub');
+    if(sub) sub.textContent=(d.date||'')+' &#47588;&#52825; &#54788;&#54889; &#48143; &#49892;&#54665;';
     function renderRound(r,prefix){
       document.getElementById(prefix+'-buy').textContent=(r.buy_count||0).toLocaleString();
       document.getElementById(prefix+'-sell').textContent=(r.sell_count||0).toLocaleString();
       document.getElementById(prefix+'-rate').textContent=(r.match_rate||0)+'%';
       const typeEl=document.getElementById(prefix+'-by-type');
       if(r.by_type&&r.by_type.length){
-        const tM={bronze:'수정',silver:'루비',gold:'다이아'};
+        const tM={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
         const cM={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
         let rows='';
         r.by_type.forEach(function(t){
@@ -628,60 +629,60 @@ async function loadMatchingStatus(){
                +'<td style="font-size:18px;font-weight:700;color:var(--green)">'+t.count+'</td>'
                +'<td style="color:var(--text2)">'+(r.sell_count>0?Math.round(t.count/r.sell_count*100):0)+'%</td></tr>';
         });
-        typeEl.innerHTML='<table><thead><tr><th>아이템</th><th>판매예약</th><th>비중</th></tr></thead><tbody>'+rows+'</tbody></table>';
-      }else{typeEl.innerHTML='<div class="empty-state"><div class="icon">&#x1F4E6;</div><div>판매 예약 없음</div></div>';}
+        typeEl.innerHTML='<table><thead><tr><th>&#50500;&#51060;&#53596;</th><th>&#54032;&#47588;&#50696;&#50557;</th><th>&#48708;&#51728;</th></tr></thead><tbody>'+rows+'</tbody></table>';
+      }else{typeEl.innerHTML='<div class="empty-state"><div class="icon">&#128230;</div><div>&#54032;&#47588; &#50696;&#50557; &#50630;&#51020;</div></div>';}
       const stEl=document.getElementById(prefix+'-by-stage');
       if(r.by_stage&&r.by_stage.length){
-        const tM={bronze:'수정',silver:'루비',gold:'다이아'};
+        const tM={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
         const cM={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
         let rows='';
         r.by_stage.forEach(function(s){
           rows+='<tr><td><span style="color:'+(cM[s.bar_type]||'#fff')+';font-weight:600">'+(tM[s.bar_type]||s.bar_type)+'</span></td>'
-               +'<td style="text-align:center"><strong>'+s.stage+'단계</strong></td>'
-               +'<td style="text-align:center;font-weight:700;color:var(--green)">'+s.count+'개</td></tr>';
+               +'<td style="text-align:center"><strong>'+s.stage+'&#45800;&#44228;</strong></td>'
+               +'<td style="text-align:center;font-weight:700;color:var(--green)">'+ s.count+'&#44060;</td></tr>';
         });
-        stEl.innerHTML='<table><thead><tr><th>종류</th><th>단계</th><th>수량</th></tr></thead><tbody>'+rows+'</tbody></table>';
-      }else{stEl.innerHTML='<div class="empty-state"><div class="icon">&#x1F522;</div><div>단계별 데이터 없음</div></div>';}
+        stEl.innerHTML='<table><thead><tr><th>&#51333;&#47448;</th><th>&#45800;&#44228;</th><th>&#49688;&#47049;</th></tr></thead><tbody>'+rows+'</tbody></table>';
+      }else{stEl.innerHTML='<div class="empty-state"><div class="icon">&#128290;</div><div>&#45800;&#44228;&#48324; &#45936;&#51060;&#53552; &#50630;&#51020;</div></div>';}
     }
     renderRound(d.round1,'r1');renderRound(d.round2,'r2');
-  }catch(e){toast('매칭 현황 로드 실패: '+e.message,'error');}
+  }catch(e){toast('&#47588;&#52825; &#54788;&#54889; &#47196;&#46300; &#49892;&#54036;: '+e.message,'error');}
 }
 async function runMatching(roundNum){
   roundNum=roundNum||1;
   const btn=event.target;
-  btn.disabled=true;btn.textContent='⏳ 실행 중...';
+  btn.disabled=true;btn.textContent='&#9203; &#49892;&#54665; &#51473;...';
   const resultId='match-result-'+roundNum;
   try{
     const d=await apiAdmin('/admin/run-matching',{method:'POST',body:JSON.stringify({round:roundNum})});
-    toast(d.message||roundNum+'차 매칭 완료!','success');
-    document.getElementById(resultId).innerHTML='<div class="match-result"><div style="font-weight:600;margin-bottom:8px;color:var(--green)">&#x2705; '+roundNum+'차 매칭 완료</div>'
-      +'<div class="match-row"><span>처리된 예약</span><span><strong>'+(d.matched||0)+'</strong>건</span></div>'
-      +'<div class="match-row"><span>완료 시각</span><span>'+new Date().toLocaleTimeString('ko-KR')+'</span></div></div>';
+    toast(d.message||roundNum+'&#52264; &#47588;&#52825; &#50756;&#47308;!','success');
+    document.getElementById(resultId).innerHTML='<div class="match-result"><div style="font-weight:600;margin-bottom:8px;color:var(--green)">&#9989; '+roundNum+'&#52264; &#47588;&#52825; &#50756;&#47308;</div>'
+      +'<div class="match-row"><span>&#52376;&#47532;&#46108; &#50696;&#50557;</span><span><strong>'+(d.matched||0)+'</strong>&#44148;</span></div>'
+      +'<div class="match-row"><span>&#50756;&#47308; &#49884;&#44033;</span><span>'+new Date().toLocaleTimeString('ko-KR')+'</span></div></div>';
     loadMatchingStatus();
   }catch(e){
     toast(e.message,'error');
-    document.getElementById(resultId).innerHTML='<div class="match-result" style="border-color:var(--red)"><div style="font-weight:600;color:var(--red)">&#x274C; 매칭 실패</div>'
+    document.getElementById(resultId).innerHTML='<div class="match-result" style="border-color:var(--red)"><div style="font-weight:600;color:var(--red)">&#10060; &#47588;&#52825; &#49892;&#54036;</div>'
       +'<div style="font-size:12px;color:var(--text2);margin-top:6px">'+e.message+'</div></div>';
   }
-  btn.disabled=false;btn.textContent='🚀 '+roundNum+'차 매칭 실행하기';
+  btn.disabled=false;btn.textContent='&#128640; '+roundNum+'&#52264; &#47588;&#52825; &#49892;&#54665;&#54616;&#44592;';
 }
 
 async function loadPenalties() {
-  document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ³</div><div>Ã«Â¡ÂÃ«ÂÂ© Ã¬Â¤Â...</div></div>';
+  document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ³</div><div>ÃÂ«ÃÂ¡ÃÂÃÂ«ÃÂÃÂ© ÃÂ¬ÃÂ¤ÃÂ...</div></div>';
   try {
     const d = await apiAdmin('/admin/users');
     const penalized = d.users.filter(function(u) { return u.penalty_count > 0; });
     if (!penalized.length) {
-      document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° Ã­ÂÂÃ¬ÂÂ Ã¬ÂÂÃ¬ÂÂ</div></div>';
+      document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ</div><div>ÃÂ­ÃÂÃÂ¨ÃÂ«ÃÂÃÂÃÂ­ÃÂÃÂ° ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ</div></div>';
     } else {
       let rows = '';
       penalized.forEach(function(u) {
-        rows += '<tr><td>' + u.nickname + '</td><td><span class="badge badge-failed">' + u.penalty_count + 'Ã­ÂÂ</span></td><td style="color:var(--red)">-</td></tr>';
+        rows += '<tr><td>' + u.nickname + '</td><td><span class="badge badge-failed">' + u.penalty_count + 'ÃÂ­ÃÂÃÂ</span></td><td style="color:var(--red)">-</td></tr>';
       });
-      document.getElementById('penalty-list').innerHTML = '<table><thead><tr><th>Ã­ÂÂÃ¬ÂÂ</th><th>Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ°</th><th>Ã¬Â ÂÃ¬Â§ÂÃªÂ¹ÂÃ¬Â§Â</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      document.getElementById('penalty-list').innerHTML = '<table><thead><tr><th>ÃÂ­ÃÂÃÂÃÂ¬ÃÂÃÂ</th><th>ÃÂ­ÃÂÃÂ¨ÃÂ«ÃÂÃÂÃÂ­ÃÂÃÂ°</th><th>ÃÂ¬ÃÂ ÃÂÃÂ¬ÃÂ§ÃÂÃÂªÃÂ¹ÃÂÃÂ¬ÃÂ§ÃÂ</th></tr></thead><tbody>' + rows + '</tbody></table>';
     }
   } catch(e) {
-    document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">Ã¢ÂÂ</div><div>Ã­ÂÂ¨Ã«ÂÂÃ­ÂÂ° Ã­ÂÂÃ­ÂÂ© Ã¬ÂÂÃ¬ÂÂ</div></div>';
+    document.getElementById('penalty-list').innerHTML = '<div class="empty-state"><div class="icon">ÃÂ¢ÃÂÃÂ</div><div>ÃÂ­ÃÂÃÂ¨ÃÂ«ÃÂÃÂÃÂ­ÃÂÃÂ° ÃÂ­ÃÂÃÂÃÂ­ÃÂÃÂ© ÃÂ¬ÃÂÃÂÃÂ¬ÃÂÃÂ</div></div>';
   }
 }
 
