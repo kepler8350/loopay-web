@@ -18,60 +18,8 @@ def index():
 
 @app.route('/admin')
 def admin():
-    import os, re
-    path = os.path.join(STATIC_DIR, 'admin.html')
-    with open(path, 'rb') as f:
-        raw_bytes = f.read()
-    # Fix double-encoding: UTF-8 bytes were encoded as UTF-8 again
-    try:
-        text1 = raw_bytes.decode('utf-8')
-        text2 = bytes([ord(c) & 0xFF for c in text1]).decode('utf-8', errors='replace')
-    except Exception:
-        text2 = raw_bytes.decode('utf-8', errors='replace')
-    # Fix matching section: replace FFFD-corrupted content with correct Korean
-    matching_html = """    <div id="page-matching" class="page">
-      <div class="page-title">\ub9e4\uce6d \uc2e4\ud589</div>
-      <div class="page-sub" id="matching-date-sub">\uc624\ub298\uc758 \ub9e4\uce6d \ud604\ud669 \ubc0f \uc2e4\ud589</div>
-      <div style="display:flex;gap:10px;margin-bottom:20px">
-        <button class="btn btn-primary" id="round-tab-1" onclick="switchRound(1,this)">1\ucc28 \ub9e4\uce6d</button>
-        <button class="btn btn-secondary" id="round-tab-2" onclick="switchRound(2,this)">2\ucc28 \ub9e4\uce6d</button>
-        <button class="refresh-btn" onclick="loadMatchingStatus()" style="margin-left:auto">&#x1F504; \uc0c8\ub85c\uace0\uce68</button>
-      </div>
-      <div id="round-panel-1">
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
-          <div class="stat-card"><div class="stat-label">\uad6c\ub9e4 \uc608\uc57d \uc218</div><div class="stat-val blue" id="r1-buy">-</div><div class="stat-change">\uc624\ub298 1\ucc28 \uad6c\ub9e4 \ub300\uae30</div></div>
-          <div class="stat-card"><div class="stat-label">\ud310\ub9e4 \uc608\uc57d \uc218</div><div class="stat-val green" id="r1-sell">-</div><div class="stat-change">\ub9e4\uce6d \uac00\ub2a5 \uc544\uc774\ud15c</div></div>
-          <div class="stat-card"><div class="stat-label">\ub9e4\uce6d\uc728</div><div class="stat-val yellow" id="r1-rate">-</div><div class="stat-change">\uad6c\ub9e4/\ud310\ub9e4 \ube44\uc728</div></div>
-        </div>
-        <div class="two-col">
-          <div class="table-card"><div class="table-header"><div class="table-title">\uc544\uc774\ud15c\ubc44 \ud310\ub9e4\uc608\uc57d</div></div><div id="r1-by-type"><div class="empty-state"><div class="icon">&#x23F3;</div><div>\ub85c\ub529 \uc911...</div></div></div></div>
-          <div class="table-card"><div class="table-header"><div class="table-title">\ub2e8\uacc4\ubc44 \ud310\ub9e4\uc608\uc57d</div></div><div id="r1-by-stage"><div class="empty-state"><div class="icon">&#x23F3;</div><div>\ub85c\ub529 \uc911...</div></div></div></div>
-        </div>
-        <div class="table-card" style="margin-top:16px">
-          <div class="table-header"><div class="table-title">&#x26A1; 1\ucc28 \ub9e4\uce6d \uc2e4\ud589</div></div>
-          <div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(1)">&#x1F680; 1\ucc28 \ub9e4\uce6d \uc2e4\ud589\ud558\uae30</button><div id="match-result-1" style="margin-top:14px"></div></div>
-        </div>
-      </div>
-      <div id="round-panel-2" style="display:none">
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
-          <div class="stat-card"><div class="stat-label">\uad6c\ub9e4 \uc608\uc57d \uc218</div><div class="stat-val blue" id="r2-buy">-</div><div class="stat-change">\uc624\ub298 2\ucc28 \uad6c\ub9e4 \ub300\uae30</div></div>
-          <div class="stat-card"><div class="stat-label">\ud310\ub9e4 \uc608\uc57d \uc218</div><div class="stat-val green" id="r2-sell">-</div><div class="stat-change">\ub9e4\uce6d \uac00\ub2a5 \uc544\uc774\ud15c</div></div>
-          <div class="stat-card"><div class="stat-label">\ub9e4\uce6d\uc728</div><div class="stat-val yellow" id="r2-rate">-</div><div class="stat-change">\uad6c\ub9e4/\ud310\ub9e4 \ube44\uc728</div></div>
-        </div>
-        <div class="two-col">
-          <div class="table-card"><div class="table-header"><div class="table-title">\uc544\uc774\ud15c\ubc44 \ud310\ub9e4\uc608\uc57d</div></div><div id="r2-by-type"><div class="empty-state"><div class="icon">&#x23F3;</div><div>\ub85c\ub529 \uc911...</div></div></div></div>
-          <div class="table-card"><div class="table-header"><div class="table-title">\ub2e8\uacc4\ubc44 \ud310\ub9e4\uc608\uc57d</div></div><div id="r2-by-stage"><div class="empty-state"><div class="icon">&#x23F3;</div><div>\ub85c\ub529 \uc911...</div></div></div></div>
-        </div>
-        <div class="table-card" style="margin-top:16px">
-          <div class="table-header"><div class="table-title">&#x26A1; 2\ucc28 \ub9e4\uce6d \uc2e4\ud589</div></div>
-          <div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(2)">&#x1F680; 2\ucc28 \ub9e4\uce6d \uc2e4\ud589\ud558\uae30</button><div id="match-result-2" style="margin-top:14px"></div></div>
-        </div>
-      </div>
-    </div>"""
-    text2 = re.sub(r'<div id="page-matching".*?</div>\s*\n\s*', matching_html + '\n    ', text2, flags=re.DOTALL)
-    resp = make_response(text2)
-    resp.headers['Content-Type'] = 'text/html; charset=utf-8'
-    return resp
+    return send_from_directory(STATIC_DIR, 'admin.html')
+
 @app.route('/api/auth/kakao-login', methods=['POST'])
 def kakao_login():
     data = request.json or {}
