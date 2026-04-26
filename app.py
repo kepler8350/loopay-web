@@ -20,8 +20,16 @@ def index():
 def admin():
     import os
     path = os.path.join(STATIC_DIR, 'admin.html')
-    with open(path, 'r', encoding='utf-8') as f:
-        content = f.read()
+    with open(path, 'rb') as f:
+        raw_bytes = f.read()
+    # Fix double-encoding: decode as UTF-8, re-encode each char as byte, decode again
+    try:
+        text1 = raw_bytes.decode('utf-8')
+        bytes2 = bytes([ord(c) & 0xFF for c in text1])
+        text2 = bytes2.decode('utf-8', errors='replace')
+        content = text2
+    except Exception:
+        content = raw_bytes.decode('utf-8', errors='replace')
     resp = make_response(content)
     resp.headers['Content-Type'] = 'text/html; charset=utf-8'
     return resp
