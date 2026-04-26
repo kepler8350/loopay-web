@@ -104,8 +104,13 @@ def _seed(conn):
     c.execute("SELECT id FROM users WHERE kakao_id='demo_kakao_001'")
     if not c.fetchone():
         c.execute("""INSERT OR IGNORE INTO users (kakao_id, nickname, email, level, charge_points, exchange_points, cumulative_count)
-                     VALUES ('demo_kakao_001','íê¸¸ë','hong@test.com',3,2400,1200,524)""")
+                     VALUES ('demo_kakao_001','Ã­ÂÂÃªÂ¸Â¸Ã«ÂÂ','hong@test.com',3,2400,1200,524)""")
         uid = c.lastrowid
+        if not uid:
+            c.execute("SELECT id FROM users WHERE kakao_id='demo_kakao_001'")
+            row = c.fetchone()
+            uid = row[0] if row else None
+        if not uid: return
         import datetime
         today = datetime.date.today()
         d_3 = (today - datetime.timedelta(days=2)).isoformat()
