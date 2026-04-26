@@ -103,8 +103,8 @@ def _seed(conn):
     c = conn.cursor()
     c.execute("SELECT id FROM users WHERE kakao_id='demo_kakao_001'")
     if not c.fetchone():
-        c.execute("""INSERT INTO users (kakao_id, nickname, email, level, charge_points, exchange_points, cumulative_count)
-                     VALUES ('demo_kakao_001','홍길동','hong@test.com',3,2400,1200,524)""")
+        c.execute("""INSERT OR IGNORE INTO users (kakao_id, nickname, email, level, charge_points, exchange_points, cumulative_count)
+                     VALUES ('demo_kakao_001','íê¸¸ë','hong@test.com',3,2400,1200,524)""")
         uid = c.lastrowid
         import datetime
         today = datetime.date.today()
@@ -121,7 +121,7 @@ def _seed(conn):
     from werkzeug.security import generate_password_hash
     c.execute("SELECT id FROM admins WHERE username='admin'")
     if not c.fetchone():
-        c.execute("INSERT INTO admins(username,password_hash) VALUES('admin',?)",
+        c.execute("INSERT OR IGNORE INTO admins(username,password_hash) VALUES('admin',?)",
                   (generate_password_hash('admin1234'),))
     conn.commit()
 
