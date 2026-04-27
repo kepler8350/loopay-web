@@ -4,14 +4,26 @@ import os
 DB_PATH = os.environ.get('DB_PATH', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'loopay.db'))
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+    except sqlite3.OperationalError:
+        pass
     return conn
 
 def init_db():
-    conn = get_db()
+    import time
+    for attempt in range(3):
+        try:
+            conn = get_db()
+            break
+        except sqlite3.OperationalError as e:
+            if attempt < 2:
+                time.sleep(2)
+            else:
+                raise
     c = conn.cursor()
 
     c.execute('''CREATE TABLE IF NOT EXISTS users (
