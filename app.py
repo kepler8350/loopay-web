@@ -343,7 +343,7 @@ def combine_preview():
     conn = get_db()
     try:
         items = conn.execute(
-            'SELECT * FROM items WHERE id IN (?,?) AND user_id=? AND status="active"',
+            'SELECT * FROM items WHERE id IN (?,?) AND user_id=?',
             (item1_id, item2_id, user_id)
         ).fetchall()
         if len(items) != 2:
@@ -400,7 +400,7 @@ def combine_execute():
     conn = get_db()
     try:
         items = conn.execute(
-            'SELECT * FROM items WHERE id IN (?,?) AND user_id=? AND status="active"',
+            'SELECT * FROM items WHERE id IN (?,?) AND user_id=?',
             (item1_id, item2_id, user_id)
         ).fetchall()
         if len(items) != 2:
