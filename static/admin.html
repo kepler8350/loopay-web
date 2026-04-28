@@ -106,9 +106,78 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div id="page-charges" class="page"><div class="page-title">&#52649;&#51204; &#44288;&#47532;</div><div class="page-sub">&#52649;&#51204; &#50836;&#52397; &#49849;&#51064; &#48143; &#44288;&#47532;</div>
 <div class="table-card"><div class="table-header"><div class="table-title">&#52649;&#51204; &#50836;&#52397; &#47785;&#47197;</div></div>
 <table><thead><tr><th>ID</th><th>&#45769;&#45348;&#51076;</th><th>&#44552;&#50529;</th><th>&#49345;&#53468;</th><th>&#49884;&#44033;</th><th>&#52376;&#47532;</th></tr></thead><tbody id="admin-charges"></tbody></table></div></div>
-<div id="page-reservations" class="page"><div class="page-title">&#50696;&#50557; &#54788;&#54889;</div><div class="page-sub">&#51204;&#52404; &#50696;&#50557; &#54788;&#54889;</div>
-<div class="table-card"><div class="table-header"><div class="table-title">&#50696;&#50557; &#47785;&#47197;</div></div><div id="admin-reservations"><div class="empty-state"><div>&#44592;&#45733; &#44060;&#48156; &#51473;</div></div></div></div></div>
-<div id="page-matching" class="page">
+<div id="page-reservations" class="page">
+      <h2 class="page-title">&#50696;&#50557; &#54788;&#54669;</h2>
+      <p class="page-subtitle">&#50500;&#51060;&#53596;&#48324; &#44396;&#47588;/&#54032;&#47588; &#50696;&#50557; &#54788;&#54669;</p>
+
+      <div id="res-status-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+        <div class="stat-card" id="res-card-bronze">
+          <div class="stat-label">&#49688;&#51221;</div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px">
+            <span style="color:#4fc3f7;font-size:13px">&#44396;&#47588; <span id="res-buy-bronze">-</span>&#44060;</span>
+            <span style="color:#66bb6a;font-size:13px">&#54032;&#47588; <span id="res-sell-bronze">-</span>&#44060;</span>
+            <span style="color:#ffa726;font-size:13px">&#47588;&#52845;&#51728; <span id="res-rate-bronze">-</span>%</span>
+          </div>
+        </div>
+        <div class="stat-card" id="res-card-silver">
+          <div class="stat-label">&#47336;&#48708;</div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px">
+            <span style="color:#4fc3f7;font-size:13px">&#44396;&#47588; <span id="res-buy-silver">-</span>&#44060;</span>
+            <span style="color:#66bb6a;font-size:13px">&#54032;&#47588; <span id="res-sell-silver">-</span>&#44060;</span>
+            <span style="color:#ffa726;font-size:13px">&#47588;&#52845;&#51728; <span id="res-rate-silver">-</span>%</span>
+          </div>
+        </div>
+        <div class="stat-card" id="res-card-gold">
+          <div class="stat-label">&#45796;&#51060;&#50500;</div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px">
+            <span style="color:#4fc3f7;font-size:13px">&#44396;&#47588; <span id="res-buy-gold">-</span>&#44060;</span>
+            <span style="color:#66bb6a;font-size:13px">&#54032;&#47588; <span id="res-sell-gold">-</span>&#44060;</span>
+            <span style="color:#ffa726;font-size:13px">&#47588;&#52845;&#51728; <span id="res-rate-gold">-</span>%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">&#52628;&#44032; &#50696;&#50557; (&#47336;&#54168;&#51060; &#44228;&#51221;)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 80px 80px 120px;gap:10px;align-items:end;padding:16px">
+          <div>
+            <label style="font-size:12px;color:#aaa;display:block;margin-bottom:4px">&#50500;&#51060;&#53596;</label>
+            <select id="add-res-type" style="width:100%;padding:8px;background:#1e2235;border:1px solid #2a2d3e;border-radius:6px;color:#e8eaf6;font-size:13px">
+              <option value="bronze">&#49688;&#51221;</option>
+              <option value="silver">&#47336;&#48708;</option>
+              <option value="gold">&#45796;&#51060;&#50500;</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:#aaa;display:block;margin-bottom:4px">&#44396;&#47588;/&#54032;&#47588;</label>
+            <select id="add-res-kind" style="width:100%;padding:8px;background:#1e2235;border:1px solid #2a2d3e;border-radius:6px;color:#e8eaf6;font-size:13px">
+              <option value="buy">&#44396;&#47588; &#50696;&#50557;</option>
+              <option value="sell">&#54032;&#47588; &#50696;&#50557;</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:#aaa;display:block;margin-bottom:4px">&#45800;&#44228;</label>
+            <input id="add-res-stage" type="number" min="1" max="21" value="1" style="width:100%;padding:8px;background:#1e2235;border:1px solid #2a2d3e;border-radius:6px;color:#e8eaf6;font-size:13px">
+          </div>
+          <div>
+            <label style="font-size:12px;color:#aaa;display:block;margin-bottom:4px">&#49688;&#47049;</label>
+            <input id="add-res-count" type="number" min="1" max="100" value="1" style="width:100%;padding:8px;background:#1e2235;border:1px solid #2a2d3e;border-radius:6px;color:#e8eaf6;font-size:13px">
+          </div>
+          <div>
+            <button class="btn btn-primary" style="width:100%;padding:10px;font-size:13px" onclick="addReservation()">&#52628;&#44032; &#50696;&#50557;</button>
+          </div>
+        </div>
+        <div id="add-res-result" style="padding:0 16px 12px;font-size:13px"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">&#50696;&#50557; &#47785;&#47197; <button class="btn btn-secondary" style="float:right;padding:4px 12px;font-size:12px" onclick="loadReservationStatus()">&#49352;&#47196;&#44256;&#52840;</button></div>
+        <table class="data-table">
+          <thead><tr><th>ID</th><th>&#45357;&#45348;&#51076;</th><th>&#50500;&#51060;&#53596;</th><th>&#44396;&#47588;/&#54032;&#47588;</th><th>&#45800;&#44228;</th><th>&#49345;&#53468;</th><th>&#45216;&#51676;</th></tr></thead>
+          <tbody id="res-list-body"><tr><td colspan="7" style="text-align:center;color:#666">&#47196;&#46377; &#51473;...</td></tr></tbody>
+        </table>
+      </div>
+      id="page-matching" class="page">
 <div class="page-title">&#47588;&#52845; &#49892;&#54665;</div>
 <div class="page-sub" id="matching-date-sub">&#50724;&#45720;&#51032; &#47588;&#52845; &#54788;&#54889; &#48143; &#49892;&#54665;</div>
 <div style="display:flex;gap:10px;margin-bottom:20px">
@@ -165,6 +234,47 @@ function runLuckyMatching(barType){
     .then(d=>{toast(d.matched+'&#44148; &#54665;&#50868; &#47588;&#52845; &#50756;&#47308;','success');loadMatchingStatus();})
     .catch(e=>toast(e.message,'error'))
     .finally(()=>{btn.disabled=false;btn.textContent='&#127340; &#54665;&#50868; &#47588;&#52845; &#49892;&#54665;&#54616;&#44592;';});
+}
+function loadReservationStatus(){
+  apiAdmin('/admin/reservation-status')
+    .then(function(d){
+      ['bronze','silver','gold'].forEach(function(bt){
+        var s = d[bt] || {};
+        document.getElementById('res-buy-'+bt).textContent = s.buy_count||0;
+        document.getElementById('res-sell-'+bt).textContent = s.sell_count||0;
+        document.getElementById('res-rate-'+bt).textContent = s.match_rate||0;
+      });
+    }).catch(function(e){ toast(e.message,'error'); });
+  apiAdmin('/admin/reservations-list')
+    .then(function(d){
+      var rows = (d.reservations||[]);
+      var barNames = {bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
+      var tbody = document.getElementById('res-list-body');
+      if(!tbody) return;
+      if(!rows.length){ tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:#666">&#50696;&#50557; &#50630;&#51020;</td></tr>'; return; }
+      tbody.innerHTML = rows.slice(0,50).map(function(r){
+        var statusColor = r.status==='pending'?'#ffa726':r.status==='matched'?'#66bb6a':'#ef5350';
+        var typeLabel = r.type==='buy'?'&#44396;&#47588;':'&#54032;&#47588;';
+        return '<tr><td>'+r.id+'</td><td>'+(r.username||'-')+'</td><td>'+(barNames[r.bar_type]||r.bar_type)+'</td><td style="color:'+statusColor+'">'+typeLabel+'</td><td>'+(r.stage||'-')+'&#45800;&#44228;</td><td style="color:'+statusColor+'">'+r.status+'</td><td>'+(r.reserve_date||'-')+'</td></tr>';
+      }).join('');
+    }).catch(function(){});
+}
+function addReservation(){
+  var barType = document.getElementById('add-res-type').value;
+  var kind = document.getElementById('add-res-kind').value;
+  var stage = parseInt(document.getElementById('add-res-stage').value)||1;
+  var count = parseInt(document.getElementById('add-res-count').value)||1;
+  var result = document.getElementById('add-res-result');
+  result.textContent='&#52628;&#44032; &#51473;...';
+  apiAdmin('/admin/add-reservation',{method:'POST',body:JSON.stringify({bar_type:barType,type:kind,stage:stage,count:count})})
+    .then(function(d){
+      result.style.color='#66bb6a';
+      result.textContent='&#52628;&#44032; &#50756;&#47308; ('+count+'&#44060;)';
+      loadReservationStatus();
+    }).catch(function(e){
+      result.style.color='#ef5350';
+      result.textContent='&#50724;&#47448;: '+e.message;
+    });
 }
 function loadPenalties(){document.getElementById('admin-penalties').innerHTML='<tr><td colspan="5"><div class="empty-state" style="padding:20px"><div>&#44592;&#45733; &#44060;&#48156; &#51473;</div></div></td></tr>';}
 function switchRound(num,el){document.querySelectorAll('#page-matching .btn').forEach(function(b){if(b.id&&b.id.startsWith('round-tab-')){b.classList.remove('btn-primary');b.classList.add('btn-secondary');}});el.classList.remove('btn-secondary');el.classList.add('btn-primary');document.getElementById('round-panel-1').style.display=num===1?'block':'none';document.getElementById('round-panel-2').style.display=num===2?'block':'none';}
