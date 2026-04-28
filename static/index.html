@@ -500,7 +500,7 @@ function toast(msg, dur=2500){
   el.textContent=msg;el.classList.add('show');
   setTimeout(()=>el.classList.remove('show'),dur);
 }
-async function demoLogin(){
+window.demoLogin = async function(){
   const btn = document.querySelector('.demo-btn');
   if(btn){ btn.disabled=true; btn.textContent='로그인 중...'; }
   try {
