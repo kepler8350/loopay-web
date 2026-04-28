@@ -466,6 +466,22 @@ def admin_reservation_status():
     finally:
         conn.close()
 
+@app.route('/api/admin/reservations-list', methods=['GET'])
+@jwt_required()
+def admin_reservations_list():
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            '''SELECT r.id, r.bar_type, r.type, r.status, r.reserve_date,
+                      r.stage, u.kakao_id as username
+               FROM reservations r
+               LEFT JOIN users u ON r.user_id = u.id
+               ORDER BY r.created_at DESC LIMIT 100'''
+        ).fetchall()
+        return jsonify(reservations=[dict(row) for row in rows])
+    finally:
+        conn.close()
+
 @app.route('/api/admin/add-reservation', methods=['POST'])
 @jwt_required()
 def admin_add_reservation():
