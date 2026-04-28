@@ -861,55 +861,69 @@ function renderCombineSelected(){
   const barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
 
   if(!selDiv) return;
-  if(combineSelected.length===0){ selDiv.style.display='none'; return; }
+
+  // 0개: 영역 숨김
+  if(combineSelected.length===0){
+    selDiv.style.display='none';
+    if(pr) pr.innerHTML='';
+    if(execBtn) execBtn.style.display='none';
+    return;
+  }
   selDiv.style.display='block';
 
-  // 선택 뱃지
-  const slot1 = combineSelected[0];
-  const slot2 = combineSelected[1];
-  const name1 = slot1 ? (barNames[slot1.barType]||slot1.barType)+' '+slot1.stage+'&#45800;&#44228;' : '&#49440;&#53469; &#54644;&#51452;&#49464;&#50836;';
-  const name2 = slot2 ? (barNames[slot2.barType]||slot2.barType)+' '+slot2.stage+'&#45800;&#44228;' : '&#49440;&#53469; &#54644;&#51452;&#49464;&#50836;';
-  const badge1 = slot1
-    ? '<span style="background:#4fc3f7;color:#000;padding:3px 8px;border-radius:12px;font-size:12px;font-weight:700">'+name1+'</span>'
-    : '<span style="background:#ddd;color:#999;padding:3px 8px;border-radius:12px;font-size:12px">'+name1+'</span>';
-  const badge2 = slot2
-    ? '<span style="background:#66bb6a;color:#fff;padding:3px 8px;border-radius:12px;font-size:12px;font-weight:700">'+name2+'</span>'
-    : '<span style="background:#ddd;color:#999;padding:3px 8px;border-radius:12px;font-size:12px">'+name2+'</span>';
-  selInfo.innerHTML = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+badge1+'<span style="color:#aaa">+</span>'+badge2+'</div>';
+  const slot1 = combineSelected[0] || null;
+  const slot2 = combineSelected[1] || null;
+
+  // 뱃지 렌더링
+  const makeBadge = function(slot, color, textColor){
+    if(!slot) return '<span style="background:#ddd;color:#999;padding:3px 10px;border-radius:12px;font-size:12px">&#49440;&#53469; &#54644;&#51452;&#49464;&#50836;</span>';
+    var name = (barNames[slot.barType]||slot.barType)+' '+slot.stage+'&#45800;&#44228;';
+    return '<span style="background:'+color+';color:'+textColor+';padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700">'+name+'</span>';
+  };
+  if(selInfo) selInfo.innerHTML =
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+    + makeBadge(slot1,'#4fc3f7','#000')
+    + '<span style="color:#aaa;font-size:14px">+</span>'
+    + makeBadge(slot2,'#66bb6a','#fff')
+    + '</div>';
 
   if(!pr || !execBtn) return;
 
-  if(combineSelected.length===2){
+  // 2개 선택 완료 시 미리보기
+  if(slot1 && slot2){
     pr.innerHTML='<div style="color:#aaa;font-size:12px">&#44228;&#49328; &#51473;...</div>';
     execBtn.style.display='none';
-    const _tok = localStorage.getItem('lp_token')||'';
+    var _tok = localStorage.getItem('lp_token')||'';
     fetch('/api/combine/preview',{
       method:'POST',
       headers:{'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},
       body:JSON.stringify({item1_id:slot1.id,item2_id:slot2.id})
     })
     .then(function(res){ return res.json(); })
-    .then(function(d){
-      if(d.can_combine){
+    .then(function(resp){
+      if(resp.can_combine){
         pr.innerHTML =
-          '<div class="row"><span class="label">&#54633;&#49328; &#44396;&#47588;&#44032;</span><span class="val">'+d.total_buy.toLocaleString()+'&#50896;</span></div>'
-          +'<div class="row"><span class="label">&#54633;&#49328; &#54644; &#45800;&#44228;</span><span class="val yellow">'+d.combined_stage+'&#45800;&#44228;</span></div>'
-          +'<div class="row"><span class="label">&#54633;&#49328; &#54032;&#47588;&#44032;</span><span class="val green">'+d.combined_sell.toLocaleString()+'&#50896;</span></div>'
+          '<div class="row"><span class="label">&#44208;&#54633; &#44396;&#47588;&#44032;</span><span class="val">'+resp.total_buy.toLocaleString()+'&#50896;</span></div>'
+          +'<div class="row"><span class="label">&#44208;&#54633; &#54032;&#47588; &#45800;&#44228;</span><span class="val yellow">'+resp.combined_stage+'&#45800;&#44228;</span></div>'
+          +'<div class="row"><span class="label">&#44208;&#54633; &#54032;&#47588;&#44032;</span><span class="val green">'+resp.combined_sell.toLocaleString()+'&#50896;</span></div>'
           +'<div class="row"><span class="label">&#54252;&#51064;&#53944; &#48708;&#50857;</span><span class="val red">250P (30,000&#50896;)</span></div>'
           +'<div class="row" style="border-top:1px solid #ddd;margin-top:6px;padding-top:6px">'
           +'<span class="label" style="font-weight:700">&#52572;&#51333; &#49692;&#49688;&#51061;</span>'
-          +'<span class="val green" style="font-size:15px;font-weight:700">'+d.net_profit.toLocaleString()+'&#50896;</span></div>';
+          +'<span class="val green" style="font-size:15px;font-weight:700">'+resp.net_profit.toLocaleString()+'&#50896;</span></div>';
         execBtn.style.display='block';
       } else {
-        var msg = d.error || (d.normal_profit>23000 ? '&#49688;&#51775; &#54620;&#46020; &#52488;&#44284;' : '&#44057;&#51008; &#51333;&#47448;&#47564; &#44208;&#54633; &#44032;&#45733;');
+        var msg = (resp.error==='same type only')
+          ? '&#44057;&#51008; &#51333;&#47448;&#47564; &#44208;&#54633; &#44032;&#45733;'
+          : (resp.normal_profit>23000 ? '&#49688;&#51775; &#54620;&#46020; &#52488;&#44284;' : (resp.error||'&#44208;&#54633; &#48276;&#44284; &#50630;&#51020;'));
         pr.innerHTML='<div style="color:#c62828;font-size:13px">'+msg+'</div>';
         execBtn.style.display='none';
       }
     })
     .catch(function(e){
-      pr.innerHTML='<div style="color:#c62828">'+e.message+'</div>';
+      pr.innerHTML='<div style="color:#c62828;font-size:12px">'+e.message+'</div>';
     });
   } else {
+    // 1개 선택 시 미리보기 초기화
     pr.innerHTML='';
     execBtn.style.display='none';
   }
