@@ -205,7 +205,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <svg width="20" height="20" viewBox="0 0 20 20"><path fill="#3a1d1d" d="M10 2C5.58 2 2 4.91 2 8.5c0 2.32 1.52 4.35 3.82 5.5L4.9 17.2a.3.3 0 00.44.34L9.1 14.9c.3.03.6.05.9.05 4.42 0 8-2.91 8-6.5S14.42 2 10 2z"/></svg>
       카카오톡으로 로그인
     </button>
-    <button class="demo-btn" onclick="demoLogin()">데모 계정으로 체험하기</button>
     <div style="margin-top:20px;font-size:12px;color:var(--text2)">API서버: <span id="api-status">확인 중...</span></div>
   </div>
 
@@ -507,13 +506,7 @@ async function api(path, opts={}){
 }
 
 // --- auth -----------------------------------------------------------------
-async function demoLogin(){
-  try{
-    const d = await api('/auth/kakao-login',{method:'POST',body:JSON.stringify({kakao_id:'demo_kakao_001',nickname:'홍길동',email:'hong@test.com'})});
-    token=d.token; localStorage.setItem('lp_token',token);
-    showMainApp(); loadUserData();
-  }catch(e){toast('로그인 실패: '+e.message);}
-}
+async 
 function loginKakao(){ toast('카카오 SDK 연동이 필요합니다. 데모 계정으로 체험해주세요.'); }
 
 async function checkApiStatus(){
