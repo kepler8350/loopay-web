@@ -173,8 +173,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .combine-group-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px}
 .combine-item-card{background:#1e2235;border:2px solid #2a2d3e;border-radius:7px;padding:8px 10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px}
 .combine-item-card.selected{border-color:#4fc3f7;background:#1a3050}
-.combine-item-card .item-stage{font-size:15px;font-weight:700;color:#4fc3f7;min-width:44px}
+.combine-item-card .item-stage{font-size:12px;font-weight:600;color:#4fc3f7;min-width:40px}
 .combine-item-card .item-price{font-size:11px;color:#66bb6a;margin-left:auto}
+.combine-selected{background:#fff;border-radius:10px;padding:14px;margin-top:8px;color:#222}
+.combine-sel-title{font-size:13px;font-weight:700;color:#1976d2;margin-bottom:8px}
+.combine-preview{background:#f5f7fa;border-radius:8px;padding:12px;margin:8px 0;font-size:13px;line-height:1.9;color:#333}
+.combine-preview .row{display:flex;justify-content:space-between}
+.combine-preview .label{color:#777}
+.combine-preview .val{font-weight:600;color:#222}
+.combine-preview .val.green{color:#2e7d32}
+.combine-preview .val.red{color:#c62828}
+.combine-preview .val.yellow{color:#e65100}
 .combine-selected{background:#1a1d2e;border-radius:12px;padding:16px;margin-top:8px}
 .combine-sel-title{font-size:14px;font-weight:700;color:#4fc3f7;margin-bottom:10px}
 .combine-preview{background:#0f1117;border-radius:8px;padding:12px;margin:10px 0;font-size:13px;line-height:1.8}
@@ -830,36 +839,43 @@ async function toggleCombineItem(id,barType,stage){
   const already = combineSelected.findIndex(x=>x.id===id);
   if(already>=0){
     combineSelected.splice(already,1);
-    card.classList.remove('selected');
+    if(card) card.classList.remove('selected');
   } else {
-    if(combineSelected.length>=2){ alert('2개만 선택 가능합니다'); return; }
+    if(combineSelected.length>=2){ alert('2&#44060;&#47564; &#49440;&#53469; &#44032;&#45733;&#54633;&#45768;&#45796;'); return; }
     combineSelected.push({id,barType,stage});
-    card.classList.add('selected');
+    if(card) card.classList.add('selected');
   }
   const selDiv = document.getElementById('combine-selected');
   const execBtn = document.getElementById('combine-exec-btn');
   if(combineSelected.length===2){
     selDiv.style.display='block';
+    const _tok = localStorage.getItem('lp_token')||'';
     try{
-      const d = await api('/api/combine/preview',{method:'POST',body:JSON.stringify({item1_id:combineSelected[0].id,item2_id:combineSelected[1].id})});
+      const _r = await fetch('/api/combine/preview',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},
+        body:JSON.stringify({item1_id:combineSelected[0].id,item2_id:combineSelected[1].id})
+      });
+      const d = await _r.json();
       document.getElementById('combine-sel-info').innerHTML =
-        `<div style="font-size:13px;color:#aaa">선택: ${combineSelected[0].stage}단계 + ${combineSelected[1].stage}단계</div>`;
+        '<div style="font-size:12px;color:#555;margin-bottom:6px">'+combineSelected[0].stage+'&#45800;&#44228; + '+combineSelected[1].stage+'&#45800;&#44228;</div>';
       const pr = document.getElementById('combine-preview-result');
       if(d.can_combine){
-        pr.innerHTML = `<div class="row"><span class="label">합산 구매가</span><span class="val">${d.total_buy.toLocaleString()}원</span></div>
-          <div class="row"><span class="label">정상 판매가</span><span class="val">${d.normal_sell.toLocaleString()}원</span></div>
-          <div class="row"><span class="label">합성 후 단계</span><span class="val yellow">${d.combined_stage}단계</span></div>
-          <div class="row"><span class="label">합성 판매가</span><span class="val green">${d.combined_sell.toLocaleString()}원</span></div>
-          <div class="row"><span class="label">포인트 비용</span><span class="val red">250P (30,000원)</span></div>
-          <div class="row" style="border-top:1px solid #2a2d3e;margin-top:8px;padding-top:8px"><span class="label">최종 순수익</span><span class="val green" style="font-size:16px">${d.net_profit.toLocaleString()}원</span></div>`;
-        execBtn.style.display='block';
+        pr.innerHTML = '<div class="row"><span class="label">&#54569;&#49328; &#44396;&#47588;&#44032;</span><span class="val">'+d.total_buy.toLocaleString()+'&#50896;</span></div>'
+          +'<div class="row"><span class="label">&#54569;&#49328; &#54644; &#45800;&#44228;</span><span class="val yellow">'+d.combined_stage+'&#45800;&#44228;</span></div>'
+          +'<div class="row"><span class="label">&#54569;&#49328; &#54032;&#47588;&#44032;</span><span class="val green">'+d.combined_sell.toLocaleString()+'&#50896;</span></div>'
+          +'<div class="row"><span class="label">&#54252;&#51064;&#53944; &#48708;&#50857;</span><span class="val red">250P (30,000&#50896;)</span></div>'
+          +'<div class="row" style="border-top:1px solid #ddd;margin-top:6px;padding-top:6px"><span class="label" style="font-weight:700">&#CD5C;&#C885; &#C21C;&#C218;&#C775;</span><span class="val green" style="font-size:15px;font-weight:700">'+d.net_profit.toLocaleString()+'&#50896;</span></div>';
+        if(execBtn) execBtn.style.display='block';
       } else {
-        pr.innerHTML='<div style="color:#ef5350">결합 불가: '+( d.normal_profit>23000?'수익 한도(23,000원) 초과':'합성 가능 단계 없음')+'</div>';
-        execBtn.style.display='none';
+        pr.innerHTML='<div style="color:#c62828;font-size:13px">'+(d.normal_profit>23000?'&#49688;&#51775; &#54620;&#46020; &#52488;&#44284;':'&#54569;&#49328; &#44032;&#45733; &#45800;&#44228; &#50630;&#51020;')+'</div>';
+        if(execBtn) execBtn.style.display='none';
       }
-    }catch(e){ document.getElementById('combine-preview-result').innerHTML='<div style="color:red">'+e.message+'</div>'; }
+    }catch(e){
+      document.getElementById('combine-preview-result').innerHTML='<div style="color:#c62828">'+e.message+'</div>';
+    }
   } else {
-    selDiv.style.display='none';
+    if(selDiv) selDiv.style.display='none';
   }
 }
 async function executeCombine(){
