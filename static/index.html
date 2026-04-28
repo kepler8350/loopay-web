@@ -167,12 +167,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 
 .combine-desc{font-size:13px;color:#aaa;margin-bottom:16px;line-height:1.5}
-.combine-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
-.combine-item-card{background:#1e2235;border:2px solid #2a2d3e;border-radius:8px;padding:10px 14px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
+.combine-list{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+.combine-group{background:#1a1d2e;border-radius:10px;overflow:hidden;border:1px solid #2a2d3e}
+.combine-group-title{padding:8px 14px;font-size:12px;font-weight:700;color:#4fc3f7;background:#232640;border-bottom:1px solid #2a2d3e}
+.combine-group-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px}
+.combine-item-card{background:#1e2235;border:2px solid #2a2d3e;border-radius:7px;padding:8px 10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px}
 .combine-item-card.selected{border-color:#4fc3f7;background:#1a3050}
-.combine-item-card .item-stage{font-size:16px;font-weight:700;color:#4fc3f7;min-width:52px}
-.combine-item-card .item-type{font-size:13px;color:#e8eaf6;flex:1}
-.combine-item-card .item-price{font-size:12px;color:#66bb6a;min-width:60px;text-align:right}
+.combine-item-card .item-stage{font-size:15px;font-weight:700;color:#4fc3f7;min-width:44px}
+.combine-item-card .item-price{font-size:11px;color:#66bb6a;margin-left:auto}
 .combine-selected{background:#1a1d2e;border-radius:12px;padding:16px;margin-top:8px}
 .combine-sel-title{font-size:14px;font-weight:700;color:#4fc3f7;margin-bottom:10px}
 .combine-preview{background:#0f1117;border-radius:8px;padding:12px;margin:10px 0;font-size:13px;line-height:1.8}
@@ -805,13 +807,21 @@ async function loadCombineItems(){
     const items = (d.items||[]);
     if(!items.length){ list.innerHTML='<div class="empty-msg">&#48372;&#50976; &#50500;&#51060;&#53596; &#50630;&#51020;</div>'; return; }
     const barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
-    list.innerHTML = items.map(i=>
-      `<div class="combine-item-card" id="ci-${i.id}" onclick="toggleCombineItem(${i.id},'${i.bar_type}',${i.stage})">
-        <div class="item-stage">${i.stage}&#45800;&#44228;</div>
-        <div class="item-type">${barNames[i.bar_type]||i.bar_type}</div>
-        <div class="item-price">${(i.buy_price||0).toLocaleString()}&#50896;</div>
-      </div>`
-    ).join('');
+    const barOrder=['bronze','silver','gold'];
+    const grouped={};
+    items.forEach(i=>{ if(!grouped[i.bar_type]) grouped[i.bar_type]=[]; grouped[i.bar_type].push(i); });
+    list.innerHTML = barOrder.filter(bt=>grouped[bt]&&grouped[bt].length).map(bt=>{
+      const cards = grouped[bt].map(i=>
+        `<div class="combine-item-card" id="ci-${i.id}" onclick="toggleCombineItem(${i.id},'${i.bar_type}',${i.stage})">
+          <div class="item-stage">${i.stage}&#45800;&#44228;</div>
+          <div class="item-price">${(i.buy_price||0).toLocaleString()}&#50896;</div>
+        </div>`
+      ).join('');
+      return `<div class="combine-group">
+        <div class="combine-group-title">${barNames[bt]}</div>
+        <div class="combine-group-grid">${cards}</div>
+      </div>`;
+    }).join('');
     combineSelected=[];
   }catch(e){ list.innerHTML='<div class="empty-msg">'+e.message+'</div>'; }
 }
