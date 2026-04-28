@@ -7,6 +7,18 @@ from db import get_db, init_db, LEVEL_CONFIG, BRONZE_PRICES, SILVER_PRICES, GOLD
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path='')
+def get_price(bar_type, stage):
+    conn = get_db()
+    try:
+        row = conn.execute('SELECT buy_price, sell_price FROM prices WHERE bar_type=? AND stage=?', (bar_type, stage)).fetchone()
+        if row:
+            return row['buy_price'], row['sell_price']
+        return 0, 0
+    except Exception:
+        return 0, 0
+    finally:
+        conn.close()
+
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'loopay-secret-key-2026')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(hours=24)
 CORS(app, origins='*')
