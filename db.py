@@ -107,6 +107,23 @@ def init_db():
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
 
+    # prices 테이블
+    c.execute('''CREATE TABLE IF NOT EXISTS prices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bar_type TEXT NOT NULL,
+        stage INTEGER NOT NULL,
+        buy_price INTEGER NOT NULL,
+        sell_price INTEGER NOT NULL,
+        UNIQUE(bar_type, stage)
+    )''')
+    # 기존 데이터 없으면 삽입
+    if conn.execute("SELECT COUNT(*) FROM prices").fetchone()[0] == 0:
+        for stage, buy, sell in BRONZE_PRICES:
+            c.execute("INSERT OR IGNORE INTO prices(bar_type,stage,buy_price,sell_price) VALUES('bronze',?,?,?)", (stage,buy,sell))
+        for stage, buy, sell in SILVER_PRICES:
+            c.execute("INSERT OR IGNORE INTO prices(bar_type,stage,buy_price,sell_price) VALUES('silver',?,?,?)", (stage,buy,sell))
+        for stage, buy, sell in GOLD_PRICES:
+            c.execute("INSERT OR IGNORE INTO prices(bar_type,stage,buy_price,sell_price) VALUES('gold',?,?,?)", (stage,buy,sell))
     conn.commit()
     _seed(conn)
     conn.close()
