@@ -18,6 +18,25 @@ def get_price(bar_type, stage):
         return 0, 0
     finally:
         conn.close()
+def days_since(purchase_date):
+    if not purchase_date:
+        return 0
+    try:
+        dt = datetime.datetime.strptime(str(purchase_date)[:19], '%Y-%m-%d %H:%M:%S')
+        return (datetime.datetime.now() - dt).days
+    except Exception:
+        return 0
+
+def item_status_label(status, purchase_date):
+    status_map = {
+        'active': '보유중',
+        'sold': '판매완료',
+        'pending': '매칭중',
+        'matched': '매칭완료',
+        'combined': '합성완료'
+    }
+    return status_map.get(status, status or '보유중')
+
 
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'loopay-secret-key-2026')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(hours=24)
