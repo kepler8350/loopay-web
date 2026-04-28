@@ -205,6 +205,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <svg width="20" height="20" viewBox="0 0 20 20"><path fill="#3a1d1d" d="M10 2C5.58 2 2 4.91 2 8.5c0 2.32 1.52 4.35 3.82 5.5L4.9 17.2a.3.3 0 00.44.34L9.1 14.9c.3.03.6.05.9.05 4.42 0 8-2.91 8-6.5S14.42 2 10 2z"/></svg>
       카카오톡으로 로그인
     </button>
+    <button class="demo-btn" onclick="demoLogin()">데모 계정으로 체험하기</button>
     <div style="margin-top:12px;text-align:center">
       <button onclick="demoLogin()" style="background:none;border:1px solid #ddd;border-radius:24px;padding:12px 0;width:100%;font-size:14px;color:#555;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">
         &#127909; &#45936;&#47784; &#44228;&#51221; &#52404;&#54744;&#54616;&#44592;
@@ -500,6 +501,32 @@ function toast(msg, dur=2500){
   const el=document.getElementById('toast');
   el.textContent=msg;el.classList.add('show');
   setTimeout(()=>el.classList.remove('show'),dur);
+}
+async function demoLogin(){
+  const btn = document.querySelector('.demo-btn');
+  if(btn){ btn.disabled=true; btn.textContent='로그인 중...'; }
+  try {
+    const r = await fetch('/api/auth/demo-login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({})
+    });
+    const d = await r.json();
+    if(d.access_token){
+      localStorage.setItem('lp_token', d.access_token);
+      token = d.access_token;
+      await loadUserData();
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('main-app').style.display = 'flex';
+      showTab('home', document.querySelector('.nav-btn'));
+    } else {
+      alert(d.error || '로그인 실패');
+    }
+  } catch(e) {
+    alert('오류: ' + e.message);
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='데모 계정으로 체험하기'; }
+  }
 }
 async function api(path, opts={}){
   const headers={'Content-Type':'application/json'};
