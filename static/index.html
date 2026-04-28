@@ -513,28 +513,34 @@ async function api(path, opts={}){
 // --- auth -----------------------------------------------------------------
 async 
 async function demoLogin(){
-  const btn = document.querySelector('[onclick="demoLogin()"]');
+  var btn = document.querySelector('[onclick="demoLogin()"]');
   if(btn){ btn.disabled=true; btn.textContent='&#47196;&#44536;&#51064; &#51473;...'; }
   try{
-    const r = await fetch('/api/auth/kakao-login',{
+    var res = await fetch('/api/auth/kakao-login',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({kakao_id:'demo_user',nickname:'&#54861;&#44600;&#46041;',demo:true})
     });
-    const d = await r.json();
-    if(d.token || d.access_token){
-      localStorage.setItem('lp_token', d.token || d.access_token);
-      window.token = d.token || d.access_token;
-      if(typeof initApp==='function') initApp();
-      else location.reload();
+    var d = await res.json();
+    var tok = d.token || d.access_token;
+    if(tok){
+      localStorage.setItem('lp_token', tok);
+      window.token = tok;
+      // 화면 전환
+      var loginEl = document.getElementById('login-screen');
+      var mainEl = document.getElementById('main-app');
+      if(loginEl) loginEl.style.display='none';
+      if(mainEl) mainEl.style.display='flex';
+      // 홈 데이터 로드
+      if(typeof loadHome==='function') loadHome();
+      else if(typeof loadUserData==='function') loadUserData();
     } else {
       alert('&#45936;&#47784; &#47196;&#44536;&#51064; &#49892;&#54028;: '+(d.error||d.msg||'unknown'));
     }
   }catch(e){
     alert('&#50724;&#47448;: '+e.message);
-  } finally {
-    if(btn){ btn.disabled=false; btn.textContent='&#127909; &#45936;&#47784; &#44228;&#51221; &#52404;&#54744;&#54616;&#44592;'; }
   }
+  if(btn){ btn.disabled=false; btn.textContent='&#127909; &#45936;&#47784; &#44228;&#51221; &#52404;&#54744;&#54616;&#44592;'; }
 }
 function loginKakao(){ toast('카카오 SDK 연동이 필요합니다. 데모 계정으로 체험해주세요.'); }
 
