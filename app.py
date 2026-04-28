@@ -448,19 +448,23 @@ def admin_reservation_status():
     try:
         result = {}
         for bar_type in ['bronze', 'silver', 'gold']:
+            # reservations 테이블에는 type 컬럼 없음 - match_round로 구매/판매 구분
+            # match_round=1: 구매예약, match_round=2: 판매예약 (또는 전체 pending)
+            total = conn.execute(
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND status='pending'",
+                (bar_type,)
+            ).fetchone()['cnt']
             buy_count = conn.execute(
-                'SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND type="buy" AND status="pending"',
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND status='pending' AND match_round=1",
                 (bar_type,)
             ).fetchone()['cnt']
-            sell_total = conn.execute(
-                'SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND type="sell" AND status="pending"',
-                (bar_type,)
-            ).fetchone()['cnt']
-            match_rate = round(sell_total / buy_count * 100, 1) if buy_count > 0 else 0
+            sell_count = total - buy_count
+            match_rate = round(sell_count / buy_count * 100, 1) if buy_count > 0 else 0
             result[bar_type] = {
                 'buy_count': buy_count,
-                'sell_count': sell_total,
-                'match_rate': match_rate
+                'sell_count': sell_count,
+                'match_rate': match_rate,
+                'total': total
             }
         return jsonify(result)
     finally:
@@ -472,8 +476,8 @@ def admin_reservations_list():
     conn = get_db()
     try:
         rows = conn.execute(
-            '''SELECT r.id, r.bar_type, r.type, r.status, r.reserve_date,
-                      r.stage, u.kakao_id as username
+            '''SELECT r.id, r.bar_type, r.match_round, r.status, r.reserve_date,
+                      u.kakao_id as username
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                ORDER BY r.created_at DESC LIMIT 100'''
@@ -492,10 +496,12 @@ def admin_add_reservation():
     stage = int(data.get('stage', 1))
     conn = get_db()
     try:
+        # reservations 테이블: item_id, bar_type, match_round, reserve_date, status
+        today = __import__('datetime').date.today().isoformat()
         for _ in range(count):
             conn.execute(
-                'INSERT INTO reservations (user_id, bar_type, type, stage, status, created_at) VALUES (1,?,?,?,"pending",datetime("now","localtime"))',
-                (bar_type, res_type, stage)
+                "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status) VALUES (1, 0, ?, ?, ?, 'pending')",
+                (bar_type, 1 if res_type == 'buy' else 2, today)
             )
         conn.commit()
         return jsonify({'success': True, 'added': count})
