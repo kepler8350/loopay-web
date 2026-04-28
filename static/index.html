@@ -450,7 +450,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="info-block">1) 입금 확인 후 입금확인 버튼 클릭 (미클릭 시 자동 확인)<br>2) 허위 입금 신고 가능<br>3) 2차 미입금 물량 → 한 단계 위 가격 다음날 판매<br>4) 판매 예약 취소 불가</div>
       </div>
     
-      <div id="tab-combine" class="tab"><div class="sec-title">결합판매</div><div class="combine-desc">두 아이템 선택 후 합성 판매 (250P 소모)</div><div id="combine-items-list" class="combine-list"><div class="empty-msg">로딩 중...</div></div><div id="combine-selected" class="combine-selected" style="display:none"><div class="combine-sel-title">선택된 아이템</div><div id="combine-sel-info"></div><div id="combine-preview-result" class="combine-preview"></div><button id="combine-exec-btn" onclick="executeCombine()" style="display:none;width:100%;padding:14px;margin-top:10px;border-radius:10px;font-size:15px;font-weight:700;border:none;background:#66bb6a;color:#fff;cursor:pointer">결합판매 실행 (250P)</button></div></div>
+      <div id="tab-combine" class="tab"><div class="sec-title">결합판매</div><div class="combine-desc">결합 판매 (250P 소모)</div><div id="combine-items-list" class="combine-list"><div class="empty-msg">로딩 중...</div></div><div id="combine-selected" class="combine-selected" style="display:none"><div class="combine-sel-title">선택된 아이템</div><div id="combine-sel-info"></div><div id="combine-preview-result" class="combine-preview"></div><button id="combine-exec-btn" onclick="executeCombine()" style="display:none;width:100%;padding:14px;margin-top:10px;border-radius:10px;font-size:15px;font-weight:700;border:none;background:#66bb6a;color:#fff;cursor:pointer">결합판매 실행 (250P)</button></div></div>
     </div>
   </div>
 
@@ -814,12 +814,17 @@ async function loadCombineItems(){
     if(!_r.ok){ list.innerHTML='<div class="empty-msg">&#47196;&#46300; &#49892;&#54036;</div>'; return; }
     const d = await _r.json();
     const items = (d.items||[]);
-    if(!items.length){ list.innerHTML='<div class="empty-msg">&#48372;&#50976; &#50500;&#51060;&#53596; &#50630;&#51020;</div>'; return; }
     const barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
     const barOrder=['bronze','silver','gold'];
     const grouped={};
     items.forEach(i=>{ if(!grouped[i.bar_type]) grouped[i.bar_type]=[]; grouped[i.bar_type].push(i); });
-    list.innerHTML = barOrder.filter(bt=>grouped[bt]&&grouped[bt].length).map(bt=>{
+    // 1개 이하인 타입은 결합 불가 → 제외
+    const validTypes = barOrder.filter(bt => grouped[bt] && grouped[bt].length >= 2);
+    if(!validTypes.length){
+      list.innerHTML='<div class="empty-msg">&#44208;&#54633; &#44032;&#45733;&#54620; &#50500;&#51060;&#53596; &#50630;&#51020;<br><small style="color:#aaa">&#44057;&#51008; &#51333;&#47448; 2&#44060; &#51060;&#49345; &#54596;&#50836;</small></div>';
+      return;
+    }
+    list.innerHTML = validTypes.map(bt=>{
       const cards = grouped[bt].map(i=>
         `<div class="combine-item-card" id="ci-${i.id}" onclick="toggleCombineItem(${i.id},'${i.bar_type}',${i.stage})">
           <div class="item-stage">${i.stage}&#45800;&#44228;</div>
@@ -845,37 +850,59 @@ async function toggleCombineItem(id,barType,stage){
     combineSelected.push({id,barType,stage});
     if(card) card.classList.add('selected');
   }
+  renderCombineSelected();
+}
+
+function renderCombineSelected(){
   const selDiv = document.getElementById('combine-selected');
+  const selInfo = document.getElementById('combine-sel-info');
+  const pr = document.getElementById('combine-preview-result');
   const execBtn = document.getElementById('combine-exec-btn');
+  const barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
+
+  if(combineSelected.length===0){
+    if(selDiv) selDiv.style.display='none';
+    return;
+  }
+  selDiv.style.display='block';
+
+  // 선택 현황 표시
+  const slot1 = combineSelected[0];
+  const slot2 = combineSelected[1];
+  const name1 = slot1 ? (barNames[slot1.barType]||slot1.barType)+' '+slot1.stage+'&#45800;&#44228;' : '&#49440;&#53469; &#54644;&#51452;&#49464;&#50836;';
+  const name2 = slot2 ? (barNames[slot2.barType]||slot2.barType)+' '+slot2.stage+'&#45800;&#44228;' : '&#49440;&#53469; &#54644;&#51452;&#49464;&#50836;';
+  const badge1 = slot1 ? '<span style="background:#4fc3f7;color:#000;padding:3px 8px;border-radius:12px;font-size:12px;font-weight:700">'+name1+'</span>' : '<span style="background:#ddd;color:#999;padding:3px 8px;border-radius:12px;font-size:12px">'+name1+'</span>';
+  const badge2 = slot2 ? '<span style="background:#66bb6a;color:#fff;padding:3px 8px;border-radius:12px;font-size:12px;font-weight:700">'+name2+'</span>' : '<span style="background:#ddd;color:#999;padding:3px 8px;border-radius:12px;font-size:12px">'+name2+'</span>';
+  selInfo.innerHTML = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+badge1+'<span style="color:#aaa">+</span>'+badge2+'</div>';
+
+  // 2개 선택 완료 시 미리보기
   if(combineSelected.length===2){
-    selDiv.style.display='block';
+    pr.innerHTML='<div style="color:#aaa;font-size:12px">&#44228;&#49328; &#51473;...</div>';
+    if(execBtn) execBtn.style.display='none';
     const _tok = localStorage.getItem('lp_token')||'';
-    try{
-      const _r = await fetch('/api/combine/preview',{
-        method:'POST',
-        headers:{'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},
-        body:JSON.stringify({item1_id:combineSelected[0].id,item2_id:combineSelected[1].id})
-      });
-      const d = await _r.json();
-      document.getElementById('combine-sel-info').innerHTML =
-        '<div style="font-size:12px;color:#555;margin-bottom:6px">'+combineSelected[0].stage+'&#45800;&#44228; + '+combineSelected[1].stage+'&#45800;&#44228;</div>';
-      const pr = document.getElementById('combine-preview-result');
+    fetch('/api/combine/preview',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},
+      body:JSON.stringify({item1_id:slot1.id,item2_id:slot2.id})
+    }).then(r=>r.json()).then(d=>{
       if(d.can_combine){
-        pr.innerHTML = '<div class="row"><span class="label">&#54569;&#49328; &#44396;&#47588;&#44032;</span><span class="val">'+d.total_buy.toLocaleString()+'&#50896;</span></div>'
+        pr.innerHTML =
+          '<div class="row"><span class="label">&#54569;&#49328; &#44396;&#47588;&#44032;</span><span class="val">'+d.total_buy.toLocaleString()+'&#50896;</span></div>'
           +'<div class="row"><span class="label">&#54569;&#49328; &#54644; &#45800;&#44228;</span><span class="val yellow">'+d.combined_stage+'&#45800;&#44228;</span></div>'
           +'<div class="row"><span class="label">&#54569;&#49328; &#54032;&#47588;&#44032;</span><span class="val green">'+d.combined_sell.toLocaleString()+'&#50896;</span></div>'
           +'<div class="row"><span class="label">&#54252;&#51064;&#53944; &#48708;&#50857;</span><span class="val red">250P (30,000&#50896;)</span></div>'
           +'<div class="row" style="border-top:1px solid #ddd;margin-top:6px;padding-top:6px"><span class="label" style="font-weight:700">&#52572;&#51333; &#49692;&#49688;&#51061;</span><span class="val green" style="font-size:15px;font-weight:700">'+d.net_profit.toLocaleString()+'&#50896;</span></div>';
         if(execBtn) execBtn.style.display='block';
       } else {
-        pr.innerHTML='<div style="color:#c62828;font-size:13px">'+(d.normal_profit>23000?'&#49688;&#51775; &#54620;&#46020; &#52488;&#44284;':'&#54569;&#49328; &#44032;&#45733; &#45800;&#44228; &#50630;&#51020;')+'</div>';
+        pr.innerHTML='<div style="color:#c62828;font-size:13px">'+(d.error||'&#44208;&#54633; &#48266;&#44ฮ 2&#44060;&#47564; &#44032;&#45733;')+'</div>';
         if(execBtn) execBtn.style.display='none';
       }
-    }catch(e){
-      document.getElementById('combine-preview-result').innerHTML='<div style="color:#c62828">'+e.message+'</div>';
-    }
+    }).catch(e=>{
+      pr.innerHTML='<div style="color:#c62828">'+e.message+'</div>';
+    });
   } else {
-    if(selDiv) selDiv.style.display='none';
+    pr.innerHTML='';
+    if(execBtn) execBtn.style.display='none';
   }
 }
 async function executeCombine(){
