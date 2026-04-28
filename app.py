@@ -79,7 +79,7 @@ def demo_login():
         user = conn.execute("SELECT * FROM users WHERE kakao_id=?", (DEMO_ID,)).fetchone()
         if not user:
             conn.execute(
-                "INSERT INTO users (kakao_id, nickname, level, charge_points, convert_points, created_at) VALUES (?,?,1,1000,0,datetime('now','localtime'))",
+                "INSERT INTO users (kakao_id, nickname, level, charge_points, created_at) VALUES (?,?,1,1000,datetime('now','localtime'))",
                 (DEMO_ID, DEMO_NICK)
             )
             conn.commit()
@@ -91,7 +91,7 @@ def demo_login():
             'nickname': u.get('nickname', DEMO_NICK),
             'level': u.get('level', 1),
             'charge_points': u.get('charge_points', 1000),
-            'convert_points': u.get('convert_points', 0)
+            'exchange_points': u.get('exchange_points', 0)
         })
     except Exception as e:
         conn.rollback()
