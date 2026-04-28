@@ -298,6 +298,222 @@ def admin_matching_status():
 with app.app_context():
     init_db()
 
+
+# == combine sell API ==
+@app.route('/api/combine/preview', methods=['POST'])
+@jwt_required()
+def combine_preview():
+    user_id = get_jwt_identity()
+    data = request.json or {}
+    item1_id = data.get('item1_id')
+    item2_id = data.get('item2_id')
+    if not item1_id or not item2_id:
+        return jsonify({'error': 'select 2 items'}), 400
+    conn = get_db()
+    try:
+        items = conn.execute(
+            'SELECT * FROM items WHERE id IN (?,?) AND user_id=? AND status="active"',
+            (item1_id, item2_id, user_id)
+        ).fetchall()
+        if len(items) != 2:
+            return jsonify({'error': 'invalid items'}), 400
+        i1, i2 = dict(items[0]), dict(items[1])
+        if i1['bar_type'] != i2['bar_type']:
+            return jsonify({'error': 'same type only'}), 400
+        bar_type = i1['bar_type']
+        stage1, stage2 = i1['stage'], i2['stage']
+        prices = conn.execute('SELECT * FROM prices WHERE bar_type=? ORDER BY stage', (bar_type,)).fetchall()
+        price_map = {p['stage']: dict(p) for p in prices}
+        buy1 = price_map.get(stage1, {}).get('buy_price', 0)
+        buy2 = price_map.get(stage2, {}).get('buy_price', 0)
+        sell1 = price_map.get(stage1, {}).get('sell_price', 0)
+        sell2 = price_map.get(stage2, {}).get('sell_price', 0)
+        total_buy = buy1 + buy2
+        normal_profit = (sell1 - buy1) + (sell2 - buy2)
+        MAX_PROFIT = 23000
+        combined_stage = None
+        combined_sell = 0
+        for stage in sorted(price_map.keys()):
+            p = price_map[stage]
+            profit = p['sell_price'] - p['buy_price']
+            if profit > normal_profit:
+                combined_stage = stage
+                combined_sell = p['sell_price']
+                break
+        POINT_COST = 30000
+        net_profit = combined_sell - total_buy - POINT_COST if combined_stage else 0
+        can_combine = combined_stage is not None and normal_profit <= MAX_PROFIT
+        return jsonify({
+            'item1': {'id': i1['id'], 'bar_type': bar_type, 'stage': stage1, 'buy_price': buy1, 'sell_price': sell1},
+            'item2': {'id': i2['id'], 'bar_type': bar_type, 'stage': stage2, 'buy_price': buy2, 'sell_price': sell2},
+            'total_buy': total_buy,
+            'normal_sell': sell1 + sell2,
+            'normal_profit': normal_profit,
+            'combined_stage': combined_stage,
+            'combined_sell': combined_sell,
+            'combined_profit': combined_sell - total_buy if combined_stage else 0,
+            'point_cost': POINT_COST,
+            'net_profit': net_profit,
+            'can_combine': can_combine
+        })
+    finally:
+        conn.close()
+
+@app.route('/api/combine/execute', methods=['POST'])
+@jwt_required()
+def combine_execute():
+    user_id = get_jwt_identity()
+    data = request.json or {}
+    item1_id = data.get('item1_id')
+    item2_id = data.get('item2_id')
+    conn = get_db()
+    try:
+        items = conn.execute(
+            'SELECT * FROM items WHERE id IN (?,?) AND user_id=? AND status="active"',
+            (item1_id, item2_id, user_id)
+        ).fetchall()
+        if len(items) != 2:
+            return jsonify({'error': 'invalid items'}), 400
+        i1, i2 = dict(items[0]), dict(items[1])
+        if i1['bar_type'] != i2['bar_type']:
+            return jsonify({'error': 'same type only'}), 400
+        user = dict(conn.execute('SELECT * FROM users WHERE id=?', (user_id,)).fetchone())
+        if user['charge_points'] < 250:
+            return jsonify({'error': 'insufficient points (need 250P)'}), 400
+        bar_type = i1['bar_type']
+        stage1, stage2 = i1['stage'], i2['stage']
+        prices = conn.execute('SELECT * FROM prices WHERE bar_type=? ORDER BY stage', (bar_type,)).fetchall()
+        price_map = {p['stage']: dict(p) for p in prices}
+        buy1 = price_map.get(stage1, {}).get('buy_price', 0)
+        buy2 = price_map.get(stage2, {}).get('buy_price', 0)
+        normal_profit = (price_map.get(stage1,{}).get('sell_price',0)-buy1)+(price_map.get(stage2,{}).get('sell_price',0)-buy2)
+        combined_stage = None
+        for stage in sorted(price_map.keys()):
+            p = price_map[stage]
+            if (p['sell_price'] - p['buy_price']) > normal_profit:
+                combined_stage = stage
+                break
+        if not combined_stage:
+            return jsonify({'error': 'no combinable stage'}), 400
+        conn.execute('UPDATE items SET status="combined" WHERE id IN (?,?)', (item1_id, item2_id))
+        conn.execute(
+            'INSERT INTO items (user_id, bar_type, stage, status, created_at) VALUES (?,?,?,"active",datetime("now","localtime"))',
+            (user_id, bar_type, combined_stage)
+        )
+        conn.execute('UPDATE users SET charge_points=charge_points-250 WHERE id=?', (user_id,))
+        conn.commit()
+        return jsonify({'success': True, 'new_stage': combined_stage})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+# == admin reservation management ==
+@app.route('/api/admin/reservation-status', methods=['GET'])
+@jwt_required()
+def admin_reservation_status():
+    conn = get_db()
+    try:
+        result = {}
+        for bar_type in ['bronze', 'silver', 'gold']:
+            buy_count = conn.execute(
+                'SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND type="buy" AND status="pending"',
+                (bar_type,)
+            ).fetchone()['cnt']
+            sell_total = conn.execute(
+                'SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND type="sell" AND status="pending"',
+                (bar_type,)
+            ).fetchone()['cnt']
+            match_rate = round(sell_total / buy_count * 100, 1) if buy_count > 0 else 0
+            result[bar_type] = {
+                'buy_count': buy_count,
+                'sell_count': sell_total,
+                'match_rate': match_rate
+            }
+        return jsonify(result)
+    finally:
+        conn.close()
+
+@app.route('/api/admin/add-reservation', methods=['POST'])
+@jwt_required()
+def admin_add_reservation():
+    data = request.json or {}
+    bar_type = data.get('bar_type')
+    res_type = data.get('type', 'buy')
+    count = int(data.get('count', 1))
+    stage = int(data.get('stage', 1))
+    conn = get_db()
+    try:
+        for _ in range(count):
+            conn.execute(
+                'INSERT INTO reservations (user_id, bar_type, type, stage, status, created_at) VALUES (1,?,?,?,"pending",datetime("now","localtime"))',
+                (bar_type, res_type, stage)
+            )
+        conn.commit()
+        return jsonify({'success': True, 'added': count})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+# == lucky matching ==
+@app.route('/api/admin/run-lucky-matching', methods=['POST'])
+@jwt_required()
+def run_lucky_matching():
+    data = request.json or {}
+    bar_type = data.get('bar_type', 'bronze')
+    round_num = int(data.get('round', 1))
+    conn = get_db()
+    try:
+        matched = 0
+        buy_list = conn.execute(
+            'SELECT * FROM reservations WHERE bar_type=? AND type="buy" AND status="pending" ORDER BY created_at',
+            (bar_type,)
+        ).fetchall()
+        # sell by stage range
+        sell_ga = conn.execute(
+            'SELECT r.* FROM reservations r JOIN items i ON r.item_id=i.id '
+            'WHERE r.bar_type=? AND r.type="sell" AND r.status="pending" AND i.stage<=7 ORDER BY r.created_at',
+            (bar_type,)
+        ).fetchall()
+        sell_na = conn.execute(
+            'SELECT r.* FROM reservations r JOIN items i ON r.item_id=i.id '
+            'WHERE r.bar_type=? AND r.type="sell" AND r.status="pending" AND i.stage BETWEEN 8 AND 11 ORDER BY r.created_at',
+            (bar_type,)
+        ).fetchall()
+        sell_ra = conn.execute(
+            'SELECT r.* FROM reservations r JOIN items i ON r.item_id=i.id '
+            'WHERE r.bar_type=? AND r.type="sell" AND r.status="pending" AND i.stage>=16 ORDER BY r.created_at',
+            (bar_type,)
+        ).fetchall()
+        buy_idx = 0
+        for sr in sell_ga:
+            if buy_idx + 2 > len(buy_list): break
+            for b in buy_list[buy_idx:buy_idx+2]:
+                conn.execute('UPDATE reservations SET status="matched" WHERE id=?', (b['id'],))
+            conn.execute('UPDATE reservations SET status="matched" WHERE id=?', (sr['id'],))
+            matched += 1; buy_idx += 2
+        for sr in sell_na:
+            if buy_idx >= len(buy_list): break
+            conn.execute('UPDATE reservations SET status="matched" WHERE id=?', (buy_list[buy_idx]['id'],))
+            conn.execute('UPDATE reservations SET status="matched" WHERE id=?', (sr['id'],))
+            matched += 1; buy_idx += 1
+        for sr in sell_ra:
+            if buy_idx + 4 > len(buy_list): break
+            for b in buy_list[buy_idx:buy_idx+4]:
+                conn.execute('UPDATE reservations SET status="matched" WHERE id=?', (b['id'],))
+            conn.execute('UPDATE reservations SET status="matched" WHERE id=?', (sr['id'],))
+            matched += 1; buy_idx += 4
+        conn.commit()
+        return jsonify({'success': True, 'matched': matched})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)
