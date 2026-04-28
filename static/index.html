@@ -522,9 +522,9 @@ async function demoLogin(){
       body:JSON.stringify({kakao_id:'demo_user',nickname:'&#54861;&#44600;&#46041;',demo:true})
     });
     const d = await r.json();
-    if(d.access_token){
-      localStorage.setItem('lp_token', d.access_token);
-      window.token = d.access_token;
+    if(d.token || d.access_token){
+      localStorage.setItem('lp_token', d.token || d.access_token);
+      window.token = d.token || d.access_token;
       if(typeof initApp==='function') initApp();
       else location.reload();
     } else {
