@@ -797,7 +797,9 @@ async function loadCombineItems(){
   const list = document.getElementById('combine-items-list');
   if(!list) return;
   try{
-    const d = await api('/api/items');
+    const _tok = localStorage.getItem('lp_token') || window.token || '';
+    const _r = await fetch('/api/items', {headers:{'Authorization':'Bearer '+_tok}});
+    const d = await _r.json();
     const items = (d.items||[]).filter(i=>i.status==='active');
     if(!items.length){ list.innerHTML='<div class="empty-msg">보유 아이템 없음</div>'; return; }
     const barNames={bronze:'수정',silver:'루비',gold:'다이아'};
