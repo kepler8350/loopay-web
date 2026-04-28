@@ -424,6 +424,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <!-- SCHEDULE -->
       <div id="tab-schedule" class="tab">
         <div class="sec-title">루페이 시간표</div>
+      <div id="tab-combine" class="tab">
+        <div class="sec-title">결합판매</div>
+        <div class="combine-desc">두 아이템을 선택하면 합성 후 더 높은 단계로 판매할 수 있습니다. (250포인트 소모)<br>합성 후 다음날 판매 가능 / 수익 한도 23,000원</div>
+        <div id="combine-items-list" class="combine-list">
+          <div class="empty-msg">로딩 중...</div>
+        </div>
+        <div id="combine-selected" class="combine-selected" style="display:none">
+          <div class="combine-sel-title">선택된 아이템 (2개)</div>
+          <div id="combine-sel-info"></div>
+          <div id="combine-preview-result" class="combine-preview"></div>
+          <button id="combine-exec-btn" onclick="executeCombine()" style="display:none;width:100%;padding:14px;margin-top:10px;border-radius:10px;font-size:15px;font-weight:700;border:none;background:#66bb6a;color:#fff;cursor:pointer">결합판매 실행 (250P)</button>
+        </div>
+      </div>
         <div class="sched-row"><span class="time-badge">05:00~13:00</span><div><div class="sched-main">구매·판매 예약</div><div class="sched-sub">1차·2차 모두 이 시간에 예약 가능</div></div></div>
         <div class="sched-row"><span class="time-badge">13:00~14:00</span><div><div class="sched-main">1차 매칭 입금</div><div class="sched-sub">매칭금액 판매자 계좌 입금 후 송금완료 버튼 클릭. 13시 이후 비활성화.</div></div></div>
         <div class="sched-row"><span class="time-badge">13:00~14:00</span><div><div class="sched-main">1차 미입금 확인</div><div class="sched-sub">판매자: 입금확인 버튼 또는 미입금 버튼 클릭</div></div></div>
@@ -439,20 +452,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
     </div>
   </div>
-
-    <div id="tab-combine" class="tab">
-      <div class="sec-title">결합판매</div>
-      <div class="combine-desc">두 아이템을 선택하면 합성 후 더 높은 단계로 판매할 수 있습니다. (250포인트 소모)<br>합성 후 다음날 판매 가능 / 수익 한도 23,000원</div>
-      <div id="combine-items-list" class="combine-list">
-        <div class="empty-msg">로딩 중...</div>
-      </div>
-      <div id="combine-selected" class="combine-selected" style="display:none">
-        <div class="combine-sel-title">선택된 아이템 (2개)</div>
-        <div id="combine-sel-info"></div>
-        <div id="combine-preview-result" class="combine-preview"></div>
-        <button class="btn-primary" id="combine-exec-btn" onclick="executeCombine()" style="display:none;width:100%;padding:14px;margin-top:10px;border-radius:10px;font-size:15px;font-weight:700;border:none;background:#66bb6a;color:#fff;cursor:pointer">결합판매 실행 (250P)</button>
-      </div>
-    </div>
 
   <!-- Admin modal overlay -->
   <div id="admin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center">
