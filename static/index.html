@@ -489,27 +489,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="toast" id="toast"></div>
 
 <script>
-window.demoLogin = function(btn){
-  if(btn){btn.disabled=true;btn.textContent='Loading...';}
-  fetch('/api/auth/demo-login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(!d.access_token){alert(d.error||'Error');if(btn){btn.disabled=false;btn.textContent='&#45936;&#47784; &#44228;&#51221;&#51004;&#47196; &#52404;&#54744;&#54616;&#44592;';}return;}
-      localStorage.setItem('lp_token',d.access_token);
-      if(typeof loadUserData==='function')loadUserData().then(function(){
-        document.getElementById('login-screen').style.display='none';
-        document.getElementById('main-app').style.display='flex';
-        var n=document.querySelector('.nav-btn');if(n)n.click();
-      });
-      else{
-        document.getElementById('login-screen').style.display='none';
-        document.getElementById('main-app').style.display='flex';
-        var n=document.querySelector('.nav-btn');if(n)n.click();
-      }
-    })
-    .catch(function(e){alert(e.message);if(btn){btn.disabled=false;btn.textContent='&#45936;&#47784; &#44228;&#51221;&#51004;&#47196; &#52404;&#54744;&#54616;&#44592;';}});
-};
-
 const API = '/api';
 let token = localStorage.getItem('lp_token') || '';
 let userData = null;
@@ -978,6 +957,31 @@ function doLogout() {
   localStorage.removeItem('lp_kakao_id');
   document.getElementById('main-app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
+}
+
+function demoLogin(btn){
+  if(btn){btn.disabled=true;btn.textContent="Loading...";}
+  fetch("/api/auth/demo-login",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.access_token){alert(d.error||"Error");if(btn){btn.disabled=false;btn.textContent="\uB370\uBAA8 \uACC4\uC815\uC73C\uB85C \uCCB4\uD5D8\uD558\uAE30";}return;}
+      localStorage.setItem("lp_token",d.access_token);
+      if(typeof token!=="undefined") token=d.access_token;
+      if(typeof loadUserData==="function"){
+        loadUserData().then(function(){
+          document.getElementById("login-screen").style.display="none";
+          document.getElementById("main-app").style.display="flex";
+          var n=document.querySelector(".nav-btn");if(n)n.click();
+        }).catch(function(){
+          document.getElementById("login-screen").style.display="none";
+          document.getElementById("main-app").style.display="flex";
+        });
+      } else {
+        document.getElementById("login-screen").style.display="none";
+        document.getElementById("main-app").style.display="flex";
+      }
+    })
+    .catch(function(e){alert(e.message);if(btn){btn.disabled=false;btn.textContent="\uB370\uBAA8 \uACC4\uC815\uC73C\uB85C \uCCB4\uD5D8\uD558\uAE30";}});
 }
 </script>
 </body>
