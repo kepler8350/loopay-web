@@ -165,6 +165,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .charge-result{font-size:13px;color:var(--text2);text-align:center;min-height:20px}
 
 
+
+.combine-desc{font-size:13px;color:#aaa;margin-bottom:16px;line-height:1.5}
+.combine-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.combine-item-card{background:#1e2235;border:2px solid #2a2d3e;border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;text-align:center}
+.combine-item-card.selected{border-color:#4fc3f7;background:#1a3050}
+.combine-item-card .item-stage{font-size:22px;font-weight:700;color:#4fc3f7}
+.combine-item-card .item-type{font-size:12px;color:#aaa;margin-top:4px}
+.combine-item-card .item-price{font-size:12px;color:#66bb6a;margin-top:2px}
+.combine-selected{background:#1a1d2e;border-radius:12px;padding:16px;margin-top:8px}
+.combine-sel-title{font-size:14px;font-weight:700;color:#4fc3f7;margin-bottom:10px}
+.combine-preview{background:#0f1117;border-radius:8px;padding:12px;margin:10px 0;font-size:13px;line-height:1.8}
+.combine-preview .row{display:flex;justify-content:space-between}
+.combine-preview .label{color:#aaa}
+.combine-preview .val{font-weight:600}
+.combine-preview .val.green{color:#66bb6a}
+.combine-preview .val.red{color:#ef5350}
+.combine-preview .val.yellow{color:#ffa726}
 </style>
 </head>
 <body>
@@ -215,6 +232,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="nav-btn" onclick="showTab('point',this)">포인트</button>
       <button class="nav-btn" onclick="showTab('penalty',this)">패널티</button>
       <button class="nav-btn" onclick="showTab('schedule',this)">시간표</button>
+      <button class="nav-btn" onclick="showTab('combine',this)">결합판매</button>
     </div>
 
     <div class="tab-content">
@@ -768,6 +786,73 @@ checkApiStatus();
 if(token){showMainApp();loadUserData();}
 loadPrices();
 
+// 결합판매
+let combineSelected = [];
+async function loadCombineItems(){
+  const list = document.getElementById('combine-items-list');
+  if(!list) return;
+  try{
+    const d = await apiFetch('/api/items');
+    const items = (d.items||[]).filter(i=>i.status==='active');
+    if(!items.length){ list.innerHTML='<div class="empty-msg">보유 아이템 없음</div>'; return; }
+    const barNames={bronze:'수정',silver:'루비',gold:'다이아'};
+    list.innerHTML = items.map(i=>
+      `<div class="combine-item-card" id="ci-${i.id}" onclick="toggleCombineItem(${i.id},'${i.bar_type}',${i.stage})">
+        <div class="item-stage">${i.stage}단계</div>
+        <div class="item-type">${barNames[i.bar_type]||i.bar_type}</div>
+        <div class="item-price">${(i.buy_price||0).toLocaleString()}원</div>
+      </div>`
+    ).join('');
+    combineSelected=[];
+  }catch(e){ list.innerHTML='<div class="empty-msg">'+e.message+'</div>'; }
+}
+async function toggleCombineItem(id,barType,stage){
+  const card = document.getElementById('ci-'+id);
+  const already = combineSelected.findIndex(x=>x.id===id);
+  if(already>=0){
+    combineSelected.splice(already,1);
+    card.classList.remove('selected');
+  } else {
+    if(combineSelected.length>=2){ alert('2개만 선택 가능합니다'); return; }
+    combineSelected.push({id,barType,stage});
+    card.classList.add('selected');
+  }
+  const selDiv = document.getElementById('combine-selected');
+  const execBtn = document.getElementById('combine-exec-btn');
+  if(combineSelected.length===2){
+    selDiv.style.display='block';
+    try{
+      const d = await apiFetch('/api/combine/preview',{method:'POST',body:JSON.stringify({item1_id:combineSelected[0].id,item2_id:combineSelected[1].id})});
+      document.getElementById('combine-sel-info').innerHTML =
+        `<div style="font-size:13px;color:#aaa">선택: ${combineSelected[0].stage}단계 + ${combineSelected[1].stage}단계</div>`;
+      const pr = document.getElementById('combine-preview-result');
+      if(d.can_combine){
+        pr.innerHTML = `<div class="row"><span class="label">합산 구매가</span><span class="val">${d.total_buy.toLocaleString()}원</span></div>
+          <div class="row"><span class="label">정상 판매가</span><span class="val">${d.normal_sell.toLocaleString()}원</span></div>
+          <div class="row"><span class="label">합성 후 단계</span><span class="val yellow">${d.combined_stage}단계</span></div>
+          <div class="row"><span class="label">합성 판매가</span><span class="val green">${d.combined_sell.toLocaleString()}원</span></div>
+          <div class="row"><span class="label">포인트 비용</span><span class="val red">250P (30,000원)</span></div>
+          <div class="row" style="border-top:1px solid #2a2d3e;margin-top:8px;padding-top:8px"><span class="label">최종 순수익</span><span class="val green" style="font-size:16px">${d.net_profit.toLocaleString()}원</span></div>`;
+        execBtn.style.display='block';
+      } else {
+        pr.innerHTML='<div style="color:#ef5350">결합 불가: '+( d.normal_profit>23000?'수익 한도(23,000원) 초과':'합성 가능 단계 없음')+'</div>';
+        execBtn.style.display='none';
+      }
+    }catch(e){ document.getElementById('combine-preview-result').innerHTML='<div style="color:red">'+e.message+'</div>'; }
+  } else {
+    selDiv.style.display='none';
+  }
+}
+async function executeCombine(){
+  if(combineSelected.length!==2){ alert('아이템 2개를 선택하세요'); return; }
+  if(!confirm('결합판매를 실행하시겠습니까? (250포인트 소모)')) return;
+  try{
+    const d = await apiFetch('/api/combine/execute',{method:'POST',body:JSON.stringify({item1_id:combineSelected[0].id,item2_id:combineSelected[1].id})});
+    alert(d.new_stage+'단계 아이템으로 합성 완료!');
+    combineSelected=[];
+    loadCombineItems();
+  }catch(e){ alert('오류: '+e.message); }
+}
 function doLogout() {
   localStorage.removeItem('lp_token');
   localStorage.removeItem('lp_kakao_id');
