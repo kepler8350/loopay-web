@@ -804,36 +804,37 @@ loadPrices();
 
 // 결합판매
 let combineSelected = [];
+function getStatusBadge(s){
+  if(s==='active'||s==='reservable'||!s)
+    return '<span style="background:#e8f5e9;color:#2e7d32;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">&#48372;&#50976;</span>';
+  if(s==='pending'||s==='matched')
+    return '<span style="background:#fff3e0;color:#e65100;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">&#47588;&#52845;&#51473;</span>';
+  return '';
+}
 async function loadCombineItems(){
-  const list = document.getElementById('combine-items-list');
+  var list = document.getElementById('combine-items-list');
   if(!list) return;
-  const _tok = localStorage.getItem('lp_token') || '';
+  var _tok = localStorage.getItem('lp_token') || '';
   if(!_tok){ list.innerHTML='<div class="empty-msg">&#47196;&#44536;&#51064; &#54596;&#50836;</div>'; return; }
   try{
-    const _r = await fetch('/api/items', {headers:{'Authorization':'Bearer '+_tok}});
+    var _r = await fetch('/api/items', {headers:{'Authorization':'Bearer '+_tok}});
     if(!_r.ok){ list.innerHTML='<div class="empty-msg">&#47196;&#46300; &#49892;&#54036;</div>'; return; }
-    const d = await _r.json();
-    const items = (d.items||[]);
-    const barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
-    // status 표시용
-    const statusLabel=function(s){
-      if(s==='active'||s==='reservable'||!s) return '<span style="background:#e8f5e9;color:#2e7d32;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">&#48372;&#50976;</span>';
-      if(s==='pending'||s==='matched') return '<span style="background:#fff3e0;color:#e65100;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">&#47588;&#52845;&#51473;</span>';
-      return '';
-    };
-    const barOrder=['bronze','silver','gold'];
-    const grouped={};
+    var d = await _r.json();
+    var items = (d.items||[]);
+    var barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
+    var barOrder=['bronze','silver','gold'];
+    var grouped={};
     items.forEach(function(i){ if(!grouped[i.bar_type]) grouped[i.bar_type]=[]; grouped[i.bar_type].push(i); });
-    // 1개 이하인 타입은 결합 불가 → 제외
-    const validTypes = barOrder.filter(function(bt){ return grouped[bt] && grouped[bt].length >= 2; });
+    var validTypes = barOrder.filter(function(bt){ return grouped[bt] && grouped[bt].length >= 2; });
     if(!validTypes.length){
       list.innerHTML='<div class="empty-msg">&#44208;&#54633; &#44032;&#45733;&#54620; &#50500;&#51060;&#53596; &#50630;&#51020;<br><small style="color:#aaa">&#44057;&#51008; &#51333;&#47448; 2&#44060; &#51060;&#49345; &#54596;&#50836;</small></div>';
       return;
     }
     list.innerHTML = validTypes.map(function(bt){
       var cards = grouped[bt].map(function(i){
+        var badge = getStatusBadge(i.status);
         return '<div class="combine-item-card" id="ci-'+i.id+'" onclick="toggleCombineItem('+i.id+',''+i.bar_type+'','+i.stage+')">'
-          +'<div class="item-stage">'+i.stage+'&#45800;&#44228;'+statusLabel(i.status)+'</div>'
+          +'<div class="item-stage">'+i.stage+'&#45800;&#44228;'+badge+'</div>'
           +'<div class="item-price">'+(i.buy_price||0).toLocaleString()+'&#50896;</div>'
           +'</div>';
       }).join('');
