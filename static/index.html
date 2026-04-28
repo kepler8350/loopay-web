@@ -716,7 +716,7 @@ function showTab(id,btn){
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
 
-  if(name === 'combine') { loadCombineItems(); }
+  if(name === 'combine') { setTimeout(loadCombineItems, 100); }
 }
 
 // ─── detail toggle ─────────────────────────────────────────────────────────
