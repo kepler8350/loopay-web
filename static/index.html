@@ -500,35 +500,7 @@ function toast(msg, dur=2500){
   el.textContent=msg;el.classList.add('show');
   setTimeout(()=>el.classList.remove('show'),dur);
 }
-window.demoLogin = async function(){
-  const btn = document.querySelector('.demo-btn');
-  if(btn){ btn.disabled=true; btn.textContent='로그인 중...'; }
-  try {
-    const r = await fetch('/api/auth/demo-login', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({})
-    });
-    if(!r.ok){ throw new Error('서버 오류 ' + r.status); }
-    const d = await r.json();
-    if(!d.access_token){ throw new Error(d.error || '토큰 없음'); }
-    // 카카오 로그인과 동일하게 처리
-    localStorage.setItem('lp_token', d.access_token);
-    token = d.access_token;
-    // 사용자 데이터 로드
-    if(typeof loadUserData === 'function') await loadUserData();
-    // 화면 전환
-    const loginEl = document.getElementById('login-screen');
-    const mainEl  = document.getElementById('main-app');
-    if(loginEl) loginEl.style.display = 'none';
-    if(mainEl)  mainEl.style.display  = 'flex';
-    const firstNav = document.querySelector('.nav-btn');
-    if(firstNav) firstNav.click();
-  } catch(e) {
-    alert('체험하기 오류: ' + e.message);
-    if(btn){ btn.disabled=false; btn.textContent='데모 계정으로 체험하기'; }
-  }
-}
+
 async function api(path, opts={}){
   const headers={'Content-Type':'application/json'};
   if(token) headers['Authorization']='Bearer '+token;
@@ -540,36 +512,7 @@ async function api(path, opts={}){
 
 // --- auth -----------------------------------------------------------------
 async 
-async function demoLogin(){
-  var btn = document.querySelector('[onclick="demoLogin()"]');
-  if(btn){ btn.disabled=true; btn.textContent='&#47196;&#44536;&#51064; &#51473;...'; }
-  try{
-    var res = await fetch('/api/auth/kakao-login',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({kakao_id:'demo_user',nickname:'&#54861;&#44600;&#46041;',demo:true})
-    });
-    var d = await res.json();
-    var tok = d.token || d.access_token;
-    if(tok){
-      localStorage.setItem('lp_token', tok);
-      window.token = tok;
-      // 화면 전환
-      var loginEl = document.getElementById('login-screen');
-      var mainEl = document.getElementById('main-app');
-      if(loginEl) loginEl.style.display='none';
-      if(mainEl) mainEl.style.display='flex';
-      // 홈 데이터 로드
-      if(typeof loadHome==='function') loadHome();
-      else if(typeof loadUserData==='function') loadUserData();
-    } else {
-      alert('&#45936;&#47784; &#47196;&#44536;&#51064; &#49892;&#54028;: '+(d.error||d.msg||'unknown'));
-    }
-  }catch(e){
-    alert('&#50724;&#47448;: '+e.message);
-  }
-  if(btn){ btn.disabled=false; btn.textContent='&#127909; &#45936;&#47784; &#44228;&#51221; &#52404;&#54744;&#54616;&#44592;'; }
-}
+
 function loginKakao(){ toast('카카오 SDK 연동이 필요합니다. 데모 계정으로 체험해주세요.'); }
 
 async function checkApiStatus(){
