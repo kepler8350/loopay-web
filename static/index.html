@@ -491,7 +491,7 @@ let token = localStorage.getItem('lp_token') || '';
 let userData = null;
 let bzCnt = 7;
 
-// ─── utils ────────────────────────────────────────────────────────────────
+// --- utils ----------------------------------------------------------------
 function toast(msg, dur=2500){
   const el=document.getElementById('toast');
   el.textContent=msg;el.classList.add('show');
@@ -506,7 +506,7 @@ async function api(path, opts={}){
   return data;
 }
 
-// ─── auth ─────────────────────────────────────────────────────────────────
+// --- auth -----------------------------------------------------------------
 async function demoLogin(){
   try{
     const d = await api('/auth/kakao-login',{method:'POST',body:JSON.stringify({kakao_id:'demo_kakao_001',nickname:'홍길동',email:'hong@test.com'})});
@@ -533,7 +533,7 @@ function showMainApp(){
   m.style.display='flex'; m.style.flexDirection='column'; m.style.height='100vh';
 }
 
-// ─── user data ────────────────────────────────────────────────────────────
+// --- user data ------------------------------------------------------------
 async function loadUserData(){
   try{
     const d = await api('/user/me');
@@ -623,7 +623,7 @@ function renderBars(d){
   });
 }
 
-// ─── reservation ──────────────────────────────────────────────────────────
+// --- reservation ----------------------------------------------------------
 function updateReserveDefaults(lv){
   const BZ_MIN=lv===3?7:4, BZ_MAX=lv===3?10:5;
   if(bzCnt<BZ_MIN) bzCnt=BZ_MIN;
@@ -678,7 +678,7 @@ async function submitReservation(){
   }
 }
 
-// ─── charge ───────────────────────────────────────────────────────────────
+// --- charge ---------------------------------------------------------------
 function calcCharge(){
   const amt=parseInt(document.getElementById('charge-amount').value)||0;
   const pts=Math.floor(amt/120);
@@ -700,7 +700,7 @@ async function requestCharge(){
   }
 }
 
-// ─── price ────────────────────────────────────────────────────────────────
+// --- price ----------------------------------------------------------------
 const PRICES={
   bronze:[[1,5000,10500],[2,10500,16550],[3,16550,23200],[4,23200,30550],[5,30550,38600],[6,38600,47450],[7,47450,57200],[8,57200,67900],[9,67900,79700],[10,79700,92700],[11,92700,106950],[12,106950,122650],[13,122650,139900],[14,139900,158900],[15,158900,179750],[16,179750,202750],[17,202750,228000],[18,228000,255800],[19,255800,286400],[20,286400,320000],[21,320000,357000]],
   silver:[[1,5000,11720],[2,11720,19250],[3,19250,27700],[4,27700,37150],[5,37150,47700],[6,47700,59550],[7,59550,72800],[8,72800,87650],[9,87650,104300],[10,104300,122950],[11,122950,143800],[12,143800,167200],[13,167200,193400],[14,193400,222700],[15,222700,255550],[16,255550,292300],[17,292300,333500]],
@@ -720,7 +720,7 @@ function showBarPrice(type,btn){
   btn.classList.add('on');
 }
 
-// ─── tabs ─────────────────────────────────────────────────────────────────
+// --- tabs -----------------------------------------------------------------
 function showTab(id,btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -730,7 +730,7 @@ function showTab(id,btn){
   if(id === 'combine') { setTimeout(loadCombineItems, 100); }
 }
 
-// ─── detail toggle ─────────────────────────────────────────────────────────
+// --- detail toggle ---------------------------------------------------------
 function toggleDetail(type){
   const panel=document.getElementById('detail-'+type);
   const card=document.getElementById('card-'+type);
@@ -742,7 +742,7 @@ function toggleDetail(type){
   if(!isOpen){panel.style.display='block';card.classList.add('selected');}
 }
 
-// ─── admin ────────────────────────────────────────────────────────────────
+// --- admin ----------------------------------------------------------------
 let adminToken='';
 function showAdminModal(){document.getElementById('admin-modal').style.display='flex';}
 function closeAdminModal(){document.getElementById('admin-modal').style.display='none';}
@@ -797,7 +797,7 @@ async function runMatching(){
 
 function closeAdminPanel(){document.getElementById('admin-panel').style.display='none';}
 
-// ─── init ─────────────────────────────────────────────────────────────────
+// --- init -----------------------------------------------------------------
 checkApiStatus();
 if(token){showMainApp();loadUserData();}
 loadPrices();
