@@ -85,7 +85,7 @@ def demo_login():
             conn.commit()
             user = conn.execute("SELECT * FROM users WHERE kakao_id=?", (DEMO_ID,)).fetchone()
         u = dict(user)
-        access_token = create_access_token(identity=u['id'])
+        access_token = create_access_token(identity=str(u['id']))
         return jsonify(access_token=access_token, user={
             'id': u['id'],
             'nickname': u.get('nickname', DEMO_NICK),
