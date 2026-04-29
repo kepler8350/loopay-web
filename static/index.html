@@ -832,7 +832,7 @@ async function loadCombineItems(){
     list.innerHTML = validTypes.map(function(bt){
       var cards = grouped[bt].map(function(i){
         var badge = getStatusBadge(i.status);
-        return '<div class="combine-item-card" id="ci-'+i.id+'" onclick="toggleCombineItem('+i.id+',''+i.bar_type+'','+i.stage+')">'
+        return `<div class="combine-item-card" id="ci-${i.id}" onclick="toggleCombineItem(${i.id},'${i.bar_type}',${i.stage})">`
           +'<div class="item-stage">'+i.stage+'&#45800;&#44228;'+badge+'</div>'
           +'<div class="item-price">'+(i.buy_price||0).toLocaleString()+'&#50896;</div>'
           +'</div>';
