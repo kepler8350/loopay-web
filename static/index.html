@@ -453,7 +453,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="info-block">1) 입금 확인 후 입금확인 버튼 클릭 (미클릭 시 자동 확인)<br>2) 허위 입금 신고 가능<br>3) 2차 미입금 물량 → 한 단계 위 가격 다음날 판매<br>4) 판매 예약 취소 불가</div>
       </div>
     
-      <div id="tab-combine" class="tab"><div class="sec-title">결합판매</div><div class="combine-desc">결합 판매 (250P 소모)</div><div id="combine-items-list" class="combine-list"><div class="empty-msg">로딩 중...</div></div><div id="combine-selected" class="combine-selected" style="display:none"><div class="combine-sel-title">선택된 아이템</div><div id="combine-sel-info"></div><div id="combine-preview-result" class="combine-preview"></div><button id="combine-exec-btn" onclick="executeCombine()" style="display:none;width:100%;padding:14px;margin-top:10px;border-radius:10px;font-size:15px;font-weight:700;border:none;background:#66bb6a;color:#fff;cursor:pointer">결합판매 실행 (250P)</button></div></div>
+      <div id="tab-combine" class="tab"><div class="sec-title">결합판매</div><div class="combine-desc">결합 판매 (250P 소모)</div><div id="combine-items-list" class="combine-list"><div class="empty-msg">로딩 중...</div></div><div id="combine-selected" class="combine-selected" style="display:none"><div class="combine-sel-title">선택된 아이템</div><div id="combine-sel-info"></div><div id="combine-preview-result" class="combine-preview"></div><button id="combine-exec-btn" onclick="executeCombine()" style="width:100%;padding:14px;background:#1976d2;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;display:none">&#44208;&#54633;&#54032;&#47588; &#49892;&#54665; (250P)</button></div></div>
     </div>
   </div>
 
@@ -869,56 +869,39 @@ async function toggleCombineItem(id,barType,stage){
 }
 
 function renderCombineSelected(){
-  const selDiv = document.getElementById('combine-selected');
-  const selInfo = document.getElementById('combine-sel-info');
-  const pr = document.getElementById('combine-preview-result');
-  const execBtn = document.getElementById('combine-exec-btn');
-  const barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
-
+  var selDiv=document.getElementById('combine-selected');
+  var selInfo=document.getElementById('combine-sel-info');
+  var pr=document.getElementById('combine-preview-result');
+  var execBtn=document.getElementById('combine-exec-btn');
+  var barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
   if(!selDiv) return;
-
-  // 0개: 영역 숨김
-  if(combineSelected.length===0){
-    selDiv.style.display='none';
-    if(pr) pr.innerHTML='';
-    if(execBtn) execBtn.style.display='none';
-    return;
-  }
+  if(combineSelected.length===0){selDiv.style.display='none';if(pr)pr.innerHTML='';if(execBtn)execBtn.style.display='none';return;}
   selDiv.style.display='block';
-
-  const slot1 = combineSelected[0] || null;
-  const slot2 = combineSelected[1] || null;
-
-  // 뱃지 렌더링
-  const makeBadge = function(slot, color, textColor){
-    if(!slot) return '<span style="background:#ddd;color:#999;padding:3px 10px;border-radius:12px;font-size:12px">&#49440;&#53469; &#54644;&#51452;&#49464;&#50836;</span>';
-    var name = (barNames[slot.barType]||slot.barType)+' '+slot.stage+'&#45800;&#44228;';
-    return '<span style="background:'+color+';color:'+textColor+';padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700">'+name+'</span>';
+  var slot1=combineSelected[0]||null;
+  var slot2=combineSelected[1]||null;
+  var makeBadge=function(slot,color,textColor){
+    if(!slot) return '<span style="background:#ddd;color:#999;padding:4px 10px;border-radius:12px;font-size:12px">&#49440;&#53469; &#54644;&#51452;&#49464;&#50836;</span>';
+    var name=(barNames[slot.barType]||slot.barType)+' '+slot.stage+'&#45800;&#44228;';
+    return '<span style="background:'+color+';color:'+textColor+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px">'
+      +name
+      +'<button onclick="removeFromCombine('+slot.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+textColor+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center" title="&#49440;&#53469; &#52712;&#49548;">&#10005;</button>'
+      +'</span>';
   };
-  if(selInfo) selInfo.innerHTML =
-    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
-    + makeBadge(slot1,'#4fc3f7','#000')
-    + '<span style="color:#aaa;font-size:14px">+</span>'
-    + makeBadge(slot2,'#66bb6a','#fff')
-    + '</div>';
-
-  if(!pr || !execBtn) return;
-
-  // 2개 선택 완료 시 미리보기
-  if(slot1 && slot2){
+  if(selInfo) selInfo.innerHTML='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">'
+    +makeBadge(slot1,'#4fc3f7','#000')
+    +'<span style="color:#aaa;font-size:14px">+</span>'
+    +makeBadge(slot2,'#66bb6a','#fff')
+    +'</div>';
+  if(!pr||!execBtn) return;
+  if(slot1&&slot2){
     pr.innerHTML='<div style="color:#aaa;font-size:12px">&#44228;&#49328; &#51473;...</div>';
     execBtn.style.display='none';
-    var _tok = localStorage.getItem('lp_token')||'';
-    fetch('/api/combine/preview',{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},
-      body:JSON.stringify({item1_id:slot1.id,item2_id:slot2.id})
-    })
-    .then(function(res){ return res.json(); })
+    var _tok=localStorage.getItem('lp_token')||'';
+    fetch('/api/combine/preview',{method:'POST',headers:{'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},body:JSON.stringify({item1_id:slot1.id,item2_id:slot2.id})})
+    .then(function(r){return r.json();})
     .then(function(resp){
       if(resp.can_combine){
-        pr.innerHTML =
-          '<div class="row"><span class="label">&#44208;&#54633; &#44396;&#47588;&#44032;</span><span class="val">'+resp.total_buy.toLocaleString()+'&#50896;</span></div>'
+        pr.innerHTML='<div class="row"><span class="label">&#44208;&#54633; &#44396;&#47588;&#44032;</span><span class="val">'+resp.total_buy.toLocaleString()+'&#50896;</span></div>'
           +'<div class="row"><span class="label">&#44208;&#54633; &#54032;&#47588; &#45800;&#44228;</span><span class="val yellow">'+resp.combined_stage+'&#45800;&#44228;</span></div>'
           +'<div class="row"><span class="label">&#44208;&#54633; &#54032;&#47588;&#44032;</span><span class="val green">'+resp.combined_sell.toLocaleString()+'&#50896;</span></div>'
           +'<div class="row"><span class="label">&#54252;&#51064;&#53944; &#48708;&#50857;</span><span class="val red">250P (30,000&#50896;)</span></div>'
@@ -927,21 +910,25 @@ function renderCombineSelected(){
           +'<span class="val green" style="font-size:15px;font-weight:700">'+resp.net_profit.toLocaleString()+'&#50896;</span></div>';
         execBtn.style.display='block';
       } else {
-        var msg = (resp.error==='same type only')
-          ? '&#44057;&#51008; &#51333;&#47448;&#47564; &#44208;&#54633; &#44032;&#45733;'
-          : (resp.normal_profit>23000 ? '&#49688;&#51775; &#54620;&#46020; &#52488;&#44284;' : (resp.error||'&#44208;&#54633; &#48276;&#44284; &#50630;&#51020;'));
+        var msg=(resp.error==='same type only')?'&#44057;&#51008; &#51333;&#47448;&#47564; &#44208;&#54633; &#44032;&#45733;':(resp.normal_profit>23000?'&#49688;&#51775; &#54620;&#46020; &#52488;&#44284;':(resp.error||'&#44208;&#54633; &#48266;&#50948; &#50630;&#51020;'));
         pr.innerHTML='<div style="color:#c62828;font-size:13px">'+msg+'</div>';
         execBtn.style.display='none';
       }
     })
-    .catch(function(e){
-      pr.innerHTML='<div style="color:#c62828;font-size:12px">'+e.message+'</div>';
-    });
+    .catch(function(e){pr.innerHTML='<div style="color:#c62828;font-size:12px">'+e.message+'</div>';});
   } else {
-    // 1개 선택 시 미리보기 초기화
-    pr.innerHTML='';
-    execBtn.style.display='none';
+    pr.innerHTML='';execBtn.style.display='none';
   }
+}
+
+function removeFromCombine(id){
+  var idx=combineSelected.findIndex(function(x){return x.id===id;});
+  if(idx>=0){
+    combineSelected.splice(idx,1);
+    var card=document.getElementById('ci-'+id);
+    if(card) card.classList.remove('selected');
+  }
+  renderCombineSelected();
 }
 async function executeCombine(){
   if(combineSelected.length!==2){ alert('아이템 2개를 선택하세요'); return; }
