@@ -950,37 +950,24 @@ function doLogout() {
 function demoLogin(btn){
   if(btn){btn.disabled=true;btn.textContent="Loading...";}
   fetch("/api/auth/demo-login",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(!d.access_token){alert(d.error||"Error");if(btn){btn.disabled=false;btn.textContent="&#45936;&#47784; &#44228;&#51221;&#51004;&#47196; &#52404;&#54744;&#54616;&#44592;";}return;}
-      localStorage.setItem("lp_token",d.access_token);
-      // 아이템 초기화 후 데이터 로드
-      return fetch("/api/auth/init-demo-items",{method:"POST",headers:{"Authorization":"Bearer "+d.access_token,"Content-Type":"application/json"},body:"{}"})
-        .then(function(){
-          if(typeof loadUserData==="function") return loadUserData();
-        })
-        .then(function(){
-          document.getElementById("login-screen").style.display="none";
-          document.getElementById("main-app").style.display="flex";
-          var n=document.querySelector(".nav-btn");if(n)n.click();
-        });
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(!d.access_token){
+      alert(d.error||"Error");
+      if(btn){btn.disabled=false;btn.textContent="\uB370\uBAA8 \uACC4\uC815\uC73C\uB85C \uCCB4\uD5D8\uD558\uAE30";}
+      return;
+    }
+    localStorage.setItem("lp_token",d.access_token);
+    return fetch("/api/auth/init-demo-items",{method:"POST",headers:{"Authorization":"Bearer "+d.access_token,"Content-Type":"application/json"},body:"{}"})
+    .then(function(){
+      if(typeof loadUserData==="function") return loadUserData();
     })
-    .catch(function(e){alert(e.message);})
-    .finally(function(){if(btn){btn.disabled=false;btn.textContent="&#45936;&#47784; &#44228;&#51221;&#51004;&#47196; &#52404;&#54744;&#54616;&#44592;";}});
+    .then(function(){
+      document.getElementById("login-screen").style.display="none";
+      document.getElementById("main-app").style.display="flex";
+      var n=document.querySelector(".nav-btn");if(n)n.click();
+    });
+  })
+  .catch(function(e){alert(e.message);})
+  .finally(function(){if(btn){btn.disabled=false;btn.textContent="\uB370\uBAA8 \uACC4\uC815\uC73C\uB85C \uCCB4\uD5D8\uD558\uAE30";}});
 }
-{}"})
-        .then(function(){
-          if(typeof loadUserData==="function") return loadUserData();
-        })
-        .then(function(){
-          document.getElementById("login-screen").style.display="none";
-          document.getElementById("main-app").style.display="flex";
-          var n=document.querySelector(".nav-btn");if(n)n.click();
-        });
-    })
-    .catch(function(e){alert(e.message);})
-    .finally(function(){if(btn){btn.disabled=false;btn.textContent="&#45936;&#47784; &#44228;&#51221;&#51004;&#47196; &#52404;&#54744;&#54616;&#44592;";}});
-}
-</script>
-</body>
-</html>
