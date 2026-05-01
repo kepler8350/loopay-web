@@ -579,16 +579,28 @@ function ciAddClick(btn){
   addToCombine(id,barType,stage);
 }
 async function addToCombine(id,barType,stage){
-  if(combineSelected.length>=2){alert('2&#44060;&#47564; &#49440;&#53469; &#44032;&#45733;');return;}
+  if(combineSelected.length>=2){alert('2개만 선택 가능합니다.');return;}
+  if(combineSelected.find(function(x){return x.id===id;})){return;}
   combineSelected.push({id:id,barType:barType,stage:stage});
-  renderCombineList();
+  // 카드 선택 표시 (재렌더링 없이)
+  var card=document.getElementById('ci-'+id);
+  if(card){
+    card.classList.add('selected');
+    var btn=card.querySelector('button');
+    if(btn) btn.textContent='✓';
+  }
   renderCombineSelected();
 }
 
 function removeFromCombine(id){
   var idx=combineSelected.findIndex(function(x){return x.id===id;});
   if(idx>=0) combineSelected.splice(idx,1);
-  renderCombineList();
+  var card=document.getElementById('ci-'+id);
+  if(card){
+    card.classList.remove('selected');
+    var btn=card.querySelector('button');
+    if(btn) btn.textContent='+';
+  }
   renderCombineSelected();
 }
 
