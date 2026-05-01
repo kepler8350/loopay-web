@@ -231,21 +231,30 @@ def get_items():
     uid = int(get_jwt_identity())
     bar_type = request.args.get('bar_type')
     db = get_db()
-    if bar_type:
-        rows = db.execute("SELECT * FROM items WHERE user_id=? AND bar_type=? AND status!='sold'", (uid,bar_type)).fetchall()
-    else:
-        rows = db.execute("SELECT * FROM items WHERE user_id=? AND status!='sold'", (uid,)).fetchall()
-    result = []
-    for it in rows:
-        buy, sell = get_price(it['bar_type'], it['stage'])
-        result.append({'id':it['id'],'bar_type':it['bar_type'],'stage':it['stage'],'purchase_date':it['purchase_date'],'days':days_since(it['purchase_date']),'status_label':item_status_label(it['status'],it['purchase_date']),'buy_price':buy,'sell_price':sell,'profit':sell-buy})
-    db.close()
-        # items_flat: 결합판매용 평면 리스트
-    items_flat = []
-    for bt, item_list in result.items():
-        for item in item_list:
-            items_flat.append(item)
-    return jsonify(items=result, items_flat=items_flat)
+    try:
+        if bar_type:
+            rows = db.execute("SELECT * FROM items WHERE user_id=? AND bar_type=? AND status!='sold' ORDER BY bar_type, stage", (uid, bar_type)).fetchall()
+        else:
+            rows = db.execute("SELECT * FROM items WHERE user_id=? AND status!='sold' ORDER BY bar_type, stage", (uid,)).fetchall()
+        result = []
+        for it in rows:
+            buy, sell = get_price(it['bar_type'], it['stage'])
+            result.append({
+                'id': it['id'],
+                'bar_type': it['bar_type'],
+                'stage': it['stage'],
+                'purchase_date': it['purchase_date'],
+                'days': days_since(it['purchase_date']),
+                'status_label': item_status_label(it['status'], it['purchase_date']),
+                'buy_price': buy,
+                'sell_price': sell,
+                'profit': sell - buy
+            })
+        return jsonify(result)
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
 
 @app.route('/api/prices', methods=['GET'])
 def get_prices():
