@@ -240,12 +240,12 @@ def get_items():
         buy, sell = get_price(it['bar_type'], it['stage'])
         result.append({'id':it['id'],'bar_type':it['bar_type'],'stage':it['stage'],'purchase_date':it['purchase_date'],'days':days_since(it['purchase_date']),'status_label':item_status_label(it['status'],it['purchase_date']),'buy_price':buy,'sell_price':sell,'profit':sell-buy})
     db.close()
-    # items_flat: 전체 아이템 평면 리스트 (결합판매용)
-        items_flat = []
-        for bt, item_list in result.items():
-            for item in item_list:
-                items_flat.append(item)
-        return jsonify(items=result, items_flat=items_flat)
+        # items_flat: 결합판매용 평면 리스트
+    items_flat = []
+    for bt, item_list in result.items():
+        for item in item_list:
+            items_flat.append(item)
+    return jsonify(items=result, items_flat=items_flat)
 
 @app.route('/api/prices', methods=['GET'])
 def get_prices():
