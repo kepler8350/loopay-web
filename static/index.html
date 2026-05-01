@@ -365,7 +365,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-sv-note').textContent=`수정 ${bzCnt}개 → 루비 ${sv}개 자동 결정${bzCnt<10?' (10개시 5개)':''}`;
   document.getElementById('r-gd-note').textContent=`루비 ${sv}개 → 다이아 ${gd}개 자동 결정${sv<5?' (루비5개시 3개)':''}`;
   const total=bzCnt+sv+gd, cost=total*40;
-  document.getElementById('r-info').innerHTML=`수정 <b>${bzCnt}<\/b> + 루비 <b>${sv}<\/b> + 다이아 <b>${gd}</b> = 총 <b>${total}</b>회 / 차감 <b>${cost.toLocaleString()}P</b>`;
+  document.getElementById('r-info').innerHTML=`수정 <b>${bzCnt}<\/b> + 루비 <b>${sv}<\/b> + 다이아 <b>${gd}<\/b> = 총 <b>${total}<\/b>회 / 차감 <b>${cost.toLocaleString()}P<\/b>`;
 }
 
 function changeRes(type,delta){
@@ -420,8 +420,8 @@ async function requestCharge(){
 
 function loadPrices(){
   ['bronze','silver','gold'].forEach(t=>{
-    const rows=PRICES[t].map(([s,b,sl])=>`<tr><td>${s}<\/td><td>${b.toLocaleString()}<\/td><td>${sl.toLocaleString()}</td><td class="${sl-b>=0?'tag-pos':'tag-neg'}">${sl-b>=0?'+':''}${(sl-b).toLocaleString()}<\/td><\/tr>`).join('');
-    document.getElementById('price-'+t).innerHTML=`<table class="price-table"><tr><th>단계<\/th><th>구매(원)<\/th><th>판매(원)<\/th><th>차액</th></tr>${rows}</table>`;
+    const rows=PRICES[t].map(([s,b,sl])=>`<tr><td>${s}<\/td><td>${b.toLocaleString()}<\/td><td>${sl.toLocaleString()}<\/td><td class="${sl-b>=0?'tag-pos':'tag-neg'}">${sl-b>=0?'+':''}${(sl-b).toLocaleString()}<\/td><\/tr>`).join('');
+    document.getElementById('price-'+t).innerHTML=`<table class="price-table"><tr><th>단계<\/th><th>구매(원)<\/th><th>판매(원)<\/th><th>차액<\/th><\/tr>${rows}<\/table>`;
   });
 }
 
@@ -482,7 +482,7 @@ async function showAdminPanel(){
       charges.charges.map(c=>`<div style="background:var(--bg2);border-radius:8px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
         <div><div style="font-size:13px;font-weight:600">${c.nickname}<\/div><div style="font-size:12px;color:var(--text2)">${c.amount.toLocaleString()}원 → ${c.points}P<\/div><\/div>
         <button onclick="confirmCharge(${c.id})" style="padding:7px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600">확인<\/button>
-      </div>`).join(''):
+      <\/div>`).join(''):
       '<div style="color:var(--text2);font-size:13px;padding:8px">대기 중인 충전 신청 없음<\/div>';
   }catch(e){document.getElementById('admin-charges').textContent='데이터 로드 실패';}
   token=savedToken;
