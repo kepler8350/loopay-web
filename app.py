@@ -99,6 +99,37 @@ def demo_login():
     finally:
         conn.close()
 
+@app.route('/api/auth/init-demo-items', methods=['POST'])
+@jwt_required()
+def init_demo_items():
+    """demo 계정에 테스트 아이템 추가"""
+    uid = int(get_jwt_identity())
+    conn = get_db()
+    try:
+        today = __import__('datetime').date.today().isoformat()
+        yesterday = (__import__('datetime').date.today() - __import__('datetime').timedelta(days=1)).isoformat()
+        # 기존 아이템 삭제 후 재추가
+        conn.execute("DELETE FROM items WHERE user_id=?", (uid,))
+        items_to_add = [
+            ('bronze', 3, yesterday), ('bronze', 5, yesterday),
+            ('bronze', 2, today),     ('bronze', 4, yesterday),
+            ('bronze', 1, today),
+            ('silver', 2, yesterday), ('silver', 3, today),
+            ('gold', 1, today),
+        ]
+        for bar_type, stage, date in items_to_add:
+            conn.execute(
+                "INSERT INTO items (user_id, bar_type, stage, purchase_date, status) VALUES (?,?,?,?,'waiting')",
+                (uid, bar_type, stage, date)
+            )
+        conn.commit()
+        return jsonify(success=True, count=len(items_to_add))
+    except Exception as e:
+        conn.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        conn.close()
+
 @app.route('/api/auth/admin-login', methods=['POST'])
 def admin_login():
     data = request.json or {}
@@ -109,6 +140,11 @@ def admin_login():
         return jsonify(error='Invalid credentials'), 401
     token = create_access_token(identity='admin:'+str(admin['id']))
     return jsonify(token=token, role='admin')
+
+@app.route('/api/user', methods=['GET'])
+@jwt_required()
+def get_user_alias():
+    return get_me()
 
 @app.route('/api/user/me', methods=['GET'])
 @jwt_required()
