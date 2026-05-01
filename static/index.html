@@ -838,10 +838,11 @@ function renderCombineList(){
   }
   list.innerHTML=validTypes.map(function(bt){
     var cards=grouped[bt].map(function(i){
-      return '<div class="combine-item-card" id="ci-'+i.id+'">'
+      // onclick에 따옴표 없이, data 속성으로 전달
+      return '<div class="combine-item-card" id="ci-'+i.id+'" data-id="'+i.id+'" data-bt="'+i.bar_type+'" data-st="'+i.stage+'">'
         +'<div class="item-stage">'+i.stage+'&#45800;&#44228;</div>'
         +'<div class="item-price">'+(i.buy_price||0).toLocaleString()+'&#50896;</div>'
-        +'<button class="ci-add-btn" onclick="addToCombine('+i.id+',''+i.bar_type+'','+i.stage+')">+</button>'
+        +'<button class="ci-add-btn" onclick="ciAddClick(this)">+</button>'
         +'</div>';
     }).join('');
     return '<div class="combine-group">'
@@ -849,6 +850,15 @@ function renderCombineList(){
       +'<div class="combine-group-grid">'+cards+'</div>'
       +'</div>';
   }).join('');
+}
+
+function ciAddClick(btn){
+  var card=btn.closest('[data-id]');
+  if(!card) return;
+  var id=parseInt(card.dataset.id);
+  var barType=card.dataset.bt;
+  var stage=parseInt(card.dataset.st);
+  addToCombine(id,barType,stage);
 }
 async function addToCombine(id,barType,stage){
   if(combineSelected.length>=2){alert('2&#44060;&#47564; &#49440;&#53469; &#44032;&#45733;');return;}
