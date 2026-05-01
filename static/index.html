@@ -662,8 +662,7 @@ function executeCombine(){
     var ok=results.filter(function(r){return r.success||r.combined_stage;});
     var fail=results.filter(function(r){return r.error;});
     var msg='';
-    if(ok.length) msg+='&#44208;&#54633; &#49457;&#44277; '+ok.length+'&#44148;!
-';
+    if(ok.length) msg+='&#44208;&#54633; &#49457;&#44277; '+ok.length+'&#44148;!\n';
     if(fail.length) msg+='&#49892;&#54028; '+fail.length+'&#44148;: '+(fail[0].error||'');
     alert(msg||'&#50756;&#47308;');
     combineSelected=[];
