@@ -967,6 +967,7 @@ function demoLogin(btn){
     .then(function(d){
       if(!d.access_token){alert(d.error||"Error");if(btn){btn.disabled=false;btn.textContent="\uB370\uBAA8 \uACC4\uC815\uC73C\uB85C \uCCB4\uD5D8\uD558\uAE30";}return;}
       localStorage.setItem("lp_token",d.access_token);
+      fetch("/api/auth/init-demo-items",{method:"POST",headers:{"Authorization":"Bearer "+d.access_token,"Content-Type":"application/json"},body:"{}"}).catch(function(){});
       if(typeof token!=="undefined") token=d.access_token;
       if(typeof loadUserData==="function"){
         loadUserData().then(function(){
