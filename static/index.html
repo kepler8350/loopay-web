@@ -502,6 +502,7 @@ const PRICES={
   gold:[[1,5000,1300],[2,1300,22100],[3,22100,32450],[4,32450,44300],[5,44300,57750],[6,57750,73150],[7,73150,90650],[8,90650,110600],[9,110600,133400],[10,133400,159350],[11,159350,188900],[12,188900,222660],[13,222660,261100],[14,261100,304900],[15,304900,354900]]
 };
 
+let combineSelected = [];
 function toast(msg, dur=2500){
   const el=document.getElementById('toast');
   el.textContent=msg;el.classList.add('show');
@@ -803,7 +804,6 @@ if(token){showMainApp();loadUserData();}
 loadPrices();
 
 // 결합판매
-let combineSelected = [];
 function getStatusBadge(s){
   if(s==='active'||s==='reservable'||!s)
     return '<span style="background:#e8f5e9;color:#2e7d32;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">&#48372;&#50976;</span>';
