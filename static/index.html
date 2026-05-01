@@ -199,6 +199,498 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .combine-preview .val.red{color:#ef5350}
 .combine-preview .val.yellow{color:#ffa726}
 </style>
+<script>
+const API = '/api';
+let token = localStorage.getItem('lp_token') || '';
+let userData = null;
+let bzCnt = 7;
+
+// --- utils ----------------------------------------------------------------
+// --- price ----------------------------------------------------------------
+const PRICES={
+  bronze:[[1,5000,10500],[2,10500,16550],[3,16550,23200],[4,23200,30550],[5,30550,38600],[6,38600,47450],[7,47450,57200],[8,57200,67900],[9,67900,79700],[10,79700,92700],[11,92700,106950],[12,106950,122650],[13,122650,139900],[14,139900,158900],[15,158900,179750],[16,179750,202750],[17,202750,228000],[18,228000,255800],[19,255800,286400],[20,286400,320000],[21,320000,357000]],
+  silver:[[1,5000,11720],[2,11720,19250],[3,19250,27700],[4,27700,37150],[5,37150,47700],[6,47700,59550],[7,59550,72800],[8,72800,87650],[9,87650,104300],[10,104300,122950],[11,122950,143800],[12,143800,167200],[13,167200,193400],[14,193400,222700],[15,222700,255550],[16,255550,292300],[17,292300,333500]],
+  gold:[[1,5000,1300],[2,1300,22100],[3,22100,32450],[4,32450,44300],[5,44300,57750],[6,57750,73150],[7,73150,90650],[8,90650,110600],[9,110600,133400],[10,133400,159350],[11,159350,188900],[12,188900,222660],[13,222660,261100],[14,261100,304900],[15,304900,354900]]
+};
+
+let combineSelected = [];
+function toast(msg, dur=2500){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+async function api(path, opts={}){
+  const headers={'Content-Type':'application/json'};
+  if(token) headers['Authorization']='Bearer '+token;
+  const r = await fetch(API+path,{...opts,headers:{...headers,...(opts.headers||{})}});
+  const data = await r.json();
+  if(!r.ok) throw new Error(data.error||'오류 발생');
+  return data;
+}
+
+// --- auth -----------------------------------------------------------------
+
+function loginKakao(){ toast('카카오 SDK 연동이 필요합니다. 데모 계정으로 체험해주세요.'); }
+
+async function checkApiStatus(){
+  try{
+    await fetch(API+'/levels');
+    document.getElementById('api-status').textContent='✅ 연결됨';
+    document.getElementById('api-status').style.color='green';
+  }catch{
+    document.getElementById('api-status').textContent='⚠️ 서버 미실행 (데모 모드)';
+    document.getElementById('api-status').style.color='orange';
+  }
+}
+
+function showMainApp(){
+  document.getElementById('login-screen').style.display='none';
+  const m=document.getElementById('main-app');
+  m.style.display='flex'; m.style.flexDirection='column'; m.style.height='100vh';
+}
+
+// --- user data ------------------------------------------------------------
+async function loadUserData(){
+  try{
+    const d = await api('/user/me');
+    userData = d;
+    renderHeader(d);
+    renderBars(d);
+    updateReserveDefaults(d.level);
+  }catch(e){
+    // fallback demo data
+    userData = {
+      level:3,charge_points:2400,exchange_points:1200,total_points:3600,
+      cumulative_count:524,next_level_cum:960,progress_pct:54.6,
+      level_config:{bz_min:7,bz_max:10,sv_min:4,sv_max:5,gd_min:2,gd_max:3},
+      items:{
+        bronze:[
+          {id:1,bar_type:'bronze',stage:3,purchase_date:'2025-04-20',days:3,status_label:'매칭예약가능',buy_price:16550,sell_price:23200,profit:6650},
+          {id:2,bar_type:'bronze',stage:5,purchase_date:'2025-04-19',days:4,status_label:'매칭예약가능',buy_price:30550,sell_price:38600,profit:8050},
+          {id:3,bar_type:'bronze',stage:2,purchase_date:'2025-04-20',days:3,status_label:'매칭예약가능',buy_price:10500,sell_price:16550,profit:6050},
+          {id:4,bar_type:'bronze',stage:4,purchase_date:'2025-04-19',days:4,status_label:'매칭예약가능',buy_price:23200,sell_price:30550,profit:7350},
+          {id:5,bar_type:'bronze',stage:1,purchase_date:'2025-04-21',days:2,status_label:'대기중',buy_price:5000,sell_price:10500,profit:5500},
+        ],
+        silver:[
+          {id:6,bar_type:'silver',stage:2,purchase_date:'2025-04-19',days:4,status_label:'매칭예약가능',buy_price:11720,sell_price:19250,profit:7530},
+          {id:7,bar_type:'silver',stage:3,purchase_date:'2025-04-21',days:2,status_label:'대기중',buy_price:19250,sell_price:27700,profit:8450},
+        ],
+        gold:[
+          {id:8,bar_type:'gold',stage:1,purchase_date:'2025-04-21',days:2,status_label:'대기중',buy_price:5000,sell_price:1300,profit:-3700},
+        ]
+      },
+      reservable:{bronze:4,silver:1,gold:0}
+    };
+    renderHeader(userData); renderBars(userData); updateReserveDefaults(3);
+  }
+  loadPrices();
+}
+
+function renderHeader(d){
+  document.getElementById('h-level').textContent=d.level+'레벨';
+  document.getElementById('h-total').textContent=(d.total_points||0).toLocaleString()+' P';
+  document.getElementById('h-sub').textContent=`충전 ${(d.charge_points||0).toLocaleString()}P + 전환 ${(d.exchange_points||0).toLocaleString()}P`;
+  document.getElementById('h-charge').textContent=(d.charge_points||0).toLocaleString()+' P';
+  document.getElementById('h-exchange').textContent=(d.exchange_points||0).toLocaleString()+' P';
+  document.getElementById('h-cum').textContent=(d.cumulative_count||0).toLocaleString()+'회';
+  const pct=d.progress_pct||0;
+  document.getElementById('h-pct').textContent=pct.toFixed(1)+'% → '+(d.level+1)+'레벨 ('+(d.next_level_cum||'?')+'회)';
+  document.getElementById('h-progfill').style.width=Math.min(100,pct)+'%';
+  // highlight current level row in table
+  document.querySelectorAll('.lv-table tr.cur').forEach(r=>r.classList.remove('cur'));
+  const row=document.getElementById('lv-row-'+d.level);
+  if(row) row.classList.add('cur');
+  // highlight cum chip
+  document.querySelectorAll('.cum-chip').forEach(c=>c.classList.remove('cur'));
+}
+
+function renderBars(d){
+  const items=d.items; const res=d.reservable; const cfg=d.level_config;
+  const types=['bronze','silver','gold'];
+  const ids=['bz','sv','gd'];
+  types.forEach((t,i)=>{
+    const hold=items[t].length;
+    const rv=res[t]||0;
+    document.getElementById(ids[i]+'-hold').textContent=hold+'개';
+    document.getElementById(ids[i]+'-res').textContent=rv+'개';
+  });
+  if(cfg){
+    document.getElementById('bz-range').textContent=`구매예약: 최소 ${cfg.bz_min} ~ 최대 ${cfg.bz_max}`;
+    document.getElementById('sv-range').textContent=`구매예약: 최소 ${cfg.sv_min} ~ 최대 ${cfg.sv_max}`;
+    document.getElementById('gd-range').textContent=`구매예약: 최소 ${cfg.gd_min} ~ 최대 ${cfg.gd_max}`;
+  }
+  // Render item details
+  types.forEach(t=>{
+    const el=document.getElementById('detail-'+t+'-items');
+    const list=items[t];
+    if(!list||!list.length){el.innerHTML='<div style="color:var(--text2);font-size:13px;padding:8px 0">보유 아이템 없음</div>';return;}
+    el.innerHTML=list.map(it=>{
+      const day4note=(it.days>=4&&it.status_label==='매칭예약가능')?' — 미매칭 재예약':'';
+      const profitStr=it.profit>=0?`+${it.profit.toLocaleString()}`:`${it.profit.toLocaleString()}`;
+      return `<div class="item-row">
+        <div class="item-hd">
+          <span class="item-stage">${it.stage}단계 ${t==='bronze'?'수정':t==='silver'?'루비':'다이아'}바</span>
+          <span class="badge ${it.status_label==='대기중'?'badge-wait':'badge-match'}">${it.status_label}</span>
+        </div>
+        <div class="item-date">구매일: ${it.purchase_date} (${it.days}일째)${day4note}</div>
+        <div class="item-price">구매 ${it.buy_price.toLocaleString()}원 → 판매 ${it.sell_price.toLocaleString()}원 (${profitStr}원)</div>
+      </div>`;
+    }).join('');
+  });
+}
+
+// --- reservation ----------------------------------------------------------
+function updateReserveDefaults(lv){
+  const BZ_MIN=lv===3?7:4, BZ_MAX=lv===3?10:5;
+  if(bzCnt<BZ_MIN) bzCnt=BZ_MIN;
+  if(bzCnt>BZ_MAX) bzCnt=BZ_MAX;
+  updateResUI(BZ_MIN,BZ_MAX);
+}
+function getSv(bz){return bz>=10?5:4;}
+function getGd(sv){return sv>=5?3:2;}
+
+function updateResUI(BZ_MIN,BZ_MAX){
+  const sv=getSv(bzCnt), gd=getGd(sv);
+  document.getElementById('r-bz-v').textContent=bzCnt;
+  document.getElementById('r-sv-v').textContent=sv;
+  document.getElementById('r-gd-v').textContent=gd;
+  document.getElementById('r-bz-range').textContent=`최소 ${BZ_MIN} / 최대 ${BZ_MAX}`;
+  document.getElementById('r-sv-range').textContent=sv+'개 (자동)';
+  document.getElementById('r-gd-range').textContent=gd+'개 (자동)';
+  document.getElementById('r-bz-m').disabled=(bzCnt<=BZ_MIN);
+  document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
+  document.getElementById('r-sv-wrap').className='r-wrap locked';
+  document.getElementById('r-gd-wrap').className='r-wrap locked';
+  document.getElementById('r-sv-note').textContent=`수정 ${bzCnt}개 → 루비 ${sv}개 자동 결정${bzCnt<10?' (10개시 5개)':''}`;
+  document.getElementById('r-gd-note').textContent=`루비 ${sv}개 → 다이아 ${gd}개 자동 결정${sv<5?' (루비5개시 3개)':''}`;
+  const total=bzCnt+sv+gd, cost=total*40;
+  document.getElementById('r-info').innerHTML=`수정 <b>${bzCnt}</b> + 루비 <b>${sv}</b> + 다이아 <b>${gd}</b> = 총 <b>${total}</b>회 / 차감 <b>${cost.toLocaleString()}P</b>`;
+}
+
+function changeRes(type,delta){
+  const lv=userData?userData.level:3;
+  const BZ_MIN=lv===3?7:4, BZ_MAX=lv===3?10:5;
+  if(type==='bz') bzCnt=Math.max(BZ_MIN,Math.min(BZ_MAX,bzCnt+delta));
+  updateResUI(BZ_MIN,BZ_MAX);
+}
+
+async function submitReservation(){
+  const sv=getSv(bzCnt), gd=getGd(sv);
+  try{
+    const d=await api('/reservation/create',{method:'POST',body:JSON.stringify({bronze_count:bzCnt})});
+    toast(d.message);
+    loadUserData();
+  }catch(e){
+    // demo fallback
+    const total=bzCnt+sv+gd;
+    toast(`매칭예약 완료! 수정 ${bzCnt}+루비 ${sv}+다이아 ${gd} = ${total}회, ${total*40}P 차감`);
+    if(userData){
+      userData.cumulative_count+=total;
+      userData.total_points-=total*40;
+      const pct=Math.min(100,userData.cumulative_count/960*100);
+      userData.progress_pct=pct;
+      renderHeader(userData);
+    }
+  }
+}
+
+// --- charge ---------------------------------------------------------------
+function calcCharge(){
+  const amt=parseInt(document.getElementById('charge-amount').value)||0;
+  const pts=Math.floor(amt/120);
+  document.getElementById('charge-result').textContent=amt>0?`${amt.toLocaleString()}원 → ${pts.toLocaleString()}P`:'';
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('charge-amount').addEventListener('input',calcCharge);
+});
+
+async function requestCharge(){
+  const amt=parseInt(document.getElementById('charge-amount').value)||0;
+  if(amt<1000){toast('최소 1,000원 이상 입력해주세요');return;}
+  try{
+    const d=await api('/charge/request',{method:'POST',body:JSON.stringify({amount:amt})});
+    toast(d.message); document.getElementById('charge-amount').value=''; document.getElementById('charge-result').textContent='';
+  }catch(e){
+    toast(`충전 신청 완료! ${amt.toLocaleString()}원 → ${Math.floor(amt/120)}P (관리자 확인 후 지급)`);
+    document.getElementById('charge-amount').value=''; document.getElementById('charge-result').textContent='';
+  }
+}
+
+
+function loadPrices(){
+  ['bronze','silver','gold'].forEach(t=>{
+    const rows=PRICES[t].map(([s,b,sl])=>`<tr><td>${s}</td><td>${b.toLocaleString()}</td><td>${sl.toLocaleString()}</td><td class="${sl-b>=0?'tag-pos':'tag-neg'}">${sl-b>=0?'+':''}${(sl-b).toLocaleString()}</td></tr>`).join('');
+    document.getElementById('price-'+t).innerHTML=`<table class="price-table"><tr><th>단계</th><th>구매(원)</th><th>판매(원)</th><th>차액</th></tr>${rows}</table>`;
+  });
+}
+
+function showBarPrice(type,btn){
+  ['bronze','silver','gold'].forEach(t=>document.getElementById('price-'+t).style.display=t===type?'block':'none');
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+// --- tabs -----------------------------------------------------------------
+function showTab(id,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+
+  if(id === 'combine') { setTimeout(loadCombineItems, 100); }
+}
+
+// --- detail toggle ---------------------------------------------------------
+function toggleDetail(type){
+  const panel=document.getElementById('detail-'+type);
+  const card=document.getElementById('card-'+type);
+  const isOpen=panel.style.display!=='none';
+  ['bronze','silver','gold'].forEach(t=>{
+    document.getElementById('detail-'+t).style.display='none';
+    document.getElementById('card-'+t).classList.remove('selected');
+  });
+  if(!isOpen){panel.style.display='block';card.classList.add('selected');}
+}
+
+// --- admin ----------------------------------------------------------------
+let adminToken='';
+function showAdminModal(){document.getElementById('admin-modal').style.display='flex';}
+function closeAdminModal(){document.getElementById('admin-modal').style.display='none';}
+
+async function adminLogin(){
+  const u=document.getElementById('adm-user').value;
+  const p=document.getElementById('adm-pass').value;
+  try{
+    const d=await api('/auth/admin-login',{method:'POST',body:JSON.stringify({username:u,password:p})});
+    adminToken=d.token; closeAdminModal(); showAdminPanel();
+  }catch(e){toast('관리자 로그인 실패: '+e.message);}
+}
+
+async function showAdminPanel(){
+  document.getElementById('admin-panel').style.display='block';
+  const savedToken=token; token=adminToken;
+  try{
+    const stats=await api('/admin/stats');
+    document.getElementById('admin-stats').innerHTML=[
+      ['총 회원',stats.total_users],['보유 아이템',stats.total_items],
+      ['충전 대기',stats.pending_charges],['오늘 예약',stats.today_reserves]
+    ].map(([l,v])=>`<div style="flex:1;background:var(--bg2);border-radius:8px;padding:10px;text-align:center"><div style="font-size:11px;color:var(--text2)">${l}</div><div style="font-size:18px;font-weight:700">${v}</div></div>`).join('');
+
+    const charges=await api('/admin/charges');
+    document.getElementById('admin-charges').innerHTML=charges.charges.length?
+      charges.charges.map(c=>`<div style="background:var(--bg2);border-radius:8px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-size:13px;font-weight:600">${c.nickname}</div><div style="font-size:12px;color:var(--text2)">${c.amount.toLocaleString()}원 → ${c.points}P</div></div>
+        <button onclick="confirmCharge(${c.id})" style="padding:7px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600">확인</button>
+      </div>`).join(''):
+      '<div style="color:var(--text2);font-size:13px;padding:8px">대기 중인 충전 신청 없음</div>';
+  }catch(e){document.getElementById('admin-charges').textContent='데이터 로드 실패';}
+  token=savedToken;
+}
+
+async function confirmCharge(id){
+  const saved=token; token=adminToken;
+  try{
+    const d=await api(`/admin/charge/confirm/${id}`,{method:'POST'});
+    toast(d.message); showAdminPanel();
+  }catch(e){toast('오류: '+e.message);}
+  token=saved;
+}
+
+async function runMatching(){
+  const saved=token; token=adminToken;
+  try{
+    const d=await api('/admin/run-matching',{method:'POST'});
+    toast(d.message);
+  }catch(e){toast('매칭 실행 오류: '+e.message);}
+  token=saved;
+}
+
+function closeAdminPanel(){document.getElementById('admin-panel').style.display='none';}
+
+// --- init -----------------------------------------------------------------
+checkApiStatus();
+if(token){showMainApp();loadUserData();}
+loadPrices();
+
+// 결합판매
+function getStatusBadge(s){
+  if(s==='active'||s==='reservable'||!s)
+    return '<span style="background:#e8f5e9;color:#2e7d32;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">&#48372;&#50976;</span>';
+  if(s==='pending'||s==='matched')
+    return '<span style="background:#fff3e0;color:#e65100;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">&#47588;&#52845;&#51473;</span>';
+  return '';
+}
+async function loadCombineItems(){
+  var list=document.getElementById('combine-items-list');
+  if(!list) return;
+  var _tok=localStorage.getItem('lp_token')||'';
+  if(!_tok){list.innerHTML='<div class="empty-msg">&#47196;&#44536;&#51064; &#54596;&#50836;</div>';return;}
+  try{
+    var _r=await fetch('/api/items',{headers:{'Authorization':'Bearer '+_tok}});
+    if(!_r.ok){list.innerHTML='<div class="empty-msg">&#47196;&#46300; &#49892;&#54036;</div>';return;}
+    var d=await _r.json();
+    window._combineAllItems=(d.items_flat||[]);
+    renderCombineList();
+  }catch(e){list.innerHTML='<div class="empty-msg">'+e.message+'</div>';}
+}
+
+function renderCombineList(){
+  var list=document.getElementById('combine-items-list');
+  if(!list) return;
+  var items=window._combineAllItems||[];
+  var selectedIds=combineSelected.map(function(x){return x.id;});
+  var barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
+  var barOrder=['bronze','silver','gold'];
+  var grouped={};
+  items.forEach(function(i){
+    if(selectedIds.indexOf(i.id)<0){
+      if(!grouped[i.bar_type]) grouped[i.bar_type]=[];
+      grouped[i.bar_type].push(i);
+    }
+  });
+  var validTypes=barOrder.filter(function(bt){return grouped[bt]&&grouped[bt].length>=1;});
+  if(!validTypes.length&&combineSelected.length===0){
+    list.innerHTML='<div class="empty-msg">&#44208;&#54633; &#44032;&#45733;&#54620; &#50500;&#51060;&#53596; &#50630;&#51020;</div>';
+    return;
+  }
+  list.innerHTML=validTypes.map(function(bt){
+    var cards=grouped[bt].map(function(i){
+      // onclick에 따옴표 없이, data 속성으로 전달
+      return '<div class="combine-item-card" id="ci-'+i.id+'" data-id="'+i.id+'" data-bt="'+i.bar_type+'" data-st="'+i.stage+'">'
+        +'<div class="item-stage">'+i.stage+'&#45800;&#44228;</div>'
+        +'<div class="item-price">'+(i.buy_price||0).toLocaleString()+'&#50896;</div>'
+        +'<button class="ci-add-btn" onclick="ciAddClick(this)">+</button>'
+        +'</div>';
+    }).join('');
+    return '<div class="combine-group">'
+      +'<div class="combine-group-title">'+barNames[bt]+'</div>'
+      +'<div class="combine-group-grid">'+cards+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function ciAddClick(btn){
+  var card=btn.closest('[data-id]');
+  if(!card) return;
+  var id=parseInt(card.dataset.id);
+  var barType=card.dataset.bt;
+  var stage=parseInt(card.dataset.st);
+  addToCombine(id,barType,stage);
+}
+async function addToCombine(id,barType,stage){
+  if(combineSelected.length>=2){alert('2&#44060;&#47564; &#49440;&#53469; &#44032;&#45733;');return;}
+  combineSelected.push({id:id,barType:barType,stage:stage});
+  renderCombineList();
+  renderCombineSelected();
+}
+
+function removeFromCombine(id){
+  var idx=combineSelected.findIndex(function(x){return x.id===id;});
+  if(idx>=0) combineSelected.splice(idx,1);
+  renderCombineList();
+  renderCombineSelected();
+}
+
+function renderCombineSelected(){
+  var selDiv=document.getElementById('combine-selected');
+  var selInfo=document.getElementById('combine-sel-info');
+  var pr=document.getElementById('combine-preview-result');
+  var execBtn=document.getElementById('combine-exec-btn');
+  var barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
+  if(!selDiv) return;
+  if(combineSelected.length===0){
+    selDiv.style.display='none';
+    if(pr) pr.innerHTML='';
+    if(execBtn) execBtn.style.display='none';
+    return;
+  }
+  selDiv.style.display='block';
+  // 선택된 아이템 뱃지 (× 버튼 포함)
+  if(selInfo) selInfo.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
+    +combineSelected.map(function(s,i){
+      var color=i===0?'#4fc3f7':'#66bb6a';
+      var tc=i===0?'#000':'#fff';
+      return '<div style="background:'+color+';color:'+tc+';padding:6px 10px;border-radius:12px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px">'
+        +(barNames[s.barType]||s.barType)+' '+s.stage+'&#45800;&#44228;'
+        +'<button onclick="removeFromCombine('+s.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+tc+';border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:12px;line-height:1;padding:0;flex-shrink:0">&#10005;</button>'
+        +'</div>';
+    }).join('')
+    +'</div>';
+  if(!pr||!execBtn) return;
+  if(combineSelected.length===2){
+    pr.innerHTML='<div style="color:#aaa;font-size:12px">&#44228;&#49328; &#51473;...</div>';
+    execBtn.style.display='none';
+    var _tok=localStorage.getItem('lp_token')||'';
+    var s1=combineSelected[0],s2=combineSelected[1];
+    fetch('/api/combine/preview',{method:'POST',headers:{'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},body:JSON.stringify({item1_id:s1.id,item2_id:s2.id})})
+    .then(function(r){return r.json();})
+    .then(function(resp){
+      if(resp.can_combine){
+        pr.innerHTML='<div class="row"><span class="label">&#44208;&#54633; &#44396;&#47588;&#44032;</span><span class="val">'+resp.total_buy.toLocaleString()+'&#50896;</span></div>'
+          +'<div class="row"><span class="label">&#44208;&#54633; &#54032;&#47588; &#45800;&#44228;</span><span class="val yellow">'+resp.combined_stage+'&#45800;&#44228;</span></div>'
+          +'<div class="row"><span class="label">&#44208;&#54633; &#54032;&#47588;&#44032;</span><span class="val green">'+resp.combined_sell.toLocaleString()+'&#50896;</span></div>'
+          +'<div class="row"><span class="label">&#54252;&#51064;&#53944; &#48708;&#50857;</span><span class="val red">250P (30,000&#50896;)</span></div>'
+          +'<div class="row" style="border-top:1px solid #ddd;margin-top:6px;padding-top:6px">'
+          +'<span class="label" style="font-weight:700">&#52572;&#51333; &#49692;&#49688;&#51061;</span>'
+          +'<span class="val green" style="font-size:15px;font-weight:700">'+resp.net_profit.toLocaleString()+'&#50896;</span></div>';
+        execBtn.style.display='block';
+      } else {
+        var msg=(resp.error==='same type only')?'&#44057;&#51008; &#51333;&#47448;&#47564; &#44208;&#54633; &#44032;&#45733;':(resp.normal_profit>23000?'&#49688;&#51775; &#54620;&#46020; &#52488;&#44284;':(resp.error||'&#44208;&#54633; &#48276;&#50948; &#50630;&#51020;'));
+        pr.innerHTML='<div style="color:#c62828;font-size:13px">'+msg+'</div>';
+        execBtn.style.display='none';
+      }
+    })
+    .catch(function(e){pr.innerHTML='<div style="color:#c62828;font-size:12px">'+e.message+'</div>';});
+  } else {
+    pr.innerHTML='';execBtn.style.display='none';
+  }
+}
+
+
+async function executeCombine(){
+  if(combineSelected.length!==2){ alert('아이템 2개를 선택하세요'); return; }
+  if(!confirm('결합판매를 실행하시겠습니까? (250포인트 소모)')) return;
+  try{
+    const d = await api('/api/combine/execute',{method:'POST',body:JSON.stringify({item1_id:combineSelected[0].id,item2_id:combineSelected[1].id})});
+    alert(d.new_stage+'단계 아이템으로 합성 완료!');
+    combineSelected=[];
+    loadCombineItems();
+  }catch(e){ alert('오류: '+e.message); }
+}
+function doLogout() {
+  localStorage.removeItem('lp_token');
+  localStorage.removeItem('lp_kakao_id');
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+function demoLogin(btn){
+  if(btn){btn.disabled=true;btn.textContent="Loading...";}
+  fetch("/api/auth/demo-login",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(!d.access_token){
+      alert(d.error||"Error");
+      if(btn){btn.disabled=false;btn.textContent="\uB370\uBAA8 \uACC4\uC815\uC73C\uB85C \uCCB4\uD5D8\uD558\uAE30";}
+      return;
+    }
+    localStorage.setItem("lp_token",d.access_token);
+    return fetch("/api/auth/init-demo-items",{method:"POST",headers:{"Authorization":"Bearer "+d.access_token,"Content-Type":"application/json"},body:"{}"})
+    .then(function(){
+      if(typeof loadUserData==="function") return loadUserData();
+    })
+    .then(function(){
+      document.getElementById("login-screen").style.display="none";
+      document.getElementById("main-app").style.display="flex";
+      var n=document.querySelector(".nav-btn");if(n)n.click();
+    });
+  })
+  .catch(function(e){alert(e.message);})
+  .finally(function(){if(btn){btn.disabled=false;btn.textContent="\uB370\uBAA8 \uACC4\uC815\uC73C\uB85C \uCCB4\uD5D8\uD558\uAE30";}});
+}
+
+</script>
 </head>
 <body>
 <div class="app" id="app">
@@ -482,8 +974,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div style="font-size:18px;font-weight:700">관리자 패널</div>
         <button onclick="closeAdminPanel()" style="padding:7px 14px;background:var(--bg2);border:none;border-radius:8
 
-</div></div></div></div>
-<script>
 const API = '/api';
 let token = localStorage.getItem('lp_token') || '';
 let userData = null;
