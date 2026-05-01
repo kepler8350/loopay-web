@@ -173,7 +173,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .combine-group-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px}
 .combine-item-card{background:#1e2235;border:2px solid #2a2d3e;border-radius:7px;padding:8px 10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px}
 .combine-item-card.selected{border-color:#4fc3f7;background:#1a3050}
+.ci-add-btn{background:#1976d2;color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:16px;line-height:1;padding:0;margin-left:auto;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700}
+.ci-add-btn:hover{background:#1565c0}
+.combine-item-card{display:flex;align-items:center;gap:6px;background:#1e2235;border-radius:8px;padding:8px 10px;cursor:default}
 .combine-item-card .item-stage{font-size:12px;font-weight:600;color:#4fc3f7;min-width:40px}
+.combine-item-card .item-price{font-size:11px;color:#66bb6a;flex:1}
+.combine-item-card{font-size:12px;font-weight:600;color:#4fc3f7;min-width:40px}
 .combine-item-card .item-price{font-size:11px;color:#66bb6a;margin-left:auto}
 .combine-selected{background:#fff;border-radius:10px;padding:14px;margin-top:8px;color:#222}
 .combine-sel-title{font-size:13px;font-weight:700;color:#1976d2;margin-bottom:8px}
@@ -475,20 +480,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div style="padding:16px;max-width:430px;margin:0 auto">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <div style="font-size:18px;font-weight:700">관리자 패널</div>
-        <button onclick="closeAdminPanel()" style="padding:7px 14px;background:var(--bg2);border:none;border-radius:8px;cursor:pointer">닫기</button>
-      </div>
-      <div id="admin-stats" style="display:flex;gap:8px;margin-bottom:16px"></div>
-      <div style="font-size:13px;font-weight:600;margin-bottom:8px">충전 신청 대기</div>
-      <div id="admin-charges">로딩 중...</div>
-      <div style="height:12px"></div>
-      <button onclick="runMatching()" style="width:100%;padding:12px;background:#2d6a4f;color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer">매칭 실행</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
+        <button onclick="closeAdminPanel()" style="padding:7px 14px;background:var(--bg2);border:none;border-radius:8
 const API = '/api';
 let token = localStorage.getItem('lp_token') || '';
 let userData = null;
@@ -812,59 +804,63 @@ function getStatusBadge(s){
   return '';
 }
 async function loadCombineItems(){
-  var list = document.getElementById('combine-items-list');
+  var list=document.getElementById('combine-items-list');
   if(!list) return;
-  var _tok = localStorage.getItem('lp_token') || '';
-  if(!_tok){ list.innerHTML='<div class="empty-msg">&#47196;&#44536;&#51064; &#54596;&#50836;</div>'; return; }
+  var _tok=localStorage.getItem('lp_token')||'';
+  if(!_tok){list.innerHTML='<div class="empty-msg">&#47196;&#44536;&#51064; &#54596;&#50836;</div>';return;}
   try{
-    var _r = await fetch('/api/items', {headers:{'Authorization':'Bearer '+_tok}});
-    if(!_r.ok){ list.innerHTML='<div class="empty-msg">&#47196;&#46300; &#49892;&#54036;</div>'; return; }
-    var d = await _r.json();
-    var items = (d.items||[]);
-    var barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
-    var barOrder=['bronze','silver','gold'];
-    var grouped={};
-    items.forEach(function(i){ if(!grouped[i.bar_type]) grouped[i.bar_type]=[]; grouped[i.bar_type].push(i); });
-    var validTypes = barOrder.filter(function(bt){ return grouped[bt] && grouped[bt].length >= 2; });
-    if(!validTypes.length){
-      list.innerHTML='<div class="empty-msg">&#44208;&#54633; &#44032;&#45733;&#54620; &#50500;&#51060;&#53596; &#50630;&#51020;<br><small style="color:#aaa">&#44057;&#51008; &#51333;&#47448; 2&#44060; &#51060;&#49345; &#54596;&#50836;</small></div>';
-      return;
+    var _r=await fetch('/api/items',{headers:{'Authorization':'Bearer '+_tok}});
+    if(!_r.ok){list.innerHTML='<div class="empty-msg">&#47196;&#46300; &#49892;&#54036;</div>';return;}
+    var d=await _r.json();
+    window._combineAllItems=(d.items_flat||[]);
+    renderCombineList();
+  }catch(e){list.innerHTML='<div class="empty-msg">'+e.message+'</div>';}
+}
+
+function renderCombineList(){
+  var list=document.getElementById('combine-items-list');
+  if(!list) return;
+  var items=window._combineAllItems||[];
+  var selectedIds=combineSelected.map(function(x){return x.id;});
+  var barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
+  var barOrder=['bronze','silver','gold'];
+  var grouped={};
+  items.forEach(function(i){
+    if(selectedIds.indexOf(i.id)<0){
+      if(!grouped[i.bar_type]) grouped[i.bar_type]=[];
+      grouped[i.bar_type].push(i);
     }
-    list.innerHTML = validTypes.map(function(bt){
-      var cards = grouped[bt].map(function(i){
-        var badge = getStatusBadge(i.status);
-        return `<div class="combine-item-card" id="ci-${i.id}" onclick="toggleCombineItem(${i.id},'${i.bar_type}',${i.stage})">`
-          +'<div class="item-stage">'+i.stage+'&#45800;&#44228;'+badge+'</div>'
-          +'<div class="item-price">'+(i.buy_price||0).toLocaleString()+'&#50896;</div>'
-          +'</div>';
-      }).join('');
-      return '<div class="combine-group">'
-        +'<div class="combine-group-title">'+barNames[bt]+'</div>'
-        +'<div class="combine-group-grid">'+cards+'</div>'
+  });
+  var validTypes=barOrder.filter(function(bt){return grouped[bt]&&grouped[bt].length>=1;});
+  if(!validTypes.length&&combineSelected.length===0){
+    list.innerHTML='<div class="empty-msg">&#44208;&#54633; &#44032;&#45733;&#54620; &#50500;&#51060;&#53596; &#50630;&#51020;</div>';
+    return;
+  }
+  list.innerHTML=validTypes.map(function(bt){
+    var cards=grouped[bt].map(function(i){
+      return '<div class="combine-item-card" id="ci-'+i.id+'">'
+        +'<div class="item-stage">'+i.stage+'&#45800;&#44228;</div>'
+        +'<div class="item-price">'+(i.buy_price||0).toLocaleString()+'&#50896;</div>'
+        +'<button class="ci-add-btn" onclick="addToCombine('+i.id+',''+i.bar_type+'','+i.stage+')">+</button>'
         +'</div>';
     }).join('');
-    combineSelected=[];
-  }catch(e){ list.innerHTML='<div class="empty-msg">'+e.message+'</div>'; }
+    return '<div class="combine-group">'
+      +'<div class="combine-group-title">'+barNames[bt]+'</div>'
+      +'<div class="combine-group-grid">'+cards+'</div>'
+      +'</div>';
+  }).join('');
 }
-async function toggleCombineItem(id,barType,stage){
-  const already = combineSelected.findIndex(x=>x.id===id);
+async function addToCombine(id,barType,stage){
+  if(combineSelected.length>=2){alert('2&#44060;&#47564; &#49440;&#53469; &#44032;&#45733;');return;}
+  combineSelected.push({id:id,barType:barType,stage:stage});
+  renderCombineList();
+  renderCombineSelected();
+}
 
-  if(already>=0){
-    // 이미 선택된 카드 → 해제
-    combineSelected.splice(already,1);
-    var oldCard = document.getElementById('ci-'+id);
-    if(oldCard) oldCard.classList.remove('selected');
-  } else {
-    if(combineSelected.length>=2){
-      // 이미 2개 선택된 상태 → 가장 먼저 선택된 것을 해제하고 새것 추가
-      var removed = combineSelected.shift();
-      var removedCard = document.getElementById('ci-'+removed.id);
-      if(removedCard) removedCard.classList.remove('selected');
-    }
-    combineSelected.push({id:id,barType:barType,stage:stage});
-    var newCard = document.getElementById('ci-'+id);
-    if(newCard) newCard.classList.add('selected');
-  }
+function removeFromCombine(id){
+  var idx=combineSelected.findIndex(function(x){return x.id===id;});
+  if(idx>=0) combineSelected.splice(idx,1);
+  renderCombineList();
   renderCombineSelected();
 }
 
@@ -875,29 +871,31 @@ function renderCombineSelected(){
   var execBtn=document.getElementById('combine-exec-btn');
   var barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
   if(!selDiv) return;
-  if(combineSelected.length===0){selDiv.style.display='none';if(pr)pr.innerHTML='';if(execBtn)execBtn.style.display='none';return;}
+  if(combineSelected.length===0){
+    selDiv.style.display='none';
+    if(pr) pr.innerHTML='';
+    if(execBtn) execBtn.style.display='none';
+    return;
+  }
   selDiv.style.display='block';
-  var slot1=combineSelected[0]||null;
-  var slot2=combineSelected[1]||null;
-  var makeBadge=function(slot,color,textColor){
-    if(!slot) return '<span style="background:#ddd;color:#999;padding:4px 10px;border-radius:12px;font-size:12px">&#49440;&#53469; &#54644;&#51452;&#49464;&#50836;</span>';
-    var name=(barNames[slot.barType]||slot.barType)+' '+slot.stage+'&#45800;&#44228;';
-    return '<span style="background:'+color+';color:'+textColor+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px">'
-      +name
-      +'<button onclick="removeFromCombine('+slot.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+textColor+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center" title="&#49440;&#53469; &#52712;&#49548;">&#10005;</button>'
-      +'</span>';
-  };
-  if(selInfo) selInfo.innerHTML='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">'
-    +makeBadge(slot1,'#4fc3f7','#000')
-    +'<span style="color:#aaa;font-size:14px">+</span>'
-    +makeBadge(slot2,'#66bb6a','#fff')
+  // 선택된 아이템 뱃지 (× 버튼 포함)
+  if(selInfo) selInfo.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
+    +combineSelected.map(function(s,i){
+      var color=i===0?'#4fc3f7':'#66bb6a';
+      var tc=i===0?'#000':'#fff';
+      return '<div style="background:'+color+';color:'+tc+';padding:6px 10px;border-radius:12px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px">'
+        +(barNames[s.barType]||s.barType)+' '+s.stage+'&#45800;&#44228;'
+        +'<button onclick="removeFromCombine('+s.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+tc+';border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:12px;line-height:1;padding:0;flex-shrink:0">&#10005;</button>'
+        +'</div>';
+    }).join('')
     +'</div>';
   if(!pr||!execBtn) return;
-  if(slot1&&slot2){
+  if(combineSelected.length===2){
     pr.innerHTML='<div style="color:#aaa;font-size:12px">&#44228;&#49328; &#51473;...</div>';
     execBtn.style.display='none';
     var _tok=localStorage.getItem('lp_token')||'';
-    fetch('/api/combine/preview',{method:'POST',headers:{'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},body:JSON.stringify({item1_id:slot1.id,item2_id:slot2.id})})
+    var s1=combineSelected[0],s2=combineSelected[1];
+    fetch('/api/combine/preview',{method:'POST',headers:{'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},body:JSON.stringify({item1_id:s1.id,item2_id:s2.id})})
     .then(function(r){return r.json();})
     .then(function(resp){
       if(resp.can_combine){
@@ -910,7 +908,7 @@ function renderCombineSelected(){
           +'<span class="val green" style="font-size:15px;font-weight:700">'+resp.net_profit.toLocaleString()+'&#50896;</span></div>';
         execBtn.style.display='block';
       } else {
-        var msg=(resp.error==='same type only')?'&#44057;&#51008; &#51333;&#47448;&#47564; &#44208;&#54633; &#44032;&#45733;':(resp.normal_profit>23000?'&#49688;&#51775; &#54620;&#46020; &#52488;&#44284;':(resp.error||'&#44208;&#54633; &#48266;&#50948; &#50630;&#51020;'));
+        var msg=(resp.error==='same type only')?'&#44057;&#51008; &#51333;&#47448;&#47564; &#44208;&#54633; &#44032;&#45733;':(resp.normal_profit>23000?'&#49688;&#51775; &#54620;&#46020; &#52488;&#44284;':(resp.error||'&#44208;&#54633; &#48276;&#50948; &#50630;&#51020;'));
         pr.innerHTML='<div style="color:#c62828;font-size:13px">'+msg+'</div>';
         execBtn.style.display='none';
       }
@@ -921,15 +919,7 @@ function renderCombineSelected(){
   }
 }
 
-function removeFromCombine(id){
-  var idx=combineSelected.findIndex(function(x){return x.id===id;});
-  if(idx>=0){
-    combineSelected.splice(idx,1);
-    var card=document.getElementById('ci-'+id);
-    if(card) card.classList.remove('selected');
-  }
-  renderCombineSelected();
-}
+
 async function executeCombine(){
   if(combineSelected.length!==2){ alert('아이템 2개를 선택하세요'); return; }
   if(!confirm('결합판매를 실행하시겠습니까? (250포인트 소모)')) return;
@@ -956,6 +946,19 @@ function demoLogin(btn){
       localStorage.setItem("lp_token",d.access_token);
       // 아이템 초기화 후 데이터 로드
       return fetch("/api/auth/init-demo-items",{method:"POST",headers:{"Authorization":"Bearer "+d.access_token,"Content-Type":"application/json"},body:"{}"})
+        .then(function(){
+          if(typeof loadUserData==="function") return loadUserData();
+        })
+        .then(function(){
+          document.getElementById("login-screen").style.display="none";
+          document.getElementById("main-app").style.display="flex";
+          var n=document.querySelector(".nav-btn");if(n)n.click();
+        });
+    })
+    .catch(function(e){alert(e.message);})
+    .finally(function(){if(btn){btn.disabled=false;btn.textContent="&#45936;&#47784; &#44228;&#51221;&#51004;&#47196; &#52404;&#54744;&#54616;&#44592;";}});
+}
+{}"})
         .then(function(){
           if(typeof loadUserData==="function") return loadUserData();
         })
