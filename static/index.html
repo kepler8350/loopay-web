@@ -324,17 +324,17 @@ function renderBars(d){
   types.forEach(t=>{
     const el=document.getElementById('detail-'+t+'-items');
     const list=items[t];
-    if(!list||!list.length){el.innerHTML='<div style="color:var(--text2);font-size:13px;padding:8px 0">보유 아이템 없음</div>';return;}
+    if(!list||!list.length){el.innerHTML='<div style="color:var(--text2);font-size:13px;padding:8px 0">보유 아이템 없음<\/div>';return;}
     el.innerHTML=list.map(it=>{
       const day4note=(it.days>=4&&it.status_label==='매칭예약가능')?' — 미매칭 재예약':'';
       const profitStr=it.profit>=0?`+${it.profit.toLocaleString()}`:`${it.profit.toLocaleString()}`;
       return `<div class="item-row">
         <div class="item-hd">
-          <span class="item-stage">${it.stage}단계 ${t==='bronze'?'수정':t==='silver'?'루비':'다이아'}바</span>
-          <span class="badge ${it.status_label==='대기중'?'badge-wait':'badge-match'}">${it.status_label}</span>
-        </div>
-        <div class="item-date">구매일: ${it.purchase_date} (${it.days}일째)${day4note}</div>
-        <div class="item-price">구매 ${it.buy_price.toLocaleString()}원 → 판매 ${it.sell_price.toLocaleString()}원 (${profitStr}원)</div>
+          <span class="item-stage">${it.stage}단계 ${t==='bronze'?'수정':t==='silver'?'루비':'다이아'}바<\/span>
+          <span class="badge ${it.status_label==='대기중'?'badge-wait':'badge-match'}">${it.status_label}<\/span>
+        <\/div>
+        <div class="item-date">구매일: ${it.purchase_date} (${it.days}일째)${day4note}<\/div>
+        <div class="item-price">구매 ${it.buy_price.toLocaleString()}원 → 판매 ${it.sell_price.toLocaleString()}원 (${profitStr}원)<\/div>
       </div>`;
     }).join('');
   });
@@ -365,7 +365,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-sv-note').textContent=`수정 ${bzCnt}개 → 루비 ${sv}개 자동 결정${bzCnt<10?' (10개시 5개)':''}`;
   document.getElementById('r-gd-note').textContent=`루비 ${sv}개 → 다이아 ${gd}개 자동 결정${sv<5?' (루비5개시 3개)':''}`;
   const total=bzCnt+sv+gd, cost=total*40;
-  document.getElementById('r-info').innerHTML=`수정 <b>${bzCnt}</b> + 루비 <b>${sv}</b> + 다이아 <b>${gd}</b> = 총 <b>${total}</b>회 / 차감 <b>${cost.toLocaleString()}P</b>`;
+  document.getElementById('r-info').innerHTML=`수정 <b>${bzCnt}<\/b> + 루비 <b>${sv}</b> + 다이아 <b>${gd}</b> = 총 <b>${total}</b>회 / 차감 <b>${cost.toLocaleString()}P</b>`;
 }
 
 function changeRes(type,delta){
@@ -420,8 +420,8 @@ async function requestCharge(){
 
 function loadPrices(){
   ['bronze','silver','gold'].forEach(t=>{
-    const rows=PRICES[t].map(([s,b,sl])=>`<tr><td>${s}</td><td>${b.toLocaleString()}</td><td>${sl.toLocaleString()}</td><td class="${sl-b>=0?'tag-pos':'tag-neg'}">${sl-b>=0?'+':''}${(sl-b).toLocaleString()}</td></tr>`).join('');
-    document.getElementById('price-'+t).innerHTML=`<table class="price-table"><tr><th>단계</th><th>구매(원)</th><th>판매(원)</th><th>차액</th></tr>${rows}</table>`;
+    const rows=PRICES[t].map(([s,b,sl])=>`<tr><td>${s}<\/td><td>${b.toLocaleString()}</td><td>${sl.toLocaleString()}</td><td class="${sl-b>=0?'tag-pos':'tag-neg'}">${sl-b>=0?'+':''}${(sl-b).toLocaleString()}<\/td><\/tr>`).join('');
+    document.getElementById('price-'+t).innerHTML=`<table class="price-table"><tr><th>단계<\/th><th>구매(원)<\/th><th>판매(원)</th><th>차액</th></tr>${rows}</table>`;
   });
 }
 
@@ -475,15 +475,15 @@ async function showAdminPanel(){
     document.getElementById('admin-stats').innerHTML=[
       ['총 회원',stats.total_users],['보유 아이템',stats.total_items],
       ['충전 대기',stats.pending_charges],['오늘 예약',stats.today_reserves]
-    ].map(([l,v])=>`<div style="flex:1;background:var(--bg2);border-radius:8px;padding:10px;text-align:center"><div style="font-size:11px;color:var(--text2)">${l}</div><div style="font-size:18px;font-weight:700">${v}</div></div>`).join('');
+    ].map(([l,v])=>`<div style="flex:1;background:var(--bg2);border-radius:8px;padding:10px;text-align:center"><div style="font-size:11px;color:var(--text2)">${l}<\/div><div style="font-size:18px;font-weight:700">${v}<\/div></div>`).join('');
 
     const charges=await api('/admin/charges');
     document.getElementById('admin-charges').innerHTML=charges.charges.length?
       charges.charges.map(c=>`<div style="background:var(--bg2);border-radius:8px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-        <div><div style="font-size:13px;font-weight:600">${c.nickname}</div><div style="font-size:12px;color:var(--text2)">${c.amount.toLocaleString()}원 → ${c.points}P</div></div>
-        <button onclick="confirmCharge(${c.id})" style="padding:7px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600">확인</button>
+        <div><div style="font-size:13px;font-weight:600">${c.nickname}<\/div><div style="font-size:12px;color:var(--text2)">${c.amount.toLocaleString()}원 → ${c.points}P<\/div></div>
+        <button onclick="confirmCharge(${c.id})" style="padding:7px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600">확인<\/button>
       </div>`).join(''):
-      '<div style="color:var(--text2);font-size:13px;padding:8px">대기 중인 충전 신청 없음</div>';
+      '<div style="color:var(--text2);font-size:13px;padding:8px">대기 중인 충전 신청 없음<\/div>';
   }catch(e){document.getElementById('admin-charges').textContent='데이터 로드 실패';}
   token=savedToken;
 }
@@ -516,9 +516,9 @@ loadPrices();
 // 결합판매
 function getStatusBadge(s){
   if(s==='active'||s==='reservable'||!s)
-    return '<span style="background:#e8f5e9;color:#2e7d32;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">&#48372;&#50976;</span>';
+    return '<span style="background:#e8f5e9;color:#2e7d32;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">&#48372;&#50976;<\/span>';
   if(s==='pending'||s==='matched')
-    return '<span style="background:#fff3e0;color:#e65100;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">&#47588;&#52845;&#51473;</span>';
+    return '<span style="background:#fff3e0;color:#e65100;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">&#47588;&#52845;&#51473;<\/span>';
   return '';
 }
 // ── combine 판매 ──────────────────────────────────────────
@@ -529,16 +529,16 @@ async function loadCombineItems(){
   var list=document.getElementById('combine-items-list');
   if(!list) return;
   var _tok=localStorage.getItem('lp_token')||'';
-  if(!_tok){list.innerHTML='<div class="empty-msg">로그인이 필요합니다.</div>';return;}
+  if(!_tok){list.innerHTML='<div class="empty-msg">로그인이 필요합니다.<\/div>';return;}
   try{
     var _r=await fetch('/api/items',{headers:{'Authorization':'Bearer '+_tok}});
-    if(!_r.ok){list.innerHTML='<div class="empty-msg">로드 실패</div>';return;}
+    if(!_r.ok){list.innerHTML='<div class="empty-msg">로드 실패<\/div>';return;}
     var d=await _r.json();
     window._combineAllItems=(Array.isArray(d)?d:(d.items_flat||[]));
     combineSelected=[];
     renderCombineList();
     renderCombinePairs();
-  }catch(e){list.innerHTML='<div class="empty-msg">'+e.message+'</div>';}
+  }catch(e){list.innerHTML='<div class="empty-msg">'+e.message+'<\/div>';}
 }
 
 function renderCombineList(){
@@ -553,18 +553,18 @@ function renderCombineList(){
     grouped[i.bar_type].push(i);
   });
   var validTypes=barOrder.filter(function(bt){return grouped[bt]&&grouped[bt].length>=1;});
-  if(!validTypes.length){list.innerHTML='<div class="empty-msg">&#44208;&#54633; &#44032;&#45733;&#54620; &#50500;&#51060;&#53596; &#50630;&#51020;</div>';return;}
+  if(!validTypes.length){list.innerHTML='<div class="empty-msg">&#44208;&#54633; &#44032;&#45733;&#54620; &#50500;&#51060;&#53596; &#50630;&#51020;<\/div>';return;}
   list.innerHTML=validTypes.map(function(bt){
     var cards=grouped[bt].map(function(i){
       var isSel=combineSelected.findIndex(function(x){return x.id===i.id;})>=0;
       return '<div class="combine-item-card'+(isSel?' selected':'')+'" id="ci-'+i.id+'" data-id="'+i.id+'" data-bt="'+i.bar_type+'" data-st="'+i.stage+'">'
-        +'<div class="item-stage">'+i.stage+'&#45800;&#44228;</div>'
-        +'<div class="item-price">'+(i.buy_price?i.buy_price.toLocaleString():'')+'&#50896;</div>'
-        +'<button onclick="ciToggle(this)">'+(isSel?'&#10003;':'+')+'</button>'
-        +'</div>';
+        +'<div class="item-stage">'+i.stage+'&#45800;&#44228;<\/div>'
+        +'<div class="item-price">'+(i.buy_price?i.buy_price.toLocaleString():'')+'&#50896;<\/div>'
+        +'<button onclick="ciToggle(this)">'+(isSel?'&#10003;':'+')+'<\/button>'
+        +'<\/div>';
     }).join('');
-    return '<div class="combine-group"><div class="combine-group-title">'+barNames[bt]+'</div>'
-      +'<div class="combine-group-grid">'+cards+'</div></div>';
+    return '<div class="combine-group"><div class="combine-group-title">'+barNames[bt]+'<\/div>'
+      +'<div class="combine-group-grid">'+cards+'<\/div><\/div>';
   }).join('');
 }
 
@@ -614,11 +614,11 @@ function renderCombinePairs(){
     var bColor=b?'#66bb6a':'#ddd'; var bText=b?'#fff':'#999';
     return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
       +'<span style="background:'+aColor+';color:'+aText+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px">'+aName
-      +'<button onclick="removeFromCombine('+a.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+aText+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">&#10005;</button></span>'
-      +'<span style="color:#aaa">+</span>'
+      +'<button onclick="removeFromCombine('+a.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+aText+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">&#10005;<\/button><\/span>'
+      +'<span style="color:#aaa">+<\/span>'
       +'<span style="background:'+bColor+';color:'+bText+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;'+(b?'display:inline-flex;align-items:center;gap:4px':'')+'">'+bName
-      +(b?'<button onclick="removeFromCombine('+b.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+bText+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">&#10005;</button>':'')
-      +'</span></div>';
+      +(b?'<button onclick="removeFromCombine('+b.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+bText+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">&#10005;<\/button>':'')
+      +'<\/span><\/div>';
   }).join('');
 
   var selTitle=sel.querySelector('.combine-sel-title');
@@ -628,7 +628,7 @@ function renderCombinePairs(){
   // sel-info에 페어 HTML 삽입
   var info=document.getElementById('combine-sel-info');
   if(info) info.innerHTML=pairHTML;
-  else sel.insertAdjacentHTML('afterbegin','<div id="combine-sel-info">'+pairHTML+'</div>');
+  else sel.insertAdjacentHTML('afterbegin','<div id="combine-sel-info">'+pairHTML+'<\/div>');
 
   // 완성된 쌍(짝수 선택)이 있을 때 실행 버튼 표시
   var completePairs=pairs.filter(function(p){return p[0]&&p[1];});
