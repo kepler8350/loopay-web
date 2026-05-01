@@ -582,7 +582,7 @@ function ciToggle(btn){
   } else {
     combineSelected.push({id:id,barType:bt,stage:st});
     card.classList.add('selected');
-    btn.textContent='&#10003;';
+    btn.innerHTML='&#10003;';
   }
   renderCombinePairs();
 }
