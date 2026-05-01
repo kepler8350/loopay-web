@@ -647,8 +647,7 @@ function executeCombine(){
   var execBtn=document.getElementById('combine-exec-btn');
   if(!combineSelected.length||combineSelected.length%2!==0){alert('2개씩 짝을 맞춰 선택해주세요.');return;}
   var pairs=[];
-  for(var i=0;i<combineSelected.length;i+=2) pairs.push([combineSelected[i],combineSelected[i+1]]);
-  if(execBtn){execBtn.disabled=true;execBtn.textContent='&#49892;&#54665; &#51473;...';}
+  for(var i=0;i<combineSelected.length;i+=2) pairs.push([combineSelected[i],combineSelected[i+1]]);&#54665; &#51473;...';}
   var _tok=localStorage.getItem('lp_token')||'';
   var totalPoints=pairs.length*250;
   Promise.all(pairs.map(function(pair){
@@ -668,8 +667,7 @@ function executeCombine(){
     if(typeof loadUserData==='function') loadUserData();
     loadCombineItems();
   }).catch(function(e){
-    alert(e.message);
-    if(execBtn){execBtn.disabled=false;execBtn.textContent='&#44208;&#54633;&#54032;&#47588; &#49892;&#54665;';}
+    alert(e.message);&#54633;&#54032;&#47588; &#49892;&#54665;';}
   });
 }
 
