@@ -530,7 +530,7 @@ async function loadCombineItems(){
     var _r=await fetch('/api/items',{headers:{'Authorization':'Bearer '+_tok}});
     if(!_r.ok){list.innerHTML='<div class="empty-msg">&#47196;&#46300; &#49892;&#54036;</div>';return;}
     var d=await _r.json();
-    window._combineAllItems=(d.items_flat||[]);
+    window._combineAllItems=(Array.isArray(d)?d:(d.items_flat||[]));
     renderCombineList();
   }catch(e){list.innerHTML='<div class="empty-msg">'+e.message+'</div>';}
 }
