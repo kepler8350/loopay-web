@@ -613,44 +613,97 @@ function renderCombinePairs(){
   }
   sel.style.display='block';
   var barName=function(t){return t==='bronze'?'수정':t==='silver'?'루비':'다이아';};
-  // 뱃지 렌더링
   var colors=['#4fc3f7','#66bb6a','#ffb74d','#ba68c8','#f06292','#4db6ac'];
-  var badges=combineSelected.map(function(it,i){
-    var col=colors[i%colors.length];
-    var txtCol=(i===1||i===3||i===5)?'#fff':'#000';
-    return '<span style="background:'+col+';color:'+txtCol+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;margin:2px">'
-      +barName(it.barType)+' '+it.stage+'단계'
-      +'<button onclick="removeFromCombine('+it.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+txtCol+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">&#10005;</button>'
-      +'</span>';
-  });
-  if(info) info.innerHTML='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">'+badges.join('')+'</div>';
 
-  // 완전한 쌍(짝수) 확인
-  if(pr) pr.innerHTML='';
-  if(execBtn) execBtn.style.display='none';
-  if(combineSelected.length>=2 && combineSelected.length%2===0){
-    var lastPair=[combineSelected[combineSelected.length-2], combineSelected[combineSelected.length-1]];
-    if(lastPair[0]&&lastPair[1]){
-      if(pr) pr.innerHTML='<div style="color:#aaa;font-size:12px">계산 중...</div>';
-      var tok=localStorage.getItem('lp_token')||'';
-      fetch('/api/combine/preview',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({item1_id:lastPair[0].id,item2_id:lastPair[1].id})})
-      .then(function(r){return r.json();})
-      .then(function(resp){
-        if(!pr) return;
-        if(resp.can_combine){
-          pr.innerHTML='<div class="row"><span class="label">결합 구매가</span><span class="val">'+resp.total_buy.toLocaleString()+'원</span></div>'
-            +'<div class="row"><span class="label">결합 판매 단계</span><span class="val yellow">'+resp.combined_stage+'단계</span></div>'
-            +'<div class="row"><span class="label">결합 판매가</span><span class="val green">'+resp.combined_sell.toLocaleString()+'원</span></div>'
-            +'<div class="row"><span class="label">포인트 비용</span><span class="val red">250P (30,000원)</span></div>'
-            +'<div class="row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px"><span class="label" style="font-weight:700">최종 순수익</span><span class="val green" style="font-size:15px;font-weight:700">'+resp.net_profit.toLocaleString()+'원</span></div>';
-          if(execBtn){execBtn.style.display='block';execBtn.innerHTML='결합판매 실행 (250P)';}
-        } else {
-          pr.innerHTML='<div style="color:#c62828;font-size:13px">'+(resp.error||'결합 불가')+'</div>';
-        }
-      })
-      .catch(function(e){if(pr)pr.innerHTML='<div style="color:#c62828">'+e.message+'</div>';});
+  // 쌍 단위로 뱃지 렌더링
+  var badges='';
+  for(var i=0;i<combineSelected.length;i++){
+    var it=combineSelected[i];
+    var col=colors[i%colors.length];
+    var txc=(i%2===1)?'#fff':'#000';
+    badges+='<span style="background:'+col+';color:'+txc+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;margin:2px">'
+      +barName(it.barType)+' '+it.stage+'단계'
+      +'<button onclick="removeFromCombine('+it.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+txc+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">&#10005;</button>'
+      +'</span>';
+    // 쌍 완성 후 구분선 (마지막이 아닐 때)
+    if(i%2===1 && i<combineSelected.length-1){
+      badges+='<hr style="border:none;border-top:1px dashed #555;margin:6px 0;width:100%">';
     }
   }
+  if(info) info.innerHTML='<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-bottom:8px">'+badges+'</div>';
+
+  // 완성된 쌍 개수
+  var completedPairs=Math.floor(combineSelected.length/2);
+
+  // 이미 렌더링된 쌍 수 추적 (data 속성으로)
+  if(!pr) return;
+  var renderedPairs=parseInt(pr.dataset.renderedPairs||'0');
+
+  // 선택이 줄어든 경우(삭제) - 전체 재렌더링
+  if(completedPairs<renderedPairs){
+    pr.innerHTML='';
+    pr.dataset.renderedPairs='0';
+    renderedPairs=0;
+    // 이전 쌍들 다시 렌더링
+    for(var pi=0;pi<completedPairs;pi++){
+      addPairPreview(pr,pi,combineSelected[pi*2],combineSelected[pi*2+1]);
+    }
+    pr.dataset.renderedPairs=String(completedPairs);
+    renderedPairs=completedPairs;
+  }
+
+  // 새로 완성된 쌍 추가
+  if(completedPairs>renderedPairs){
+    for(var pi=renderedPairs;pi<completedPairs;pi++){
+      addPairPreview(pr,pi,combineSelected[pi*2],combineSelected[pi*2+1]);
+    }
+    pr.dataset.renderedPairs=String(completedPairs);
+  }
+
+  // 실행 버튼
+  if(execBtn){
+    if(completedPairs>0){
+      execBtn.style.display='block';
+      execBtn.innerHTML='결합판매 실행 ('+completedPairs+'새 × 250P)';
+    } else {
+      execBtn.style.display='none';
+    }
+  }
+}
+
+function addPairPreview(container,pairIndex,item1,item2){
+  var barName=function(t){return t==='bronze'?'수정':t==='silver'?'루비':'다이아';};
+  var wrapper=document.createElement('div');
+  wrapper.id='pair-result-'+pairIndex;
+  wrapper.style.cssText='margin-bottom:12px;padding:10px;background:rgba(255,255,255,0.05);border-radius:8px;border:1px solid #333;';
+  // 구분 제목
+  wrapper.innerHTML='<div style="font-size:11px;color:#aaa;margin-bottom:6px">'
+    +'쌍 #'+(pairIndex+1)+': '+barName(item1.barType)+' '+item1.stage+'단계 + '+barName(item2.barType)+' '+item2.stage+'단계</div>'
+    +'<div style="color:#aaa;font-size:12px">계산 중...</div>';
+  container.appendChild(wrapper);
+
+  var tok=localStorage.getItem('lp_token')||'';
+  fetch('/api/combine/preview',{method:'POST',
+    headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+    body:JSON.stringify({item1_id:item1.id,item2_id:item2.id})})
+  .then(function(r){return r.json();})
+  .then(function(resp){
+    if(resp.can_combine){
+      wrapper.innerHTML='<div style="font-size:11px;color:#aaa;margin-bottom:6px">'
+        +'쌍 #'+(pairIndex+1)+': '+barName(item1.barType)+' '+item1.stage+'단계 + '+barName(item2.barType)+' '+item2.stage+'단계</div>'
+        +'<div class="row"><span class="label">결합 구매가</span><span class="val">'+resp.total_buy.toLocaleString()+'원</span></div>'
+        +'<div class="row"><span class="label">결합 판매 단계</span><span class="val yellow">'+resp.combined_stage+'단계</span></div>'
+        +'<div class="row"><span class="label">결합 판매가</span><span class="val green">'+resp.combined_sell.toLocaleString()+'원</span></div>'
+        +'<div class="row"><span class="label">포인트 비용</span><span class="val red">250P (30,000원)</span></div>'
+        +'<div class="row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px"><span class="label" style="font-weight:700">최종 순수익</span>'
+        +'<span class="val green" style="font-size:15px;font-weight:700">'+resp.net_profit.toLocaleString()+'원</span></div>';
+    } else {
+      wrapper.innerHTML='<div style="font-size:11px;color:#aaa;margin-bottom:4px">'
+        +'쌍 #'+(pairIndex+1)+'</div>'
+        +'<div style="color:#c62828;font-size:13px">'+(resp.error||'결합 불가')+'</div>';
+    }
+  })
+  .catch(function(e){wrapper.innerHTML='<div style="color:#c62828">'+e.message+'</div>';});
 }
 
 function executeCombine(){
