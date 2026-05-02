@@ -553,7 +553,7 @@ function renderCombineList(){
     grouped[i.bar_type].push(i);
   });
   var validTypes=barOrder.filter(function(bt){return grouped[bt]&&grouped[bt].length>=1;});
-  if(!validTypes.length){list.innerHTML='<div class="empty-msg">결
+  if(!validTypes.length){list.innerHTML='<div class="empty-msg">결합 가능한 아이템 없음</div>';return;}
   list.innerHTML=validTypes.map(function(bt){
     var cards=grouped[bt].map(function(i){
       var isSel=combineSelected.findIndex(function(x){return x.id===i.id;})>=0;
