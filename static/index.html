@@ -362,8 +362,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
   document.getElementById('r-sv-wrap').className='r-wrap locked';
   document.getElementById('r-gd-wrap').className='r-wrap locked';
-  document.getElementById('r-sv-note').textContent=`수정 ${bzCnt}개 → 루비 ${sv}
-  document.getElementById('r-gd-note').textContent=`루비 ${sv}개 → 다이아 ${gd}
+  document.getElementById('r-sv-note').textContent=`수정 ${bzCnt}개 → 루비 ${sv}개 / 10개 → 루비 5개`;
+  document.getElementById('r-gd-note').textContent=`루비 ${sv}개 → 다이아 ${gd}개 / 루비 5개 → 다이아 3개`;
   const total=bzCnt+sv+gd, cost=total*40;
   document.getElementById('r-info').innerHTML=`수정 <b>${bzCnt}<\/b> + 루비 <b>${sv}<\/b> + 다이아 <b>${gd}<\/b> = 총 <b>${total}<\/b>회 / 차감 <b>${cost.toLocaleString()}P<\/b>`;
 }
