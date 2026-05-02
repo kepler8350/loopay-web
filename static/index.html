@@ -199,7 +199,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .combine-preview .val.red{color:#ef5350}
 .combine-preview .val.yellow{color:#ffa726}
 </style>
-<script>
+<script>var combineSelected=[];
+
 const API = '/api';
 let token = localStorage.getItem('lp_token') || '';
 let userData = null;
@@ -574,163 +575,172 @@ function ciToggle(btn){
   var id=parseInt(card.dataset.id);
   var bt=card.dataset.bt;
   var st=parseInt(card.dataset.st);
-  var idx=combineSelected.findIndex(function(x){return x.id===id;});
-  if(idx>=0){
-    combineSelected.splice(idx,1);
-    card.style.display='';
-    btn.innerHTML='+';
-    card.classList.remove('selected');
-  } else {
-    combineSelected.push({id:id,barType:bt,stage:st});
+
+  // 이미 쌍에 포함된 카드는 클릭 무시 (display:none 상태)
+  if(card.style.display==='none') return;
+
+  if(!pendingItem){
+    // 첫 번째 선택
+    pendingItem={id:id,barType:bt,stage:st};
     card.style.display='none';
+    renderCombinePairs();
+  } else {
+    // 두 번째 선택 → 쌍 완성
+    var pair={item1:pendingItem, item2:{id:id,barType:bt,stage:st}};
+    pendingItem=null;
+    card.style.display='none';
+    combinePairs.push(pair);
+    renderCombinePairs();
+    // 새 쌍 preview 로드
+    var pairIdx=combinePairs.length-1;
+    loadPairPreview(pairIdx, pair.item1, pair.item2);
   }
-  renderCombinePairs();
 }
 
-function removeFromCombine(id){
-  var idx=combineSelected.findIndex(function(x){return x.id===id;});
-  if(idx>=0) combineSelected.splice(idx,1);
-  var card=document.getElementById('ci-'+id);
-  if(card){
-    card.style.display='';
-    var btn=card.querySelector('button');
-    if(btn){btn.innerHTML='+'; card.classList.remove('selected');}
-  }
+function removeFromCombine(pairIdx){
+  var pair=combinePairs[pairIdx];
+  if(!pair) return;
+  // 두 카드 모두 복원
+  [pair.item1, pair.item2].forEach(function(it){
+    var c=document.getElementById('ci-'+it.id);
+    if(c){c.style.display=''; var b=c.querySelector('button'); if(b) b.innerHTML='+';}
+  });
+  combinePairs.splice(pairIdx,1);
   renderCombinePairs();
 }
 
 function renderCombinePairs(){
   var sel=document.getElementById('combine-selected');
-  var info=document.getElementById('combine-sel-info');
+  var container=document.getElementById('combine-sel-info');
   var pr=document.getElementById('combine-preview-result');
   var execBtn=document.getElementById('combine-exec-btn');
   if(!sel) return;
-  if(combineSelected.length===0){
+
+  var totalItems=combinePairs.length*2+(pendingItem?1:0);
+  if(totalItems===0&&!pendingItem){
     sel.style.display='none';
     if(pr) pr.innerHTML='';
     if(execBtn) execBtn.style.display='none';
     return;
   }
   sel.style.display='block';
+
   var barName=function(t){return t==='bronze'?'수정':t==='silver'?'루비':'다이아';};
-  var colors=['#4fc3f7','#66bb6a','#ffb74d','#ba68c8','#f06292','#4db6ac'];
+  var pairColors=[['#4fc3f7','#000'],['#66bb6a','#fff'],['#ffb74d','#000'],['#ba68c8','#fff'],['#f06292','#fff'],['#4db6ac','#fff']];
 
-  // 쌍 단위로 뱃지 렌더링
-  var badges='';
-  for(var i=0;i<combineSelected.length;i++){
-    var it=combineSelected[i];
-    var col=colors[i%colors.length];
-    var txc=(i%2===1)?'#fff':'#000';
-    badges+='<span style="background:'+col+';color:'+txc+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;margin:2px">'
-      +barName(it.barType)+' '+it.stage+'단계'
-      +'<button onclick="removeFromCombine('+it.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+txc+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">&#10005;</button>'
-      +'</span>';
-    // 쌍 완성 후 구분선 (마지막이 아닐 때)
-    if(i%2===1 && i<combineSelected.length-1){
-      badges+='<hr style="border:none;border-top:1px dashed #555;margin:6px 0;width:100%">';
+  // ── container: 쌍별 독립 블록 ──
+  if(container){
+    var html='';
+    // 완성된 쌍들
+    combinePairs.forEach(function(pair,pi){
+      var c1=pairColors[pi*2%pairColors.length];
+      var c2=pairColors[(pi*2+1)%pairColors.length];
+      html+='<div style="margin-bottom:14px;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid #333;border-radius:10px">';
+      // 뱃지 줄
+      html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">';
+      html+='<span style="background:'+c1[0]+';color:'+c1[1]+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700">'+barName(pair.item1.barType)+' '+pair.item1.stage+'단계</span>';
+      html+='<span style="color:#aaa">+</span>';
+      html+='<span style="background:'+c2[0]+';color:'+c2[1]+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700">'+barName(pair.item2.barType)+' '+pair.item2.stage+'단계</span>';
+      html+='<button onclick="removeFromCombine('+pi+')" style="margin-left:auto;background:#c62828;border:none;color:#fff;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px">전체 삭제</button>';
+      html+='</div>';
+      // 결과 영역 (id로 나중에 채움)
+      html+='<div id="pair-preview-'+pi+'" style="font-size:12px;color:#aaa">계산 중...</div>';
+      html+='</div>';
+    });
+    // 대기 중인 첫 번째 선택
+    if(pendingItem){
+      var c=pairColors[(combinePairs.length*2)%pairColors.length];
+      html+='<div style="margin-bottom:14px;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px dashed #555;border-radius:10px">';
+      html+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
+      html+='<span style="background:'+c[0]+';color:'+c[1]+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700">'+barName(pendingItem.barType)+' '+pendingItem.stage+'단계</span>';
+      html+='<span style="color:#aaa;font-size:12px">하나 더 선택하세요</span>';
+      html+='<button onclick="cancelPending()" style="margin-left:auto;background:#555;border:none;color:#fff;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px">취소</button>';
+      html+='</div>';
+      html+='</div>';
     }
-  }
-  if(info) info.innerHTML='<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-bottom:8px">'+badges+'</div>';
+    container.innerHTML=html;
 
-  // 완성된 쌍 개수
-  var completedPairs=Math.floor(combineSelected.length/2);
-
-  // 이미 렌더링된 쌍 수 추적 (data 속성으로)
-  if(!pr) return;
-  var renderedPairs=parseInt(pr.dataset.renderedPairs||'0');
-
-  // 선택이 줄어든 경우(삭제) - 전체 재렌더링
-  if(completedPairs<renderedPairs){
-    pr.innerHTML='';
-    pr.dataset.renderedPairs='0';
-    renderedPairs=0;
-    // 이전 쌍들 다시 렌더링
-    for(var pi=0;pi<completedPairs;pi++){
-      addPairPreview(pr,pi,combineSelected[pi*2],combineSelected[pi*2+1]);
-    }
-    pr.dataset.renderedPairs=String(completedPairs);
-    renderedPairs=completedPairs;
-  }
-
-  // 새로 완성된 쌍 추가
-  if(completedPairs>renderedPairs){
-    for(var pi=renderedPairs;pi<completedPairs;pi++){
-      addPairPreview(pr,pi,combineSelected[pi*2],combineSelected[pi*2+1]);
-    }
-    pr.dataset.renderedPairs=String(completedPairs);
+    // preview 영역 채우기 (이미 로드된 쌍)
+    combinePairs.forEach(function(pair,pi){
+      if(pair._preview) renderPairResult(pi, pair._preview);
+    });
   }
 
   // 실행 버튼
   if(execBtn){
-    if(completedPairs>0){
+    if(combinePairs.length>0){
       execBtn.style.display='block';
-      execBtn.innerHTML='결합판매 실행 ('+completedPairs+'새 × 250P)';
+      execBtn.innerHTML='결합판매 실행 ('+combinePairs.length+'쌍 × 250P)';
     } else {
       execBtn.style.display='none';
     }
   }
+  if(pr) pr.innerHTML='';
 }
 
-function addPairPreview(container,pairIndex,item1,item2){
-  var barName=function(t){return t==='bronze'?'수정':t==='silver'?'루비':'다이아';};
-  var wrapper=document.createElement('div');
-  wrapper.id='pair-result-'+pairIndex;
-  wrapper.style.cssText='margin-bottom:12px;padding:10px;background:rgba(255,255,255,0.05);border-radius:8px;border:1px solid #333;';
-  // 구분 제목
-  wrapper.innerHTML='<div style="font-size:11px;color:#aaa;margin-bottom:6px">'
-    +'쌍 #'+(pairIndex+1)+': '+barName(item1.barType)+' '+item1.stage+'단계 + '+barName(item2.barType)+' '+item2.stage+'단계</div>'
-    +'<div style="color:#aaa;font-size:12px">계산 중...</div>';
-  container.appendChild(wrapper);
+function cancelPending(){
+  if(!pendingItem) return;
+  var card=document.getElementById('ci-'+pendingItem.id);
+  if(card){card.style.display=''; var b=card.querySelector('button'); if(b) b.innerHTML='+';}
+  pendingItem=null;
+  renderCombinePairs();
+}
 
+function loadPairPreview(pairIdx, item1, item2){
   var tok=localStorage.getItem('lp_token')||'';
   fetch('/api/combine/preview',{method:'POST',
     headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
     body:JSON.stringify({item1_id:item1.id,item2_id:item2.id})})
   .then(function(r){return r.json();})
   .then(function(resp){
-    if(resp.can_combine){
-      wrapper.innerHTML='<div style="font-size:11px;color:#aaa;margin-bottom:6px">'
-        +'쌍 #'+(pairIndex+1)+': '+barName(item1.barType)+' '+item1.stage+'단계 + '+barName(item2.barType)+' '+item2.stage+'단계</div>'
-        +'<div class="row"><span class="label">결합 구매가</span><span class="val">'+resp.total_buy.toLocaleString()+'원</span></div>'
-        +'<div class="row"><span class="label">결합 판매 단계</span><span class="val yellow">'+resp.combined_stage+'단계</span></div>'
-        +'<div class="row"><span class="label">결합 판매가</span><span class="val green">'+resp.combined_sell.toLocaleString()+'원</span></div>'
-        +'<div class="row"><span class="label">포인트 비용</span><span class="val red">250P (30,000원)</span></div>'
-        +'<div class="row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px"><span class="label" style="font-weight:700">최종 순수익</span>'
-        +'<span class="val green" style="font-size:15px;font-weight:700">'+resp.net_profit.toLocaleString()+'원</span></div>';
-    } else {
-      wrapper.innerHTML='<div style="font-size:11px;color:#aaa;margin-bottom:4px">'
-        +'쌍 #'+(pairIndex+1)+'</div>'
-        +'<div style="color:#c62828;font-size:13px">'+(resp.error||'결합 불가')+'</div>';
-    }
+    if(combinePairs[pairIdx]) combinePairs[pairIdx]._preview=resp;
+    renderPairResult(pairIdx, resp);
   })
-  .catch(function(e){wrapper.innerHTML='<div style="color:#c62828">'+e.message+'</div>';});
+  .catch(function(e){
+    var el=document.getElementById('pair-preview-'+pairIdx);
+    if(el) el.innerHTML='<span style="color:#c62828">'+e.message+'</span>';
+  });
+}
+
+function renderPairResult(pairIdx, resp){
+  var el=document.getElementById('pair-preview-'+pairIdx);
+  if(!el) return;
+  if(resp.can_combine){
+    el.innerHTML='<div class="row"><span class="label">결합 구매가</span><span class="val">'+resp.total_buy.toLocaleString()+'원</span></div>'
+      +'<div class="row"><span class="label">결합 판매 단계</span><span class="val yellow">'+resp.combined_stage+'단계</span></div>'
+      +'<div class="row"><span class="label">결합 판매가</span><span class="val green">'+resp.combined_sell.toLocaleString()+'원</span></div>'
+      +'<div class="row"><span class="label">포인트 비용</span><span class="val red">250P (30,000원)</span></div>'
+      +'<div class="row" style="border-top:1px solid #333;margin-top:5px;padding-top:5px">'
+      +'<span class="label" style="font-weight:700">최종 순수익</span>'
+      +'<span class="val green" style="font-size:14px;font-weight:700">'+resp.net_profit.toLocaleString()+'원</span></div>';
+  } else {
+    el.innerHTML='<span style="color:#c62828;font-size:13px">'+(resp.error||'결합 불가')+'</span>';
+  }
 }
 
 function executeCombine(){
-  var execBtn=document.getElementById('combine-exec-btn');
-  if(!combineSelected.length||combineSelected.length%2!==0){alert('2개씩 짝을 맞춰 선택해주세요.');return;}
-  var pairs=[];
-  for(var i=0;i<combineSelected.length;i+=2) pairs.push([combineSelected[i],combineSelected[i+1]]);
-  var _tok=localStorage.getItem('lp_token')||'';
-  var totalPoints=pairs.length*250;
-  Promise.all(pairs.map(function(pair){
-    return fetch('/api/combine/execute',{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},
-      body:JSON.stringify({item1_id:pair[0].id,item2_id:pair[1].id})
-    }).then(function(r){return r.json();});
-  })).then(function(results){
-    var ok=results.filter(function(r){return r.success||r.combined_stage;});
-    var fail=results.filter(function(r){return r.error;});
-    var msg='';
-    if(ok.length) msg+='결합 성공 '+ok.length+'건!\n';
-    if(fail.length) msg+='실파 '+fail.length+'건: '+(fail[0].error||'');
-    alert(msg||'완료');
-    combineSelected=[];
-    if(typeof loadUserData==='function') loadUserData();
+  if(combinePairs.length===0){alert('선택된 쌍이 없습니다.');return;}
+  var tok=localStorage.getItem('lp_token')||'';
+  var btn=document.getElementById('combine-exec-btn');
+  if(btn) btn.disabled=true;
+  var promises=combinePairs.map(function(pair){
+    return fetch('/api/combine/execute',{method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify({item1_id:pair.item1.id,item2_id:pair.item2.id})})
+    .then(function(r){return r.json();});
+  });
+  Promise.all(promises)
+  .then(function(results){
+    var ok=results.filter(function(r){return r.success;}).length;
+    combinePairs=[];pendingItem=null;
+    renderCombinePairs();
     loadCombineItems();
-  }).catch(function(e){
-    alert(e.message);
+    loadUserData();
+    alert(ok+'쌍 결합판매 완료! ('+ok*250+'P 차감)');
+  })
+  .catch(function(e){
+    alert('오류: '+e.message);
+    if(btn) btn.disabled=false;
   });
 }
 
