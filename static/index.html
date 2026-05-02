@@ -577,12 +577,12 @@ function ciToggle(btn){
   var idx=combineSelected.findIndex(function(x){return x.id===id;});
   if(idx>=0){
     combineSelected.splice(idx,1);
-    card.classList.remove('selected');
+    card.style.display='';
     btn.innerHTML='+';
+    card.classList.remove('selected');
   } else {
     combineSelected.push({id:id,barType:bt,stage:st});
-    card.classList.add('selected');
-    btn.innerHTML='✓';
+    card.style.display='none';
   }
   renderCombinePairs();
 }
@@ -591,54 +591,64 @@ function removeFromCombine(id){
   var idx=combineSelected.findIndex(function(x){return x.id===id;});
   if(idx>=0) combineSelected.splice(idx,1);
   var card=document.getElementById('ci-'+id);
-  if(card){card.classList.remove('selected');var b=card.querySelector('button');if(b)b.textContent='+';}
+  if(card){
+    card.style.display='';
+    var btn=card.querySelector('button');
+    if(btn){btn.innerHTML='+'; card.classList.remove('selected');}
+  }
   renderCombinePairs();
 }
 
 function renderCombinePairs(){
   var sel=document.getElementById('combine-selected');
+  var info=document.getElementById('combine-sel-info');
+  var pr=document.getElementById('combine-preview-result');
   var execBtn=document.getElementById('combine-exec-btn');
   if(!sel) return;
-  if(!combineSelected.length){sel.style.display='none';if(execBtn)execBtn.style.display='none';return;}
-  sel.style.display='block';
-  var barNames={bronze:'수정',silver:'루비',gold:'다이아'};
-  var pairs=[];
-  for(var i=0;i<combineSelected.length;i+=2){
-    pairs.push([combineSelected[i], combineSelected[i+1]||null]);
+  if(combineSelected.length===0){
+    sel.style.display='none';
+    if(pr) pr.innerHTML='';
+    if(execBtn) execBtn.style.display='none';
+    return;
   }
-  var pairHTML=pairs.map(function(pair,pi){
-    var a=pair[0], b=pair[1];
-    var aName=(barNames[a.barType]||a.barType)+' '+a.stage+'단계';
-    var bName=b?((barNames[b.barType]||b.barType)+' '+b.stage+'단계'):'선택 해주세요';
-    var aColor='#4fc3f7'; var aText='#000';
-    var bColor=b?'#66bb6a':'#ddd'; var bText=b?'#fff':'#999';
-    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-      +'<span style="background:'+aColor+';color:'+aText+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px">'+aName
-      +'<button onclick="removeFromCombine('+a.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+aText+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">✕<\/button><\/span>'
-      +'<span style="color:#aaa">+<\/span>'
-      +'<span style="background:'+bColor+';color:'+bText+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;'+(b?'display:inline-flex;align-items:center;gap:4px':'')+'">'+bName
-      +(b?'<button onclick="removeFromCombine('+b.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+bText+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">✕<\/button>':'')
-      +'<\/span><\/div>';
-  }).join('');
+  sel.style.display='block';
+  var barName=function(t){return t==='bronze'?'수정':t==='silver'?'루비':'다이아';};
+  // 뱃지 렌더링
+  var colors=['#4fc3f7','#66bb6a','#ffb74d','#ba68c8','#f06292','#4db6ac'];
+  var badges=combineSelected.map(function(it,i){
+    var col=colors[i%colors.length];
+    var txtCol=(i===1||i===3||i===5)?'#fff':'#000';
+    return '<span style="background:'+col+';color:'+txtCol+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;margin:2px">'
+      +barName(it.barType)+' '+it.stage+'단계'
+      +'<button onclick="removeFromCombine('+it.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+txtCol+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">&#10005;</button>'
+      +'</span>';
+  });
+  if(info) info.innerHTML='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">'+badges.join('')+'</div>';
 
-  var selTitle=sel.querySelector('.combine-sel-title');
-  var selInfo=sel.querySelector('#combine-sel-info')||sel;
-  if(selTitle) selTitle.style.display='block';
-
-  // sel-info에 페어 HTML 삽입
-  var info=document.getElementById('combine-sel-info');
-  if(info) info.innerHTML=pairHTML;
-  else sel.insertAdjacentHTML('afterbegin','<div id="combine-sel-info">'+pairHTML+'<\/div>');
-
-  // 완성된 쌍(짝수 선택)이 있을 때 실행 버튼 표시
-  var completePairs=pairs.filter(function(p){return p[0]&&p[1];});
-  var pr=document.getElementById('combine-preview-result');
+  // 완전한 쌍(짝수) 확인
   if(pr) pr.innerHTML='';
-  if(execBtn){
-    if(completePairs.length>0 && combineSelected.length%2===0){
-      execBtn.style.display='block';execBtn.innerHTML='결합판매 실행 (250P)';var _tok=localStorage.getItem('lp_token')||'';if(pr) pr.innerHTML='<div style="color:#aaa;font-size:12px">계산 중...</div>';fetch('/api/combine/preview',{method:'POST',headers:{'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},body:JSON.stringify({item1_id:completePairs[0][0].id,item2_id:completePairs[0][1].id})}).then(function(r){return r.json();}).then(function(resp){if(pr){if(resp.can_combine){pr.innerHTML='<div class="row"><span class="label">결합 구매가</span><span class="val">'+resp.total_buy.toLocaleString()+'원</span></div>'+'<div class="row"><span class="label">결합 판매 단계</span><span class="val yellow">'+resp.combined_stage+'단계</span></div>'+'<div class="row"><span class="label">결합 판매가</span><span class="val green">'+resp.combined_sell.toLocaleString()+'원</span></div>'+'<div class="row"><span class="label">포인트 비용</span><span class="val red">250P (30,000원)</span></div>'+'<div class="row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px"><span class="label" style="font-weight:700">최종 순수익</span><span class="val green" style="font-size:15px;font-weight:700">'+resp.net_profit.toLocaleString()+'원</span></div>';}else{pr.innerHTML='<div style="color:#c62828;font-size:13px">'+(resp.error||'결합 불가')+'</div>';execBtn.style.display='none';}}}).catch(function(e){if(pr)pr.innerHTML='<div style="color:#c62828">'+e.message+'</div>';});
-    } else {
-      execBtn.style.display='none';
+  if(execBtn) execBtn.style.display='none';
+  if(combineSelected.length>=2 && combineSelected.length%2===0){
+    var lastPair=[combineSelected[combineSelected.length-2], combineSelected[combineSelected.length-1]];
+    if(lastPair[0]&&lastPair[1]){
+      if(pr) pr.innerHTML='<div style="color:#aaa;font-size:12px">계산 중...</div>';
+      var tok=localStorage.getItem('lp_token')||'';
+      fetch('/api/combine/preview',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({item1_id:lastPair[0].id,item2_id:lastPair[1].id})})
+      .then(function(r){return r.json();})
+      .then(function(resp){
+        if(!pr) return;
+        if(resp.can_combine){
+          pr.innerHTML='<div class="row"><span class="label">결합 구매가</span><span class="val">'+resp.total_buy.toLocaleString()+'원</span></div>'
+            +'<div class="row"><span class="label">결합 판매 단계</span><span class="val yellow">'+resp.combined_stage+'단계</span></div>'
+            +'<div class="row"><span class="label">결합 판매가</span><span class="val green">'+resp.combined_sell.toLocaleString()+'원</span></div>'
+            +'<div class="row"><span class="label">포인트 비용</span><span class="val red">250P (30,000원)</span></div>'
+            +'<div class="row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px"><span class="label" style="font-weight:700">최종 순수익</span><span class="val green" style="font-size:15px;font-weight:700">'+resp.net_profit.toLocaleString()+'원</span></div>';
+          if(execBtn){execBtn.style.display='block';execBtn.innerHTML='결합판매 실행 (250P)';}
+        } else {
+          pr.innerHTML='<div style="color:#c62828;font-size:13px">'+(resp.error||'결합 불가')+'</div>';
+        }
+      })
+      .catch(function(e){if(pr)pr.innerHTML='<div style="color:#c62828">'+e.message+'</div>';});
     }
   }
 }
