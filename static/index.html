@@ -553,7 +553,7 @@ function renderCombineList(){
     grouped[i.bar_type].push(i);
   });
   var validTypes=barOrder.filter(function(bt){return grouped[bt]&&grouped[bt].length>=1;});
-  if(!validTypes.length){list.innerHTML='<div class="empty-msg">&#44208;&#54633; &#44032;&#45733;&#54620; &#50500;&#51060;&#53596; &#50630;&#51020;<\/div>';return;}
+  if(!validTypes.length){list.innerHTML='<div class="empty-msg">&#44208;
   list.innerHTML=validTypes.map(function(bt){
     var cards=grouped[bt].map(function(i){
       var isSel=combineSelected.findIndex(function(x){return x.id===i.id;})>=0;
@@ -636,7 +636,7 @@ function renderCombinePairs(){
   if(pr) pr.innerHTML='';
   if(execBtn){
     if(completePairs.length>0 && combineSelected.length%2===0){
-      execBtn.style.display='block';execBtn.innerHTML='결합판매 실행 (250P)';&#54633;&#54032;&#47588; &#49892;&#54665; ('+completePairs.length+'&#49313; &#45824;&#55693; 250P&#49549;)';
+      execBtn.style.display='block';execBtn.innerHTML='결합판매 실행 (250P)';
     } else {
       execBtn.style.display='none';
     }
