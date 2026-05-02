@@ -636,7 +636,7 @@ function renderCombinePairs(){
   if(pr) pr.innerHTML='';
   if(execBtn){
     if(completePairs.length>0 && combineSelected.length%2===0){
-      execBtn.style.display='block';execBtn.innerHTML='결합판매 실행 (250P)';
+      execBtn.style.display='block';execBtn.innerHTML='결합판매 실행 (250P)';var _tok=localStorage.getItem('lp_token')||'';if(pr) pr.innerHTML='<div style="color:#aaa;font-size:12px">계산 중...</div>';fetch('/api/combine/preview',{method:'POST',headers:{'Authorization':'Bearer '+_tok,'Content-Type':'application/json'},body:JSON.stringify({item1_id:completePairs[0][0].id,item2_id:completePairs[0][1].id})}).then(function(r){return r.json();}).then(function(resp){if(pr){if(resp.can_combine){pr.innerHTML='<div class="row"><span class="label">결합 구매가</span><span class="val">'+resp.total_buy.toLocaleString()+'원</span></div>'+'<div class="row"><span class="label">결합 판매 단계</span><span class="val yellow">'+resp.combined_stage+'단계</span></div>'+'<div class="row"><span class="label">결합 판매가</span><span class="val green">'+resp.combined_sell.toLocaleString()+'원</span></div>'+'<div class="row"><span class="label">포인트 비용</span><span class="val red">250P (30,000원)</span></div>'+'<div class="row" style="border-top:1px solid #333;margin-top:6px;padding-top:6px"><span class="label" style="font-weight:700">최종 순수익</span><span class="val green" style="font-size:15px;font-weight:700">'+resp.net_profit.toLocaleString()+'원</span></div>';}else{pr.innerHTML='<div style="color:#c62828;font-size:13px">'+(resp.error||'결합 불가')+'</div>';execBtn.style.display='none';}}}).catch(function(e){if(pr)pr.innerHTML='<div style="color:#c62828">'+e.message+'</div>';});
     } else {
       execBtn.style.display='none';
     }
