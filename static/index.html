@@ -384,7 +384,7 @@ async function submitReservation(){
   }catch(e){
     // demo fallback
     const total=bzCnt+sv+gd;
-    toast(`매칭예약 완료! 수정 ${bzCnt}+루비 ${sv}+다이아 ${gd} = ${total}
+    toast(`매칭예약 완료! 수정 ${bzCnt}+루비 ${sv}+다이아 ${gd} = ${total}회 예약`);
     if(userData){
       userData.cumulative_count+=total;
       userData.total_points-=total*40;
@@ -399,7 +399,7 @@ async function submitReservation(){
 function calcCharge(){
   const amt=parseInt(document.getElementById('charge-amount').value)||0;
   const pts=Math.floor(amt/120);
-  document.getElementById('charge-result').textContent=amt>0?`${amt.toLocaleString()}
+  document.getElementById('charge-result').textContent=amt>0?`${amt.toLocaleString()}원 입금됨`:'';
 }
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('charge-amount').addEventListener('input',calcCharge);
@@ -412,7 +412,7 @@ async function requestCharge(){
     const d=await api('/charge/request',{method:'POST',body:JSON.stringify({amount:amt})});
     toast(d.message); document.getElementById('charge-amount').value=''; document.getElementById('charge-result').textContent='';
   }catch(e){
-    toast(`충전 신청 완료! ${amt.toLocaleString()}
+    toast(`충전 신청 완료! ${amt.toLocaleString()}원`);
     document.getElementById('charge-amount').value=''; document.getElementById('charge-result').textContent='';
   }
 }
