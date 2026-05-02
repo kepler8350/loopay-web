@@ -516,9 +516,9 @@ loadPrices();
 // 결합판매
 function getStatusBadge(s){
   if(s==='active'||s==='reservable'||!s)
-    return '<span style="background:#e8f5e9;color:#2e7d32;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">&#48372;&#50976;<\/span>';
+    return '<span style="background:#e8f5e9;color:#2e7d32;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">보유<\/span>';
   if(s==='pending'||s==='matched')
-    return '<span style="background:#fff3e0;color:#e65100;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">&#47588;&#52845;&#51473;<\/span>';
+    return '<span style="background:#fff3e0;color:#e65100;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:4px">매칭중<\/span>';
   return '';
 }
 // ── combine 판매 ──────────────────────────────────────────
@@ -545,7 +545,7 @@ function renderCombineList(){
   var list=document.getElementById('combine-items-list');
   if(!list) return;
   var items=window._combineAllItems||[];
-  var barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
+  var barNames={bronze:'수정',silver:'루비',gold:'다이아'};
   var barOrder=['bronze','silver','gold'];
   var grouped={};
   items.forEach(function(i){
@@ -553,14 +553,14 @@ function renderCombineList(){
     grouped[i.bar_type].push(i);
   });
   var validTypes=barOrder.filter(function(bt){return grouped[bt]&&grouped[bt].length>=1;});
-  if(!validTypes.length){list.innerHTML='<div class="empty-msg">&#44208;
+  if(!validTypes.length){list.innerHTML='<div class="empty-msg">결
   list.innerHTML=validTypes.map(function(bt){
     var cards=grouped[bt].map(function(i){
       var isSel=combineSelected.findIndex(function(x){return x.id===i.id;})>=0;
       return '<div class="combine-item-card'+(isSel?' selected':'')+'" id="ci-'+i.id+'" data-id="'+i.id+'" data-bt="'+i.bar_type+'" data-st="'+i.stage+'">'
-        +'<div class="item-stage">'+i.stage+'&#45800;&#44228;<\/div>'
-        +'<div class="item-price">'+(i.buy_price?i.buy_price.toLocaleString():'')+'&#50896;<\/div>'
-        +'<button onclick="ciToggle(this)">'+(isSel?'&#10003;':'+')+'<\/button>'
+        +'<div class="item-stage">'+i.stage+'단계<\/div>'
+        +'<div class="item-price">'+(i.buy_price?i.buy_price.toLocaleString():'')+'원<\/div>'
+        +'<button onclick="ciToggle(this)">'+(isSel?'✓':'+')+'<\/button>'
         +'<\/div>';
     }).join('');
     return '<div class="combine-group"><div class="combine-group-title">'+barNames[bt]+'<\/div>'
@@ -582,7 +582,7 @@ function ciToggle(btn){
   } else {
     combineSelected.push({id:id,barType:bt,stage:st});
     card.classList.add('selected');
-    btn.innerHTML='&#10003;';
+    btn.innerHTML='✓';
   }
   renderCombinePairs();
 }
@@ -601,23 +601,23 @@ function renderCombinePairs(){
   if(!sel) return;
   if(!combineSelected.length){sel.style.display='none';if(execBtn)execBtn.style.display='none';return;}
   sel.style.display='block';
-  var barNames={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};
+  var barNames={bronze:'수정',silver:'루비',gold:'다이아'};
   var pairs=[];
   for(var i=0;i<combineSelected.length;i+=2){
     pairs.push([combineSelected[i], combineSelected[i+1]||null]);
   }
   var pairHTML=pairs.map(function(pair,pi){
     var a=pair[0], b=pair[1];
-    var aName=(barNames[a.barType]||a.barType)+' '+a.stage+'&#45800;&#44228;';
-    var bName=b?((barNames[b.barType]||b.barType)+' '+b.stage+'&#45800;&#44228;'):'&#49440;&#53469; &#54644;&#51452;&#49464;&#50836;';
+    var aName=(barNames[a.barType]||a.barType)+' '+a.stage+'단계';
+    var bName=b?((barNames[b.barType]||b.barType)+' '+b.stage+'단계'):'선택 해주세요';
     var aColor='#4fc3f7'; var aText='#000';
     var bColor=b?'#66bb6a':'#ddd'; var bText=b?'#fff':'#999';
     return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
       +'<span style="background:'+aColor+';color:'+aText+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px">'+aName
-      +'<button onclick="removeFromCombine('+a.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+aText+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">&#10005;<\/button><\/span>'
+      +'<button onclick="removeFromCombine('+a.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+aText+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">✕<\/button><\/span>'
       +'<span style="color:#aaa">+<\/span>'
       +'<span style="background:'+bColor+';color:'+bText+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;'+(b?'display:inline-flex;align-items:center;gap:4px':'')+'">'+bName
-      +(b?'<button onclick="removeFromCombine('+b.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+bText+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">&#10005;<\/button>':'')
+      +(b?'<button onclick="removeFromCombine('+b.id+')" style="background:rgba(0,0,0,0.2);border:none;color:'+bText+';border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:11px;line-height:1;padding:0">✕<\/button>':'')
       +'<\/span><\/div>';
   }).join('');
 
@@ -647,7 +647,7 @@ function executeCombine(){
   var execBtn=document.getElementById('combine-exec-btn');
   if(!combineSelected.length||combineSelected.length%2!==0){alert('2개씩 짝을 맞춰 선택해주세요.');return;}
   var pairs=[];
-  for(var i=0;i<combineSelected.length;i+=2) pairs.push([combineSelected[i],combineSelected[i+1]]);&#54665; &#51473;...';}
+  for(var i=0;i<combineSelected.length;i+=2) pairs.push([combineSelected[i],combineSelected[i+1]]);행 중...';}
   var _tok=localStorage.getItem('lp_token')||'';
   var totalPoints=pairs.length*250;
   Promise.all(pairs.map(function(pair){
@@ -660,14 +660,14 @@ function executeCombine(){
     var ok=results.filter(function(r){return r.success||r.combined_stage;});
     var fail=results.filter(function(r){return r.error;});
     var msg='';
-    if(ok.length) msg+='&#44208;&#54633; &#49457;&#44277; '+ok.length+'&#44148;!\n';
-    if(fail.length) msg+='&#49892;&#54028; '+fail.length+'&#44148;: '+(fail[0].error||'');
-    alert(msg||'&#50756;&#47308;');
+    if(ok.length) msg+='결합 성공 '+ok.length+'건!\n';
+    if(fail.length) msg+='실파 '+fail.length+'건: '+(fail[0].error||'');
+    alert(msg||'완료');
     combineSelected=[];
     if(typeof loadUserData==='function') loadUserData();
     loadCombineItems();
   }).catch(function(e){
-    alert(e.message);&#54633;&#54032;&#47588; &#49892;&#54665;';}
+    alert(e.message);합판매 실행';}
   });
 }
 
