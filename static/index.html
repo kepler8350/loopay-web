@@ -330,11 +330,11 @@ function renderBars(d){
       const profitStr=it.profit>=0?`+${it.profit.toLocaleString()}`:`${it.profit.toLocaleString()}`;
       return `<div class="item-row">
         <div class="item-hd">
-          <span class="item-stage">${it.stage}단계 ${t==='bronze'?'수정':t==='silver'?'루비':'다이아'}바<\/span>
+          <span class="item-stage">${it.stage}단계 ${t==='bronze'?'수정':t==='silver'?'루비':'다이아'}
           <span class="badge ${it.status_label==='대기중'?'badge-wait':'badge-match'}">${it.status_label}<\/span>
         <\/div>
-        <div class="item-date">구매일: ${it.purchase_date} (${it.days}일째)${day4note}<\/div>
-        <div class="item-price">구매 ${it.buy_price.toLocaleString()}원 → 판매 ${it.sell_price.toLocaleString()}원 (${profitStr}원)<\/div>
+        <div class="item-date">구매일: ${it.purchase_date} (${it.days}
+        <div class="item-price">구매 ${it.buy_price.toLocaleString()}원 → 판매 ${it.sell_price.toLocaleString()}원 (${profitStr}
       <\/div>`;
     }).join('');
   });
@@ -362,8 +362,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
   document.getElementById('r-sv-wrap').className='r-wrap locked';
   document.getElementById('r-gd-wrap').className='r-wrap locked';
-  document.getElementById('r-sv-note').textContent=`수정 ${bzCnt}개 → 루비 ${sv}개 자동 결정${bzCnt<10?' (10개시 5개)':''}`;
-  document.getElementById('r-gd-note').textContent=`루비 ${sv}개 → 다이아 ${gd}개 자동 결정${sv<5?' (루비5개시 3개)':''}`;
+  document.getElementById('r-sv-note').textContent=`수정 ${bzCnt}개 → 루비 ${sv}
+  document.getElementById('r-gd-note').textContent=`루비 ${sv}개 → 다이아 ${gd}
   const total=bzCnt+sv+gd, cost=total*40;
   document.getElementById('r-info').innerHTML=`수정 <b>${bzCnt}<\/b> + 루비 <b>${sv}<\/b> + 다이아 <b>${gd}<\/b> = 총 <b>${total}<\/b>회 / 차감 <b>${cost.toLocaleString()}P<\/b>`;
 }
@@ -384,7 +384,7 @@ async function submitReservation(){
   }catch(e){
     // demo fallback
     const total=bzCnt+sv+gd;
-    toast(`매칭예약 완료! 수정 ${bzCnt}+루비 ${sv}+다이아 ${gd} = ${total}회, ${total*40}P 차감`);
+    toast(`매칭예약 완료! 수정 ${bzCnt}+루비 ${sv}+다이아 ${gd} = ${total}
     if(userData){
       userData.cumulative_count+=total;
       userData.total_points-=total*40;
@@ -399,7 +399,7 @@ async function submitReservation(){
 function calcCharge(){
   const amt=parseInt(document.getElementById('charge-amount').value)||0;
   const pts=Math.floor(amt/120);
-  document.getElementById('charge-result').textContent=amt>0?`${amt.toLocaleString()}원 → ${pts.toLocaleString()}P`:'';
+  document.getElementById('charge-result').textContent=amt>0?`${amt.toLocaleString()}
 }
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('charge-amount').addEventListener('input',calcCharge);
@@ -412,7 +412,7 @@ async function requestCharge(){
     const d=await api('/charge/request',{method:'POST',body:JSON.stringify({amount:amt})});
     toast(d.message); document.getElementById('charge-amount').value=''; document.getElementById('charge-result').textContent='';
   }catch(e){
-    toast(`충전 신청 완료! ${amt.toLocaleString()}원 → ${Math.floor(amt/120)}P (관리자 확인 후 지급)`);
+    toast(`충전 신청 완료! ${amt.toLocaleString()}
     document.getElementById('charge-amount').value=''; document.getElementById('charge-result').textContent='';
   }
 }
@@ -480,7 +480,7 @@ async function showAdminPanel(){
     const charges=await api('/admin/charges');
     document.getElementById('admin-charges').innerHTML=charges.charges.length?
       charges.charges.map(c=>`<div style="background:var(--bg2);border-radius:8px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-        <div><div style="font-size:13px;font-weight:600">${c.nickname}<\/div><div style="font-size:12px;color:var(--text2)">${c.amount.toLocaleString()}원 → ${c.points}P<\/div><\/div>
+        <div><div style="font-size:13px;font-weight:600">${c.nickname}<\/div><div style="font-size:12px;color:var(--text2)">${c.amount.toLocaleString()}
         <button onclick="confirmCharge(${c.id})" style="padding:7px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600">확인<\/button>
       <\/div>`).join(''):
       '<div style="color:var(--text2);font-size:13px;padding:8px">대기 중인 충전 신청 없음<\/div>';
@@ -667,7 +667,7 @@ function executeCombine(){
     if(typeof loadUserData==='function') loadUserData();
     loadCombineItems();
   }).catch(function(e){
-    alert(e.message);합판매 실행';}
+    alert(e.message);
   });
 }
 
