@@ -511,7 +511,7 @@ def combine_execute():
             return jsonify({'error': 'no combinable stage'}), 400
         conn.execute('UPDATE items SET status="sold" WHERE id IN (?,?)', (item1_id, item2_id))
         conn.execute(
-            "INSERT INTO items (user_id, bar_type, stage, status, created_at) VALUES (?,?,?,'waiting',datetime('now','localtime'))",
+            "INSERT INTO items (user_id, bar_type, stage, status, purchase_date) VALUES (?,?,?,'waiting',date('now'))",
             (user_id, bar_type, combined_stage)
         )
         conn.execute('UPDATE users SET charge_points=charge_points-250 WHERE id=?', (user_id,))
