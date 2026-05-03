@@ -770,6 +770,17 @@ function onlyDigits(el){
   var v=el.value.replace(/[^0-9]/g,'');
   if(el.value!==v) el.value=v;
 }
+function onUsername(el){
+  // 영소문자·숫자만 허용, 대문자는 소문자로
+  var v=el.value.toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(el.value!==v) el.value=v;
+  var err=document.getElementById('reg-username-error');
+  if(!err) return;
+  if(v.length===0){ err.textContent=''; return; }
+  if(v.length<4){ err.textContent='⚠️ 4자 이상 입력해주세요.'; }
+  else if(v.length>8){ el.value=v.slice(0,8); err.textContent=''; }
+  else { err.textContent=''; }
+}
 function showLogin(){
   document.getElementById('login-form').style.display='';
   document.getElementById('register-form').style.display='none';
@@ -807,7 +818,7 @@ async function doRegister(){
   var accountName=document.getElementById('reg-account-name').value.trim();
   var errEl=document.getElementById('register-error');
   errEl.textContent='';
-  if(!username||!password){errEl.textContent='아이디와 비밀번호는 필수입니다.';return;}
+  if(!username||!password){errEl.textContent='아이디와 비밀번호는 필수입니다.';return;}if(!/^[a-z0-9]{4,8}$/.test(username)){errEl.textContent='아이디: 영소문자+숫자 4~8자로 입력해주세요.';return;}
   try{
     var r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({username,password,phone,bank,account_no:accountNo,account_name:accountName})});
@@ -866,7 +877,9 @@ function demoLogin(btn){
     <!-- 회원가입 폼 -->
     <div id="register-form" style="display:none">
       <div style="font-size:16px;font-weight:700;text-align:center;margin-bottom:16px;color:#1976d2">회원가입</div>
-      <input id="reg-username" type="text" class="login-input" placeholder="아이디 (필수)" autocomplete="username">
+      <input id="reg-username" type="text" class="login-input" placeholder="아이디 (필수)" autocomplete="username" maxlength="8" oninput="onUsername(this)">
+      <div style="font-size:11px;color:#555;margin-top:-6px;margin-bottom:10px">ℹ️ 영어 소문자와 숫자만 가능， 4자 이상 8자 이하</div>
+      <div id="reg-username-error" style="color:#c62828;font-size:12px;margin-top:-6px;margin-bottom:6px;min-height:14px"></div>
       <input id="reg-password" type="password" class="login-input" placeholder="비밀번호 (필수, 4자 이상)" autocomplete="new-password">
       <div style="position:relative">
         <input id="reg-phone" type="text" class="login-input" placeholder="핸드폰번호 싵력" inputmode="numeric" oninput="onlyDigits(this)" style="padding-right:0">
