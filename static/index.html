@@ -398,23 +398,29 @@ async function submitReservation(){
 
 // --- charge ---------------------------------------------------------------
 function calcCharge(){
-  const amt=parseInt(document.getElementById('charge-amount').value)||0;
-  const pts=Math.floor(amt/120);
-  document.getElementById('charge-result').textContent=amt>0?`${amt.toLocaleString()}원 입금됨`:'';
+  var pts=parseInt(document.getElementById('charge-amount').value)||0;
+  var won=pts*120;
+  var el=document.getElementById('charge-result');
+  if(el) el.textContent=pts>0?pts.toLocaleString()+'P → '+won.toLocaleString()+'원 입금':'';
 }
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('charge-amount').addEventListener('input',calcCharge);
 });
 
 async function requestCharge(){
-  const amt=parseInt(document.getElementById('charge-amount').value)||0;
-  if(amt<1000){toast('최소 1,000원 이상 입력해주세요');return;}
+  var pts=parseInt(document.getElementById('charge-amount').value)||0;
+  var won=pts*120;
+  if(pts<1){toast('포인트를 입력해주세요');return;}
+  if(won<1000){toast('최소 9P(원1,080원) 이상 입력해주세요');return;}
   try{
-    const d=await api('/charge/request',{method:'POST',body:JSON.stringify({amount:amt})});
-    toast(d.message); document.getElementById('charge-amount').value=''; document.getElementById('charge-result').textContent='';
+    const d=await api('/charge/request',{method:'POST',body:JSON.stringify({amount:won})});
+    toast(d.message);
+    document.getElementById('charge-amount').value='';
+    document.getElementById('charge-result').textContent='';
   }catch(e){
-    toast(`충전 신청 완료! ${amt.toLocaleString()}원`);
-    document.getElementById('charge-amount').value=''; document.getElementById('charge-result').textContent='';
+    toast('충전 신청 완료! '+pts.toLocaleString()+'P ('+won.toLocaleString()+'원)');
+    document.getElementById('charge-amount').value='';
+    document.getElementById('charge-result').textContent='';
   }
 }
 
@@ -908,7 +914,7 @@ function demoLogin(btn){
         <div style="height:14px"></div>
         <div class="reserve-box">
           <div class="reserve-title">포인트 충전 신청</div>
-          <input class="charge-input" id="charge-amount" type="number" placeholder="충전 금액 입력 (원)" min="1000" step="1000">
+          <input class="charge-input" id="charge-amount" type="number" placeholder="충전 포인트 입력 (P)" min="1000" step="1000">
           <div class="charge-result" id="charge-result"></div>
           <button class="charge-btn" onclick="requestCharge()">충전 신청하기</button>
           <div class="info-block" style="margin-bottom:0;font-size:11px">충전 신청 후 관리자 확인 시 포인트가 지급됩니다. (1P = 120원)</div>
