@@ -565,46 +565,37 @@ function renderCombineList(){
   var barOrder=['bronze','silver','gold'];
   var grouped={bronze:[],silver:[],gold:[]};
   items.forEach(function(i){ if(grouped[i.bar_type]) grouped[i.bar_type].push(i); });
-
-  // 2개 이상 있는 종류만 표시
   var validTypes=barOrder.filter(function(bt){ return grouped[bt]&&grouped[bt].length>=2; });
 
-  // 아이템이 아예 없는 경우
   if(items.length===0){
-    list.innerHTML='<div class="empty-msg" style="padding:20px;text-align:center;color:#888">'
-      +'<div style="font-size:32px;margin-bottom:8px">📦</div>'
-      +'아이템이 없습니다.<br>'
-      +'<span style="font-size:12px">우선 아이템을 구매하세요.</span>'
-      +'</div>';
+    list.innerHTML='<div class="empty-msg" style="padding:20px;text-align:center;color:#888"><div style="font-size:32px;margin-bottom:8px">📦</div>아이템이 없습니다.<br><span style="font-size:12px">우선 아이템을 구매하세요.</span></div>';
     return;
   }
-
-  // 아이템은 있지만 2개 이상인 종류가 없는 경우
   if(!validTypes.length){
     var hasList=barOrder.filter(function(bt){ return grouped[bt]&&grouped[bt].length>=1; });
-    var msg='결합판매는 각 종류별 2개 이상 필요합니다.<br>';
+    var msg='결합판매는 각 종류별 2개 이상 필요합니다.';
     if(hasList.length){
-      msg+='<span style="font-size:12px;color:#aaa">현재 보유: ';
+      msg+='<br><span style="font-size:12px;color:#aaa">현재 보유: ';
       msg+=hasList.map(function(bt){ return barNames[bt]+' '+grouped[bt].length+'개'; }).join(', ');
       msg+='</span>';
     }
-    list.innerHTML='<div class="empty-msg" style="padding:20px;text-align:center;color:#888">'
-      +'<div style="font-size:32px;margin-bottom:8px">🔗</div>'+msg+'</div>';
+    list.innerHTML='<div class="empty-msg" style="padding:20px;text-align:center;color:#888"><div style="font-size:32px;margin-bottom:8px">🔗</div>'+msg+'</div>';
     return;
   }
 
   list.innerHTML=validTypes.map(function(bt){
     var cards=grouped[bt].map(function(i){
-      var isSel=combinePairs.some(function(pair){ return pair.item1.id===i.id||pair.item2.id===i.id; })
-        ||(pendingItem&&pendingItem.id===i.id);
-      return '<div class="combine-item-card'+(isSel?' selected':'')+'" id="ci-'+i.id+'" data-id="'+i.id+'" data-bt="'+i.bar_type+'" data-st="'+i.stage+'" style="'+(isSel?'display:none':'')+'"">'
-        +'<div class="item-stage">'+i.stage+'단계<\/div>'
-        +'<div class="item-price">'+(i.buy_price?i.buy_price.toLocaleString():'')+'원<\/div>'
-        +'<button onclick="ciToggle(this)">'+(isSel?'✓':'+')+'\/button>'
-        +'<\/div>';
+      var isSel=combinePairs.some(function(pair){ return pair.item1.id===i.id||pair.item2.id===i.id; })||(pendingItem&&pendingItem.id===i.id);
+      var styleVal=isSel?'display:none':'';
+      var btnLabel=isSel?'✓':'+';
+      return '<div class="combine-item-card'+(isSel?' selected':'')+'" id="ci-'+i.id+'" data-id="'+i.id+'" data-bt="'+i.bar_type+'" data-st="'+i.stage+'" style="'+styleVal+'">'
+        +'<div class="item-stage">'+i.stage+'단계</div>'
+        +'<div class="item-price">'+(i.buy_price?i.buy_price.toLocaleString():'')+'원</div>'
+        +'<button onclick="ciToggle(this)">'+btnLabel+'</button>'
+        +'</div>';
     }).join('');
-    return '<div class="combine-group"><div class="combine-group-title">'+barNames[bt]+'<\/div>'
-      +'<div class="combine-group-grid">'+cards+'<\/div><\/div>';
+    return '<div class="combine-group"><div class="combine-group-title">'+barNames[bt]+'</div>'
+      +'<div class="combine-group-grid">'+cards+'</div></div>';
   }).join('');
 }
 
