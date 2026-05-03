@@ -3,6 +3,17 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import check_password_hash, generate_password_hash
 import datetime, sqlite3, os
+
+# ── 테스트용 시간 조작 ──────────────────────────────────
+_MOCK_TIME = None  # None이면 실제 시간 사용
+
+def get_now():
+    """현재 시간 반환 (mock 설정 시 mock 시간)"""
+    return _MOCK_TIME if _MOCK_TIME else datetime.datetime.now()
+
+def get_today():
+    """오늘 날짜 반환"""
+    return get_now().date()
 from db import get_db, init_db, LEVEL_CONFIG, BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES, PENALTY_TABLE, get_sv_count, get_gd_count
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
@@ -23,7 +34,7 @@ def days_since(purchase_date):
         return 0
     try:
         dt = datetime.datetime.strptime(str(purchase_date)[:19], '%Y-%m-%d %H:%M:%S')
-        return (datetime.datetime.now() - dt).days
+        return (get_now() - dt).days
     except Exception:
         return 0
 
@@ -168,8 +179,8 @@ def init_demo_items():
     uid = int(get_jwt_identity())
     conn = get_db()
     try:
-        today = __import__('datetime').date.today().isoformat()
-        yesterday = (__import__('datetime').date.today() - __import__('datetime').timedelta(days=1)).isoformat()
+        today = get_today().isoformat()
+        yesterday = (get_today() - __import__('datetime').timedelta(days=1)).isoformat()
         # 기존 아이템 삭제 후 재추가
         conn.execute("DELETE FROM items WHERE user_id=?", (uid,))
         items_to_add = [
@@ -274,7 +285,7 @@ def create_reservation():
     if total_pts < cost:
         db.close()
         return jsonify(error=f'포인트 부족. 필요: {cost}P, 보유: {total_pts}P'), 400
-    today = datetime.date.today().isoformat()
+    today = get_today().isoformat()
     counts = {'bronze': bz, 'silver': sv, 'gold': gd}
     for bar_type, cnt in counts.items():
         reservable = db.execute("SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='reservable' AND julianday('now') - julianday(purchase_date) >= 2 LIMIT ?", (uid, bar_type, cnt)).fetchall()
@@ -386,13 +397,84 @@ def admin_approve_user():
     finally:
         db.close()
 
+@app.route('/api/admin/set-time', methods=['POST'])
+def admin_set_time():
+    auth = request.headers.get('Authorization','')
+    if auth != 'Bearer admin-loopay-2026':
+        return jsonify(error='unauthorized'), 401
+    global _MOCK_TIME
+    data = request.json or {}
+    dt_str = data.get('datetime')  # "2026-03-15 09:00:00" or null
+    if dt_str:
+        try:
+            _MOCK_TIME = datetime.datetime.strptime(dt_str, '%Y-%m-%d %H:%M:%S')
+            return jsonify(success=True, mock_time=_MOCK_TIME.strftime('%Y-%m-%d %H:%M:%S'))
+        except Exception as e:
+            return jsonify(error=str(e)), 400
+    else:
+        _MOCK_TIME = None
+        return jsonify(success=True, mock_time=None, message='실제 시간으로 복원됨')
+
+@app.route('/api/admin/get-time', methods=['GET'])
+def admin_get_time():
+    auth = request.headers.get('Authorization','')
+    if auth != 'Bearer admin-loopay-2026':
+        return jsonify(error='unauthorized'), 401
+    now = get_now()
+    return jsonify(
+        current=now.strftime('%Y-%m-%d %H:%M:%S'),
+        is_mock=_MOCK_TIME is not None,
+        real=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    )
+
+@app.route('/api/admin/create-test-users', methods=['POST'])
+def admin_create_test_users():
+    auth = request.headers.get('Authorization','')
+    if auth != 'Bearer admin-loopay-2026':
+        return jsonify(error='unauthorized'), 401
+    from werkzeug.security import generate_password_hash
+    db = get_db()
+    try:
+        test_users = [
+            ('testuser01','홍길동','01011110001','국민은행','110123456789','홍길동'),
+            ('testuser02','김민준','01022220002','신한은행','110234567890','김민준'),
+            ('testuser03','이서연','01033330003','하나은행','110345678901','이서연'),
+            ('testuser04','박도윤','01044440004','우리은행','110456789012','박도윤'),
+            ('testuser05','정시우','01055550005','농협은행','110567890123','정시우'),
+            ('testuser06','강예은','01066660006','기업은행','110678901234','강예은'),
+            ('testuser07','조지호','01077770007','카카오뱅크','3333012345678','조지호'),
+            ('testuser08','윤하은','01088880008','토스뱅크','1000123456789','윤하은'),
+            ('testuser09','임서준','01099990009','케이뱅크','1234567890123','임서준'),
+            ('testuser10','오수아','01000000010','SC제일은행','110901234567','오수아'),
+        ]
+        created = []
+        skipped = []
+        for username,name,phone,bank,account,acname in test_users:
+            exists = db.execute('SELECT id FROM users WHERE username=?',(username,)).fetchone()
+            if exists:
+                skipped.append(username)
+                continue
+            pw = generate_password_hash('test1234')
+            db.execute(
+                'INSERT INTO users (username,password_hash,nickname,phone,bank,account_no,account_name,approved) VALUES (?,?,?,?,?,?,?,0)',
+                (username,pw,name,phone,bank,account,acname)
+            )
+            created.append(username)
+        db.commit()
+        return jsonify(success=True, created=created, skipped=skipped, password='test1234')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/users', methods=['GET'])
 @jwt_required()
 def admin_users():
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    users = db.execute("SELECT id,nickname,email,level,charge_points,exchange_points,cumulative_count,created_at FROM users").fetchall()
+    users = db.execute("SELECT id,username,nickname,email,level,charge_points,exchange_points,cumulative_count,created_at FROM users").fetchall()
     db.close()
     return jsonify(users=[dict(u) for u in users])
 
@@ -426,7 +508,7 @@ def admin_run_matching():
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    today = datetime.date.today().isoformat()
+    today = get_today().isoformat()
     pending = db.execute("SELECT * FROM reservations WHERE reserve_date=? AND status='pending'", (today,)).fetchall()
     matched = 0
     for r in pending:
@@ -445,7 +527,7 @@ def admin_stats():
     total_users = db.execute("SELECT COUNT(*) as c FROM users").fetchone()['c']
     total_items = db.execute("SELECT COUNT(*) as c FROM items WHERE status!='sold'").fetchone()['c']
     pending_charges = db.execute("SELECT COUNT(*) as c FROM charge_requests WHERE status='pending'").fetchone()['c']
-    today = datetime.date.today().isoformat()
+    today = get_today().isoformat()
     today_reserves = db.execute("SELECT COUNT(*) as c FROM reservations WHERE reserve_date=?", (today,)).fetchone()['c']
     db.close()
     return jsonify(total_users=total_users,total_items=total_items,pending_charges=pending_charges,today_reserves=today_reserves)
@@ -460,7 +542,7 @@ def admin_matching_status():
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    today = datetime.date.today().isoformat()
+    today = get_today().isoformat()
 
     def get_round_data(round_num):
         # l� }  (reservations where match_round=round_num, status=pending)
@@ -681,7 +763,7 @@ def admin_add_reservation():
     conn = get_db()
     try:
         # reservations 테이블: item_id, bar_type, match_round, reserve_date, status
-        today = __import__('datetime').date.today().isoformat()
+        today = get_today().isoformat()
         for _ in range(count):
             conn.execute(
                 "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status) VALUES (1, 0, ?, ?, ?, 'pending')",
