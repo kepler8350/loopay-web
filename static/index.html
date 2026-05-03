@@ -452,28 +452,23 @@ function showTab(id,btn){
 function toggleDetail(type){
   var panel=document.getElementById('detail-'+type);
   var card=document.getElementById('card-'+type);
+  var masterPanel=document.getElementById('bar-detail-panel');
   var isOpen=panel&&panel.style.display!=='none';
-  var container=card&&card.parentElement&&card.parentElement.parentElement;
+  // 모든 패널 닫기, 카드 selected 제거
   ['bronze','silver','gold'].forEach(function(t){
     var p2=document.getElementById('detail-'+t);
     var c2=document.getElementById('card-'+t);
     if(p2) p2.style.display='none';
-    if(c2){
-      c2.classList.remove('selected');
-      if(c2.parentElement){c2.parentElement.style.flex='1';c2.parentElement.style.flexBasis='';}
-    }
+    if(c2) c2.classList.remove('selected');
   });
-  if(container) container.style.flexWrap='';
   if(!isOpen&&panel){
+    // 해당 패널 열기
+    if(masterPanel) masterPanel.style.display='block';
     panel.style.display='block';
-    if(card){
-      card.classList.add('selected');
-      if(card.parentElement){
-        card.parentElement.style.flex='1 1 100%';
-        card.parentElement.style.flexBasis='100%';
-      }
-    }
-    if(container) container.style.flexWrap='wrap';
+    if(card) card.classList.add('selected');
+  } else {
+    // 닫기
+    if(masterPanel) masterPanel.style.display='none';
   }
 }
 
@@ -859,34 +854,36 @@ function demoLogin(btn){
       <!-- HOME -->
       <div id="tab-home" class="tab active">
         <div class="sec-title">아이템 현황 (클릭하면 상세보기)</div>
-        <div style="display:flex;gap:8px;align-items:flex-start">
+        <div style="display:flex;gap:8px">
           <div style="flex:1;min-width:0">
-            <div class="bar-card bar-bronze" id="card-bronze" onclick="toggleDetail('bronze')" style="cursor:pointer;margin-bottom:0">
+            <div class="bar-card bar-bronze" id="card-bronze" onclick="toggleDetail('bronze')" style="cursor:pointer">
               <div class="bar-name">수정</div>
               <div class="bar-stat"><span>보유</span><span id="bz-hold">0개</span></div>
               <div class="bar-stat"><span>매칭예약가능</span><span id="bz-res">0개</span></div>
               <div class="bar-range" id="bz-range">구매예약: ?</div>
             </div>
-            <div id="detail-bronze" style="display:none"><div class="detail-panel"><div class="detail-panel-title">수정 보유 내역</div><div id="detail-bronze-items"><div class="loading">불러오는 중...</div></div></div></div>
           </div>
           <div style="flex:1;min-width:0">
-            <div class="bar-card bar-silver" id="card-silver" onclick="toggleDetail('silver')" style="cursor:pointer;margin-bottom:0">
+            <div class="bar-card bar-silver" id="card-silver" onclick="toggleDetail('silver')" style="cursor:pointer">
               <div class="bar-name">루비</div>
               <div class="bar-stat"><span>보유</span><span id="sv-hold">0개</span></div>
               <div class="bar-stat"><span>매칭예약가능</span><span id="sv-res">0개</span></div>
               <div class="bar-range" id="sv-range">구매예약: ?</div>
             </div>
-            <div id="detail-silver" style="display:none"><div class="detail-panel"><div class="detail-panel-title">루비 보유 내역</div><div id="detail-silver-items"><div class="loading">불러오는 중...</div></div></div></div>
           </div>
           <div style="flex:1;min-width:0">
-            <div class="bar-card bar-gold" id="card-gold" onclick="toggleDetail('gold')" style="cursor:pointer;margin-bottom:0">
+            <div class="bar-card bar-gold" id="card-gold" onclick="toggleDetail('gold')" style="cursor:pointer">
               <div class="bar-name">다이아</div>
               <div class="bar-stat"><span>보유</span><span id="gd-hold">0개</span></div>
               <div class="bar-stat"><span>매칭예약가능</span><span id="gd-res">0개</span></div>
               <div class="bar-range" id="gd-range">구매예약: ?</div>
             </div>
-            <div id="detail-gold" style="display:none"><div class="detail-panel"><div class="detail-panel-title">다이아 보유 내역</div><div id="detail-gold-items"><div class="loading">불러오는 중...</div></div></div></div>
           </div>
+        </div>
+        <div id="bar-detail-panel" style="display:none;margin-top:8px">
+          <div id="detail-bronze" style="display:none"><div class="detail-panel"><div class="detail-panel-title">수정 보유 내역</div><div id="detail-bronze-items"><div class="loading">불러오는 중...</div></div></div></div>
+          <div id="detail-silver" style="display:none"><div class="detail-panel"><div class="detail-panel-title">루비 보유 내역</div><div id="detail-silver-items"><div class="loading">불러오는 중...</div></div></div></div>
+          <div id="detail-gold" style="display:none"><div class="detail-panel"><div class="detail-panel-title">다이아 보유 내역</div><div id="detail-gold-items"><div class="loading">불러오는 중...</div></div></div></div>
         </div>
 
         <div class="reserve-box">
