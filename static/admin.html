@@ -85,6 +85,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div class="nav-item" data-page="matching" onclick="showPage('matching',this)"><span class="nav-icon">&#9889;</span>&#47588;&#52845; &#49892;&#54665;</div>
 <div class="nav-item" data-page="penalties" onclick="showPage('penalties',this)"><span class="nav-icon">&#9888;</span>&#54056;&#45328;&#54000; &#44288;&#47532;</div>
 <div class="nav-item" data-page="members" onclick="showPage('members',this)"><span class="nav-icon">👥</span>회원승인관리</div>
+<div class="nav-item" data-page="testtools" onclick="showPage('testtools',this)"><span class="nav-icon">⚙️</span>테스트도구</div>
 </nav>
 <div class="sidebar-footer"><button class="logout-btn" onclick="doAdminLogout()">&#128682; &#47196;&#44536;&#50500;&#50883;</button></div>
 </div>
@@ -230,6 +231,39 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
     </div>
   </div>
 </div>
+<div id="page-testtools" class="page">
+  <div class="page-header">
+    <h2 class="page-title">⚙️ 테스트 도구</h2>
+    <p class="page-sub">시스템 테스트용 도구 (실 운영 사용 금지)</p>
+  </div>
+  <div class="table-card" style="margin-bottom:20px">
+    <div class="table-header"><span class="table-title">🕰️ 시스템 시간 조작</span></div>
+    <div style="padding:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <span style="color:#aaa;font-size:13px">현재 시스템 시간:</span>
+        <span id="current-sys-time" style="color:#4fc3f7;font-weight:700;font-size:14px">-</span>
+        <span id="mock-badge" style="display:none;background:#e65100;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px">테스트 모드</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="datetime-local" id="mock-datetime-input" style="padding:8px 12px;background:#1a1d2e;border:1px solid #333;color:#fff;border-radius:6px;font-size:13px">
+        <button onclick="setMockTime()" style="padding:8px 16px;background:#1976d2;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">설정한 시간으로 변경</button>
+        <button onclick="resetMockTime()" style="padding:8px 16px;background:#2e7d32;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">현재 실제 시간으로 복원</button>
+      </div>
+      <div id="time-result" style="margin-top:10px;font-size:13px"></div>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="table-header"><span class="table-title">👥 테스트 회원 일괄 생성 (10명)</span></div>
+    <div style="padding:16px">
+      <p style="color:#aaa;font-size:13px;margin-bottom:12px">비밀번호: <strong style="color:#4fc3f7">test1234</strong> / 이미 존재하면 건너롱</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button onclick="createTestUsers()" style="padding:10px 20px;background:#1976d2;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600">테스트 회원 10명 생성</button>
+        <button onclick="approveAllTest()" style="padding:10px 20px;background:#2e7d32;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px">테스트 회원 전체 승인</button>
+      </div>
+      <div id="test-users-result" style="font-size:13px;color:#aaa"></div>
+    </div>
+  </div>
+</div>
 </div></div>
 <div class="toast" id="toast"></div>
 <script>
@@ -337,4 +371,75 @@ if(_origShowPage){
     if(page==='members') loadMembers();
   };
 }
+
+async function loadCurrentTime(){
+  try{
+    var r=await fetch('/api/admin/get-time',{headers:{'Authorization':'Bearer admin-loopay-2026'}});
+    var d=await r.json();
+    var el=document.getElementById('current-sys-time');
+    var badge=document.getElementById('mock-badge');
+    if(el) el.textContent=d.current;
+    if(badge) badge.style.display=d.is_mock?'inline':'none';
+  }catch(e){}
+}
+async function setMockTime(){
+  var inp=document.getElementById('mock-datetime-input');
+  var res=document.getElementById('time-result');
+  if(!inp||!inp.value){if(res)res.textContent='날짜/시간을 입력해주세요.';return;}
+  var dtVal=inp.value.replace('T',' ')+':00';
+  var r=await fetch('/api/admin/set-time',{method:'POST',
+    headers:{'Authorization':'Bearer admin-loopay-2026','Content-Type':'application/json'},
+    body:JSON.stringify({datetime:dtVal})});
+  var d=await r.json();
+  if(res) res.innerHTML=d.success?'<span style="color:#4fc3f7">✅ 테스트 시간: '+d.mock_time+'</span>':'<span style="color:#c62828">❌ '+d.error+'</span>';
+  loadCurrentTime();
+}
+async function resetMockTime(){
+  var res=document.getElementById('time-result');
+  var r=await fetch('/api/admin/set-time',{method:'POST',
+    headers:{'Authorization':'Bearer admin-loopay-2026','Content-Type':'application/json'},
+    body:JSON.stringify({datetime:null})});
+  var d=await r.json();
+  if(res) res.innerHTML=d.success?'<span style="color:#4fc3f7">✅ 실제 시간으로 복원되었습니다.</span>':'<span style="color:#c62828">❌ '+d.error+'</span>';
+  var inp=document.getElementById('mock-datetime-input');
+  if(inp) inp.value='';
+  loadCurrentTime();
+}
+async function createTestUsers(){
+  var res=document.getElementById('test-users-result');
+  if(res) res.textContent='생성 중...';
+  var r=await fetch('/api/admin/create-test-users',{method:'POST',
+    headers:{'Authorization':'Bearer admin-loopay-2026','Content-Type':'application/json'},body:'{}'});
+  var d=await r.json();
+  if(res){
+    if(d.success){
+      var msg='✅ 생성: '+(d.created.length?d.created.join(', '):'없음');
+      if(d.skipped.length) msg+='<br>기존(건너롱): '+d.skipped.join(', ');
+      msg+='<br>비밀번호: <strong>'+d.password+'</strong>';
+      res.innerHTML='<span style="color:#4fc3f7">'+msg+'</span>';
+    } else res.innerHTML='<span style="color:#c62828">❌ '+d.error+'</span>';
+  }
+  if(typeof loadMembers==='function') loadMembers();
+}
+async function approveAllTest(){
+  var res=document.getElementById('test-users-result');
+  if(res) res.textContent='승인 중...';
+  var r=await fetch('/api/admin/pending-users',{headers:{'Authorization':'Bearer admin-loopay-2026'}});
+  var d=await r.json();
+  var tests=(d.users||[]).filter(function(u){return u.username&&u.username.startsWith('testuser');});
+  if(!tests.length){if(res)res.innerHTML='<span style="color:#aaa">승인할 테스트 회원이 없습니다.</span>';return;}
+  var ok=0;
+  for(var i=0;i<tests.length;i++){
+    var pr=await fetch('/api/admin/approve-user',{method:'POST',
+      headers:{'Authorization':'Bearer admin-loopay-2026','Content-Type':'application/json'},
+      body:JSON.stringify({user_id:tests[i].id,action:'approve'})});
+    var pd=await pr.json();
+    if(pd.success) ok++;
+  }
+  if(res) res.innerHTML='<span style="color:#4fc3f7">✅ '+ok+'명 승인 완료</span>';
+  if(typeof loadMembers==='function') loadMembers();
+  if(typeof loadUsers==='function') loadUsers();
+}
+var _origShow2=typeof showPage==='function'?showPage:null;
+if(_origShow2){ showPage=function(page,el){ _origShow2(page,el); if(page==='testtools') loadCurrentTime(); }; }
 </script></body></html>
