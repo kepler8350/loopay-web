@@ -347,6 +347,45 @@ def get_levels():
 def get_penalty_table():
     return jsonify(penalties=[{'count':c,'days':d,'release_points':p} for c,d,p in PENALTY_TABLE])
 
+@app.route('/api/admin/pending-users', methods=['GET'])
+def admin_pending_users():
+    """승인 대기 중인 회원 목록"""
+    auth = request.headers.get('Authorization','')
+    if auth != 'Bearer admin-loopay-2026':
+        return jsonify(error='unauthorized'), 401
+    db = get_db()
+    try:
+        rows = db.execute("""
+            SELECT id, username, nickname, phone, bank, account_no, account_name, approved, created_at
+            FROM users WHERE username IS NOT NULL
+            ORDER BY approved ASC, created_at DESC
+        """).fetchall()
+        return jsonify(users=[dict(r) for r in rows])
+    finally:
+        db.close()
+
+@app.route('/api/admin/approve-user', methods=['POST'])
+def admin_approve_user():
+    """회원 승인/거절"""
+    auth = request.headers.get('Authorization','')
+    if auth != 'Bearer admin-loopay-2026':
+        return jsonify(error='unauthorized'), 401
+    data = request.json or {}
+    user_id = data.get('user_id')
+    action = data.get('action')  # 'approve' or 'reject'
+    if not user_id or action not in ('approve','reject'):
+        return jsonify(error='invalid params'), 400
+    db = get_db()
+    try:
+        if action == 'approve':
+            db.execute('UPDATE users SET approved=1 WHERE id=?', (user_id,))
+        else:
+            db.execute('DELETE FROM users WHERE id=? AND username IS NOT NULL', (user_id,))
+        db.commit()
+        return jsonify(success=True, action=action)
+    finally:
+        db.close()
+
 @app.route('/api/admin/users', methods=['GET'])
 @jwt_required()
 def admin_users():
