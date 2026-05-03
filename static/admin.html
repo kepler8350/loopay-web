@@ -191,8 +191,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 </div>
 <div id="round-panel-1">
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
-<div class="stat-card"><div class="stat-label">&#44396;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val blue" id="r1-buy">-</div><div class="stat-change">&#50724;&#45720; 1&#52264; &#44396;&#47588; &#45824;&#44592;</div></div>
-<div class="stat-card"><div class="stat-label">&#54032;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val green" id="r1-sell">-</div><div class="stat-change">&#47588;&#52845; &#44032;&#45733; &#50500;&#51060;&#53596;</div></div>
+<div class="stat-card"><div class="stat-label">&#44396;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val blue" id="r1-buy">-</div><div class="stat-change">&#50724;&#45720; 1&#52264; &#44396;&#47588; &#45824;&#44592;</div></d
 <div class="stat-card"><div class="stat-label">&#47588;&#52845;&#47456;</div><div class="stat-val yellow" id="r1-rate">-</div><div class="stat-change">&#44396;&#47588;/&#54032;&#47588; &#48708;&#50984;</div></div>
 </div>
 <div class="two-col">
@@ -205,7 +204,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div id="round-panel-2" style="display:none">
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
 <div class="stat-card"><div class="stat-label">&#44396;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val blue" id="r2-buy">-</div><div class="stat-change">&#50724;&#45720; 2&#52264; &#44396;&#47588; &#45824;&#44592;</div></div>
-<div class="stat-card"><div class="stat-label">&#54032;&#47588; &#50696;&#50557; &#49688;</div><div class="stat-val green" id="r2-sell">-</div><div class="stat-change">&#47588;&#52845; &#44032;&#45733; &#50500;&#51060;&#53596;</div></div>
+
 <div class="stat-card"><div class="stat-label">&#47588;&#52845;&#47456;</div><div class="stat-val yellow" id="r2-rate">-</div><div class="stat-change">&#44396;&#47588;/&#54032;&#47588; &#48708;&#50984;</div></div>
 </div>
 <div class="two-col">
@@ -291,7 +290,6 @@ function loadReservationStatus(){
       ['bronze','silver','gold'].forEach(function(bt){
         var s = d[bt] || {};
         document.getElementById('res-buy-'+bt).textContent = s.buy_count||0;
-        document.getElementById('res-sell-'+bt).textContent = s.sell_count||0;
         document.getElementById('res-rate-'+bt).textContent = s.match_rate||0;
       });
     }).catch(function(e){ toast(e.message,'error'); });
