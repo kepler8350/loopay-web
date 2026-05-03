@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, make_response, g, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 import datetime, sqlite3, os
 from db import get_db, init_db, LEVEL_CONFIG, BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES, PENALTY_TABLE, get_sv_count, get_gd_count
 
@@ -50,6 +50,68 @@ def index():
 @app.route('/admin')
 def admin():
     return send_from_directory(STATIC_DIR, 'admin.html')
+
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    """아이디/비밀번호 회원가입"""
+    data = request.json or {}
+    username = (data.get('username') or '').strip()
+    password = data.get('password', '')
+    phone    = (data.get('phone') or '').strip()
+    bank     = (data.get('bank') or '').strip()
+    account_no   = (data.get('account_no') or '').strip()
+    account_name = (data.get('account_name') or '').strip()
+    if not username or not password:
+        return jsonify(error='아이디와 비밀번호를 입력해주세요.'), 400
+    if len(password) < 4:
+        return jsonify(error='비밀번호는 4자 이상이어야 합니다.'), 400
+    db = get_db()
+    try:
+        existing = db.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone()
+        if existing:
+            return jsonify(error='이미 사용 중인 아이디입니다.'), 409
+        pw_hash = generate_password_hash(password)
+        db.execute(
+            "INSERT INTO users (username, password_hash, nickname, phone, bank, account_no, account_name, approved) VALUES (?,?,?,?,?,?,?,0)",
+            (username, pw_hash, username, phone, bank, account_no, account_name)
+        )
+        db.commit()
+        return jsonify(success=True, message='회원가입이 완료되었습니다. 관리자 승인 후 이용 가능합니다.')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """아이디/비밀번호 로그인"""
+    data = request.json or {}
+    username = (data.get('username') or '').strip()
+    password = data.get('password', '')
+    if not username or not password:
+        return jsonify(error='아이디와 비밀번호를 입력해주세요.'), 400
+    db = get_db()
+    try:
+        user = db.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+        if not user:
+            return jsonify(error='존재하지 않는 아이디입니다.'), 404
+        if not check_password_hash(user['password_hash'] or '', password):
+            return jsonify(error='비밀번호가 올바르지 않습니다.'), 401
+        if not user['approved']:
+            return jsonify(error='관리자 승인 대기 중입니다. 승인 후 로그인 가능합니다.'), 403
+        access_token = create_access_token(identity=str(user['id']))
+        return jsonify(access_token=access_token, user={
+            'id': user['id'],
+            'nickname': user['nickname'],
+            'level': user['level'],
+            'charge_points': user['charge_points'],
+            'exchange_points': user['exchange_points']
+        })
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
 
 @app.route('/api/auth/kakao-login', methods=['POST'])
 def kakao_login():
