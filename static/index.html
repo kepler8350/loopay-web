@@ -326,17 +326,17 @@ function renderBars(d){
     const el=document.getElementById('detail-'+t+'-items');
     const list=items[t];
     if(!list||!list.length){el.innerHTML='<div style="color:var(--text2);font-size:13px;padding:8px 0">보유 아이템 없음<\/div>';return;}
-    el.innerHTML=list.map(it=>{
-      const day4note=(it.days>=4&&it.status_label==='매칭예약가능')?' — 미매칭 재예약':'';
-      const profitStr=it.profit>=0?`+${it.profit.toLocaleString()}`:`${it.profit.toLocaleString()}`;
-      return `<div class="item-row">
-        <div class="item-hd">
-          <span class="item-stage">${it.stage}단계 ${t==='bronze'?'수정':t==='silver'?'루비':'다이아'}
-          <span class="badge ${it.status_label==='대기중'?'badge-wait':'badge-match'}">${it.status_label}<\/span>
-        <\/div>
-        <div class="item-date">구매일: ${it.purchase_date} (${it.days}
-        <div class="item-price">구매 ${it.buy_price.toLocaleString()}원 → 판매 ${it.sell_price.toLocaleString()}원 (${profitStr}
-      <\/div>`;
+    el.innerHTML=list.map(function(it){
+      var barLabel=t==='bronze'?'수정':t==='silver'?'루비':'다이아';
+      var badgeCls=it.status_label==='대기중'?'badge-wait':'badge-match';
+      return '<div class="item-row">'
+        +'<div class="item-hd">'
+        +'<span class="item-stage">'+it.stage+'단계 '+barLabel+'<\/span>'
+        +'<span class="badge '+badgeCls+'">'+it.status_label+'<\/span>'
+        +'<\/div>'
+        +'<div class="item-date">구매일: '+it.purchase_date+' ('+it.days+'일전)<\/div>'
+        +'<div class="item-price">구매 '+it.buy_price.toLocaleString()+'원 → 판매 '+it.sell_price.toLocaleString()+'원 (+'+(it.profit||0).toLocaleString()+')<\/div>'
+        +'<\/div>';
     }).join('');
   });
 }
