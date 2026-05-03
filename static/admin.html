@@ -309,37 +309,11 @@ function loadMembers(){
       return;
     }
     var rows=data.users.map(function(u){
-      var badge=u.approved
-        ?'<span style="background:#2e7d32;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px">승인완료</span>'
-        :'<span style="background:#e65100;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px">대기중</span>';
-      var btns=u.approved
-        ?'<button onclick="approveUser('+u.id+','reject')" style="padding:4px 10px;background:#c62828;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px">회원탈퇴</button>'
-        :'<button onclick="approveUser('+u.id+','approve')" style="padding:4px 10px;background:#1976d2;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">승인</button>'
-         +'<button onclick="approveUser('+u.id+','reject')" style="padding:4px 10px;background:#c62828;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px">거절</button>';
-      return '<tr>'
-        +'<td>'+u.id+'</td>'
-        +'<td style="font-weight:600">'+( u.username||'-')+'</td>'
-        +'<td>'+( u.phone||'-')+'</td>'
-        +'<td>'+( u.bank||'-')+'</td>'
-        +'<td>'+( u.account_no||'-')+'</td>'
-        +'<td>'+( u.account_name||'-')+'</td>'
-        +'<td>'+badge+'</td>'
-        +'<td>'+(u.created_at||'').slice(0,10)+'</td>'
-        +'<td>'+btns+'</td>'
-        +'</tr>';
+      var badge=u.approved?'<span style="background:#2e7d32;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px">승인완료</span>':'<span style="background:#e65100;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px">대기중</span>';
+      var btns=u.approved?'<button onclick="approveUser('+u.id+',\'reject\')" style="padding:4px 10px;background:#c62828;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px">회원탈퇴</button>':'<button onclick="approveUser('+u.id+',\'approve\')" style="padding:4px 10px;background:#1976d2;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin-right:4px">승인</button><button onclick="approveUser('+u.id+',\'reject\')" style="padding:4px 10px;background:#c62828;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px">거절</button>';
+      return '<tr>'+'<td>'+u.id+'</td>'+'<td style="font-weight:600">'+(u.username||'-')+'</td>'+'<td>'+(u.phone||'-')+'</td>'+'<td>'+(u.bank||'-')+'</td>'+'<td>'+(u.account_no||'-')+'</td>'+'<td>'+(u.account_name||'-')+'</td>'+'<td>'+badge+'</td>'+'<td>'+(u.created_at||'').slice(0,10)+'</td>'+'<td>'+btns+'</td>'+'</tr>';
     }).join('');
-    wrap.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px">'
-      +'<thead><tr style="color:#888;border-bottom:1px solid #333">'
-      +'<th style="padding:8px 6px;text-align:left">ID</th>'
-      +'<th style="padding:8px 6px;text-align:left">아이디</th>'
-      +'<th style="padding:8px 6px;text-align:left">핸드폰</th>'
-      +'<th style="padding:8px 6px;text-align:left">은행</th>'
-      +'<th style="padding:8px 6px;text-align:left">계좌번호</th>'
-      +'<th style="padding:8px 6px;text-align:left">예금주</th>'
-      +'<th style="padding:8px 6px;text-align:left">상태</th>'
-      +'<th style="padding:8px 6px;text-align:left">가입일</th>'
-      +'<th style="padding:8px 6px;text-align:left">관리</th>'
-      +'</tr></thead><tbody>'+rows+'</tbody></table>';
+    wrap.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="color:#888;border-bottom:1px solid #333"><th style="padding:8px 6px;text-align:left">ID</th><th style="padding:8px 6px;text-align:left">아이디</th><th style="padding:8px 6px;text-align:left">핸드폰</th><th style="padding:8px 6px;text-align:left">은행</th><th style="padding:8px 6px;text-align:left">계좌번호</th><th style="padding:8px 6px;text-align:left">예금주</th><th style="padding:8px 6px;text-align:left">상태</th><th style="padding:8px 6px;text-align:left">가입일</th><th style="padding:8px 6px;text-align:left">관리</th></tr></thead><tbody>'+rows+'</tbody></table>';
   })
   .catch(function(e){wrap.innerHTML='<div style="color:#c62828;padding:20px">오류: '+e.message+'</div>';});
 }
