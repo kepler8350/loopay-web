@@ -453,17 +453,21 @@ function toggleDetail(type){
   var panel=document.getElementById('detail-'+type);
   var card=document.getElementById('card-'+type);
   var isOpen=panel&&panel.style.display!=='none';
-  // 모든 패널 닫기
   ['bronze','silver','gold'].forEach(function(t){
     var p2=document.getElementById('detail-'+t);
     var c2=document.getElementById('card-'+t);
     if(p2) p2.style.display='none';
-    if(c2) c2.classList.remove('selected');
+    if(c2){
+      c2.classList.remove('selected');
+      if(c2.parentElement){c2.parentElement.style.flex='1';c2.parentElement.style.flexBasis='';}
+    }
   });
-  // 클릭한 것 토글
   if(!isOpen&&panel){
     panel.style.display='block';
-    if(card) card.classList.add('selected');
+    if(card){
+      card.classList.add('selected');
+      if(card.parentElement){card.parentElement.style.flex='1 1 100%';card.parentElement.style.flexBasis='100%';}
+    }
   }
 }
 
