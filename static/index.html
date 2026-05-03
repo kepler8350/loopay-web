@@ -311,7 +311,7 @@ function renderBars(d){
   const types=['bronze','silver','gold'];
   const ids=['bz','sv','gd'];
   types.forEach((t,i)=>{
-    const hold=items[t].length;
+    const hold=(items&&items[t])?items[t].length:0;
     const rv=res[t]||0;
     document.getElementById(ids[i]+'-hold').textContent=hold+'개';
     document.getElementById(ids[i]+'-res').textContent=rv+'개';
@@ -559,8 +559,8 @@ function renderCombineList(){
     if(!grouped[i.bar_type]) grouped[i.bar_type]=[];
     grouped[i.bar_type].push(i);
   });
-  var validTypes=barOrder.filter(function(bt){return grouped[bt]&&grouped[bt].length>=1;});
-  if(!validTypes.length){list.innerHTML='<div class="empty-msg">결합 가능한 아이템 없음</div>';return;}
+  var validTypes=barOrder.filter(function(bt){return grouped[bt]&&grouped[bt].length>=2;});
+  if(!validTypes.length){list.innerHTML='<div class="empty-msg">결합판매는 각 종류 2개 이상 필요합니다</div>';return;}
   list.innerHTML=validTypes.map(function(bt){
     var cards=grouped[bt].map(function(i){
       var isSel=combineSelected.findIndex(function(x){return x.id===i.id;})>=0;
