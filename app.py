@@ -474,7 +474,7 @@ def admin_users():
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    users = db.execute("SELECT id,username,nickname,email,level,charge_points,exchange_points,cumulative_count,created_at FROM users").fetchall()
+    users = db.execute("SELECT id,username,nickname,email,level,charge_points,exchange_points,cumulative_count,created_at FROM users WHERE approved=1 ORDER BY created_at DESC").fetchall()
     db.close()
     return jsonify(users=[dict(u) for u in users])
 
