@@ -29,8 +29,15 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         kakao_id TEXT UNIQUE,
+        username TEXT UNIQUE,
+        password_hash TEXT,
         nickname TEXT NOT NULL,
         email TEXT,
+        phone TEXT,
+        bank TEXT,
+        account_no TEXT,
+        account_name TEXT,
+        approved INTEGER DEFAULT 0,
         level INTEGER DEFAULT 1,
         charge_points INTEGER DEFAULT 0,
         exchange_points INTEGER DEFAULT 0,
@@ -126,6 +133,22 @@ def init_db():
             c.execute("INSERT OR IGNORE INTO prices(bar_type,stage,buy_price,sell_price) VALUES('gold',?,?,?)", (stage,buy,sell))
     conn.commit()
     _seed(conn)
+
+    # 마이그레이션: 기존 DB에 신규 컬럼 추가
+    for col_def in [
+        ('username', 'TEXT'),
+        ('password_hash', 'TEXT'),
+        ('phone', 'TEXT'),
+        ('bank', 'TEXT'),
+        ('account_no', 'TEXT'),
+        ('account_name', 'TEXT'),
+        ('approved', 'INTEGER DEFAULT 0'),
+    ]:
+        try:
+            c.execute(f'ALTER TABLE users ADD COLUMN {col_def[0]} {col_def[1]}')
+            conn.commit()
+        except Exception:
+            pass
     conn.close()
 
 def _seed(conn):
