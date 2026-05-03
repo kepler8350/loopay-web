@@ -450,14 +450,21 @@ function showTab(id,btn){
 
 // --- detail toggle ---------------------------------------------------------
 function toggleDetail(type){
-  const panel=document.getElementById('detail-'+type);
-  const card=document.getElementById('card-'+type);
-  const isOpen=panel.style.display!=='none';
-  ['bronze','silver','gold'].forEach(t=>{
-    document.getElementById('detail-'+t).style.display='none';
-    document.getElementById('card-'+t).classList.remove('selected');
+  var panel=document.getElementById('detail-'+type);
+  var card=document.getElementById('card-'+type);
+  var isOpen=panel&&panel.style.display!=='none';
+  // 모든 패널 닫기
+  ['bronze','silver','gold'].forEach(function(t){
+    var p2=document.getElementById('detail-'+t);
+    var c2=document.getElementById('card-'+t);
+    if(p2) p2.style.display='none';
+    if(c2) c2.classList.remove('selected');
   });
-  if(!isOpen){panel.style.display='block';card.classList.add('selected');}
+  // 클릭한 것 토글
+  if(!isOpen&&panel){
+    panel.style.display='block';
+    if(card) card.classList.add('selected');
+  }
 }
 
 // --- admin ----------------------------------------------------------------
