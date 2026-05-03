@@ -453,6 +453,7 @@ function toggleDetail(type){
   var panel=document.getElementById('detail-'+type);
   var card=document.getElementById('card-'+type);
   var isOpen=panel&&panel.style.display!=='none';
+  var container=card&&card.parentElement&&card.parentElement.parentElement;
   ['bronze','silver','gold'].forEach(function(t){
     var p2=document.getElementById('detail-'+t);
     var c2=document.getElementById('card-'+t);
@@ -462,12 +463,17 @@ function toggleDetail(type){
       if(c2.parentElement){c2.parentElement.style.flex='1';c2.parentElement.style.flexBasis='';}
     }
   });
+  if(container) container.style.flexWrap='';
   if(!isOpen&&panel){
     panel.style.display='block';
     if(card){
       card.classList.add('selected');
-      if(card.parentElement){card.parentElement.style.flex='1 1 100%';card.parentElement.style.flexBasis='100%';}
+      if(card.parentElement){
+        card.parentElement.style.flex='1 1 100%';
+        card.parentElement.style.flexBasis='100%';
+      }
     }
+    if(container) container.style.flexWrap='wrap';
   }
 }
 
