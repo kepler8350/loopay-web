@@ -329,21 +329,11 @@ function updateReserveDefaults(lv){
   var d=userData||{};
   var tr=d.today_reservations||{};
   var cfg=d.level_config||{};
-  // 오늘 이미 예약한 수량 (없으면 0)
-  var bzCnt=tr.bronze||0;
-  var svCnt=tr.silver||0;
-  var gdCnt=tr.gold||0;
-  // 레벨별 min/max
   var BZ_MIN=cfg.bz_min||4, BZ_MAX=cfg.bz_max||10;
-  var SV_MIN=cfg.sv_min||4, SV_MAX=cfg.sv_max||5;
-  var GD_MIN=cfg.gd_min||2, GD_MAX=cfg.gd_max||3;
-  if(bzCnt<BZ_MIN) bzCnt=BZ_MIN;
-  if(bzCnt>BZ_MAX) bzCnt=BZ_MAX;
-  if(svCnt<SV_MIN) svCnt=SV_MIN;
-  if(svCnt>SV_MAX) svCnt=SV_MAX;
-  if(gdCnt<GD_MIN) gdCnt=GD_MIN;
-  if(gdCnt>GD_MAX) gdCnt=GD_MAX;
-  updateResUI(bzCnt,svCnt,gdCnt,BZ_MIN,BZ_MAX,SV_MIN,SV_MAX,GD_MIN,GD_MAX);
+  // 오늘 예약한 수량 반영 (없으면 최솟값)
+  var todayBz=tr.bronze||0;
+  bzCnt = todayBz > 0 ? Math.min(Math.max(todayBz,BZ_MIN),BZ_MAX) : BZ_MIN;
+  updateResUI(BZ_MIN, BZ_MAX);
 }
 function getSv(bz){return bz>=10?5:4;}
 function getGd(sv){return sv>=5?3:2;}
