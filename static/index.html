@@ -329,6 +329,11 @@ function renderBars(d){
         +'<\/div>';
     }).join('');
   });
+  // 보유 아이템이 0개이면 매칭 예약 섹션 숨기기
+  var totalItems=(items.bronze||[]).length+(items.silver||[]).length+(items.gold||[]).length;
+  var reserveBox=document.querySelector('.reserve-box');
+  if(reserveBox) reserveBox.style.display=totalItems>0?'':'none';
+}
 async function requestCharge(){
   var pts=parseInt(document.getElementById('charge-amount').value)||0;
   var won=pts*120;
