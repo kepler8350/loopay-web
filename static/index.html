@@ -895,7 +895,8 @@ var LEVEL_CFG_JS = {
 function renderLevelTab(){
   var lv=(userData&&userData.level)||1;
   var cfg=LEVEL_CFG_JS[lv]||{};
-  // 모든 행 초기화
+
+  // ── 모든 행 초기화 (별표숨김, 하이라이트 해제) ──
   for(var i=1;i<=10;i++){
     var row=document.getElementById('level-row-'+i);
     if(!row) continue;
@@ -903,41 +904,31 @@ function renderLevelTab(){
     if(star) star.style.display='none';
     row.style.background='';
     row.style.fontWeight='';
+    row.style.color='';
   }
-  // 현재 레벨 강조
+
+  // ── 현재 레벨 행 강조 + 별표 표시 ──
   var cur=document.getElementById('level-row-'+lv);
   if(cur){
-    var star=cur.querySelector('.lv-star');
-    if(star) star.style.display='inline';
-    cur.style.background='#e3f2fd';
+    cur.style.background='rgba(25,118,210,0.18)';
     cur.style.fontWeight='700';
+    var star=cur.querySelector('.lv-star');
+    if(star){ star.style.display='inline'; star.textContent='★'; }
   }
-  // 연동규칙 업데이트
-  var lb=document.getElementById('rule-level-label');
-  if(lb) lb.textContent=lv+'레벨';
-  var bzMin=document.getElementById('rl-bz-min');
-  var bzMax=document.getElementById('rl-bz-max');
-  if(bzMin) bzMin.textContent=cfg.bz_min||'-';
-  if(bzMax) bzMax.textContent=cfg.bz_max||'-';
-  // 루비
-  var svTxt=document.getElementById('rl-sv-txt');
-  var svEl=document.getElementById('rule-sv');
-  if(cfg.sv_max>0){
-    if(svTxt) svTxt.textContent='최소 '+(cfg.sv_min||0)+' ~ 최대 '+cfg.sv_max+'개 예약 가능 (수정 충족 시)';
-    if(svEl) svEl.style.color='';
-  } else {
-    if(svTxt) svTxt.textContent='수정 예약 충족 시 활성화';
-    if(svEl) svEl.style.color='#aaa';
+
+  // ── 연동규칙 텍스트 업데이트 ──
+  var bzTxt=document.getElementById('level-bz-rule');
+  var svTxt=document.getElementById('level-sv-rule');
+  var gdTxt=document.getElementById('level-gd-rule');
+
+  if(bzTxt) bzTxt.textContent='수정 최소 '+(cfg.bz_min||0)+' ~ 최대 '+cfg.bz_max+'개 예약 (대기 중 수정 구매)';
+  if(svTxt){
+    if(cfg.sv_max>0) svTxt.textContent='루비 최소 '+(cfg.sv_min||0)+' ~ 최대 '+cfg.sv_max+'개 예약 (수정 연동)';
+    else svTxt.textContent='루비 구매 불가 (레벨 부족)';
   }
-  // 다이아
-  var gdTxt=document.getElementById('rl-gd-txt');
-  var gdEl=document.getElementById('rule-gd');
-  if(cfg.gd_max>0){
-    if(gdTxt) gdTxt.textContent='최소 '+(cfg.gd_min||0)+' ~ 최대 '+cfg.gd_max+'개 예약 가능 (루비 충족 시)';
-    if(gdEl) gdEl.style.color='';
-  } else {
-    if(gdTxt) gdTxt.textContent='루비 예약 충족 시 활성화';
-    if(gdEl) gdEl.style.color='#aaa';
+  if(gdTxt){
+    if(cfg.gd_max>0) gdTxt.textContent='다이아 최소 '+(cfg.gd_min||0)+' ~ 최대 '+cfg.gd_max+'개 예약 (루비 연동)';
+    else gdTxt.textContent='다이아 구매 불가 (레벨 부족)';
   }
 }
 
