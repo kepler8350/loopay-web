@@ -183,16 +183,16 @@ def _seed(conn):
     conn.commit()
 
 LEVEL_CONFIG = {
-    1:{'bz_min':1,'bz_max':3,'sv_min':1,'sv_max':2,'gd_min':1,'gd_max':1,'cum':150},
-    2:{'bz_min':4,'bz_max':5,'sv_min':2,'sv_max':3,'gd_min':1,'gd_max':2,'cum':450},
+    1:{'bz_min':1,'bz_max':3,'sv_min':0,'sv_max':1,'gd_min':0,'gd_max':1,'cum':150},
+    2:{'bz_min':4,'bz_max':6,'sv_min':2,'sv_max':3,'gd_min':1,'gd_max':2,'cum':450},
     3:{'bz_min':7,'bz_max':10,'sv_min':4,'sv_max':5,'gd_min':2,'gd_max':3,'cum':960},
-    4:{'bz_min':9,'bz_max':10,'sv_min':5,'sv_max':6,'gd_min':3,'gd_max':4,'cum':1740},
-    5:{'bz_min':11,'bz_max':12,'sv_min':6,'sv_max':7,'gd_min':4,'gd_max':5,'cum':2850},
-    6:{'bz_min':14,'bz_max':15,'sv_min':8,'sv_max':8,'gd_min':6,'gd_max':6,'cum':4350},
-    7:{'bz_min':18,'bz_max':20,'sv_min':9,'sv_max':10,'gd_min':7,'gd_max':8,'cum':6450},
-    8:{'bz_min':21,'bz_max':25,'sv_min':11,'sv_max':13,'gd_min':8,'gd_max':9,'cum':9450},
-    9:{'bz_min':27,'bz_max':28,'sv_min':14,'sv_max':15,'gd_min':10,'gd_max':11,'cum':12450},
-    10:{'bz_min':32,'bz_max':34,'sv_min':17,'sv_max':18,'gd_min':12,'gd_max':13,'cum':None},
+    4:{'bz_min':11,'bz_max':14,'sv_min':6,'sv_max':7,'gd_min':4,'gd_max':5,'cum':1740},
+    5:{'bz_min':15,'bz_max':20,'sv_min':8,'sv_max':9,'gd_min':6,'gd_max':7,'cum':2850},
+    6:{'bz_min':21,'bz_max':27,'sv_min':10,'sv_max':13,'gd_min':8,'gd_max':9,'cum':4350},
+    7:{'bz_min':28,'bz_max':34,'sv_min':14,'sv_max':17,'gd_min':10,'gd_max':12,'cum':6450},
+    8:{'bz_min':35,'bz_max':42,'sv_min':18,'sv_max':22,'gd_min':13,'gd_max':15,'cum':9450},
+    9:{'bz_min':43,'bz_max':51,'sv_min':23,'sv_max':27,'gd_min':16,'gd_max':20,'cum':12450},
+    10:{'bz_min':52,'bz_max':60,'sv_min':28,'sv_max':34,'gd_min':21,'gd_max':26,'cum':None},
 }
 def get_sv_count(bz): return 5 if bz>=10 else 4
 def get_gd_count(sv): return 3 if sv>=5 else 2
