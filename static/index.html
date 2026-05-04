@@ -304,7 +304,6 @@ function renderBars(d){
     const hold=(items&&items[t])?items[t].length:0;
     const rv=res[t]||0;
     document.getElementById(ids[i]+'-hold').textContent=hold+'개';
-    document.getElementById(ids[i]+'-res').textContent=rv+'개';
   });
   if(cfg){
     document.getElementById('bz-range').textContent=`구매예약: 최소 ${cfg.bz_min} ~ 최대 ${cfg.bz_max}`;
