@@ -255,6 +255,7 @@ async function loadUserData(){
     userData = d;
     renderHeader(d);
     renderBars(d);
+    renderLevelTab();
     updateReserveDefaults(d.level);
     }catch(e){
     // 로그인 실패 또는 새 회원 - 빈 초기값
@@ -1057,40 +1058,93 @@ function demoLogin(btn){
 
       <!-- LEVEL -->
       <div id="tab-level" class="tab">
-        <div class="sec-title">레벨별 예약 수량</div>
-        <div class="info-block" style="font-size:12px;margin-bottom:10px">
-          <strong>3레벨 연동 규칙</strong><br>
-          수정 7~9개 → 루비 4개 자동 / 수정 10개 → 루비 5개 자동<br>
-          루비 4개 → 다이아 2개 자동 / 루비 5개 → 다이아 3개 자동
-        </div>
-        <div style="overflow-x:auto">
-        <table class="lv-table">
-          <tr><th>레벨</th><th>BZ최소</th><th>BZ최대</th><th>SV최소</th><th>SV최대</th><th>GD최소</th><th>GD최대</th></tr>
-          <tr><td>1</td><td>1</td><td>3</td><td>1</td><td>2</td><td>1</td><td>1</td></tr>
-          <tr><td>2</td><td>4</td><td>5</td><td>2</td><td>3</td><td>1</td><td>2</td></tr>
-          <tr class="cur" id="lv-row-3"><td>3★</td><td>7</td><td>10</td><td>4</td><td>5</td><td>2</td><td>3</td></tr>
-          <tr><td>4</td><td>9</td><td>10</td><td>5</td><td>6</td><td>3</td><td>4</td></tr>
-          <tr><td>5</td><td>11</td><td>12</td><td>6</td><td>7</td><td>4</td><td>5</td></tr>
-          <tr><td>6</td><td>14</td><td>15</td><td>8</td><td>8</td><td>6</td><td>6</td></tr>
-          <tr><td>7</td><td>18</td><td>20</td><td>9</td><td>10</td><td>7</td><td>8</td></tr>
-          <tr><td>8</td><td>21</td><td>25</td><td>11</td><td>13</td><td>8</td><td>9</td></tr>
-          <tr><td>9</td><td>27</td><td>28</td><td>14</td><td>15</td><td>10</td><td>11</td></tr>
-          <tr><td>10</td><td>32</td><td>34</td><td>17</td><td>18</td><td>12</td><td>13</td></tr>
+      <div class="sec-title">레벨별 예약 수량</div>
+      <div class="level-desc" style="font-size:12px;color:#888;margin-bottom:8px">★ = 현재 나의 레벨</div>
+      <div style="overflow-x:auto">
+        <table class="level-table" style="width:100%;border-collapse:collapse;font-size:13px;text-align:center">
+          <thead>
+            <tr style="background:#1976d2;color:#fff">
+              <th style="padding:7px 6px">레벨</th>
+              <th style="padding:7px 4px">수정최소</th>
+              <th style="padding:7px 4px">수정최대</th>
+              <th style="padding:7px 4px">루비최소</th>
+              <th style="padding:7px 4px">루비최대</th>
+              <th style="padding:7px 4px">다이아최소</th>
+              <th style="padding:7px 4px">다이아최대</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="level-row-1" data-lv="1">
+          <td class="lv-cell"><span class="lv-num">1</span><span class="lv-star" style="display:none">★</span></td>
+          <td>1</td><td>3</td>
+          <td>-</td><td>1</td>
+          <td>-</td><td>1</td>
+        </tr>
+<tr id="level-row-2" data-lv="2">
+          <td class="lv-cell"><span class="lv-num">2</span><span class="lv-star" style="display:none">★</span></td>
+          <td>4</td><td>6</td>
+          <td>2</td><td>3</td>
+          <td>1</td><td>2</td>
+        </tr>
+<tr id="level-row-3" data-lv="3">
+          <td class="lv-cell"><span class="lv-num">3</span><span class="lv-star" style="display:none">★</span></td>
+          <td>7</td><td>10</td>
+          <td>4</td><td>5</td>
+          <td>2</td><td>3</td>
+        </tr>
+<tr id="level-row-4" data-lv="4">
+          <td class="lv-cell"><span class="lv-num">4</span><span class="lv-star" style="display:none">★</span></td>
+          <td>11</td><td>14</td>
+          <td>6</td><td>7</td>
+          <td>4</td><td>5</td>
+        </tr>
+<tr id="level-row-5" data-lv="5">
+          <td class="lv-cell"><span class="lv-num">5</span><span class="lv-star" style="display:none">★</span></td>
+          <td>15</td><td>20</td>
+          <td>8</td><td>9</td>
+          <td>6</td><td>7</td>
+        </tr>
+<tr id="level-row-6" data-lv="6">
+          <td class="lv-cell"><span class="lv-num">6</span><span class="lv-star" style="display:none">★</span></td>
+          <td>21</td><td>27</td>
+          <td>10</td><td>13</td>
+          <td>8</td><td>9</td>
+        </tr>
+<tr id="level-row-7" data-lv="7">
+          <td class="lv-cell"><span class="lv-num">7</span><span class="lv-star" style="display:none">★</span></td>
+          <td>28</td><td>34</td>
+          <td>14</td><td>17</td>
+          <td>10</td><td>12</td>
+        </tr>
+<tr id="level-row-8" data-lv="8">
+          <td class="lv-cell"><span class="lv-num">8</span><span class="lv-star" style="display:none">★</span></td>
+          <td>35</td><td>42</td>
+          <td>18</td><td>22</td>
+          <td>13</td><td>15</td>
+        </tr>
+<tr id="level-row-9" data-lv="9">
+          <td class="lv-cell"><span class="lv-num">9</span><span class="lv-star" style="display:none">★</span></td>
+          <td>43</td><td>51</td>
+          <td>23</td><td>27</td>
+          <td>16</td><td>20</td>
+        </tr>
+<tr id="level-row-10" data-lv="10">
+          <td class="lv-cell"><span class="lv-num">10</span><span class="lv-star" style="display:none">★</span></td>
+          <td>52</td><td>60</td>
+          <td>28</td><td>34</td>
+          <td>21</td><td>26</td>
+        </tr>
+          </tbody>
         </table>
-        </div>
-        <div class="sec-title" style="margin-top:14px;margin-bottom:8px">레벨업 누적 횟수</div>
-        <div class="cum-row">
-          <div class="cum-chip"><div class="clv">1→2</div><div class="cval">150</div></div>
-          <div class="cum-chip"><div class="clv">2→3</div><div class="cval">450</div></div>
-          <div class="cum-chip cur"><div class="clv">3→4★</div><div class="cval">960</div></div>
-          <div class="cum-chip"><div class="clv">4→5</div><div class="cval">1,740</div></div>
-          <div class="cum-chip"><div class="clv">5→6</div><div class="cval">2,850</div></div>
-          <div class="cum-chip"><div class="clv">6→7</div><div class="cval">4,350</div></div>
-          <div class="cum-chip"><div class="clv">7→8</div><div class="cval">6,450</div></div>
-          <div class="cum-chip"><div class="clv">8→9</div><div class="cval">9,450</div></div>
-          <div class="cum-chip"><div class="clv">9→10</div><div class="cval">12,450</div></div>
-        </div>
       </div>
+      <div class="level-rules" id="level-rules-box" style="margin-top:14px;padding:12px;background:#f0f4ff;border-radius:8px;font-size:13px;line-height:1.7">
+      <div style="font-weight:700;margin-bottom:6px;color:#1976d2">🔗 연동규칙 (현재 <span id="rule-level-label">-</span>)</div>
+      <div id="rule-bz">• 수정: 최소 <b id="rl-bz-min">-</b> ~ 최대 <b id="rl-bz-max">-</b>개 예약 가능</div>
+      <div id="rule-sv" style="color:#888">• 루비: <span id="rl-sv-txt">수정 예약 수량 충족 시 활성화</span></div>
+      <div id="rule-gd" style="color:#888">• 다이아: <span id="rl-gd-txt">루비 예약 수량 충족 시 활성화</span></div>
+      <div style="margin-top:6px;font-size:12px;color:#999">⚠️ 매칭 성공 1회당 40P 차감 / 포인트 부족 시 예약 불가</div>
+    </div>
+    </div>
 
       <!-- POINT -->
       <div id="tab-point" class="tab">
@@ -1542,6 +1596,68 @@ function demoLogin(btn){
   .finally(function(){if(btn){btn.disabled=false;btn.textContent="\uB370\uBAA8 \uACC4\uC815\uC73C\uB85C \uCCB4\uD5D8\uD558\uAE30";}});
 }
 
+
+// ── 레벨 탭: 현재 레벨 강조 + 연동규칙 표시 ──
+var LEVEL_CFG_JS = {
+  1:{bz_min:1,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1},
+  2:{bz_min:4,bz_max:6,sv_min:2,sv_max:3,gd_min:1,gd_max:2},
+  3:{bz_min:7,bz_max:10,sv_min:4,sv_max:5,gd_min:2,gd_max:3},
+  4:{bz_min:11,bz_max:14,sv_min:6,sv_max:7,gd_min:4,gd_max:5},
+  5:{bz_min:15,bz_max:20,sv_min:8,sv_max:9,gd_min:6,gd_max:7},
+  6:{bz_min:21,bz_max:27,sv_min:10,sv_max:13,gd_min:8,gd_max:9},
+  7:{bz_min:28,bz_max:34,sv_min:14,sv_max:17,gd_min:10,gd_max:12},
+  8:{bz_min:35,bz_max:42,sv_min:18,sv_max:22,gd_min:13,gd_max:15},
+  9:{bz_min:43,bz_max:51,sv_min:23,sv_max:27,gd_min:16,gd_max:20},
+  10:{bz_min:52,bz_max:60,sv_min:28,sv_max:34,gd_min:21,gd_max:26}
+};
+function renderLevelTab(){
+  var lv=(userData&&userData.level)||1;
+  var cfg=LEVEL_CFG_JS[lv]||{};
+  // 모든 행 초기화
+  for(var i=1;i<=10;i++){
+    var row=document.getElementById('level-row-'+i);
+    if(!row) continue;
+    var star=row.querySelector('.lv-star');
+    if(star) star.style.display='none';
+    row.style.background='';
+    row.style.fontWeight='';
+  }
+  // 현재 레벨 강조
+  var cur=document.getElementById('level-row-'+lv);
+  if(cur){
+    var star=cur.querySelector('.lv-star');
+    if(star) star.style.display='inline';
+    cur.style.background='#e3f2fd';
+    cur.style.fontWeight='700';
+  }
+  // 연동규칙 업데이트
+  var lb=document.getElementById('rule-level-label');
+  if(lb) lb.textContent=lv+'레벨';
+  var bzMin=document.getElementById('rl-bz-min');
+  var bzMax=document.getElementById('rl-bz-max');
+  if(bzMin) bzMin.textContent=cfg.bz_min||'-';
+  if(bzMax) bzMax.textContent=cfg.bz_max||'-';
+  // 루비
+  var svTxt=document.getElementById('rl-sv-txt');
+  var svEl=document.getElementById('rule-sv');
+  if(cfg.sv_max>0){
+    if(svTxt) svTxt.textContent='최소 '+(cfg.sv_min||0)+' ~ 최대 '+cfg.sv_max+'개 예약 가능 (수정 충족 시)';
+    if(svEl) svEl.style.color='';
+  } else {
+    if(svTxt) svTxt.textContent='수정 예약 충족 시 활성화';
+    if(svEl) svEl.style.color='#aaa';
+  }
+  // 다이아
+  var gdTxt=document.getElementById('rl-gd-txt');
+  var gdEl=document.getElementById('rule-gd');
+  if(cfg.gd_max>0){
+    if(gdTxt) gdTxt.textContent='최소 '+(cfg.gd_min||0)+' ~ 최대 '+cfg.gd_max+'개 예약 가능 (루비 충족 시)';
+    if(gdEl) gdEl.style.color='';
+  } else {
+    if(gdTxt) gdTxt.textContent='루비 예약 충족 시 활성화';
+    if(gdEl) gdEl.style.color='#aaa';
+  }
+}
 </script>
 </body>
 </html>
