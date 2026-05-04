@@ -253,23 +253,27 @@ function showMainApp(){
 // --- user data ------------------------------------------------------------
 async function loadUserData(){
   try{
-    const d = await api('/user/me');
-    userData = d;
+    const d=await api('/user/me');
+    userData=d;
     renderHeader(d);
     renderBars(d);
     renderLevelTab();
     updateReserveDefaults(d.level);
-    }catch(e){
-    // 로그인 실패 또는 새 회원 - 빈 초기값
-    userData = {
+  }catch(e){
+    // API 실패 또는 새 회원 - 빈 초기값
+    userData={
       level:1,charge_points:0,exchange_points:0,total_points:0,
       cumulative_count:0,next_level_cum:150,progress_pct:0,
-      level_config:{bz_min:5,bz_max:10,sv_min:4,sv_max:5,gd_min:2,gd_max:3},
+      level_config:{bz_min:1,bz_max:3,sv_min:1,sv_max:2,gd_min:1,gd_max:1},
       items:{bronze:[],silver:[],gold:[]},
+      reservable:{bronze:0,silver:0,gold:0},
       today_reservations:{bronze:0,silver:0,gold:0},
       reserve_counts:{bronze:0,silver:0,gold:0}
     };
-    renderHeader(userData); renderBars(userData); updateReserveDefaults(1);
+    renderHeader(userData);
+    renderBars(userData);
+    renderLevelTab();
+    updateReserveDefaults(1);
   }
   loadPrices();
 }
