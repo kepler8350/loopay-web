@@ -404,17 +404,29 @@ document.addEventListener('DOMContentLoaded',()=>{
 async function requestCharge(){
   var pts=parseInt(document.getElementById('charge-amount').value)||0;
   var won=pts*120;
-  if(pts<1){toast('포인트를 입력해주세요');return;}
-  if(won<1000){toast('최소 9P(원1,080원) 이상 입력해주세요');return;}
+  if(pts<1){toast('충전 포인트를 입력해주세요.');return;}
+  if(won<1000){toast('앙0 이상 충전해주세요.');return;}
+
+  // ── 확인 다이얼로그 ──
+  var ok=confirm(
+    '충전 신청 확인\n\n'
+    +'충전 포인트: '+pts.toLocaleString()+'P\n'
+    +'입금 금액: '+won.toLocaleString()+'원\n\n'
+    +'신청하시겠습니까?'
+  );
+  if(!ok) return;
+
   try{
-    const d=await api('/charge/request',{method:'POST',body:JSON.stringify({amount:won})});
-    toast(d.message);
-    document.getElementById('charge-amount').value='';
-    document.getElementById('charge-result').textContent='';
+    var d=await api('/charge/request',{method:'POST',body:JSON.stringify({amount:won})});
+    if(d.message){
+      toast(d.message);
+      document.getElementById('charge-amount').value='';
+      document.getElementById('charge-result').textContent='';
+    } else {
+      toast('충전 신청 완료! '+pts.toLocaleString()+'P ('+won.toLocaleString()+'원)');
+    }
   }catch(e){
-    toast('충전 신청 완료! '+pts.toLocaleString()+'P ('+won.toLocaleString()+'원)');
-    document.getElementById('charge-amount').value='';
-    document.getElementById('charge-result').textContent='';
+    toast('신청 실패: '+e.message);
   }
 }
 
