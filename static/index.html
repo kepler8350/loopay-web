@@ -1041,8 +1041,8 @@ function demoLogin(btn){
         <div style="height:14px"></div>
         <div class="reserve-box">
           <div class="reserve-title">포인트 충전 신청</div>
-          <input class="charge-input" id="charge-amount" type="number" placeholder="충전 포인트 입력 (P)" min="1000" step="1000">
-          <div class="charge-result" id="charge-result"></div>
+          <input class="charge-input" id="charge-amount" type="number" placeholder="충전 포인트 입력 (P)" min="1" oninput="calcCharge()">
+          <div class="charge-result" id="charge-result" style="font-size:14px;font-weight:600;color:#1976d2;min-height:20px;text-align:center;margin:4px 0 8px"></div>
           <button class="charge-btn" onclick="requestCharge()">충전 신청하기</button>
           <div class="info-block" style="margin-bottom:0;font-size:11px">충전 신청 후 관리자 확인 시 포인트가 지급됩니다. (1P = 120원)</div>
         </div>
