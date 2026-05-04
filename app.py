@@ -242,7 +242,15 @@ def get_me():
     reservable_sv = sum(1 for i in silver if i['status_label']=='매칭예약가능')
     reservable_gd = sum(1 for i in gold   if i['status_label']=='매칭예약가능')
     db.close()
-    return jsonify(id=u['id'],nickname=u['nickname'],level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd})
+    today = get_today().isoformat()
+    res_rows = db.execute(
+        "SELECT bar_type, COUNT(*) as cnt FROM reservations WHERE user_id=? AND reserve_date=?",
+        (uid, today)
+    ).fetchall()
+    today_res = {r['bar_type']: r['cnt'] for r in res_rows}
+    auto_reserve = u['auto_reserve'] if u['auto_reserve'] is not None else 0
+    db.close()
+    return jsonify(id=u['id'],nickname=u['nickname'],level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve)
 
 @app.route('/api/reservation/preview', methods=['POST'])
 @jwt_required()
