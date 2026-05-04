@@ -894,9 +894,9 @@ var LEVEL_CFG_JS = {
 };
 function renderLevelTab(){
   var lv=(userData&&userData.level)||1;
-  var cfg=LEVEL_CFG_JS[lv]||{};
+  var cfg=LEVEL_CFG_JS[lv]||LEVEL_CFG_JS[1];
 
-  // ── 모든 행 초기화 (별표숨김, 하이라이트 해제) ──
+  // ── 모든 행 초기화 ──
   for(var i=1;i<=10;i++){
     var row=document.getElementById('level-row-'+i);
     if(!row) continue;
@@ -904,31 +904,43 @@ function renderLevelTab(){
     if(star) star.style.display='none';
     row.style.background='';
     row.style.fontWeight='';
-    row.style.color='';
+    row.style.outline='';
   }
 
-  // ── 현재 레벨 행 강조 + 별표 표시 ──
+  // ── 현재 레벨 행 강조 + 별표 ──
   var cur=document.getElementById('level-row-'+lv);
   if(cur){
     cur.style.background='rgba(25,118,210,0.18)';
     cur.style.fontWeight='700';
+    cur.style.outline='2px solid #1976d2';
     var star=cur.querySelector('.lv-star');
     if(star){ star.style.display='inline'; star.textContent='★'; }
   }
 
-  // ── 연동규칙 텍스트 업데이트 ──
-  var bzTxt=document.getElementById('level-bz-rule');
-  var svTxt=document.getElementById('level-sv-rule');
-  var gdTxt=document.getElementById('level-gd-rule');
+  // ── 연동규칙 헤더 ──
+  var hdr=document.querySelector('#level-rules-box>div:first-child');
+  if(hdr) hdr.textContent='🔗 연동규칙 (현재 '+lv+'레벨)';
 
-  if(bzTxt) bzTxt.textContent='수정 최소 '+(cfg.bz_min||0)+' ~ 최대 '+cfg.bz_max+'개 예약 (대기 중 수정 구매)';
-  if(svTxt){
-    if(cfg.sv_max>0) svTxt.textContent='루비 최소 '+(cfg.sv_min||0)+' ~ 최대 '+cfg.sv_max+'개 예약 (수정 연동)';
-    else svTxt.textContent='루비 구매 불가 (레벨 부족)';
+  // ── 수정 규칙 ──
+  var bzEl=document.getElementById('rule-bz');
+  if(bzEl) bzEl.textContent='• 수정: 최소 '+(cfg.bz_min||1)+' ~ 최대 '+(cfg.bz_max||1)+'개 예약 가능';
+
+  // ── 루비 규칙 ──
+  var svEl=document.getElementById('rule-sv');
+  if(svEl){
+    if(cfg.sv_max>0)
+      svEl.textContent='• 루비: 최소 '+(cfg.sv_min||1)+' ~ 최대 '+(cfg.sv_max||1)+'개 예약 (수정 '+cfg.bz_min+'개 이상 시 활성화)';
+    else
+      svEl.textContent='• 룢: 현재 레벨에서 예약 불가';
   }
-  if(gdTxt){
-    if(cfg.gd_max>0) gdTxt.textContent='다이아 최소 '+(cfg.gd_min||0)+' ~ 최대 '+cfg.gd_max+'개 예약 (루비 연동)';
-    else gdTxt.textContent='다이아 구매 불가 (레벨 부족)';
+
+  // ── 다이아 규칙 ──
+  var gdEl=document.getElementById('rule-gd');
+  if(gdEl){
+    if(cfg.gd_max>0)
+      gdEl.textContent='• 다이아: 최소 '+(cfg.gd_min||1)+' ~ 최대 '+(cfg.gd_max||1)+'개 예약 (룢 '+cfg.sv_min+'개 이상 시 활성화)';
+    else
+      gdEl.textContent='• 다이아: 현재 레벨에서 예약 불가';
   }
 }
 
