@@ -339,7 +339,7 @@ function renderBars(d){
     var sellCount=res[bt]||0;
     if(holdCount>0){
       sellEl.style.display='';
-      sellEl.textContent='판매예약 가능: '+sellCount+'개 / 보유 '+holdCount+'개';
+      sellEl.textContent='판매예약: '+sellCount+'개 / 보유 '+holdCount+'개';
     } else {
       sellEl.style.display='none';
     }
@@ -363,8 +363,23 @@ function updateReserveDefaults(lv){
   bzCnt = todayBz > 0 ? Math.min(Math.max(todayBz,BZ_MIN),BZ_MAX) : BZ_MIN;
   updateResUI(BZ_MIN, BZ_MAX);
 }
-function getSv(bz){return bz>=10?5:4;}
-function getGd(sv){return sv>=5?3:2;}
+function getSv(bz){
+  var cfg=(userData&&userData.level_config)||{};
+  var min=cfg.sv_min||0, max=cfg.sv_max||0;
+  if(max===0) return 0;
+  // bz 수량 기반으로 sv 계산 (bz가 크면 sv도 비례)
+  var bz_max=cfg.bz_max||10;
+  var ratio=Math.min(1, bz/Math.max(bz_max,1));
+  return Math.max(min, Math.round(min + ratio*(max-min)));
+}
+function getGd(sv){
+  var cfg=(userData&&userData.level_config)||{};
+  var min=cfg.gd_min||0, max=cfg.gd_max||0;
+  if(max===0) return 0;
+  var sv_max=cfg.sv_max||5;
+  var ratio=Math.min(1, sv/Math.max(sv_max,1));
+  return Math.max(min, Math.round(min + ratio*(max-min)));
+}
 
 function updateResUI(BZ_MIN,BZ_MAX){
   const sv=getSv(bzCnt), gd=getGd(sv);
