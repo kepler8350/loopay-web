@@ -64,6 +64,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bar-gold .bar-name{color:var(--gold-text)}
 .bar-stat{display:flex;justify-content:space-between;font-size:11px;margin-top:2px;color:var(--text2)}
 .bar-stat span:last-child{font-weight:600;color:var(--text)}
+.bar-sell-res{font-size:11px;color:#4caf50;margin-top:4px;padding:3px 6px;background:rgba(76,175,80,0.1);border-radius:4px;}
 .bar-range{font-size:10px;color:var(--text2);margin-top:4px;padding-top:4px;border-top:1px solid rgba(0,0,0,.07)}
 
 /* Detail panel */
@@ -324,6 +325,22 @@ function renderBars(d){
         +'<\/div>';
     }).join('');
   });
+  // ── 판매예약 (보유 아이템 → 판매 대기 가능 수량) ──
+  var sellMap={bronze:'bz-sell-res',silver:'sv-sell-res',gold:'gd-sell-res'};
+  var barKorMap={bronze:'수정',silver:'룢카',gold:'다이아'};
+  Object.keys(sellMap).forEach(function(bt){
+    var sellEl=document.getElementById(sellMap[bt]);
+    if(!sellEl) return;
+    var holdCount=(items[bt]||[]).length;
+    var sellCount=res[bt]||0;
+    if(holdCount>0){
+      sellEl.style.display='';
+      sellEl.textContent='판매예약 가능: '+sellCount+'개 / 보유 '+holdCount+'개';
+    } else {
+      sellEl.style.display='none';
+    }
+  });
+
   // 보유 아이템이 0개이면 매칭 예약 섹션 숨기기
   var totalItems=(items.bronze||[]).length+(items.silver||[]).length+(items.gold||[]).length;
   var reserveBox=document.querySelector('.reserve-box');
@@ -1057,6 +1074,7 @@ function renderLevelTab(){
               <div class="bar-stat"><span>보유</span><span id="bz-hold">0개</span></div>
               <div class="bar-stat"><span>매칭예약가능</span><span id="bz-res">0개</span></div>
               <div class="bar-range" id="bz-range">구매예약: ?</div>
+              <div class="bar-sell-res" id="bz-sell-res" style="display:none"></div>
             </div>
           </div>
           <div style="flex:1;min-width:0">
@@ -1065,6 +1083,7 @@ function renderLevelTab(){
               <div class="bar-stat"><span>보유</span><span id="sv-hold">0개</span></div>
               <div class="bar-stat"><span>매칭예약가능</span><span id="sv-res">0개</span></div>
               <div class="bar-range" id="sv-range">구매예약: ?</div>
+              <div class="bar-sell-res" id="sv-sell-res" style="display:none"></div>
             </div>
           </div>
           <div style="flex:1;min-width:0">
@@ -1073,6 +1092,7 @@ function renderLevelTab(){
               <div class="bar-stat"><span>보유</span><span id="gd-hold">0개</span></div>
               <div class="bar-stat"><span>매칭예약가능</span><span id="gd-res">0개</span></div>
               <div class="bar-range" id="gd-range">구매예약: ?</div>
+              <div class="bar-sell-res" id="gd-sell-res" style="display:none"></div>
             </div>
           </div>
         </div>
