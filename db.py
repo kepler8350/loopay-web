@@ -192,7 +192,7 @@ LEVEL_CONFIG = {
     7:{'bz_min':28,'bz_max':34,'sv_min':14,'sv_max':17,'gd_min':10,'gd_max':12,'cum':6450},
     8:{'bz_min':35,'bz_max':42,'sv_min':18,'sv_max':22,'gd_min':13,'gd_max':15,'cum':9450},
     9:{'bz_min':43,'bz_max':51,'sv_min':23,'sv_max':27,'gd_min':16,'gd_max':20,'cum':12450},
-    10:{'bz_min':52,'bz_max':60,'sv_min':28,'sv_max':34,'gd_min':21,'gd_max':26,'cum':None},
+    10:{'bz_min':52,'bz_max':60,'sv_min':28,'sv_max':34,'gd_min':21,'gd_max':26,'cum':99999},
 }
 def get_sv_count(bz): return 5 if bz>=10 else 4
 def get_gd_count(sv): return 3 if sv>=5 else 2
