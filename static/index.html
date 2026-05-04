@@ -329,114 +329,6 @@ function renderBars(d){
         +'<\/div>';
     }).join('');
   });
-  // ── 판매예약 (보유 아이템 → 판매 대기 가능 수량) ──
-  var sellMap={bronze:'bz-sell-res',silver:'sv-sell-res',gold:'gd-sell-res'};
-  var barKorMap={bronze:'수정',silver:'룢카',gold:'다이아'};
-  Object.keys(sellMap).forEach(function(bt){
-    var sellEl=document.getElementById(sellMap[bt]);
-    if(!sellEl) return;
-    var holdCount=(items[bt]||[]).length;
-    var sellCount=res[bt]||0;
-    if(holdCount>0){
-      sellEl.style.display='';
-      sellEl.textContent='판매예약: '+sellCount+'개 / 보유 '+holdCount+'개';
-    } else {
-      sellEl.style.display='none';
-    }
-  });
-
-  // 보유 아이템이 0개이면 매칭 예약 섹션 숨기기
-  var totalItems=(items.bronze||[]).length+(items.silver||[]).length+(items.gold||[]).length;
-  var reserveBox=document.querySelector('.reserve-box');
-  if(reserveBox) reserveBox.style.display=totalItems>0?'':'none';
-
-}
-
-// --- reservation ----------------------------------------------------------
-function updateReserveDefaults(lv){
-  var d=userData||{};
-  var tr=d.today_reservations||{};
-  var cfg=d.level_config||{};
-  var BZ_MIN=cfg.bz_min||4, BZ_MAX=cfg.bz_max||10;
-  // 오늘 예약한 수량 반영 (없으면 최솟값)
-  var todayBz=tr.bronze||0;
-  bzCnt = todayBz > 0 ? Math.min(Math.max(todayBz,BZ_MIN),BZ_MAX) : BZ_MIN;
-  updateResUI(BZ_MIN, BZ_MAX);
-}
-function getSv(bz){
-  var cfg=(userData&&userData.level_config)||{};
-  var min=cfg.sv_min||0, max=cfg.sv_max||0;
-  if(max===0) return 0;
-  // bz 수량 기반으로 sv 계산 (bz가 크면 sv도 비례)
-  var bz_max=cfg.bz_max||10;
-  var ratio=Math.min(1, bz/Math.max(bz_max,1));
-  return Math.max(min, Math.round(min + ratio*(max-min)));
-}
-function getGd(sv){
-  var cfg=(userData&&userData.level_config)||{};
-  var min=cfg.gd_min||0, max=cfg.gd_max||0;
-  if(max===0) return 0;
-  var sv_max=cfg.sv_max||5;
-  var ratio=Math.min(1, sv/Math.max(sv_max,1));
-  return Math.max(min, Math.round(min + ratio*(max-min)));
-}
-
-function updateResUI(BZ_MIN,BZ_MAX){
-  const sv=getSv(bzCnt), gd=getGd(sv);
-  document.getElementById('r-bz-v').textContent=bzCnt;
-  document.getElementById('r-sv-v').textContent=sv;
-  document.getElementById('r-gd-v').textContent=gd;
-  document.getElementById('r-bz-range').textContent=`최소 ${BZ_MIN} / 최대 ${BZ_MAX}`;
-  document.getElementById('r-sv-range').textContent=sv+'개 (자동)';
-  document.getElementById('r-gd-range').textContent=gd+'개 (자동)';
-  document.getElementById('r-bz-m').disabled=(bzCnt<=BZ_MIN);
-  document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
-  document.getElementById('r-sv-wrap').className='r-wrap locked';
-  document.getElementById('r-gd-wrap').className='r-wrap locked';
-  document.getElementById('r-sv-note').textContent=`수정 ${bzCnt}개 → 루비 ${sv}개 / 10개 → 루비 5개`;
-  document.getElementById('r-gd-note').textContent=`루비 ${sv}개 → 다이아 ${gd}개 / 루비 5개 → 다이아 3개`;
-  const total=bzCnt+sv+gd, cost=total*40;
-  document.getElementById('r-info').innerHTML=`수정 <b>${bzCnt}<\/b> + 루비 <b>${sv}<\/b> + 다이아 <b>${gd}<\/b> = 총 <b>${total}<\/b>회 / 차감 <b>${cost.toLocaleString()}P<\/b>`;
-}
-
-function changeRes(type,delta){
-  const lv=userData?userData.level:3;
-  const BZ_MIN=lv===3?7:4, BZ_MAX=lv===3?10:5;
-  if(type==='bz') bzCnt=Math.max(BZ_MIN,Math.min(BZ_MAX,bzCnt+delta));
-  updateResUI(BZ_MIN,BZ_MAX);
-}
-
-async function submitReservation(){
-  const sv=getSv(bzCnt), gd=getGd(sv);
-  try{
-    const d=await api('/reservation/create',{method:'POST',body:JSON.stringify({bronze_count:bzCnt})});
-    toast(d.message);
-    loadUserData();
-  }catch(e){
-    // demo fallback
-    const total=bzCnt+sv+gd;
-    toast(`매칭예약 완료! 수정 ${bzCnt}+루비 ${sv}+다이아 ${gd} = ${total}회 예약`);
-    if(userData){
-      userData.cumulative_count+=total;
-      userData.total_points-=total*40;
-      const pct=Math.min(100,userData.cumulative_count/960*100);
-      userData.progress_pct=pct;
-      renderHeader(userData);
-    }
-  }
-}
-
-// --- charge ---------------------------------------------------------------
-function calcCharge(){
-  var pts=parseInt(document.getElementById('charge-amount').value)||0;
-  var won=pts*120;
-  var el=document.getElementById('charge-result');
-  if(el) el.textContent=pts>0?pts.toLocaleString()+'P → '+won.toLocaleString()+'원 입금':'';
-}
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('charge-amount').addEventListener('input',calcCharge);
-});
-
 async function requestCharge(){
   var pts=parseInt(document.getElementById('charge-amount').value)||0;
   var won=pts*120;
@@ -1091,27 +983,24 @@ function renderLevelTab(){
             <div class="bar-card bar-bronze" id="card-bronze" onclick="toggleDetail('bronze')" style="cursor:pointer">
               <div class="bar-name">수정</div>
               <div class="bar-stat"><span>보유</span><span id="bz-hold">0개</span></div>
-              <div class="bar-stat"><span>매칭예약가능</span><span id="bz-res">0개</span></div>
-              <div class="bar-range" id="bz-range">구매예약: ?</div>
-              <div class="bar-sell-res" id="bz-sell-res" style="display:none"></div>
+                            <div class="bar-range" id="bz-range">구매예약: ?</div>
+              
             </div>
           </div>
           <div style="flex:1;min-width:0">
             <div class="bar-card bar-silver" id="card-silver" onclick="toggleDetail('silver')" style="cursor:pointer">
               <div class="bar-name">루비</div>
               <div class="bar-stat"><span>보유</span><span id="sv-hold">0개</span></div>
-              <div class="bar-stat"><span>매칭예약가능</span><span id="sv-res">0개</span></div>
-              <div class="bar-range" id="sv-range">구매예약: ?</div>
-              <div class="bar-sell-res" id="sv-sell-res" style="display:none"></div>
+                            <div class="bar-range" id="sv-range">구매예약: ?</div>
+              
             </div>
           </div>
           <div style="flex:1;min-width:0">
             <div class="bar-card bar-gold" id="card-gold" onclick="toggleDetail('gold')" style="cursor:pointer">
               <div class="bar-name">다이아</div>
               <div class="bar-stat"><span>보유</span><span id="gd-hold">0개</span></div>
-              <div class="bar-stat"><span>매칭예약가능</span><span id="gd-res">0개</span></div>
-              <div class="bar-range" id="gd-range">구매예약: ?</div>
-              <div class="bar-sell-res" id="gd-sell-res" style="display:none"></div>
+                            <div class="bar-range" id="gd-range">구매예약: ?</div>
+              
             </div>
           </div>
         </div>
@@ -1122,7 +1011,7 @@ function renderLevelTab(){
         </div>
 
         <div class="reserve-box">
-          <div class="reserve-title">오늘 매칭예약하기</div>
+          <div class="reserve-title">오늘 구매 예약하기</div>
           <div class="r-wrap" id="r-bz-wrap">
             <div class="r-row">
               <span class="r-lbl">수정</span>
@@ -1162,7 +1051,7 @@ function renderLevelTab(){
             <div class="auto-note" id="r-gd-note">루비 예약 수에 따라 자동 결정</div>
           </div>
           <div class="r-info" id="r-info">수정 수량 조절 시 루비·다이아가 자동 변경됩니다.</div>
-          <button class="reserve-btn" onclick="submitReservation()">매칭예약하기 (40P × 매칭예약수)</button>
+          <button class="reserve-btn" onclick="submitReservation()">구매 예약하기 (40P × 매칭예약수)</button>
         </div>
 
         <!-- Charge section -->
