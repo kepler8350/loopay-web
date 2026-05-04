@@ -290,7 +290,7 @@ function renderHeader(d){
 }
 
 function renderBars(d){
-  const items=d.items; const res=d.reservable; const cfg=d.level_config;
+  const items=d.items||{}; const res=d.reservable||{}; const cfg=d.level_config||{};
   const types=['bronze','silver','gold'];
   const ids=['bz','sv','gd'];
   types.forEach((t,i)=>{
