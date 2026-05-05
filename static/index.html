@@ -333,6 +333,12 @@ function renderBars(d){
   var reserveBox=document.querySelector('.reserve-box');
   if(reserveBox) reserveBox.style.display=totalItems>0?'':'none';
 }
+function calcCharge(){
+  var pts=parseInt(document.getElementById('charge-amount').value)||0;
+  var won=pts*120;
+  var el=document.getElementById('charge-result');
+  if(el) el.textContent=pts>0?pts.toLocaleString()+'P → '+won.toLocaleString()+'원 입금':'';
+}
 async function requestCharge(){
   var pts=parseInt(document.getElementById('charge-amount').value)||0;
   var won=pts*120;
