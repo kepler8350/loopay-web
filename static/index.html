@@ -855,36 +855,43 @@ function changeRes(t, delta){
   }
 }
 function getSv(bz){
-  var cfg=(userData&&userData.level_config)||{};
-  var min=cfg.sv_min||0, max=cfg.sv_max||0;
-  if(max===0) return 0;
-  var bz_max=cfg.bz_max||10;
-  var ratio=Math.min(1, bz/Math.max(bz_max,1));
-  return Math.max(min, Math.round(min + ratio*(max-min)));
+  var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
+  return cfg.sv_max||0;
 }
 function getGd(sv){
-  var cfg=(userData&&userData.level_config)||{};
-  var min=cfg.gd_min||0, max=cfg.gd_max||0;
-  if(max===0) return 0;
-  var sv_max=cfg.sv_max||5;
-  var ratio=Math.min(1, sv/Math.max(sv_max,1));
-  return Math.max(min, Math.round(min + ratio*(max-min)));
+  var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
+  return cfg.gd_max||0;
 }
 function updateResUI(BZ_MIN,BZ_MAX){
+  var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
+  var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
   var sv=getSv(bzCnt), gd=getGd(sv);
+
+  // 수정 표시
   document.getElementById('r-bz-v').textContent=bzCnt;
-  document.getElementById('r-sv-v').textContent=sv;
-  document.getElementById('r-gd-v').textContent=gd;
-  document.getElementById('r-sv-range').textContent=sv+'개 (자동)';
-  document.getElementById('r-gd-range').textContent=gd+'개 (자동)';
   document.getElementById('r-bz-range').textContent='최소 '+BZ_MIN+' / 최대 '+BZ_MAX;
-  document.getElementById('r-sv-note').textContent='수정 '+bzCnt+'개 시 루비 '+sv+'개 예약';
-  document.getElementById('r-gd-note').textContent='루비 '+sv+'개 시 다이아 '+gd+'개 예약';
   document.getElementById('r-bz-m').disabled=(bzCnt<=BZ_MIN);
   document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
-  document.getElementById('r-sv-wrap').className='r-wrap locked';
-  document.getElementById('r-gd-wrap').className='r-wrap locked';
-  document.getElementById('r-info').textContent='수정 '+bzCnt+' + 루비 '+sv+' + 다이아 '+gd+' = 잡 '+(bzCnt+sv+gd)+'회 / 차감 '+((bzCnt+sv+gd)*40)+'P';
+
+  // 루비: 수정이 BZ_MAX 도달해야 활성화
+  var svUnlocked = (bzCnt >= BZ_MAX) && SV_MAX > 0;
+  document.getElementById('r-sv-v').textContent=svUnlocked ? sv : 0;
+  document.getElementById('r-sv-range').textContent=svUnlocked ? sv+'개 (자동)' : '(수정 '+BZ_MAX+'개 시 활성화)';
+  document.getElementById('r-sv-note').textContent='수정 '+BZ_MAX+'개 예약 시 루비 '+SV_MAX+'개 활성화';
+  document.getElementById('r-sv-wrap').className='r-wrap'+(svUnlocked?'':' locked');
+
+  // 다이아: 루비가 SV_MAX 도달해야 활성화
+  var gdUnlocked = svUnlocked && (sv >= SV_MAX) && GD_MAX > 0;
+  document.getElementById('r-gd-v').textContent=gdUnlocked ? gd : 0;
+  document.getElementById('r-gd-range').textContent=gdUnlocked ? gd+'개 (자동)' : '(루비 '+SV_MAX+'개 시 활성화)';
+  document.getElementById('r-gd-note').textContent='루비 '+SV_MAX+'개 예약 시 다이아 '+GD_MAX+'개 활성화';
+  document.getElementById('r-gd-wrap').className='r-wrap'+(gdUnlocked?'':' locked');
+
+  // 총계
+  var totalSv = svUnlocked ? sv : 0;
+  var totalGd = gdUnlocked ? gd : 0;
+  var total = bzCnt + totalSv + totalGd;
+  document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+(total*40)+'P (수정 '+bzCnt+(totalSv>0?' + 룢 '+totalSv:'')+(totalGd>0?' + 다이아 '+totalGd:'')+')';
 }
 function updateReserveDefaults(lv){
   var d=userData||{};
