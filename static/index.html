@@ -891,7 +891,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
   var totalSv = svUnlocked ? sv : 0;
   var totalGd = gdUnlocked ? gd : 0;
   var total = bzCnt + totalSv + totalGd;
-  document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+(total*40)+'P (수정 '+bzCnt+(totalSv>0?' + 룢 '+totalSv:'')+(totalGd>0?' + 다이아 '+totalGd:'')+')';
+  document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+(total*40)+'P (수정 '+bzCnt+(totalSv>0?' + 루비 '+totalSv:'')+(totalGd>0?' + 다이아 '+totalGd:'')+')';
 }
 function updateReserveDefaults(lv){
   var d=userData||{};
