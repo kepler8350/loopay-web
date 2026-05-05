@@ -305,6 +305,9 @@ function renderHeader(d){
   if(row) row.classList.add('cur');
   // highlight cum chip
   document.querySelectorAll('.cum-chip').forEach(c=>c.classList.remove('cur'));
+  // 매칭유지 포인트 초기화 (구매예약 전)
+  var mEl=document.getElementById('h-maintain');
+  if(mEl) mEl.textContent=(d.total_points||0).toLocaleString()+' P';
 }
 
 function renderBars(d){
@@ -905,6 +908,27 @@ function updateResUI(BZ_MIN,BZ_MAX){
   var totalGd = gdUnlocked ? gd : 0;
   var total = bzCnt + totalSv + totalGd;
   document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+(total*40)+'P (수정 '+bzCnt+(totalSv>0?' + 루비 '+totalSv:'')+(totalGd>0?' + 다이아 '+totalGd:'')+')';
+  // ── 매칭유지 포인트 계산 ──
+  var d2=userData||{};
+  var chargePts=d2.charge_points||0;
+  var exchangePts=d2.exchange_points||0;
+  var totalPts=chargePts+exchangePts;
+  var costPer40=total; // total = 총 예약 횟수
+  var cost=costPer40*40;
+  // 충전포인트 우선 차감, 나머지 전환포인트에서 차감
+  var remainCharge=Math.max(0, chargePts-cost);
+  var remainExchange=Math.max(0, exchangePts-Math.max(0, cost-chargePts));
+  var maintainPts=remainCharge+remainExchange;
+  var mEl=document.getElementById('h-maintain');
+  if(mEl) mEl.textContent=maintainPts.toLocaleString()+' P';
+  // 버튼 비활성화
+  var btn=document.querySelector('.reserve-btn');
+  var notEnough=(totalPts<cost);
+  if(btn){
+    btn.disabled=notEnough;
+    btn.style.opacity=notEnough?'0.4':'1';
+    btn.style.cursor=notEnough?'not-allowed':'pointer';
+  }
 }
 function updateReserveDefaults(lv){
   var d=userData||{};
@@ -1034,8 +1058,8 @@ function renderLevelTab(){
         <div class="total-sub" id="h-sub">충전 0P + 전환 0P</div>
       </div>
       <div class="pt-row">
-        <div class="pt-card"><div class="pt-lbl">충전포인트</div><div class="pt-val" id="h-charge">0 P</div></div>
-        <div class="pt-card"><div class="pt-lbl">전환포인트</div><div class="pt-val" id="h-exchange">0 P</div></div>
+        <div class="pt-row" style="display:flex;gap:8px"><div style="flex:1;display:flex;gap:8px"><div class="pt-card"><div class="pt-lbl">충전포인트</div><div class="pt-val" id="h-charge">0 P</div></div>
+        <div class="pt-card"><div class="pt-lbl">전환포인트</div><div class="pt-val" id="h-exchange">0 P</div></div></div><div class="pt-card pt-maintain" style="flex:1;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3)"><div class="pt-lbl">매칭유지포인트</div><div class="pt-val" id="h-maintain" style="color:#ffd54f">0 P</div></div></div>
       </div>
       <div class="progress-wrap">
         <div class="prog-lbl">
@@ -1133,6 +1157,7 @@ function renderLevelTab(){
             <div class="auto-note" id="r-gd-note">루비 예약 수에 따라 자동 결정</div>
           </div>
           <div class="r-info" id="r-info">수정 수량 조절 시 루비·다이아가 자동 변경됩니다.</div>
+          <div class="r-notice" style="font-size:11px;color:#888;margin-bottom:6px;text-align:center">차감 포인트는 매칭 여부에 따라 정산됩니다</div>
           <button class="reserve-btn" onclick="submitReservation()">구매 예약하기 (40P × 매칭예약수)</button>
         </div>
 
