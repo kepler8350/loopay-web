@@ -837,6 +837,14 @@ var LEVEL_CFG_JS = {
   9:{bz_min:43,bz_max:51,sv_min:23,sv_max:27,gd_min:16,gd_max:20},
   10:{bz_min:52,bz_max:60,sv_min:28,sv_max:34,gd_min:21,gd_max:26}
 };
+function changeRes(t, delta){
+  var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
+  var BZ_MIN=cfg.bz_min||1, BZ_MAX=cfg.bz_max||3;
+  if(t==='bz'){
+    bzCnt = Math.min(Math.max(bzCnt+delta, BZ_MIN), BZ_MAX);
+    updateResUI(BZ_MIN, BZ_MAX);
+  }
+}
 function getSv(bz){
   var cfg=(userData&&userData.level_config)||{};
   var min=cfg.sv_min||0, max=cfg.sv_max||0;
@@ -854,20 +862,20 @@ function getGd(sv){
   return Math.max(min, Math.round(min + ratio*(max-min)));
 }
 function updateResUI(BZ_MIN,BZ_MAX){
-  const sv=getSv(bzCnt), gd=getGd(sv);
+  var sv=getSv(bzCnt), gd=getGd(sv);
   document.getElementById('r-bz-v').textContent=bzCnt;
   document.getElementById('r-sv-v').textContent=sv;
   document.getElementById('r-gd-v').textContent=gd;
   document.getElementById('r-sv-range').textContent=sv+'개 (자동)';
   document.getElementById('r-gd-range').textContent=gd+'개 (자동)';
   document.getElementById('r-bz-range').textContent='최소 '+BZ_MIN+' / 최대 '+BZ_MAX;
-  document.getElementById('r-sv-note').textContent='수정 '+bzCnt+'개 시 루비 '+sv+'개 / 1:'+Math.round(sv/Math.max(bzCnt,1)*10)/10+' 비율';
-  document.getElementById('r-gd-note').textContent='룢 '+sv+'개 시 다이아 '+gd+'개 / 룢:다 1:'+Math.round(gd/Math.max(sv,1)*10)/10;
+  document.getElementById('r-sv-note').textContent='수정 '+bzCnt+'개 시 루비 '+sv+'개 예약';
+  document.getElementById('r-gd-note').textContent='루비 '+sv+'개 시 다이아 '+gd+'개 예약';
   document.getElementById('r-bz-m').disabled=(bzCnt<=BZ_MIN);
   document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
   document.getElementById('r-sv-wrap').className='r-wrap locked';
   document.getElementById('r-gd-wrap').className='r-wrap locked';
-  document.getElementById('r-info').textContent='수정 '+bzCnt+' + 룢 '+sv+' + 다이아 '+gd+' = 주 '+( bzCnt+sv+gd)+'회 / 차감 '+((bzCnt+sv+gd)*40)+'P';
+  document.getElementById('r-info').textContent='수정 '+bzCnt+' + 루비 '+sv+' + 다이아 '+gd+' = 잡 '+(bzCnt+sv+gd)+'회 / 차감 '+((bzCnt+sv+gd)*40)+'P';
 }
 function updateReserveDefaults(lv){
   var d=userData||{};
@@ -1104,7 +1112,7 @@ function renderLevelTab(){
         <div class="reserve-box">
           <div class="reserve-title">포인트 충전 신청</div>
           <input class="charge-input" id="charge-amount" type="number" placeholder="충전 포인트 입력 (P)" min="1" oninput="calcCharge()">
-          <div class="charge-result" id="charge-result" style="font-size:14px;font-weight:600;color:#1976d2;min-height:20px;text-align:center;margin:4px 0 8px"></div>
+          <div class="charge-result" id="charge-result" style="font-size:13px;font-weight:600;color:#1976d2;min-height:18px;margin:4px 0 8px;text-align:center"></div>
           <button class="charge-btn" onclick="requestCharge()">충전 신청하기</button>
           <div class="info-block" style="margin-bottom:0;font-size:11px">충전 신청 후 관리자 확인 시 포인트가 지급됩니다. (1P = 120원)</div>
         </div>
