@@ -328,10 +328,6 @@ function renderBars(d){
         +'<\/div>';
     }).join('');
   });
-  // 보유 아이템이 0개이면 매칭 예약 섹션 숨기기
-  var totalItems=(items.bronze||[]).length+(items.silver||[]).length+(items.gold||[]).length;
-  var reserveBox=document.querySelector('.reserve-box');
-  if(reserveBox) reserveBox.style.display=totalItems>0?'':'none';
 }
 function calcCharge(){
   var pts=parseInt(document.getElementById('charge-amount').value)||0;
@@ -518,6 +514,13 @@ async function loadCombineItems(){
 }
 
 function renderCombineList(){
+  // 보유 아이템 없으면 빈 메시지
+  var totalItems=(userData&&userData.items)?(userData.items.bronze||[]).length+(userData.items.silver||[]).length+(userData.items.gold||[]).length:0;
+  if(totalItems===0){
+    var el=document.getElementById('combine-items-list');
+    if(el) el.innerHTML='<div class=\"empty-msg\">📦 보유 아이템이 없습니다</div>';
+    return;
+  }
   var list=document.getElementById('combine-items-list');
   if(!list) return;
   var items=window._combineAllItems||[];
