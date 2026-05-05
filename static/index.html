@@ -881,6 +881,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
   // 수정 표시
   document.getElementById('r-bz-v').textContent=bzCnt;
   document.getElementById('r-bz-range').textContent='최소 '+BZ_MIN+' / 최대 '+BZ_MAX;
+  var bzNote=document.getElementById('r-bz-note');
+  if(bzNote) bzNote.textContent='수정 '+BZ_MAX+'개 예약시 루비 '+SV_MAX+'개 활성화 / 루비 '+SV_MAX+'개 예약시 다이아 '+GD_MAX+'개 활성화';
   document.getElementById('r-bz-m').disabled=(bzCnt<=BZ_MIN);
   document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
 
