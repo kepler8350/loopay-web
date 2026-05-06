@@ -1,7 +1,10 @@
 import sqlite3
 import os
 
-DB_PATH = os.environ.get('DB_PATH', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'loopay.db'))
+# DB 경로: 환경변수 DB_PATH > /data/loopay.db (Railway Volume) > 로컬
+_volume_path = '/data/loopay.db'
+_local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'loopay.db')
+DB_PATH = os.environ.get('DB_PATH', _volume_path if os.path.isdir('/data') else _local_path)
 
 def get_db():
     conn = sqlite3.connect(DB_PATH, timeout=30)
