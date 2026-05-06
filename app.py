@@ -849,3 +849,66 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port, debug=False)
 
 # volume-persistent-db
+
+@app.route('/api/admin/user/<int:uid>', methods=['GET'])
+@jwt_required()
+def admin_get_user(uid):
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+    db.close()
+    if not u: return jsonify(error='Not found'), 404
+    return jsonify(user=dict(u))
+
+@app.route('/api/admin/user/<int:uid>/charges', methods=['GET'])
+@jwt_required()
+def admin_user_charges(uid):
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    rows = db.execute("SELECT * FROM charge_requests WHERE user_id=? ORDER BY created_at DESC", (uid,)).fetchall()
+    db.close()
+    return jsonify(charges=[dict(r) for r in rows])
+
+@app.route('/api/admin/user/<int:uid>/exchanges', methods=['GET'])
+@jwt_required()
+def admin_user_exchanges(uid):
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    rows = db.execute("SELECT * FROM exchange_requests WHERE user_id=? ORDER BY created_at DESC LIMIT 100", (uid,)).fetchall()
+    db.close()
+    return jsonify(exchanges=[dict(r) for r in rows])
+
+@app.route('/api/admin/user/<int:uid>/reservations', methods=['GET'])
+@jwt_required()
+def admin_user_reservations(uid):
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    rows = db.execute("SELECT * FROM reservations WHERE user_id=? ORDER BY created_at DESC LIMIT 100", (uid,)).fetchall()
+    db.close()
+    return jsonify(reservations=[dict(r) for r in rows])
+
+@app.route('/api/admin/user/<int:uid>/items', methods=['GET'])
+@jwt_required()
+def admin_user_items(uid):
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    rows = db.execute("SELECT * FROM items WHERE user_id=? ORDER BY purchase_date DESC LIMIT 100", (uid,)).fetchall()
+    db.close()
+    return jsonify(items=[dict(r) for r in rows])
+
+@app.route('/api/admin/delete-user/<int:uid>', methods=['POST'])
+@jwt_required()
+def admin_delete_user(uid):
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    db.execute("DELETE FROM users WHERE id=?", (uid,))
+    db.commit()
+    db.close()
+    return jsonify(success=True)
+
