@@ -294,7 +294,7 @@ function renderHeader(d){
   document.getElementById('h-total').textContent=(d.total_points||0).toLocaleString()+' P';
   var uidEl=document.getElementById('h-userid');
   if(uidEl) uidEl.textContent=d.username||d.nickname||'';;
-  documendocument.getElementById('h-sub').textContent='충전 '+(d.charge_points||0).toLocaleString()+'P + 전환 '+(d.exchange_points||0).toLocaleString()+'P';
+  document.getElementById('h-sub').textContent='충전 '+(d.charge_points||0).toLocaleString()+'P + 전환 '+(d.exchange_points||0).toLocaleString()+'P';
   document.getElementById('h-charge').textContent=(d.charge_points||0).toLocaleString()+' P';
   document.getElementById('h-exchange').textContent=(d.exchange_points||0).toLocaleString()+' P';
   document.getElementById('h-cum').textContent=(d.cumulative_count||0).toLocaleString()+'회';
