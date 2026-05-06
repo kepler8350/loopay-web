@@ -1017,12 +1017,12 @@ function renderLevelTab(){
     <!-- 회원가입 폼 -->
     <div id="register-form" style="display:none">
       <div style="font-size:16px;font-weight:700;text-align:center;margin-bottom:16px;color:#1976d2">회원가입</div>
-      <input id="reg-username" type="text" class="login-input" placeholder="아이디 (필수)" autocomplete="username" maxlength="8" oninput="onUsername(this)">
+      <input id="reg-username" type="text" class="login-input" placeholder="아이디 (영문/숫자, 16자 이하)" autocomplete="username" maxlength="16" oninput="onUsername(this)">
       <div style="font-size:11px;color:#555;margin-top:-6px;margin-bottom:10px">ℹ️ 영어 소문자와 숫자만 가능， 4자 이상 8자 이하</div>
       <div id="reg-username-error" style="color:#c62828;font-size:12px;margin-top:-6px;margin-bottom:6px;min-height:14px"></div>
       <input id="reg-password" type="password" class="login-input" placeholder="비밀번호 (필수, 4자 이상)" autocomplete="new-password">
       <div style="position:relative">
-        <input id="reg-phone" type="text" class="login-input" placeholder="핸드폰번호 싵력" inputmode="numeric" oninput="onlyDigits(this)" style="padding-right:0">
+        <input id="reg-phone" type="text" class="login-input" maxlength="11" placeholder="휴대폰번호 입력" inputmode="numeric" oninput="onlyDigits(this)" style="padding-right:0">
         <div style="font-size:11px;color:#e65100;margin-top:-6px;margin-bottom:10px">⚠️ (-) 없이 숫자만 입력해주세요 (01012345678)</div>
       </div>
       <select id="reg-bank" class="login-input" style="appearance:auto;-webkit-appearance:auto"><option value="">은행 선택</option><option value="국민은행">국민은행</option><option value="신한은행">신한은행</option><option value="하나은행">하나은행</option><option value="우리은행">우리은행</option><option value="농협은행">농협은행</option><option value="기업은행">기업은행</option><option value="산업은행">산업은행</option><option value="수협">수협</option><option value="신협">신협</option><option value="전북은행">전북은행</option><option value="경남은행">경남은행</option><option value="광주은행">광주은행</option><option value="제주은행">제주은행</option><option value="전남은행">전남은행</option><option value="케이뱅크">케이뱅크</option><option value="토스뱅크">토스뱅크</option><option value="카카오뱅크">카카오뱅크</option><option value="씨티은행">씨티은행</option><option value="SC제일은행">SC제일은행</option><option value="우체국">우체국</option><option value="새마을금고">새마을금고</option><option value="산림조합">산림조합</option></select>
