@@ -479,13 +479,13 @@ async function showUserDetail(uid){
 function showDetailTab(tab){['charge','exchange','buy','sell'].forEach(function(t){var b=document.getElementById('dtab-'+t);if(b){b.style.background=t===tab?'#7c3aed':'#2d2d4e';}});var con=document.getElementById('detail-content');if(con)con.innerHTML='<div style="padding:20px;text-align:center;color:#888">로딩 중...</div>';var uid=_detailUserId;var mkRow=function(cells){return '<tr style="border-bottom:1px solid #1a1a2e">'+cells.map(c=>'<td style="padding:7px 6px;color:#cdd6f4">'+c+'</td>').join('')+'</tr>';};var mkTbl=function(ths,rows){return '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'+ths.map(h=>'<th style="padding:8px 6px;text-align:left;background:#1e1e3a;color:#a0a0c0;border-bottom:2px solid #7c3aed">'+h+'</th>').join('')+'</tr></thead><tbody>'+(rows.length?rows.join(''):'<tr><td colspan='+ths.length+' style="padding:14px;text-align:center;color:#555">내역 없음</td></tr>')+'</tbody></table>';};if(tab==='charge'){apiAdmin('/admin/user/'+uid+'/charges').then(function(d){if(con)con.innerHTML=mkTbl(['No','포인트','입금액','상태','신청일'],(d.charges||[]).map(function(c,i){return mkRow([(i+1),Math.round((c.amount||0)/120)+'P',(c.amount||0).toLocaleString()+'원',(c.status||'-'),(c.created_at||'').slice(0,10)]);}));}).catch(function(e){if(con)con.textContent=e.message;});}else if(tab==='exchange'){apiAdmin('/admin/user/'+uid+'/exchanges').then(function(d){if(con)con.innerHTML=mkTbl(['No','전환P','상태','신청일'],(d.exchanges||[]).map(function(c,i){return mkRow([(i+1),(c.amount||0)+'P',(c.status||'-'),(c.created_at||'').slice(0,10)]);}));}).catch(function(e){if(con)con.textContent=e.message;});}else if(tab==='buy'){apiAdmin('/admin/user/'+uid+'/reservations').then(function(d){if(con)con.innerHTML=mkTbl(['No','아이템','수량','상태','예약일'],(d.reservations||[]).map(function(c,i){return mkRow([(i+1),(c.bar_type||'-'),(c.quantity||0),(c.status||'-'),(c.created_at||'').slice(0,10)]);}));}).catch(function(e){if(con)con.textContent=e.message;});}else if(tab==='sell'){apiAdmin('/admin/user/'+uid+'/items').then(function(d){if(con)con.innerHTML=mkTbl(['No','아이템','상태','매입가','매입일'],(d.items||[]).map(function(c,i){return mkRow([(i+1),(c.bar_type||'-'),(c.status_label||'-'),(c.buy_price||0).toLocaleString()+'원',(c.purchase_date||'').slice(0,10)]);}));}).catch(function(e){if(con)con.textContent=e.message;});}}
 
 async function withdrawUser(uid){if(!confirm('정말 탈퇴하시겠습니까?'))return;try{await apiAdmin('/admin/delete-user/'+uid,{method:'POST'});alert('탈퇴완료');loadUsers();}catch(e){alert(e.message);}}
-  if(!confirm('정말 회원탈퇴 시키겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
-  try{
-    await apiAdmin('/admin/delete-user/'+uid, {method:'POST'});
-    toast('회원탈퇴가 완료되었습니다.');
-    loadUsers();
-  }catch(e){toast(e.message,'error');}
-}
+
+
+
+
+
+
+
 </script>
 <div id="user-detail-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;overflow-y:auto">
   <div style="background:#1e1e2e;margin:30px auto;max-width:700px;border-radius:12px;padding:24px;position:relative">
