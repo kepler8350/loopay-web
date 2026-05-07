@@ -887,7 +887,7 @@ def admin_user_exchanges(uid):
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    rows = db.execute("SELECT * FROM exchange_requests WHERE user_id=? ORDER BY created_at DESC LIMIT 100", (uid,)).fetchall()
+    rows = db.execute("SELECT r.*, r.reserve_date as created_at FROM reservations r WHERE r.user_id=? AND r.status IN ('matched','sold') ORDER BY r.reserve_date DESC LIMIT 100", (uid,)).fetchall()
     db.close()
     return jsonify(exchanges=[dict(r) for r in rows])
 
@@ -897,7 +897,7 @@ def admin_user_reservations(uid):
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    rows = db.execute("SELECT * FROM reservations WHERE user_id=? ORDER BY created_at DESC LIMIT 100", (uid,)).fetchall()
+    rows = db.execute("SELECT * FROM reservations WHERE user_id=? ORDER BY reserve_date DESC LIMIT 100", (uid,)).fetchall()
     db.close()
     return jsonify(reservations=[dict(r) for r in rows])
 
