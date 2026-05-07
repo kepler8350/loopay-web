@@ -621,6 +621,7 @@ var _detailUserId = null;
 async function showUserDetail(uid){
   _detailUserId = uid;
   var modal = document.getElementById('user-detail-modal');
+  if(modal && modal.parentElement !== document.body) document.body.appendChild(modal);
   if(!modal) return;
   modal.style.display = 'block';
   document.getElementById('detail-title').textContent = '회원 상세 (ID: '+uid+')';
@@ -694,6 +695,7 @@ async function withdrawUser(uid){
 }
 
 </script>
+
 <div id="user-detail-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;overflow-y:auto">
   <div style="background:#1e1e2e;margin:30px auto;max-width:700px;border-radius:12px;padding:24px;position:relative">
     <button onclick="document.getElementById('user-detail-modal').style.display='none'" style="position:absolute;top:12px;right:12px;background:none;border:none;color:#aaa;font-size:20px;cursor:pointer">&times;</button>
