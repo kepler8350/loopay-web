@@ -285,14 +285,29 @@ async function doLogin(){
     const d=await r.json();
     if(d.token){
       localStorage.setItem('admin_token',d.token);
-      document.getElementById('login-box').style.display='none';
-      document.getElementById('admin-panel').style.display='flex';
-      showPage('dashboard',document.querySelector('[data-page="dashboard"]'));
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('admin-app').style.display='flex';
     }else{
       alert(d.error||'로그인 실패');
     }
   }catch(e){alert(e.message);}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function doAdminLogout(){adminToken=null;document.getElementById('admin-app').style.display='none';document.getElementById('login-screen').style.display='flex';}
 function showPage(name,el){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));if(el)el.classList.add('active');const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');if(name==='dashboard')loadDashboard();else if(name==='users')loadUsers();else if(name==='charges')loadCharges();else if(name==='matching')loadMatchingStatus();else if(name==='penalties')loadPenalties();}
 async function loadDashboard(){try{const s=await apiAdmin('/admin/stats');document.getElementById('s-users').textContent=s.total_users||0;document.getElementById('s-items').textContent=s.total_items||0;document.getElementById('s-charges').textContent=s.pending_charges||0;document.getElementById('s-reservations').textContent=s.today_reservations||0;const charges=await apiAdmin('/admin/charges');const pending=(charges.charges||[]).filter(c=>c.status==='pending').slice(0,5);const dc=document.getElementById('dash-charges');if(pending.length){dc.innerHTML='<table><thead><tr><th>&#45769;&#45348;&#51076;</th><th>&#44552;&#50529;</th><th>&#49345;&#53468;</th></tr></thead><tbody>'+pending.map(c=>'<tr><td>'+c.nickname+'</td><td>'+Math.round((c.amount||0)/120).toLocaleString()+'P<br><small style="color:#aaa">'+(c.amount||0).toLocaleString()+'원</small></td><td><span class="badge badge-warning">&#45824;&#44592;</span></td></tr>').join('')+'</tbody></table>';}else{dc.innerHTML='<div class="empty-state"><div>&#45824;&#44592; &#51473;&#51064; &#52649;&#51204; &#50630;&#51020;</div></div>';}const users=await apiAdmin('/admin/users');document.getElementById('dash-users').innerHTML=(users.users||[]).slice(0,5).map(u=>'<tr><td>'+u.nickname+'</td><td><span class="badge badge-info">'+(u.level||1)+'&#47112;&#48296;</span></td><td>'+(u.charge_points||0).toLocaleString()+'P</td></tr>').join('')||'<tr><td colspan="3">&#54924;&#50896; &#50630;&#51020;</td></tr>';}catch(e){toast('&#45824;&#49884;&#48372;&#46300; &#49892;&#54036;: '+e.message,'error');}}
