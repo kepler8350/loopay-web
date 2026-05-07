@@ -475,7 +475,7 @@ if(_origShowPage){
   };
 }
 
-async function loadCurrentTime(){var el=document.getElementById('current-time');function getKST(){var n=new Date();var k=new Date(n.getTime()+9*60*60*1000);return k.getUTCFullYear()+'-'+String(k.getUTCMonth()+1).padStart(2,'0')+'-'+String(k.getUTCDate()).padStart(2,'0')+' '+String(k.getUTCHours()).padStart(2,'0')+':'+String(k.getUTCMinutes()).padStart(2,'0')+':'+String(k.getUTCSeconds()).padStart(2,'0');}if(el)el.textContent=getKST();setInterval(function(){if(el)el.textContent=getKST();},1000);}
+async function loadCurrentTime(){var el=document.getElementById('current-sys-time');function getKST(){var n=new Date();var k=new Date(n.getTime()+9*60*60*1000);return k.getUTCFullYear()+'-'+String(k.getUTCMonth()+1).padStart(2,'0')+'-'+String(k.getUTCDate()).padStart(2,'0')+' '+String(k.getUTCHours()).padStart(2,'0')+':'+String(k.getUTCMinutes()).padStart(2,'0')+':'+String(k.getUTCSeconds()).padStart(2,'0');}if(el)el.textContent=getKST();setInterval(function(){if(el)el.textContent=getKST();},1000);}
 async function setMockTime(){
   var inp=document.getElementById('mock-datetime-input');
   var res=document.getElementById('time-result');
