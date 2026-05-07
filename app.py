@@ -1,6 +1,21 @@
 from flask import Flask, request, jsonify, make_response, g, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+
+def check_admin_auth():
+    """admin-loopay-2026 헤더 또는 JWT admin 토큰 허용"""
+    auth = request.headers.get('Authorization','')
+    if auth == 'Bearer admin-loopay-2026':
+        return True
+    # JWT 토큰으로도 체크
+    try:
+        from flask_jwt_extended import decode_token
+        token = auth.replace('Bearer ','')
+        data = decode_token(token)
+        identity = data.get('sub','')
+        return identity.startswith('admin:')
+    except:
+        return False
 from werkzeug.security import check_password_hash, generate_password_hash
 import datetime, sqlite3, os
 
@@ -372,8 +387,7 @@ def get_penalty_table():
 @app.route('/api/admin/pending-users', methods=['GET'])
 def admin_pending_users():
     """승인 대기 중인 회원 목록"""
-    auth = request.headers.get('Authorization','')
-    if auth != 'Bearer admin-loopay-2026':
+    if not check_admin_auth():
         return jsonify(error='unauthorized'), 401
     db = get_db()
     try:
@@ -389,8 +403,7 @@ def admin_pending_users():
 @app.route('/api/admin/approve-user', methods=['POST'])
 def admin_approve_user():
     """회원 승인/거절"""
-    auth = request.headers.get('Authorization','')
-    if auth != 'Bearer admin-loopay-2026':
+    if not check_admin_auth():
         return jsonify(error='unauthorized'), 401
     data = request.json or {}
     user_id = data.get('user_id')
@@ -410,8 +423,7 @@ def admin_approve_user():
 
 @app.route('/api/admin/set-time', methods=['POST'])
 def admin_set_time():
-    auth = request.headers.get('Authorization','')
-    if auth != 'Bearer admin-loopay-2026':
+    if not check_admin_auth():
         return jsonify(error='unauthorized'), 401
     global _MOCK_TIME
     data = request.json or {}
@@ -428,8 +440,7 @@ def admin_set_time():
 
 @app.route('/api/admin/get-time', methods=['GET'])
 def admin_get_time():
-    auth = request.headers.get('Authorization','')
-    if auth != 'Bearer admin-loopay-2026':
+    if not check_admin_auth():
         return jsonify(error='unauthorized'), 401
     now = get_now()
     return jsonify(
@@ -440,8 +451,7 @@ def admin_get_time():
 
 @app.route('/api/admin/create-test-users', methods=['POST'])
 def admin_create_test_users():
-    auth = request.headers.get('Authorization','')
-    if auth != 'Bearer admin-loopay-2026':
+    if not check_admin_auth():
         return jsonify(error='unauthorized'), 401
     from werkzeug.security import generate_password_hash
     db = get_db()
