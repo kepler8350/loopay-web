@@ -358,27 +358,27 @@ async function loadUsers(){
     </tr>`).join('');
   }catch(e){console.error('loadUsers:',e);}
 }
-  try{
-    const d=await apiAdmin('/admin/users');
-    const tbody=document.getElementById('admin-users');
-    if(!tbody)return;
-    if(!d.users||!d.users.length){
-      tbody.innerHTML='<tr><td colspan=9 style="text-align:center;padding:16px;color:#888">회원이 없습니다</td></tr>';
-      return;
-    }
-    tbody.innerHTML=d.users.map((u,i)=>`<tr>
-      <td>${i+1}</td>
-      <td style="white-space:nowrap">${u.username||'-'}</td>
-      <td style="white-space:nowrap">${u.nickname||'-'}</td>
-      <td><span class="badge badge-info">${u.level||1}L</span></td>
-      <td>${u.charge_points||0}</td>
-      <td>${u.exchange_points||0}</td>
-      <td>${u.total_reservations||0}</td>
-      <td><button onclick="showUserDetail(${u.id})" class="btn-primary btn-sm">상세</button></td>
-      <td><button onclick="withdrawUser(${u.id})" style="background:#e53935;color:#fff;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px">탈퇴</button></td>
-    </tr>`).join('');
-  }catch(e){console.error('loadUsers:',e);}
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function loadCharges(){try{const d=await apiAdmin('/admin/charges');const tbody=document.getElementById('admin-charges');const charges=d.charges||[];if(!charges.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div>&#52649;&#51204; &#50836;&#52397; &#50630;&#51020;</div></div></td></tr>';return;}const sM={pending:'&#45824;&#44592;',confirmed:'&#49849;&#51064;',rejected:'&#44144;&#51208;'};const bM={pending:'badge-warning',confirmed:'badge-success',rejected:'badge-red'};tbody.innerHTML=charges.map(c=>'<tr><td>'+c.id+'</td><td>'+c.nickname+'</td><td>'+(c.amount||0).toLocaleString()+'P</td><td><span class="badge '+(bM[c.status]||'')+'">&#x200B;'+(sM[c.status]||c.status)+'</span></td><td>'+(c.created_at||'-')+'</td><td>'+(c.status==='pending'?'<button class="btn btn-success" style="font-size:11px;padding:4px 10px" onclick="confirmCharge('+c.id+')">&#49849;&#51064;</button>':'&#51204;&#47532;&#47308;')+'</td></tr>').join('');}catch(e){toast('&#52649;&#51204; &#49892;&#54036;: '+e.message,'error');}}
 async function confirmCharge(id){try{await apiAdmin('/admin/charge/confirm/'+id,{method:'POST'});toast('&#52649;&#51204; &#49849;&#51064; &#50756;&#47308;','success');loadCharges();}catch(e){toast(e.message,'error');}}
 function runLuckyMatching(barType){
