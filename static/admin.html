@@ -475,26 +475,7 @@ if(_origShowPage){
   };
 }
 
-async function loadCurrentTime(){
-  // KST = UTC+9
-  const now = new Date();
-  const kst = new Date(now.getTime() + 9*60*60*1000);
-  const y = kst.getUTCFullYear();
-  const mo = String(kst.getUTCMonth()+1).padStart(2,'0');
-  const d = String(kst.getUTCDate()).padStart(2,'0');
-  const h = String(kst.getUTCHours()).padStart(2,'0');
-  const mi = String(kst.getUTCMinutes()).padStart(2,'0');
-  const s = String(kst.getUTCSeconds()).padStart(2,'0');
-  const kstStr = y+'-'+mo+'-'+d+' '+h+':'+mi+':'+s;
-  const el = document.getElementById('current-time');
-  if(el) el.textContent = kstStr;
-  setInterval(function(){
-    const n = new Date();
-    const k = new Date(n.getTime() + 9*60*60*1000);
-    const ts = k.getUTCFullYear()+'-'+String(k.getUTCMonth()+1).padStart(2,'0')+'-'+String(k.getUTCDate()).padStart(2,'0')+' '+String(k.getUTCHours()).padStart(2,'0')+':'+String(k.getUTCMinutes()).padStart(2,'0')+':'+String(k.getUTCSeconds()).padStart(2,'0');
-    if(el) el.textContent = ts;
-  }, 1000);
-}
+async function loadCurrentTime(){var el=document.getElementById('current-time');function getKST(){var n=new Date();var k=new Date(n.getTime()+9*60*60*1000);return k.getUTCFullYear()+'-'+String(k.getUTCMonth()+1).padStart(2,'0')+'-'+String(k.getUTCDate()).padStart(2,'0')+' '+String(k.getUTCHours()).padStart(2,'0')+':'+String(k.getUTCMinutes()).padStart(2,'0')+':'+String(k.getUTCSeconds()).padStart(2,'0');}if(el)el.textContent=getKST();setInterval(function(){if(el)el.textContent=getKST();},1000);}
 async function setMockTime(){
   var inp=document.getElementById('mock-datetime-input');
   var res=document.getElementById('time-result');
