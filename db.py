@@ -48,17 +48,6 @@ def init_db():
         auto_reserve INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )'''
-    db.execute('''CREATE TABLE IF NOT EXISTS notifications (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        type TEXT NOT NULL DEFAULT 'info',
-        title TEXT NOT NULL,
-        message TEXT NOT NULL,
-        is_read INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT (datetime('now','localtime')),
-        FOREIGN KEY(user_id) REFERENCES users(id)
-    )'''))
-
     c.execute('''CREATE TABLE IF NOT EXISTS items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -144,6 +133,16 @@ def init_db():
             c.execute("INSERT OR IGNORE INTO prices(bar_type,stage,buy_price,sell_price) VALUES('silver',?,?,?)", (stage,buy,sell))
         for stage, buy, sell in GOLD_PRICES:
             c.execute("INSERT OR IGNORE INTO prices(bar_type,stage,buy_price,sell_price) VALUES('gold',?,?,?)", (stage,buy,sell))
+
+    c.execute('''CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        type TEXT NOT NULL DEFAULT 'info',
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        is_read INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT (datetime('now','localtime'))
+    )''')
     conn.commit()
     _seed(conn)
 
