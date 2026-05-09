@@ -47,7 +47,17 @@ def init_db():
         cumulative_count INTEGER DEFAULT 0,
         auto_reserve INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )''')
+    )'''
+    db.execute('''CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        type TEXT NOT NULL DEFAULT 'info',
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        is_read INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT (datetime('now','localtime')),
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )'''))
 
     c.execute('''CREATE TABLE IF NOT EXISTS items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
