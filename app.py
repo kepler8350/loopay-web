@@ -767,10 +767,10 @@ def admin_reservations_list():
     try:
         rows = conn.execute(
             '''SELECT r.id, r.bar_type, r.match_round, r.status, r.reserve_date,
-                      u.kakao_id as username
+                      u.username, u.nickname
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
-               ORDER BY r.created_at DESC LIMIT 100'''
+               ORDER BY r.reserve_date DESC, r.created_at DESC LIMIT 200'''
         ).fetchall()
         return jsonify(reservations=[dict(row) for row in rows])
     finally:
