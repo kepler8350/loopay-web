@@ -920,9 +920,9 @@ function updateResUI(BZ_MIN,BZ_MAX){
   // 충전포인트 우선 차감, 나머지 전환포인트에서 차감
   var remainCharge=Math.max(0, chargePts-cost);
   var remainExchange=Math.max(0, exchangePts-Math.max(0, cost-chargePts));
-  var maintainPts=remainCharge+remainExchange;
+  var maintainPts=cost;
   var mEl=document.getElementById('h-maintain');
-  if(mEl) mEl.textContent=maintainPts.toLocaleString()+' P';
+  if(mEl) mEl.textContent=maintainPts.toLocaleString()+' P'; var tEl=document.getElementById('h-total'); if(tEl) tEl.textContent=(totalPts-cost).toLocaleString()+' P'; var cEl=document.getElementById('h-charge'); if(cEl) cEl.textContent=remainCharge.toLocaleString()+' P'; var xEl=document.getElementById('h-exchange'); if(xEl) xEl.textContent=remainExchange.toLocaleString()+' P'; var sbEl=document.getElementById('h-sub'); if(sbEl) sbEl.textContent='충전 '+remainCharge.toLocaleString()+'P + 전환 '+remainExchange.toLocaleString()+'P';
   // 버튼 비활성화
   var btn=document.querySelector('.reserve-btn');
   var notEnough=(totalPts<cost);
