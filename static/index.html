@@ -285,6 +285,12 @@ async function loadUserData(){
     renderBars(d);
     renderLevelTab();
     updateReserveDefaults(d.level);
+    // 오늘 이미 예약했으면 비활성화
+    if(d.today_reservations && (d.today_reservations.bronze||0) > 0){
+      disableReserveSection();
+    }
+    // 다음날 05:00 재활성화 타이머
+    scheduleReserveReset();
   }catch(e){
     // API 실패 또는 새 회원 - 빈 초기값
     userData={
@@ -907,6 +913,41 @@ function disableReserveSection(){
     info.style.color='#4caf50';info.style.fontWeight='600';
   }
   bzCnt=0;
+}
+
+function scheduleReserveReset(){
+  // 다음날 05:00까지 남은 ms 계산
+  var now = new Date();
+  var next5am = new Date(now);
+  next5am.setDate(next5am.getDate() + 1);
+  next5am.setHours(5, 0, 0, 0);
+  // 현재 시간이 05:00 이전이면 오늘 05:00
+  if(now.getHours() < 5){
+    next5am.setDate(now.getDate());
+    next5am.setHours(5, 0, 0, 0);
+  }
+  var ms = next5am.getTime() - now.getTime();
+  if(window._reserveResetTimer) clearTimeout(window._reserveResetTimer);
+  window._reserveResetTimer = setTimeout(function(){
+    enableReserveSection();
+  }, ms);
+}
+
+function enableReserveSection(){
+  var btn = document.getElementById('reserve-btn');
+  if(btn){
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.textContent = '구매 예약하기 (40P × 매칭예약수)';
+    btn.onclick = function(){ showReserveConfirm(); };
+  }
+  ['r-bz-m','r-bz-p'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.disabled = false;
+  });
+  var info = document.getElementById('r-info');
+  if(info){ info.style.color = ''; info.style.fontWeight = ''; }
+  if(userData) updateReserveDefaults(userData.level || 1);
 }
 
 function updateResUI(BZ_MIN,BZ_MAX){
@@ -1543,6 +1584,12 @@ async function loadUserData(){
     renderHeader(d);
     renderBars(d);
     updateReserveDefaults(d.level);
+    // 오늘 이미 예약했으면 비활성화
+    if(d.today_reservations && (d.today_reservations.bronze||0) > 0){
+      disableReserveSection();
+    }
+    // 다음날 05:00 재활성화 타이머 설정
+    scheduleReserveReset();
   }catch(e){
   console.error('loadUserData error:', e.message);
   }
