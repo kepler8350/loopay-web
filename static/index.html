@@ -1514,30 +1514,7 @@ async function loadUserData(){
     renderBars(d);
     updateReserveDefaults(d.level);
   }catch(e){
-    // fallback demo data
-    userData = {
-      level:3,charge_points:2400,exchange_points:1200,total_points:3600,
-      cumulative_count:524,next_level_cum:960,progress_pct:54.6,
-      level_config:{bz_min:7,bz_max:10,sv_min:4,sv_max:5,gd_min:2,gd_max:3},
-      items:{
-        bronze:[
-          {id:1,bar_type:'bronze',stage:3,purchase_date:'2025-04-20',days:3,status_label:'매칭예약가능',buy_price:16550,sell_price:23200,profit:6650},
-          {id:2,bar_type:'bronze',stage:5,purchase_date:'2025-04-19',days:4,status_label:'매칭예약가능',buy_price:30550,sell_price:38600,profit:8050},
-          {id:3,bar_type:'bronze',stage:2,purchase_date:'2025-04-20',days:3,status_label:'매칭예약가능',buy_price:10500,sell_price:16550,profit:6050},
-          {id:4,bar_type:'bronze',stage:4,purchase_date:'2025-04-19',days:4,status_label:'매칭예약가능',buy_price:23200,sell_price:30550,profit:7350},
-          {id:5,bar_type:'bronze',stage:1,purchase_date:'2025-04-21',days:2,status_label:'대기중',buy_price:5000,sell_price:10500,profit:5500},
-        ],
-        silver:[
-          {id:6,bar_type:'silver',stage:2,purchase_date:'2025-04-19',days:4,status_label:'매칭예약가능',buy_price:11720,sell_price:19250,profit:7530},
-          {id:7,bar_type:'silver',stage:3,purchase_date:'2025-04-21',days:2,status_label:'대기중',buy_price:19250,sell_price:27700,profit:8450},
-        ],
-        gold:[
-          {id:8,bar_type:'gold',stage:1,purchase_date:'2025-04-21',days:2,status_label:'대기중',buy_price:5000,sell_price:1300,profit:-3700},
-        ]
-      },
-      reservable:{bronze:4,silver:1,gold:0}
-    };
-renderHeader(userData); renderBars(userData); updateReserveDefaults(userData.level||1);
+  console.error('loadUserData error:', e.message);
   }
   loadPrices();
 }
