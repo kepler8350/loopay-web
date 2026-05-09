@@ -114,7 +114,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 
 <div id="page-charges" class="page"><div class="page-title">&#52649;&#51204; &#44288;&#47532;</div><div class="page-sub">&#52649;&#51204; &#50836;&#52397; &#49849;&#51064; &#48143; &#44288;&#47532;</div>
 <div class="table-card"><div class="table-header"><div class="table-title">&#52649;&#51204; &#50836;&#52397; &#47785;&#47197;</div></div>
-<table><thead><tr><th>No</th><th>니코네임</th><th>&#44552;&#50529;</th><th>&#49345;&#53468;</th><th>&#49884;&#44033;</th><th>&#52376;&#47532;</th></tr></thead><tbody id="admin-charges"></tbody></table></div></div>
+<table><thead><tr><th>No</th><th>아이디</th><th>성명</th><th>&#44552;&#50529;</th><th>&#49345;&#53468;</th><th>&#49884;&#44033;</th><th>&#52376;&#47532;</th></tr></thead><tbody id="admin-charges"></tbody></table></div></div>
 <div id="page-reservations" class="page">
       <h2 class="page-title">&#50696;&#50557; &#54788;&#54889;</h2>
       <p class="page-subtitle">&#50500;&#51060;&#53596;&#48324; &#44396;&#47588;/&#54032;&#47588; &#50696;&#50557; &#54788;&#54889;</p>
@@ -656,7 +656,7 @@ function showDetailTab(tab){
   if(tab==='charge'){
     apiAdmin('/admin/user/'+uid+'/charges').then(function(d){
       if(con) con.innerHTML = mkTbl(['번호','포인트','입금액','상태','신청일'],
-        (d.charges||[]).map(function(c,i){return mkRow([i+1, Math.round((c.amount||0)/120)+'P', (c.amount||0).toLocaleString()+'원', c.status||'-', (c.created_at||'').slice(0,10)]);}));
+        (d.charges||[]).map(function(c,i){return mkRow([i+1, (c.points||0)+'P', (c.amount||0).toLocaleString()+'원', c.status||'-', (c.created_at||'').slice(0,10)]);}));
     }).catch(function(e){if(con)con.textContent=e.message;});
   } else if(tab==='exchange'){
     apiAdmin('/admin/user/'+uid+'/exchanges').then(function(d){
