@@ -1474,6 +1474,7 @@ async function loadUserData(){
 }
 
 function renderHeader(d){
+  document.getElementById('h-maintain').textContent='- P';
   document.getElementById('h-level').textContent=d.level+'레벨';
   document.getElementById('h-total').textContent=(d.total_points||0).toLocaleString()+' P';
   document.getElementById('h-sub').textContent=`충전 ${(d.charge_points||0).toLocaleString()}P + 전환 ${(d.exchange_points||0).toLocaleString()}P`;
@@ -1711,6 +1712,8 @@ function getStatusBadge(s){
 function doLogout() {
   localStorage.removeItem('lp_token');
   localStorage.removeItem('lp_kakao_id');
+  document.getElementById('h-total').textContent='0 P';
+  document.getElementById('h-maintain').textContent='0 P';
   document.getElementById('main-app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
 }
