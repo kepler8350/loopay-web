@@ -1677,6 +1677,9 @@ function changeRes(type,delta){
 }
 
 function showReserveConfirm(){
+  // 모달을 body 직속으로 이동 (overflow 클리핑 방지)
+  var ov=document.getElementById("reserve-confirm-overlay");
+  if(ov && ov.parentElement!==document.body) document.body.appendChild(ov);
   var cfg=userData&&userData.level_config||LEVEL_CFG_JS[1];
   var BZ_MAX=cfg.bz_max||3;
   var svUnlocked=(bzCnt>=BZ_MAX)&&(cfg.sv_max||0)>0;
