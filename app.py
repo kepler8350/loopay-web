@@ -521,7 +521,10 @@ def admin_confirm_charge(charge_id):
     db.execute("UPDATE users SET charge_points=charge_points+? WHERE id=?", (cr['points'],cr['user_id']))
     db.commit()
     db.close()
-    return jsonify(success=True,message=f'{cr["points"]}P 충전 완료')
+    return jsonify(success=True,message=f'{cr["points"]}P 충전 완료')    # 알림 생성
+    db.execute("INSERT INTO notifications (user_id, type, title, message) VALUES (?, 'charge', ?, ?)", (cr['user_id'], '충전 포인트 지급 완료', str(cr['points']) + 'P가 충전 승인되었습니다. (입금액: ' + '{:,}'.format(cr['amount']) + '원)'))
+    db.commit()
+    
 
 @app.route('/api/admin/run-matching', methods=['POST'])
 @jwt_required()
@@ -853,6 +856,49 @@ def run_lucky_matching():
         return jsonify({'error': str(e)}), 500
     finally:
         conn.close()
+
+
+# ── 알림 API ────────────────────────────────────────────────
+@app.route('/api/user/notifications', methods=['GET'])
+@jwt_required()
+def get_notifications():
+    uid = int(get_jwt_identity())
+    db = get_db()
+    rows = db.execute("SELECT * FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 50", (uid,)).fetchall()
+    unread = db.execute("SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0", (uid,)).fetchone()[0]
+    db.close()
+    return jsonify(notifications=[dict(r) for r in rows], unread=unread)
+
+@app.route('/api/user/notifications/read', methods=['POST'])
+@jwt_required()
+def read_notifications():
+    uid = int(get_jwt_identity())
+    db = get_db()
+    db.execute("UPDATE notifications SET is_read=1 WHERE user_id=?", (uid,))
+    db.commit()
+    db.close()
+    return jsonify(success=True)
+
+@app.route('/api/admin/notify', methods=['POST'])
+@jwt_required()
+def admin_send_notify():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.get_json() or {}
+    user_id = data.get('user_id')
+    title = data.get('title', '관리자 알림')
+    message = data.get('message', '')
+    ntype = data.get('type', 'admin')
+    db = get_db()
+    if user_id:
+        db.execute("INSERT INTO notifications (user_id, type, title, message) VALUES (?, ?, ?, ?)", (user_id, ntype, title, message))
+    else:
+        users = db.execute("SELECT id FROM users WHERE approved=1").fetchall()
+        for u in users:
+            db.execute("INSERT INTO notifications (user_id, type, title, message) VALUES (?, ?, ?, ?)", (u['id'], ntype, title, message))
+    db.commit()
+    db.close()
+    return jsonify(success=True)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
