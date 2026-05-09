@@ -1387,7 +1387,7 @@ function renderLevelTab(){
         <button onclick="closeAdminPanel()" style="padding:7px 14px;background:var(--bg2);border:none;border-radius:8
 
 const API = '/api';
-let token = localStorage.getItem('lp_token') || '';
+let token = '';
 let userData = null;
 let bzCnt = 7;
 
@@ -1407,7 +1407,7 @@ function toast(msg, dur=2500){
 }
 
 async function api(path, opts={}){
-  const headers={'Content-Type':'application/json'};
+  token = localStorage.getItem('lp_token')||''; const headers={'Content-Type':'application/json'};
   if(token) headers['Authorization']='Bearer '+token;
   const r = await fetch(API+path,{...opts,headers:{...headers,...(opts.headers||{})}});
   const data = await r.json();
