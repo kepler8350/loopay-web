@@ -519,12 +519,11 @@ def admin_confirm_charge(charge_id):
     if not cr: return jsonify(error='Not found'), 404
     db.execute("UPDATE charge_requests SET status='confirmed', confirmed_at=CURRENT_TIMESTAMP WHERE id=?", (charge_id,))
     db.execute("UPDATE users SET charge_points=charge_points+? WHERE id=?", (cr['points'],cr['user_id']))
-    db.commit()
-    db.close()
-    return jsonify(success=True,message=f'{cr["points"]}P 충전 완료')    # 알림 생성
+        # 알림 생성
     db.execute("INSERT INTO notifications (user_id, type, title, message) VALUES (?, 'charge', ?, ?)", (cr['user_id'], '충전 포인트 지급 완료', str(cr['points']) + 'P가 충전 승인되었습니다. (입금액: ' + '{:,}'.format(cr['amount']) + '원)'))
     db.commit()
-    
+    db.close()
+    return jsonify(success=True, message=f'{cr["points"]}P 충전 완료')
 
 @app.route('/api/admin/run-matching', methods=['POST'])
 @jwt_required()
