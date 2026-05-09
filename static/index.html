@@ -1049,6 +1049,7 @@ async function loadNotifications(){
     if(list) list.innerHTML='<div style="text-align:center;color:#e53935;padding:40px 0">알림을 불러오지 못했습니다</div>';
   }
 }
+</script>
 </head>
 <body>
 <div class="app" id="app">
@@ -1804,7 +1805,6 @@ function demoLogin(btn){
   .catch(function(e){alert(e.message);})
   .finally(function(){if(btn){btn.disabled=false;btn.textContent="\uB370\uBAA8 \uACC4\uC815\uC73C\uB85C \uCCB4\uD5D8\uD558\uAE30";}});
 }
-</script>
 
 
 </body>
