@@ -1630,24 +1630,19 @@ function changeRes(type,delta){
 }
 
 async function submitReservation(){
-  const sv=getSv(bzCnt), gd=getGd(sv);
+  // bzCnt를 레벨 제한 범위로 클램핑
+  const actualBz = Math.min(Math.max(bzCnt, BZ_MIN), BZ_MAX);
   try{
-    const d=await api('/reservation/create',{method:'POST',body:JSON.stringify({bronze_count:bzCnt})});
-    toast(d.message);
-    loadUserData();
-    // 예약 완료 - 오늘 예약하기 비활성화
-    disableReserveSection();
-  }catch(e){
-    // demo fallback
-    const total=bzCnt+sv+gd;
-    toast(`매칭예약 완료! 수정 ${bzCnt}+루비 ${sv}+다이아 ${gd} = ${total}회, ${total*40}P 차감`);
-    if(userData){
-      userData.cumulative_count+=total;
-      userData.total_points-=total*40;
-      const pct=Math.min(100,userData.cumulative_count/960*100);
-      userData.progress_pct=pct;
-      renderHeader(userData);
+    const d=await api('/reservation/create',{method:'POST',body:JSON.stringify({bronze_count:actualBz})});
+    if(d.success){
+      toast(d.message);
+      disableReserveSection();
+      await loadUserData();
+    } else {
+      toast(d.error||'예약 실패');
     }
+  }catch(e){
+    toast('예약 오류: '+e.message);
   }
 }
 
