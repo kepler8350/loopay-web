@@ -1008,37 +1008,47 @@ async function loadNotifBadge(){
 async function loadNotifications(){
   try{
     const d=await api('/user/notifications');
-    // 읽음 처리
-    await api('/user/notifications/read',{method:'POST'});
-    // 뱃지 숨김
+    // 뱃지 업데이트
     const badge=document.getElementById('notif-badge');
-    if(badge)badge.style.display='none';
-    // 목록 렌더링
+    if(badge){
+      if(d.unread>0){
+        badge.textContent=d.unread>99?'99+':d.unread;
+        badge.style.display='inline-block';
+      } else {
+        badge.style.display='none';
+      }
+    }
+    // 알림 목록 렌더링
     const list=document.getElementById('notif-list');
-    if(!list)return;
+    if(!list) return;
     if(!d.notifications||d.notifications.length===0){
-      list.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px">알림이 없습니다</div>';
+      list.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 0">알림이 없습니다</div>';
       return;
     }
     list.innerHTML=d.notifications.map(n=>{
+      const date=(n.created_at||'').slice(0,16);
       const isRead=n.is_read;
-      const dateStr=(n.created_at||'').slice(0,16);
-      const typeColor=n.type==='charge'?'#4caf50':n.type==='admin'?'#2196f3':'#ff9800';
-      const typeLabel=n.type==='charge'?'충전':n.type==='admin'?'관리자':'알림';
-      return `<div style="background:${isRead?'#f8f9fa':'#fff'};border:1px solid ${isRead?'#e0e0e0':'#2196f3'};border-radius:10px;padding:14px 16px;margin-bottom:10px;box-shadow:${isRead?'none':'0 2px 8px rgba(33,150,243,0.08)'}">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <span style="background:${typeColor};color:#fff;font-size:11px;font-weight:600;border-radius:4px;padding:2px 7px">${typeLabel}</span>
-          <span style="color:#999;font-size:11px">${dateStr}</span>
-        </div>
-        <div style="font-size:15px;font-weight:600;color:#1a1a2e;margin-bottom:4px">${n.title}</div>
-        <div style="font-size:13px;color:#555;line-height:1.5">${n.message}</div>
-      </div>`;
+      const typeIcon=n.type==='charge'?'💰':n.type==='admin'?'📢':'🔔';
+      return '<div style="padding:14px 16px;border-bottom:1px solid #eee;background:'+(isRead?'#fff':'#f0f7ff')+'">'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+        +'<span style="font-size:16px">'+typeIcon+'</span>'
+        +'<span style="font-weight:600;font-size:14px;color:#333">'+n.title+'</span>'
+        +(isRead?'':'<span style="background:#2196f3;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:auto">NEW</span>')
+        +'</div>'
+        +'<div style="font-size:13px;color:#555;margin-left:24px">'+n.message+'</div>'
+        +'<div style="font-size:11px;color:#aaa;margin-left:24px;margin-top:4px">'+date+'</div>'
+        +'</div>';
     }).join('');
+    // 읽음 처리
+    if(d.unread>0){
+      await api('/user/notifications/read',{method:'POST'});
+      if(badge) badge.style.display='none';
+    }
   }catch(e){
     const list=document.getElementById('notif-list');
-    if(list)list.innerHTML='<div style="text-align:center;color:#e53935;padding:40px 0">로드 실패</div>';
+    if(list) list.innerHTML='<div style="text-align:center;color:#e53935;padding:40px 0">알림을 불러오지 못했습니다</div>';
   }
-}</script>
+}
 </head>
 <body>
 <div class="app" id="app">
