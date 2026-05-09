@@ -195,15 +195,15 @@ def init_demo_items():
     conn = get_db()
     try:
         today = get_today().isoformat()
-        yesterday = (get_today() - __import__('datetime').timedelta(days=1)).isoformat()
+        yesterday = (get_today() - __import__('datetime').timedelta(days=3)).isoformat()
         # 기존 아이템 삭제 후 재추가
         conn.execute("DELETE FROM items WHERE user_id=?", (uid,))
         items_to_add = [
             ('bronze', 3, yesterday), ('bronze', 5, yesterday),
-            ('bronze', 2, today),     ('bronze', 4, yesterday),
-            ('bronze', 1, today),
-            ('silver', 2, yesterday), ('silver', 3, today),
-            ('gold', 1, today),
+            ('bronze', 2, yesterday), ('bronze', 4, yesterday),
+            ('bronze', 1, yesterday),
+            ('silver', 2, yesterday), ('silver', 3, yesterday),
+            ('gold', 1, yesterday),
         ]
         for bar_type, stage, date in items_to_add:
             conn.execute(
@@ -303,8 +303,8 @@ def create_reservation():
     if bz < cfg['bz_min'] or bz > cfg['bz_max']:
         db.close()
         return jsonify(error='예약 수량 범위 초과'), 400
-    sv = get_sv_count(bz) if lv == 3 else cfg['sv_min']
-    gd = get_gd_count(sv) if lv == 3 else cfg['gd_min']
+    sv = get_sv_count(bz) if bz >= cfg['bz_max'] else 0
+    gd = get_gd_count(sv) if sv >= cfg['sv_max'] and cfg['sv_max'] > 0 else 0
     total = bz + sv + gd
     cost = total * 40
     total_pts = u['charge_points'] + u['exchange_points']
@@ -314,7 +314,7 @@ def create_reservation():
     today = get_today().isoformat()
     counts = {'bronze': bz, 'silver': sv, 'gold': gd}
     for bar_type, cnt in counts.items():
-        reservable = db.execute("SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='reservable' AND julianday('now') - julianday(purchase_date) >= 2 LIMIT ?", (uid, bar_type, cnt)).fetchall()
+        reservable = db.execute("SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='reservable' AND julianday('now') - julianday(purchase_date) >= 1 LIMIT ?", (uid, bar_type, cnt)).fetchall()
         for item in reservable:
             db.execute("INSERT INTO reservations(user_id,item_id,bar_type,reserve_date) VALUES(?,?,?,?)", (uid,item['id'],bar_type,today))
     ex_use = min(u['exchange_points'], cost)
