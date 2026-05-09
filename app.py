@@ -256,7 +256,7 @@ def get_me():
     reservable_bz = sum(1 for i in bronze if i['status_label']=='매칭예약가능')
     reservable_sv = sum(1 for i in silver if i['status_label']=='매칭예약가능')
     reservable_gd = sum(1 for i in gold   if i['status_label']=='매칭예약가능')
-    db.close()
+    # db stays open for today_res query below
     today = get_today().isoformat()
     try:
         res_rows = db.execute(
