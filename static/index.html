@@ -1599,10 +1599,13 @@ function renderBars(d){
 
 // --- reservation ----------------------------------------------------------
 function updateReserveDefaults(lv){
-  const BZ_MIN=lv===3?7:4, BZ_MAX=lv===3?10:5;
-  if(bzCnt<BZ_MIN) bzCnt=BZ_MIN;
-  if(bzCnt>BZ_MAX) bzCnt=BZ_MAX;
-  updateResUI(BZ_MIN,BZ_MAX);
+  var d=userData||{};
+  var tr=d.today_reservations||{};
+  var cfg=d.level_config||LEVEL_CFG_JS[lv]||LEVEL_CFG_JS[1];
+  var BZ_MIN=cfg.bz_min||1, BZ_MAX=cfg.bz_max||3;
+  var todayBz=tr.bronze||0;
+  bzCnt = todayBz > 0 ? Math.min(Math.max(todayBz,BZ_MIN),BZ_MAX) : BZ_MIN;
+  updateResUI(BZ_MIN, BZ_MAX);
 }
 function getSv(bz){return bz>=10?5:4;}
 function getGd(sv){return sv>=5?3:2;}
