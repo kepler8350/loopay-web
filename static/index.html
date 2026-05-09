@@ -286,7 +286,7 @@ async function loadUserData(){
     renderLevelTab();
     updateReserveDefaults(1);
   }
-  loadPrices();
+  loadPrices(); loadNotifBadge();
 }
 
 function renderHeader(d){
@@ -411,7 +411,7 @@ var LEVEL_CONFIG_JS={
 function showTab(id,btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+id).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active'); if(id==='notif'){loadNotifications();}
   btn.classList.add('active');
 
   if(id === 'combine') { setTimeout(loadCombineItems, 100); }
@@ -993,7 +993,52 @@ function renderLevelTab(){
   }
 }
 
-</script>
+
+async function loadNotifBadge(){
+  try{
+    const d=await api('/user/notifications');
+    const badge=document.getElementById('notif-badge');
+    if(badge){
+      if(d.unread>0){badge.style.display='inline-block';badge.textContent=d.unread>99?'99+':d.unread;}
+      else{badge.style.display='none';}
+    }
+  }catch(e){}
+}
+
+async function loadNotifications(){
+  try{
+    const d=await api('/user/notifications');
+    // 읽음 처리
+    await api('/user/notifications/read',{method:'POST'});
+    // 뱃지 숨김
+    const badge=document.getElementById('notif-badge');
+    if(badge)badge.style.display='none';
+    // 목록 렌더링
+    const list=document.getElementById('notif-list');
+    if(!list)return;
+    if(!d.notifications||d.notifications.length===0){
+      list.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px">알림이 없습니다</div>';
+      return;
+    }
+    list.innerHTML=d.notifications.map(n=>{
+      const isRead=n.is_read;
+      const dateStr=(n.created_at||'').slice(0,16);
+      const typeColor=n.type==='charge'?'#4caf50':n.type==='admin'?'#2196f3':'#ff9800';
+      const typeLabel=n.type==='charge'?'충전':n.type==='admin'?'관리자':'알림';
+      return `<div style="background:${isRead?'#f8f9fa':'#fff'};border:1px solid ${isRead?'#e0e0e0':'#2196f3'};border-radius:10px;padding:14px 16px;margin-bottom:10px;box-shadow:${isRead?'none':'0 2px 8px rgba(33,150,243,0.08)'}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="background:${typeColor};color:#fff;font-size:11px;font-weight:600;border-radius:4px;padding:2px 7px">${typeLabel}</span>
+          <span style="color:#999;font-size:11px">${dateStr}</span>
+        </div>
+        <div style="font-size:15px;font-weight:600;color:#1a1a2e;margin-bottom:4px">${n.title}</div>
+        <div style="font-size:13px;color:#555;line-height:1.5">${n.message}</div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    const list=document.getElementById('notif-list');
+    if(list)list.innerHTML='<div style="text-align:center;color:#e53935;padding:40px 0">로드 실패</div>';
+  }
+}</script>
 </head>
 <body>
 <div class="app" id="app">
@@ -1093,6 +1138,7 @@ function renderLevelTab(){
       <button class="nav-btn" onclick="showTab('penalty',this)">패널티</button>
       <button class="nav-btn" onclick="showTab('schedule',this)">시간표</button>
       <button class="nav-btn" onclick="showTab('combine',this)">결합판매</button>
+<button class="nav-btn" id="nav-notif-btn" onclick="showTab('notif',this)" style="position:relative">🔔<span id="notif-badge" style="display:none;position:absolute;top:2px;right:2px;background:#e53935;color:#fff;font-size:9px;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px"></span></button>
     </div>
 
     <div class="tab-content">
@@ -1364,6 +1410,12 @@ function renderLevelTab(){
     
       <div id="tab-combine" class="tab"><div class="sec-title">결합판매</div><div class="combine-desc">결합 판매 (250P 소모)</div><div id="combine-items-list" class="combine-list"><div class="empty-msg">로딩 중...</div></div><div id="combine-selected" class="combine-selected" style="display:none"><div class="combine-sel-title">선택된 아이템</div><div id="combine-sel-info"></div><div id="combine-preview-result" class="combine-preview"></div><button id="combine-exec-btn" onclick="executeCombine()" style="width:100%;padding:14px;background:#1976d2;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;display:none">결합판매 실행 (250P)</button></div></div>
     </div>
+
+<!-- NOTIF TAB -->
+<div id="tab-notif" class="tab">
+<div class="sec-title" style="display:flex;align-items:center;justify-content:space-between">알림<button onclick="loadNotifications()" style="background:transparent;border:1px solid #aaa;color:#aaa;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer">새로고침</button></div>
+<div id="notif-list" style="margin-top:8px"><div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px">알림이 없습니다</div></div>
+</div>
   </div>
 
   <!-- Admin modal overlay -->
