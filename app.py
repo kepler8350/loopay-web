@@ -322,9 +322,11 @@ def create_reservation():
             for item in reservable:
                 db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date) VALUES(?,?,?,?,?)", (uid,item['id'],bar_type,1,today))
         else:
-            # 아이템 없어도 예약 수만큼 레코드 생성 (item_id=0)
+            # 아이템 없어도 예약 수만큼 레코드 생성 (외래키 일시 해제)
+            db.execute("PRAGMA foreign_keys=OFF")
             for _ in range(cnt):
                 db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date) VALUES(?,?,?,?,?)", (uid,0,bar_type,1,today))
+            db.execute("PRAGMA foreign_keys=ON")
     ex_use = min(u['exchange_points'], cost)
     ch_use = cost - ex_use
     db.execute("UPDATE users SET exchange_points=exchange_points-?, charge_points=charge_points-?, cumulative_count=cumulative_count+? WHERE id=?", (ex_use,ch_use,total,uid))

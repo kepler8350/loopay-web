@@ -61,14 +61,13 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS reservations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
-        item_id INTEGER NOT NULL,
+        item_id INTEGER,
         bar_type TEXT NOT NULL,
         match_round INTEGER DEFAULT 1,
         reserve_date DATE NOT NULL,
         status TEXT DEFAULT 'pending' CHECK(status IN ('pending','matched','unmatched','sold')),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(user_id) REFERENCES users(id),
-        FOREIGN KEY(item_id) REFERENCES items(id)
+        FOREIGN KEY(user_id) REFERENCES users(id)
     )''')
 
     c.execute('''CREATE TABLE IF NOT EXISTS matches (
