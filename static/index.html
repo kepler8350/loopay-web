@@ -1584,8 +1584,14 @@ function updateReserveDefaults(lv){
   bzCnt = todayBz > 0 ? Math.min(Math.max(todayBz,BZ_MIN),BZ_MAX) : BZ_MIN;
   updateResUI(BZ_MIN, BZ_MAX);
 }
-function getSv(bz){return bz>=10?5:4;}
-function getGd(sv){return sv>=5?3:2;}
+function getSv(bz){
+  var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[userData&&userData.level||1]||LEVEL_CFG_JS[1];
+  return cfg.sv_max||0;
+}
+function getGd(sv){
+  var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[userData&&userData.level||1]||LEVEL_CFG_JS[1];
+  return cfg.gd_max||0;
+}
 
 function updateResUI(BZ_MIN,BZ_MAX){
   const sv=getSv(bzCnt), gd=getGd(sv);
@@ -1599,15 +1605,15 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
   document.getElementById('r-sv-wrap').className='r-wrap locked';
   document.getElementById('r-gd-wrap').className='r-wrap locked';
-  document.getElementById('r-sv-note').textContent=`수정 ${bzCnt}개 → 루비 ${sv}개 자동 결정${bzCnt<10?' (10개시 5개)':''}`;
-  document.getElementById('r-gd-note').textContent=`루비 ${sv}개 → 다이아 ${gd}개 자동 결정${sv<5?' (루비5개시 3개)':''}`;
+  document.getElementById('r-sv-note').textContent=`수정 ${bzCnt}개 → 루비 ${sv}개 자동 결정`;
+  document.getElementById('r-gd-note').textContent=`루비 ${sv}개 → 다이아 ${gd}개 자동 결정`;
   const total=bzCnt+sv+gd, cost=total*40;
   document.getElementById('r-info').innerHTML=`수정 <b>${bzCnt}</b> + 루비 <b>${sv}</b> + 다이아 <b>${gd}</b> = 총 <b>${total}</b>회 / 차감 <b>${cost.toLocaleString()}P</b>`;
 }
 
 function changeRes(type,delta){
-  const lv=userData?userData.level:3;
-  const BZ_MIN=lv===3?7:4, BZ_MAX=lv===3?10:5;
+  var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[userData&&userData.level||1]||LEVEL_CFG_JS[1];
+  var BZ_MIN=cfg.bz_min||1, BZ_MAX=cfg.bz_max||3;
   if(type==='bz') bzCnt=Math.max(BZ_MIN,Math.min(BZ_MAX,bzCnt+delta));
   updateResUI(BZ_MIN,BZ_MAX);
 }
