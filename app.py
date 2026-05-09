@@ -283,8 +283,8 @@ def reservation_preview():
     if bz < cfg['bz_min'] or bz > cfg['bz_max']:
         db.close()
         return jsonify(error=f'브론즈 예약수는 {cfg["bz_min"]}~{cfg["bz_max"]}개 범위여야 합니다'), 400
-    sv = get_sv_count(bz) if lv == 3 else cfg['sv_min']
-    gd = get_gd_count(sv) if lv == 3 else cfg['gd_min']
+    sv = get_sv_count(bz) if bz >= cfg['bz_max'] else 0
+    gd = get_gd_count(sv) if sv >= cfg['sv_max'] and cfg['sv_max'] > 0 else 0
     total = bz + sv + gd
     cost = total * 40
     db.close()
