@@ -1183,7 +1183,7 @@ function renderLevelTab(){
           <input class="charge-input" id="charge-amount" type="number" placeholder="충전 포인트 입력 (P)" min="1" oninput="calcCharge()">
           <div class="charge-result" id="charge-result" style="font-size:13px;font-weight:600;color:#1976d2;min-height:18px;margin:4px 0 8px;text-align:center"></div>
           <button class="charge-btn" onclick="requestCharge()">충전 신청하기</button>
-<div id="charge-refresh-wrap" style="display:none;margin-top:12px;text-align:center"><button onclick="document.getElementById('charge-refresh-wrap').style.display='none';loadUserData();" style="background:#2196f3;color:#fff;border:none;padding:10px 28px;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600">개신하기 ↻</button></div>
+<div id="charge-refresh-wrap" style="margin-top:10px;text-align:center"><button onclick="document.getElementById('charge-refresh-wrap').style.display='none';loadUserData();" style="background:transparent;color:#2196f3;border:1.5px solid #2196f3;padding:8px 22px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;width:100%">포인트 새로고침 ↻</button><div style="font-size:11px;color:#888;margin-top:4px">승인 후 클릭하면 포인트가 반영됩니다</div></div>
           <div class="info-block" style="margin-bottom:0;font-size:11px">충전 신청 후 관리자 확인 시 포인트가 지급됩니다. (1P = 120원)</div>
         </div>
       </div>
