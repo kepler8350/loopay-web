@@ -205,6 +205,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .login-btn-primary{width:100%;padding:14px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:4px}
 .login-btn-primary:hover{background:#1565c0}
 .login-btn-primary:active{background:#0d47a1}
+#toast.show{opacity:1}
 </style>
 <script>var LEVEL_CFG_JS={
   1:{bz_min:1,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1,cum:150},
@@ -1465,6 +1466,7 @@ async function loadNotifications(){
         <div style="font-size:18px;font-weight:700">관리자 패널</div>
         <button onclick="closeAdminPanel()" style="padding:7px 14px;background:var(--bg2);border:none;border-radius:8px;color:var(--text1);cursor:pointer">닫기</button>
 
+<div id="toast" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 22px;border-radius:8px;font-size:14px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:9999"></div>
 <script>
 
 function toast(msg, dur=2500){
