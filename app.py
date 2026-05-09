@@ -518,12 +518,13 @@ def admin_confirm_charge(charge_id):
     cr = db.execute("SELECT * FROM charge_requests WHERE id=? AND status='pending'", (charge_id,)).fetchone()
     if not cr: return jsonify(error='Not found'), 404
     db.execute("UPDATE charge_requests SET status='confirmed', confirmed_at=CURRENT_TIMESTAMP WHERE id=?", (charge_id,))
-    db.execute("UPDATE users SET charge_points=charge_points+? WHERE id=?", (cr['points'],cr['user_id']))
-        # 알림 생성
-    db.execute("INSERT INTO notifications (user_id, type, title, message) VALUES (?, 'charge', ?, ?)", (cr['user_id'], '충전 포인트 지급 완료', str(cr['points']) + 'P가 충전 승인되었습니다. (입금액: ' + '{:,}'.format(cr['amount']) + '원)'))
+    db.execute("UPDATE users SET charge_points=charge_points+? WHERE id=?", (cr['points'], cr['user_id']))
+    db.execute("INSERT INTO notifications (user_id, type, title, message) VALUES (?, 'charge', ?, ?)",
+               (cr['user_id'], '\ucda9\uc804 \ud3ec\uc778\ud2b8 \uc9c0\uae09 \uc644\ub8cc',
+                str(cr['points']) + 'P\uac00 \ucda9\uc804 \uc2b9\uc778\ub418\uc5c8\uc2b5\ub2c8\ub2e4. (\uc785\uae08\uc561: ' + '{:,}'.format(cr['amount']) + '\uc6d0)'))
     db.commit()
     db.close()
-    return jsonify(success=True, message=f'{cr["points"]}P 충전 완료')
+    return jsonify(success=True, message=str(cr['points']) + 'P \ucda9\uc804 \uc644\ub8cc')
 
 @app.route('/api/admin/run-matching', methods=['POST'])
 @jwt_required()
