@@ -1566,8 +1566,8 @@ function renderBars(d){
   types.forEach((t,i)=>{
     const hold=items[t].length;
     const rv=res[t]||0;
-    document.getElementById(ids[i]+'-hold').textContent=hold+'개';
-    document.getElementById(ids[i]+'-res').textContent=rv+'개';
+    var el1=document.getElementById(ids[i]+'-hold'); if(el1) el1.textContent=hold+'개';
+    var el2=document.getElementById(ids[i]+'-res'); if(el2) el2.textContent=rv+'개';
   });
   if(cfg){
     document.getElementById('bz-range').textContent=`구매예약: 최소 ${cfg.bz_min} ~ 최대 ${cfg.bz_max}`;
