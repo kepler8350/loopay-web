@@ -207,7 +207,7 @@ def init_demo_items():
         ]
         for bar_type, stage, date in items_to_add:
             conn.execute(
-                "INSERT INTO items (user_id, bar_type, stage, purchase_date, status) VALUES (?,?,?,?,'waiting')",
+                "INSERT INTO items (user_id, bar_type, stage, purchase_date, status) VALUES (?,?,?,?,'reservable')",
                 (uid, bar_type, stage, date)
             )
         conn.commit()
