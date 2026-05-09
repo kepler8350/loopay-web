@@ -1630,10 +1630,8 @@ function changeRes(type,delta){
 }
 
 async function submitReservation(){
-  // bzCnt를 레벨 제한 범위로 클램핑
-  const actualBz = Math.min(Math.max(bzCnt, BZ_MIN), BZ_MAX);
   try{
-    const d=await api('/reservation/create',{method:'POST',body:JSON.stringify({bronze_count:actualBz})});
+    const d=await api('/reservation/create',{method:'POST',body:JSON.stringify({bronze_count:bzCnt})});
     if(d.success){
       toast(d.message);
       disableReserveSection();
