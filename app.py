@@ -505,7 +505,7 @@ def admin_charges():
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    rows = db.execute("SELECT cr.*, u.nickname FROM charge_requests cr JOIN users u ON u.id=cr.user_id WHERE cr.status='pending' ORDER BY cr.created_at DESC").fetchall()
+    rows = db.execute("SELECT cr.*, u.nickname, u.username FROM charge_requests cr JOIN users u ON u.id=cr.user_id WHERE cr.status='pending' ORDER BY cr.created_at DESC").fetchall()
     db.close()
     return jsonify(charges=[dict(r) for r in rows])
 
