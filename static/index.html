@@ -221,7 +221,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 var combinePairs=[];var pendingItem=null;
 
 const API = '/api';
-let token = localStorage.getItem('lp_token') || '';
+let token = '';
 let userData = null;
 let bzCnt = 7;
 
@@ -241,7 +241,7 @@ function toast(msg, dur=2500){
 }
 
 async function api(path, opts={}){
-  const headers={'Content-Type':'application/json'};
+  token = localStorage.getItem('lp_token')||''; const headers={'Content-Type':'application/json'};
   if(token) headers['Authorization']='Bearer '+token;
   const r = await fetch(API+path,{...opts,headers:{...headers,...(opts.headers||{})}});
   const data = await r.json();
