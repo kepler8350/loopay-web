@@ -91,6 +91,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div class="nav-item" data-page="reservations" onclick="showPage('reservations',this)"><span class="nav-icon">&#128203;</span>&#50696;&#50557; &#54788;&#54889;</div>
 <div class="nav-item" data-page="matching" onclick="showPage('matching',this)"><span class="nav-icon">&#9889;</span>&#47588;&#52845; &#49892;&#54665;</div>
 <div class="nav-item" data-page="penalties" onclick="showPage('penalties',this)"><span class="nav-icon">&#9888;</span>&#54056;&#45328;&#54000; &#44288;&#47532;</div>
+<div class="nav-item" data-page="notifications" onclick="showPage('notifications',this)"><span class="nav-icon">🔔</span><span class="nav-label">알림관리</span></div>
 <div class="nav-item" data-page="approve" onclick="showPage('approve',this)"><span class="nav-icon">👥</span>회원승인관리</div>
 <div class="nav-item" data-page="testtools" onclick="showPage('testtools',this)"><span class="nav-icon">⚙️</span>테스트도구</div>
 </nav>
@@ -229,6 +230,17 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div class="page-header"><h2 class="page-title">회원 관리</h2><p class="page-sub">전체 회원 목록</p></div>
 <div class="table-card"><div class="table-header"><div class="table-title">회원 목록</div></div><div class="table-wrap"><table><thead><tr><th>No</th><th>아이디</th><th>성명</th><th>레벨</th><th>충전P</th><th>전환P</th><th>예약</th><th colspan=2 style="min-width:100px">관리</th></tr></thead><tbody id="admin-users"></tbody></table></div></div>
 </div>
+<div id="page-notifications" class="page">
+<div class="page-header"><h2 class="page-title">알림 관리</h2><p class="page-sub">사용자에게 알림을 보냅니다</p></div>
+<div class="table-card" style="margin-bottom:20px">
+<div class="table-header"><div class="table-title">알림 발송</div></div>
+<div style="padding:16px">
+<div style="margin-bottom:12px"><label style="color:#a0a0c0;font-size:13px;display:block;margin-bottom:4px">수신 회원 (ID, 비워두면 전체 발송)</label><input id="notif-user-id" type="number" placeholder="회원 ID (선택)" style="width:100%;padding:8px 12px;background:#2a2a3e;border:1px solid #3a3a5e;border-radius:6px;color:#fff;font-size:13px"></div>
+<div style="margin-bottom:12px"><label style="color:#a0a0c0;font-size:13px;display:block;margin-bottom:4px">제목</label><input id="notif-title" type="text" placeholder="알림 제목" value="관리자 알림" style="width:100%;padding:8px 12px;background:#2a2a3e;border:1px solid #3a3a5e;border-radius:6px;color:#fff;font-size:13px"></div>
+<div style="margin-bottom:16px"><label style="color:#a0a0c0;font-size:13px;display:block;margin-bottom:4px">내용</label><textarea id="notif-message" rows="3" placeholder="알림 내용 입력" style="width:100%;padding:8px 12px;background:#2a2a3e;border:1px solid #3a3a5e;border-radius:6px;color:#fff;font-size:13px;resize:vertical"></textarea></div>
+<button onclick="sendAdminNotif()" style="background:#7c3aed;color:#fff;border:none;padding:10px 24px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600">알림 발송</button>
+<div id="notif-result" style="margin-top:10px;font-size:13px;color:#4caf50"></div>
+</div></div></div>
 <div id="page-approve" class="page"><div class="page-title">회원승인관리</div><div class="page-sub">승인 대기 회원 목록</div><div class="table-card"><div class="table-header"><div class="table-title">승인 대기 목록</div></div><div class="table-wrap"><table><thead><tr><th>No</th><th>아이디</th><th>성명</th><th>휴대폰</th><th>신청일</th><th>승인</th></tr></thead><tbody id="pending-users"></tbody></table></div></div></div>
 
 
@@ -311,7 +323,7 @@ async function doLogin(){
 
 
 function doAdminLogout(){adminToken=null;document.getElementById('admin-app').style.display='none';document.getElementById('login-screen').style.display='flex';}
-function showPage(name,el){var _mn=document.querySelector('.main');if(_mn){document.querySelectorAll('.page').forEach(function(pg){if(pg.parentElement!==_mn)_mn.appendChild(pg);});}var mainEl=document.querySelector('.main');if(mainEl){document.querySelectorAll('.page').forEach(function(pg){if(pg.parentElement!==mainEl)mainEl.appendChild(pg);});}document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));if(el)el.classList.add('active');const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');if(name==='dashboard')loadDashboard();else if(name==='users')loadUsers();else if(name==='members'){var pm=document.getElementById('page-members');var mn=document.querySelector('.main');if(pm&&mn&&pm.parentElement!==mn)mn.appendChild(pm);loadUsers();}else if(name==='approve'){var pa=document.getElementById('page-approve');var mn2=document.querySelector('.main');if(pa&&mn2&&pa.parentElement!==mn2)mn2.appendChild(pa);loadPendingUsers();}else if(name==='charges')loadCharges();else if(name==='matching')loadMatchingStatus();else if(name==='reservations')loadReservations();else if(name==='testtools')loadTesttools();else if(name==='penalties')loadPenalties();}
+function showPage(name,el){var _mn=document.querySelector('.main');if(_mn){document.querySelectorAll('.page').forEach(function(pg){if(pg.parentElement!==_mn)_mn.appendChild(pg);});}var mainEl=document.querySelector('.main');if(mainEl){document.querySelectorAll('.page').forEach(function(pg){if(pg.parentElement!==mainEl)mainEl.appendChild(pg);});}document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));if(el)el.classList.add('active');const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');if(name==='dashboard')loadDashboard();else if(name==='users')loadUsers();else if(name==='members'){var pm=document.getElementById('page-members');var mn=document.querySelector('.main');if(pm&&mn&&pm.parentElement!==mn)mn.appendChild(pm);loadUsers();}else if(name==='approve'){var pa=document.getElementById('page-approve');var mn2=document.querySelector('.main');if(pa&&mn2&&pa.parentElement!==mn2)mn2.appendChild(pa);loadPendingUsers();}else if(name==='charges')loadCharges();else if(name==='matching')loadMatchingStatus();else if(name==='notifications'){var pn=document.getElementById('page-notifications');var mn=document.querySelector('.main');if(pn&&mn&&pn.parentElement!==mn)mn.appendChild(pn);}else if(name==='reservations')loadReservations();else if(name==='testtools')loadTesttools();else if(name==='penalties')loadPenalties();}
 async function loadDashboard(){try{const s=await apiAdmin('/admin/stats');document.getElementById('s-users').textContent=s.total_users||0;document.getElementById('s-items').textContent=s.total_items||0;document.getElementById('s-charges').textContent=s.pending_charges||0;document.getElementById('s-reservations').textContent=s.today_reservations||0;const charges=await apiAdmin('/admin/charges');const pending=(charges.charges||[]).filter(c=>c.status==='pending').slice(0,5);const dc=document.getElementById('dash-charges');if(pending.length){dc.innerHTML='<table><thead><tr><th>&#45769;&#45348;&#51076;</th><th>&#44552;&#50529;</th><th>&#49345;&#53468;</th></tr></thead><tbody>'+pending.map(c=>'<tr><td>'+c.nickname+'</td><td>'+Math.round((c.amount||0)/120).toLocaleString()+'P<br><small style="color:#aaa">'+(c.amount||0).toLocaleString()+'원</small></td><td><span class="badge badge-warning">&#45824;&#44592;</span></td></tr>').join('')+'</tbody></table>';}else{dc.innerHTML='<div class="empty-state"><div>&#45824;&#44592; &#51473;&#51064; &#52649;&#51204; &#50630;&#51020;</div></div>';}const users=await apiAdmin('/admin/users');document.getElementById('dash-users').innerHTML=(users.users||[]).slice(0,5).map(u=>'<tr><td>'+u.nickname+'</td><td><span class="badge badge-info">'+(u.level||1)+'&#47112;&#48296;</span></td><td>'+(u.charge_points||0).toLocaleString()+'P</td></tr>').join('')||'<tr><td colspan="3">&#54924;&#50896; &#50630;&#51020;</td></tr>';}catch(e){toast('&#45824;&#49884;&#48372;&#46300; &#49892;&#54036;: '+e.message,'error');}}
 async function loadPendingUsers(){
   try{
@@ -712,7 +724,21 @@ async function loadTesttools(){
 
 
 
-</script>
+
+async function sendAdminNotif(){
+  const uid = document.getElementById('notif-user-id').value.trim();
+  const title = document.getElementById('notif-title').value.trim();
+  const msg = document.getElementById('notif-message').value.trim();
+  if(!title||!msg){alert('제목과 내용을 입력해주세요.');return;}
+  const body = {title,message:msg,type:'admin'};
+  if(uid) body.user_id = parseInt(uid);
+  try{
+    await apiAdmin('/admin/notify',{method:'POST',body:JSON.stringify(body)});
+    document.getElementById('notif-result').textContent = '✅ 발송 완료!';
+    document.getElementById('notif-message').value='';
+    setTimeout(()=>{document.getElementById('notif-result').textContent='';},3000);
+  }catch(e){document.getElementById('notif-result').style.color='#e53935';document.getElementById('notif-result').textContent='오류: '+e.message;}
+}</script>
 
 <div id="user-detail-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;overflow-y:auto">
   <div style="background:#1e1e2e;margin:30px auto;max-width:700px;border-radius:12px;padding:24px;position:relative">
