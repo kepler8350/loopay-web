@@ -1537,12 +1537,13 @@ async function loadUserData(){
       },
       reservable:{bronze:4,silver:1,gold:0}
     };
-    renderHeader(userData); renderBars(userData); updateReserveDefaults(3);
+renderHeader(userData); renderBars(userData); updateReserveDefaults(userData.level||1);
   }
   loadPrices();
 }
 
 function renderHeader(d){
+  var uidEl2=document.getElementById('h-userid'); if(uidEl2) uidEl2.textContent=d.username||d.nickname||'';
   document.getElementById('h-maintain').textContent='- P';
   document.getElementById('h-level').textContent=d.level+'레벨';
   document.getElementById('h-total').textContent=(d.total_points||0).toLocaleString()+' P';
