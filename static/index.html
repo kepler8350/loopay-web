@@ -878,7 +878,7 @@ async function doLogin(){
     await loadUserData();
     document.getElementById('login-screen').style.display='none';
     document.getElementById('main-app').style.display='flex';
-    updateTimeBar();
+    startTimeBar();
   }catch(e){errEl.textContent='서버 오류: '+e.message;}
 }
 async function doRegister(){
@@ -918,7 +918,7 @@ function demoLogin(btn){
     .then(function(){
       document.getElementById("login-screen").style.display="none";
       document.getElementById("main-app").style.display="flex";
-      updateTimeBar();
+      startTimeBar();
       var n=document.querySelector(".nav-btn");if(n)n.click();
     });
   })
@@ -1034,7 +1034,13 @@ function updateTimeBar(){
     barEl.style.background='linear-gradient(90deg,'+found.color+' 0%,'+found.color+'cc 100%)';
   }
 }
-setInterval(updateTimeBar, 1000);
+// updateTimeBar interval은 로그인 후 startTimeBar()로 등록
+
+function startTimeBar(){
+  updateTimeBar();
+  if(window._tbInterval) clearInterval(window._tbInterval);
+  window._tbInterval = setInterval(updateTimeBar, 1000);
+}
 
 // ── 아이템 상세보기 (판매예약 포함) ──
 async function toggleDetail(type){
@@ -2289,7 +2295,7 @@ function demoLogin(btn){
     .then(function(){
       document.getElementById("login-screen").style.display="none";
       document.getElementById("main-app").style.display="flex";
-      updateTimeBar();
+      startTimeBar();
       var n=document.querySelector(".nav-btn");if(n)n.click();
     });
   })
