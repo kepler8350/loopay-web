@@ -579,33 +579,29 @@ def admin_matching_status():
     today = get_today().isoformat()
 
     def get_round_data(round_num):
-        # l� }  (reservations where match_round=round_num, status=pending)
         buy_count = db.execute(
             "SELECT COUNT(*) as c FROM reservations WHERE match_round=? AND reserve_date=? AND status='pending'",
             (round_num, today)
         ).fetchone()['c']
-
-        # � }  (items where status='reservable')
         sell_count = db.execute(
-            "SELECT COUNT(*) as c FROM items WHERE status='reservable'"
+            "SELECT COUNT(*) as c FROM reservations WHERE match_round=2 AND reserve_date=? AND status='pending'",
+            (today,)
         ).fetchone()['c']
-
-        # �m(
-        if sell_count > 0:
-            rate = round(min(buy_count, sell_count) / max(buy_count, sell_count) * 100, 1)
+        if buy_count > 0:
+            rate = round(min(buy_count, sell_count) / buy_count * 100, 1)
         else:
             rate = 0.0
-
-        # Dt\� �} 
         by_type = db.execute(
-            "SELECT bar_type, COUNT(*) as cnt FROM items WHERE status='reservable' GROUP BY bar_type"
+            "SELECT bar_type, COUNT(*) as cnt FROM reservations WHERE match_round=2 AND reserve_date=? AND status='pending' GROUP BY bar_type",
+            (today,)
         ).fetchall()
-
-        # Dt\ ��� �} 
         by_stage = db.execute(
-            "SELECT bar_type, stage, COUNT(*) as cnt FROM items WHERE status='reservable' GROUP BY bar_type, stage ORDER BY bar_type, stage"
+            """SELECT r.bar_type, COALESCE(i.stage,1) as stage, COUNT(*) as cnt
+               FROM reservations r LEFT JOIN items i ON r.item_id=i.id
+               WHERE r.match_round=2 AND r.reserve_date=? AND r.status='pending'
+               GROUP BY r.bar_type, COALESCE(i.stage,1) ORDER BY r.bar_type, stage""",
+            (today,)
         ).fetchall()
-
         return {
             'buy_count': buy_count,
             'sell_count': sell_count,
@@ -1139,6 +1135,7 @@ def payment_complete():
     uid = int(get_jwt_identity())
     data = request.json or {}
     reservation_id = int(data.get('reservation_id', 0))
+    image_b64 = data.get('image', '')  # base64 이미지
     db = get_db()
     try:
         r = db.execute(
@@ -1147,9 +1144,22 @@ def payment_complete():
         ).fetchone()
         if not r:
             return jsonify(error='송금완료 처리 불가'), 400
+        # 이미지 저장 (static/uploads 폴더)
+        img_path = ''
+        if image_b64 and image_b64.startswith('data:image'):
+            import base64, uuid as _uuid
+            upload_dir = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            ext = 'jpg'
+            if 'png' in image_b64[:30]: ext = 'png'
+            header, b64data = image_b64.split(',', 1)
+            fname = f'pay_{reservation_id}_{_uuid.uuid4().hex[:8]}.{ext}'
+            with open(os.path.join(upload_dir, fname), 'wb') as fp:
+                fp.write(base64.b64decode(b64data))
+            img_path = f'/uploads/{fname}'
         db.execute("UPDATE reservations SET status='paid' WHERE id=?", (reservation_id,))
         db.commit()
-        return jsonify(success=True, message='송금완료 처리됐습니다')
+        return jsonify(success=True, message='송금완료 처리됐습니다', image_url=img_path)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
