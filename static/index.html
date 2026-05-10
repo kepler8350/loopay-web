@@ -220,6 +220,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .reserve-confirm-btns button{flex:1;padding:12px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer}
 .btn-cancel-res{background:var(--bg2);color:var(--text2)}
 .btn-confirm-res{background:var(--accent);color:#fff}
+
+/* 시간표 배너 */
+.time-banner{background:var(--blue);color:#fff;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.time-banner .tb-icon{font-size:16px}
+/* 아이템 상세 */
+.item-detail-card{background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.item-detail-info{font-size:13px;color:var(--text2)}
+.item-detail-stage{font-weight:700;color:var(--text1);font-size:15px}
+.item-detail-price{font-size:12px;color:#aaa;text-align:right}
+.sell-badge{font-size:11px;background:#1976d2;color:#fff;border-radius:4px;padding:2px 7px;margin-left:6px}
+.sellable-badge{font-size:11px;background:#388e3c;color:#fff;border-radius:4px;padding:2px 7px;margin-left:6px}
+/* 매칭 탭 */
+.match-card{background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px}
+.match-card-title{font-size:13px;font-weight:700;color:var(--text1);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.match-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.match-row:last-child{border-bottom:none}
+.match-type-badge{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:700}
+.badge-buy{background:#1565c0;color:#fff}
+.badge-sell{background:#6a1b9a;color:#fff}
+.badge-matched{background:#2e7d32;color:#fff}
+.badge-pending{background:#e65100;color:#fff}
+.badge-paid{background:#37474f;color:#fff}
+.match-btn{border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-left:6px}
+.btn-send{background:#1976d2;color:#fff}
+.btn-confirm-pay{background:#388e3c;color:#fff}
+.btn-unpaid{background:#c62828;color:#fff}
+.btn-disabled{background:#37474f;color:#999;cursor:not-allowed}
+
 </style>
 <script>var LEVEL_CFG_JS={
   1:{bz_min:1,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1,cum:150},
@@ -274,6 +302,8 @@ function showMainApp(){
   document.getElementById('login-screen').style.display='none';
   const m=document.getElementById('main-app');
   m.style.display='flex'; m.style.flexDirection='column'; m.style.height='100vh';
+
+  updateTimeBanner();
 }
 
 // --- user data ------------------------------------------------------------
@@ -432,7 +462,9 @@ var LEVEL_CONFIG_JS={
 function showTab(id,btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+id).classList.add('active'); if(id==='notif'){loadNotifications();}
+  document.getElementById('tab-'+id).classList.add('active'); if(id==='notif'){loadNotifications();
+  if(id==='matching') loadMatchingTab();
+}
   btn.classList.add('active');
 
   if(id === 'combine') { setTimeout(loadCombineItems, 100); }
@@ -899,6 +931,174 @@ function getGd(sv){
   var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
   return cfg.gd_max||0;
 }
+
+// ── 시간표 배너: 현재시간 기준 표시 ──
+var SCHEDULE=[
+  {s:5,e:13,text:'05:00~13:00 구매·판매 예약 시간'},
+  {s:13,e:14,text:'13:00~14:00 1차 매칭 입금 시간'},
+  {s:14,e:15,text:'14:00~15:00 2차 매칭 준비 시간'},
+  {s:15,e:19,text:'15:00~19:00 2차 매칭 입금 시간'},
+  {s:19,e:20,text:'19:00~20:00 2차 미입금 확인 시간'},
+  {s:20,e:24,text:'20:00~13:00 매칭 대기 시간'},
+  {s:0,e:5,text:'00:00~05:00 매칭 대기 시간'}
+];
+function updateTimeBanner(){
+  var h=new Date().getHours();
+  var banner=document.getElementById('time-banner');
+  var bannerText=document.getElementById('time-banner-text');
+  if(!banner||!bannerText)return;
+  var found=null;
+  SCHEDULE.forEach(function(s){
+    if(s.s<=h&&h<s.e) found=s;
+    if(s.s===20&&(h>=20||h<s.e)) found=s;
+    if(s.s===0&&h<5) found=s;
+  });
+  if(found){
+    banner.style.display='flex';
+    bannerText.textContent=found.text;
+  }
+}
+setInterval(updateTimeBanner, 60000);
+
+// ── 아이템 상세보기 (판매예약 포함) ──
+async function toggleDetail(type){
+  var panel=document.getElementById('detail-'+type);
+  var card=document.getElementById('card-'+type);
+  var isOpen=panel.style.display!=='none';
+  ['bronze','silver','gold'].forEach(function(t){
+    document.getElementById('detail-'+t).style.display='none';
+    document.getElementById('card-'+t).classList.remove('selected');
+  });
+  if(isOpen) return;
+  panel.style.display='block';
+  card.classList.add('selected');
+  await loadItemDetail(type);
+}
+
+async function loadItemDetail(barType){
+  var container=document.getElementById('detail-'+barType+'-items');
+  container.innerHTML='<div class="loading">로딩 중...</div>';
+  try{
+    var items=await api('/items?bar_type='+barType);
+    if(!items.length){
+      container.innerHTML='<div style="text-align:center;color:#aaa;padding:20px">보유 아이템 없음</div>';
+      return;
+    }
+    var names={bronze:'수정',silver:'루비',gold:'다이아'};
+    var html=items.map(function(it){
+      var canSell = it.days>=2 && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료';
+      var statusBadge = it.status_label==='보유중'?'<span class="sell-badge" style="background:#546e7a">보유중</span>'
+        :it.status_label==='매칭예약가능'?'<span class="sellable-badge">판매예약가능</span>'
+        :'<span class="sell-badge">'+(it.status_label||'보유중')+'</span>';
+      var sellBtn = canSell
+        ?'<button onclick="doSellReservation('+it.id+',\''+barType+'\')" style="background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px">판매예약</button>'
+        :(it.days<2?'<div style="font-size:11px;color:#aaa;margin-top:4px">구매 '+(it.days+1)+'일차 (3일째부터 가능)</div>':'');
+      return '<div class="item-detail-card">'
+        +'<div><div class="item-detail-stage">'+names[barType]+' '+it.stage+'단계'+statusBadge+'</div>'
+        +'<div class="item-detail-info">구매일: '+it.purchase_date+' · '+( it.days+1)+'일차</div>'
+        +sellBtn+'</div>'
+        +'<div class="item-detail-price"><div style="font-size:14px;font-weight:700;color:#f9a825">판매가 '+(it.sell_price/10000).toFixed(1)+'만원</div>'
+        +'<div>구매 '+(it.buy_price/10000).toFixed(1)+'만원</div>'
+        +'<div style="color:#66bb6a">수익 '+(it.profit/10000).toFixed(1)+'만원</div>'
+        +'</div></div>';
+    }).join('');
+    container.innerHTML=html;
+  }catch(e){
+    container.innerHTML='<div style="color:#ef5350;padding:12px">오류: '+e.message+'</div>';
+  }
+}
+
+async function doSellReservation(itemId, barType){
+  if(!confirm('이 아이템을 판매예약하시겠습니까?')) return;
+  try{
+    var d=await api('/reservation/sell',{method:'POST',body:JSON.stringify({item_id:itemId})});
+    toast('판매예약 완료! 판매가: '+(d.sell_price/10000).toFixed(1)+'만원');
+    await loadItemDetail(barType);
+  }catch(e){ toast('판매예약 실패: '+e.message); }
+}
+
+// ── 매칭 탭 로드 ──
+async function loadMatchingTab(){
+  try{
+    var list=await api('/user/matching');
+    var buys=list.filter(function(r){return r.match_round===1;});
+    var sells=list.filter(function(r){return r.match_round===2;});
+    renderMatchBuyList(buys);
+    renderMatchSellList(sells);
+  }catch(e){
+    document.getElementById('match-buy-list').innerHTML='<div style="color:#ef5350;padding:12px">오류: '+e.message+'</div>';
+  }
+}
+
+var TYPE_NAME={bronze:'수정',silver:'루비',gold:'다이아'};
+var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+
+function renderMatchBuyList(items){
+  var el=document.getElementById('match-buy-list');
+  if(!items.length){el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">오늘 구매예약 없음</div>';return;}
+  // 시간 체크 (13:00~14:00 송금, 15:00~19:00 2차 송금)
+  var h=new Date().getHours();
+  var canSend1=(h>=13&&h<14), canSend2=(h>=15&&h<19);
+  el.innerHTML=items.map(function(r){
+    var statusBadge=r.status==='matched'?'<span class="match-type-badge badge-matched">매칭완료</span>'
+      :r.status==='paid'?'<span class="match-type-badge badge-paid">송금완료</span>'
+      :'<span class="match-type-badge badge-pending">대기중</span>';
+    var canSendNow=(r.status==='matched')&&(canSend1||canSend2);
+    var sendBtn=canSendNow
+      ?'<button class="match-btn btn-send" onclick="doPaymentComplete('+r.id+')">💸 송금완료</button>'
+      :(r.status==='matched'?'<button class="match-btn btn-disabled" disabled title="13:00~14:00 또는 15:00~19:00에 활성화">송금완료</button>':'');
+    return '<div class="match-row">'
+      +'<div><strong style="color:'+TYPE_COLOR[r.bar_type]+'">'+TYPE_NAME[r.bar_type]+'</strong> '
+      +(r.stage?r.stage+'단계':'')
+      +' '+statusBadge+'</div>'
+      +'<div style="text-align:right"><div style="font-size:12px;color:#aaa">구매가 '+(r.buy_price?(r.buy_price/10000).toFixed(1)+'만원':'-')+'</div>'
+      +sendBtn+'</div></div>';
+  }).join('');
+}
+
+function renderMatchSellList(items){
+  var el=document.getElementById('match-sell-list');
+  if(!items.length){el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">오늘 판매예약 없음</div>';return;}
+  var h=new Date().getHours();
+  var canConfirm1=(h>=13&&h<14), canConfirm2=(h>=19&&h<20);
+  el.innerHTML=items.map(function(r){
+    var statusBadge=r.status==='matched'?'<span class="match-type-badge badge-matched">매칭완료</span>'
+      :r.status==='confirmed'?'<span class="match-type-badge" style="background:#1b5e20;color:#fff">입금확인</span>'
+      :r.status==='unpaid'?'<span class="match-type-badge badge-buy">미입금처리</span>'
+      :'<span class="match-type-badge badge-pending">대기중</span>';
+    var canAct=r.status==='matched'&&(canConfirm1||canConfirm2);
+    var actBtns=canAct
+      ?'<button class="match-btn btn-confirm-pay" onclick="doPaymentConfirm('+r.id+',true)">✅ 입금확인</button>'
+       +'<button class="match-btn btn-unpaid" onclick="doPaymentConfirm('+r.id+',false)">❌ 미입금</button>'
+      :(r.status==='matched'?'<button class="match-btn btn-disabled" disabled title="13:00~14:00 또는 19:00~20:00에 활성화">입금확인</button>':'');
+    return '<div class="match-row">'
+      +'<div><strong style="color:'+TYPE_COLOR[r.bar_type]+'">'+TYPE_NAME[r.bar_type]+'</strong> '
+      +(r.stage?r.stage+'단계':'')
+      +' '+statusBadge+'</div>'
+      +'<div style="text-align:right"><div style="font-size:12px;color:#aaa">판매가 '+(r.sell_price?(r.sell_price/10000).toFixed(1)+'만원':'-')+'</div>'
+      +actBtns+'</div></div>';
+  }).join('');
+}
+
+async function doPaymentComplete(resId){
+  if(!confirm('송금완료 처리하시겠습니까? 입금 영수증은 관리자에게 별도 제출해주세요.')) return;
+  try{
+    await api('/reservation/payment-complete',{method:'POST',body:JSON.stringify({reservation_id:resId})});
+    toast('송금완료 처리됐습니다');
+    await loadMatchingTab();
+  }catch(e){ toast('오류: '+e.message); }
+}
+
+async function doPaymentConfirm(resId, confirmed){
+  var msg = confirmed ? '입금확인 처리하시겠습니까?' : '미입금 처리하시겠습니까?';
+  if(!confirm(msg)) return;
+  try{
+    await api('/reservation/payment-confirm',{method:'POST',body:JSON.stringify({reservation_id:resId,confirmed:confirmed})});
+    toast(confirmed?'입금확인 처리됐습니다':'미입금 처리됐습니다');
+    await loadMatchingTab();
+  }catch(e){ toast('오류: '+e.message); }
+}
+
 function disableReserveSection(){
   // 구매 예약하기 버튼 비활성화
   var btn=document.getElementById('reserve-btn');
@@ -1219,6 +1419,7 @@ async function loadNotifications(){
       <button class="nav-btn" onclick="showTab('level',this)">레벨</button>
       <button class="nav-btn" onclick="showTab('point',this)">포인트</button>
       <button class="nav-btn" onclick="showTab('penalty',this)">패널티</button>
+      <button class="nav-btn" onclick="showTab('matching',this)">매칭</button>
       <button class="nav-btn" onclick="showTab('schedule',this)">시간표</button>
       <button class="nav-btn" onclick="showTab('combine',this)">결합판매</button>
 <button class="nav-btn" id="nav-notif-btn" onclick="showTab('notif',this)" style="position:relative">🔔<span id="notif-badge" style="display:none;position:absolute;top:2px;right:2px;background:#e53935;color:#fff;font-size:9px;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px"></span></button>
@@ -1255,9 +1456,9 @@ async function loadNotifications(){
           </div>
         </div>
         <div id="bar-detail-panel" style="display:none;margin-top:8px">
-          <div id="detail-bronze" style="display:none"><div class="detail-panel"><div class="detail-panel-title">수정 보유 내역</div><div id="detail-bronze-items"><div class="loading">불러오는 중...</div></div></div></div>
-          <div id="detail-silver" style="display:none"><div class="detail-panel"><div class="detail-panel-title">루비 보유 내역</div><div id="detail-silver-items"><div class="loading">불러오는 중...</div></div></div></div>
-          <div id="detail-gold" style="display:none"><div class="detail-panel"><div class="detail-panel-title">다이아 보유 내역</div><div id="detail-gold-items"><div class="loading">불러오는 중...</div></div></div></div>
+          <div id="detail-bronze" style="display:none"><div class="detail-panel"><div class="detail-panel-title" style="display:flex;justify-content:space-between;align-items:center">수정 보유 내역<span style="font-size:11px;color:#aaa">구매 3일째부터 판매예약 가능</span></div><div id="detail-bronze-items"><div class="loading">불러오는 중...</div></div></div></div>
+          <div id="detail-silver" style="display:none"><div class="detail-panel"><div class="detail-panel-title" style="display:flex;justify-content:space-between;align-items:center">루비 보유 내역<span style="font-size:11px;color:#aaa">구매 3일째부터 판매예약 가능</span></div><div id="detail-silver-items"><div class="loading">불러오는 중...</div></div></div></div>
+          <div id="detail-gold" style="display:none"><div class="detail-panel"><div class="detail-panel-title" style="display:flex;justify-content:space-between;align-items:center">다이아 보유 내역<span style="font-size:11px;color:#aaa">구매 3일째부터 판매예약 가능</span></div><div id="detail-gold-items"><div class="loading">불러오는 중...</div></div></div></div>
         </div>
 
         <div class="reserve-box">
@@ -1474,6 +1675,31 @@ async function loadNotifications(){
       </div>
 
       <!-- SCHEDULE -->
+      <div id="tab-matching" class="tab">
+        <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">
+          매칭 현황
+          <button onclick="loadMatchingTab()" style="background:transparent;border:1px solid #aaa;color:#aaa;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer">새로고침</button>
+        </div>
+
+        <!-- 오늘 구매예약 -->
+        <div class="match-card">
+          <div class="match-card-title">
+            🛒 오늘 구매예약
+            <span style="font-size:11px;color:#aaa">수정이 매칭되면 송금 버튼 활성화</span>
+          </div>
+          <div id="match-buy-list"><div style="text-align:center;color:#aaa;padding:20px;font-size:13px">로딩 중...</div></div>
+        </div>
+
+        <!-- 오늘 판매예약 -->
+        <div class="match-card">
+          <div class="match-card-title">
+            💰 오늘 판매예약
+            <span style="font-size:11px;color:#aaa">매칭 후 입금확인/미입금 버튼 활성화</span>
+          </div>
+          <div id="match-sell-list"><div style="text-align:center;color:#aaa;padding:20px;font-size:13px">로딩 중...</div></div>
+        </div>
+      </div>
+
       <div id="tab-schedule" class="tab">
         <div class="sec-title">루페이 시간표</div>
       
@@ -1574,6 +1800,8 @@ function showMainApp(){
   document.getElementById('login-screen').style.display='none';
   const m=document.getElementById('main-app');
   m.style.display='flex'; m.style.flexDirection='column'; m.style.height='100vh';
+
+  updateTimeBanner();
 }
 
 // --- user data ------------------------------------------------------------
@@ -1807,20 +2035,13 @@ function showTab(id,btn){
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
 
-  if(id === 'combine') { setTimeout(loadCombineItems, 100); }
+  if(id === 'combine') { setTimeout(loadCombineItems, 100); 
+  if(id==='matching') loadMatchingTab();
+}
 }
 
 // --- detail toggle ---------------------------------------------------------
-function toggleDetail(type){
-  const panel=document.getElementById('detail-'+type);
-  const card=document.getElementById('card-'+type);
-  const isOpen=panel.style.display!=='none';
-  ['bronze','silver','gold'].forEach(t=>{
-    document.getElementById('detail-'+t).style.display='none';
-    document.getElementById('card-'+t).classList.remove('selected');
-  });
-  if(!isOpen){panel.style.display='block';card.classList.add('selected');}
-}
+
 
 // --- admin ----------------------------------------------------------------
 function showAdminModal(){document.getElementById('admin-modal').style.display='flex';}

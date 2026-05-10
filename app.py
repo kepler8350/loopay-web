@@ -1062,3 +1062,122 @@ def admin_delete_user(uid):
     db.close()
     return jsonify(success=True)
 
+
+# ── 판매예약 API ──
+@app.route('/api/reservation/sell', methods=['POST'])
+@jwt_required()
+def create_sell_reservation():
+    uid = int(get_jwt_identity())
+    data = request.json or {}
+    item_id = int(data.get('item_id', 0))
+    db = get_db()
+    try:
+        item = db.execute("SELECT * FROM items WHERE id=? AND user_id=? AND status='reservable'", (item_id, uid)).fetchone()
+        if not item:
+            return jsonify(error='판매예약 불가능한 아이템입니다'), 400
+        days = days_since(item['purchase_date'])
+        if days < 2:
+            return jsonify(error=f'구매 후 3일째부터 판매예약 가능합니다 (현재 {days+1}일차)'), 400
+        today = get_today().isoformat()
+        existing = db.execute(
+            "SELECT id FROM reservations WHERE item_id=? AND status='pending'", (item_id,)
+        ).fetchone()
+        if existing:
+            return jsonify(error='이미 예약된 아이템입니다'), 400
+        db.execute(
+            "INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status) VALUES(?,?,?,2,?,'pending')",
+            (uid, item_id, item['bar_type'], today)
+        )
+        db.commit()
+        buy_p, sell_p = get_price(item['bar_type'], item['stage'])
+        return jsonify(success=True, message='판매예약 완료!', sell_price=sell_p)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+# ── 사용자 매칭 목록 API ──
+@app.route('/api/user/matching', methods=['GET'])
+@jwt_required()
+def user_matching():
+    uid = int(get_jwt_identity())
+    db = get_db()
+    try:
+        today = get_today().isoformat()
+        rows = db.execute(
+            """SELECT r.*, i.stage, i.purchase_date,
+                      p.buy_price, p.sell_price
+               FROM reservations r
+               LEFT JOIN items i ON r.item_id = i.id
+               LEFT JOIN prices p ON p.bar_type=r.bar_type AND p.stage=i.stage
+               WHERE r.user_id=? AND r.reserve_date=?
+               ORDER BY r.id DESC""",
+            (uid, today)
+        ).fetchall()
+        result = []
+        for r in rows:
+            result.append({
+                'id': r['id'],
+                'bar_type': r['bar_type'],
+                'stage': r['stage'],
+                'match_round': r['match_round'],
+                'status': r['status'],
+                'reserve_date': r['reserve_date'],
+                'buy_price': r['buy_price'] or 0,
+                'sell_price': r['sell_price'] or 0,
+                'item_id': r['item_id']
+            })
+        return jsonify(result)
+    finally:
+        db.close()
+
+# ── 송금완료 API (구매자) ──
+@app.route('/api/reservation/payment-complete', methods=['POST'])
+@jwt_required()
+def payment_complete():
+    uid = int(get_jwt_identity())
+    data = request.json or {}
+    reservation_id = int(data.get('reservation_id', 0))
+    db = get_db()
+    try:
+        r = db.execute(
+            "SELECT * FROM reservations WHERE id=? AND user_id=? AND match_round=1 AND status='matched'",
+            (reservation_id, uid)
+        ).fetchone()
+        if not r:
+            return jsonify(error='송금완료 처리 불가'), 400
+        db.execute("UPDATE reservations SET status='paid' WHERE id=?", (reservation_id,))
+        db.commit()
+        return jsonify(success=True, message='송금완료 처리됐습니다')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+# ── 입금확인/미입금 API (판매자) ──
+@app.route('/api/reservation/payment-confirm', methods=['POST'])
+@jwt_required()
+def payment_confirm():
+    uid = int(get_jwt_identity())
+    data = request.json or {}
+    reservation_id = int(data.get('reservation_id', 0))
+    confirmed = data.get('confirmed', True)
+    db = get_db()
+    try:
+        r = db.execute(
+            "SELECT * FROM reservations WHERE id=? AND user_id=? AND match_round=2 AND status='matched'",
+            (reservation_id, uid)
+        ).fetchone()
+        if not r:
+            return jsonify(error='처리 불가'), 400
+        new_status = 'confirmed' if confirmed else 'unpaid'
+        db.execute("UPDATE reservations SET status=? WHERE id=?", (new_status, reservation_id))
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
