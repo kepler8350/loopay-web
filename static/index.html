@@ -1004,6 +1004,15 @@ var SCHEDULE_TEXTS=[
   {s:0,e:5,text:'🌙 00:00~05:00 매칭 대기',color:'#37474f'}
 ];
 function updateTimeBar(){
+  var SCHED=[
+    {s:5,e:13,text:'📅 05:00~13:00 구매·판매 예약 시간',color:'#0d47a1'},
+    {s:13,e:14,text:'💸 13:00~14:00 1차 매칭 입금',color:'#b71c1c'},
+    {s:14,e:15,text:'⚡ 14:00~15:00 2차 매칭 준비',color:'#4a148c'},
+    {s:15,e:19,text:'💸 15:00~19:00 2차 매칭 입금',color:'#b71c1c'},
+    {s:19,e:20,text:'✅ 19:00~20:00 미입금 확인',color:'#1b5e20'},
+    {s:20,e:24,text:'🌙 20:00~05:00 매칭 대기',color:'#37474f'},
+    {s:0,e:5,text:'🌙 00:00~05:00 매칭 대기',color:'#37474f'}
+  ];
   var now=new Date();
   var h=now.getHours(), m=now.getMinutes(), s=now.getSeconds();
   var days=['일','월','화','수','목','금','토'];
@@ -1016,15 +1025,14 @@ function updateTimeBar(){
   if(dateEl) dateEl.textContent=dateStr;
   if(timeEl) timeEl.textContent=timeStr;
   if(schedEl&&barEl){
-    var found=SCHEDULE_TEXTS.find(function(st){return h>=st.s&&h<st.e;});
-    if(!found) found=SCHEDULE_TEXTS[SCHEDULE_TEXTS.length-1];
+    var found=null;
+    for(var i=0;i<SCHED.length;i++){
+      if(h>=SCHED[i].s && h<SCHED[i].e){found=SCHED[i];break;}
+    }
+    if(!found) found=SCHED[5];
     schedEl.textContent=found.text;
-    barEl.style.background='linear-gradient(90deg,'+found.color+' 0%,'+adjustColor(found.color)+' 100%)';
+    barEl.style.background='linear-gradient(90deg,'+found.color+' 0%,'+found.color+'cc 100%)';
   }
-}
-function adjustColor(hex){
-  // 약간 밝게
-  return hex;
 }
 // updateTimeBar는 로그인 후 showMainApp()에서 최초 호출됨
 setInterval(function(){
