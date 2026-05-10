@@ -947,16 +947,23 @@ function updateTimeBanner(){
   var banner=document.getElementById('time-banner');
   var bannerText=document.getElementById('time-banner-text');
   if(!banner||!bannerText)return;
+  var SCHED=[
+    {s:5,e:13,text:'📅 05:00~13:00 구매·판매 예약 시간'},
+    {s:13,e:14,text:'💸 13:00~14:00 1차 매칭 입금 시간'},
+    {s:14,e:15,text:'⚡ 14:00~15:00 2차 매칭 준비 시간'},
+    {s:15,e:19,text:'💸 15:00~19:00 2차 매칭 입금 시간'},
+    {s:19,e:20,text:'✅ 19:00~20:00 2차 미입금 확인 시간'},
+    {s:20,e:24,text:'🌙 20:00~13:00 매칭 대기 시간'},
+    {s:0,e:5,text:'🌙 00:00~05:00 매칭 대기 시간'}
+  ];
   var found=null;
-  SCHEDULE.forEach(function(s){
-    if(s.s<=h&&h<s.e) found=s;
-    if(s.s===20&&(h>=20||h<s.e)) found=s;
-    if(s.s===0&&h<5) found=s;
-  });
-  if(found){
-    banner.style.display='flex';
-    bannerText.textContent=found.text;
+  for(var i=0;i<SCHED.length;i++){
+    var s=SCHED[i];
+    if(s.s>=0&&s.e<=24&&h>=s.s&&h<s.e){found=s;break;}
   }
+  if(!found) found={text:'🌙 현재 매칭 대기 시간'};
+  banner.style.display='flex';
+  bannerText.textContent=found.text;
 }
 setInterval(updateTimeBanner, 60000);
 
