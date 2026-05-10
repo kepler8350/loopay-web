@@ -1075,20 +1075,27 @@ async function loadItemDetail(barType){
     }
     var names={bronze:'수정',silver:'루비',gold:'다이아'};
     var html=items.map(function(it){
+      var dayNum = it.days + 1;  // 구매일 당일=1일차
       var canSell = it.days>=2 && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료';
-      var statusBadge = it.status_label==='보유중'?'<span class="sell-badge" style="background:#546e7a">보유중</span>'
-        :it.status_label==='매칭예약가능'?'<span class="sellable-badge">판매예약가능</span>'
-        :'<span class="sell-badge">'+(it.status_label||'보유중')+'</span>';
+      // 상태 배지: reservable → 예약가능
+      var rawLabel = it.status_label||'보유중';
+      var displayLabel = rawLabel==='reservable'?'예약가능'
+        :rawLabel==='매칭예약가능'?'예약가능'
+        :rawLabel;
+      var badgeColor = canSell?'#7b1fa2':'#546e7a';
+      var statusBadge = '<span class="sell-badge" style="background:'+badgeColor+'">'+displayLabel+'</span>';
+      // 판매예약 버튼 or 현재 일차 안내
       var sellBtn = canSell
         ?'<button onclick="doSellReservation('+it.id+',\''+barType+'\')" style="background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px">판매예약</button>'
-        :(it.days<2?'<div style="font-size:11px;color:#aaa;margin-top:4px">구매 '+(it.days+1)+'일차 (3일째부터 가능)</div>':'');
+        :'<div style="font-size:11px;color:#aaa;margin-top:4px">현재 '+dayNum+'일차 (3일째부터 판매가능)</div>';
+      // 금액 형식: toLocaleString()으로 원단위
       return '<div class="item-detail-card">'
-        +'<div><div class="item-detail-stage">'+names[barType]+' '+it.stage+'단계'+statusBadge+'</div>'
-        +'<div class="item-detail-info">구매일: '+it.purchase_date+' · '+( it.days+1)+'일차</div>'
+        +'<div><div class="item-detail-stage">'+names[barType]+' '+it.stage+'단계 '+statusBadge+'</div>'
+        +'<div class="item-detail-info">구매일: '+it.purchase_date+'</div>'
         +sellBtn+'</div>'
-        +'<div class="item-detail-price"><div style="font-size:14px;font-weight:700;color:#f9a825">판매가 '+(it.sell_price/10000).toFixed(1)+'만원</div>'
-        +'<div>구매 '+(it.buy_price/10000).toFixed(1)+'만원</div>'
-        +'<div style="color:#66bb6a">수익 '+(it.profit/10000).toFixed(1)+'만원</div>'
+        +'<div class="item-detail-price"><div style="font-size:14px;font-weight:700;color:#f9a825">판매가 '+it.sell_price.toLocaleString()+'원</div>'
+        +'<div>구매가 '+it.buy_price.toLocaleString()+'원</div>'
+        +'<div style="color:#66bb6a">수익 '+it.profit.toLocaleString()+'원</div>'
         +'</div></div>';
     }).join('');
     container.innerHTML=html;
@@ -1101,7 +1108,7 @@ async function doSellReservation(itemId, barType){
   if(!confirm('이 아이템을 판매예약하시겠습니까?')) return;
   try{
     var d=await api('/reservation/sell',{method:'POST',body:JSON.stringify({item_id:itemId})});
-    toast('판매예약 완료! 판매가: '+(d.sell_price/10000).toFixed(1)+'만원');
+    toast('판매예약 완료! 판매가: '+d.sell_price.toLocaleString()+'원');
     await loadItemDetail(barType);
   }catch(e){ toast('판매예약 실패: '+e.message); }
 }
@@ -1140,7 +1147,7 @@ function renderMatchBuyList(items){
       +'<div><strong style="color:'+TYPE_COLOR[r.bar_type]+'">'+TYPE_NAME[r.bar_type]+'</strong> '
       +(r.stage?r.stage+'단계':'')
       +' '+statusBadge+'</div>'
-      +'<div style="text-align:right"><div style="font-size:12px;color:#aaa">구매가 '+(r.buy_price?(r.buy_price/10000).toFixed(1)+'만원':'-')+'</div>'
+      +'<div style="text-align:right"><div style="font-size:12px;color:#aaa">구매가 '+(r.buy_price?r.buy_price.toLocaleString()+'원':'-')+'</div>'
       +sendBtn+'</div></div>';
   }).join('');
 }
@@ -1164,7 +1171,7 @@ function renderMatchSellList(items){
       +'<div><strong style="color:'+TYPE_COLOR[r.bar_type]+'">'+TYPE_NAME[r.bar_type]+'</strong> '
       +(r.stage?r.stage+'단계':'')
       +' '+statusBadge+'</div>'
-      +'<div style="text-align:right"><div style="font-size:12px;color:#aaa">판매가 '+(r.sell_price?(r.sell_price/10000).toFixed(1)+'만원':'-')+'</div>'
+      +'<div style="text-align:right"><div style="font-size:12px;color:#aaa">판매가 '+(r.sell_price?r.sell_price.toLocaleString()+'원':'-')+'</div>'
       +actBtns+'</div></div>';
   }).join('');
 }
