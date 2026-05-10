@@ -48,8 +48,9 @@ def days_since(purchase_date):
     if not purchase_date:
         return 0
     try:
-        dt = datetime.datetime.strptime(str(purchase_date)[:19], '%Y-%m-%d %H:%M:%S')
-        return (get_now() - dt).days
+        s = str(purchase_date)[:10]  # YYYY-MM-DD 부분만
+        dt = datetime.datetime.strptime(s, '%Y-%m-%d')
+        return (datetime.datetime.combine(get_today(), datetime.time()) - dt).days
     except Exception:
         return 0
 
