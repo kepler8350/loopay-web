@@ -1088,6 +1088,8 @@ async function loadItemDetail(barType){
     }
     var names={bronze:'수정',silver:'루비',gold:'다이아'};
     updateBulkSellBtn(barType, items);
+    // 아이템 캐시 업데이트 (판매보드에서 사용)
+    items.forEach(function(it){ _itemCache[it.id]={bar_type:barType,stage:it.stage,sell_price:it.sell_price}; });
     var html=items.map(function(it){
       var dayNum = it.days + 1;
       var canSell = it.days>=2 && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료' && it.status_label!=='판매예약';
@@ -1144,6 +1146,7 @@ async function toggleBulkSell(barType){
   var allSelected = btn._allSelected;
   ids.forEach(function(id){ _sellSelected[id] = !allSelected; });
   await loadItemDetail(barType);
+  updateSellBoard();
 }
 
 function toggleSellSelect(itemId, barType){
@@ -1164,6 +1167,7 @@ function toggleSellSelect(itemId, barType){
     bulkBtn.style.background = allSel?'#546e7a':'#7b1fa2';
     bulkBtn._allSelected = allSel;
   }
+  updateSellBoard();
 }
 
 async function doSellReservation(itemId, barType){
@@ -1688,6 +1692,36 @@ async function loadNotifications(){
           <div id="detail-gold" style="display:none"><div class="detail-panel"><div class="detail-panel-title" style="display:flex;justify-content:space-between;align-items:center"><strong>다이아 보유 내역</strong><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:#aaa">구매 3일째부터 판매가능</span><button id="bulk-sell-btn-gold" onclick="toggleBulkSell('gold')" style="background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">전체판매예약</button></div></div><div id="detail-gold-items"><div class="loading">불러오는 중...</div></div></div></div>
         </div>
 
+        <!-- 오늘 판매예약 보드 -->
+        <div class="reserve-box" id="sell-board" style="margin-bottom:10px">
+          <div class="reserve-title" style="display:flex;justify-content:space-between;align-items:center">
+            <span>오늘 판매예약</span>
+            <span style="font-size:11px;color:var(--text2);font-weight:400">아이템 상세보기에서 선택</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0">
+            <div style="background:var(--bg2);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:11px;color:#cd7f32;font-weight:600;margin-bottom:4px">수정</div>
+              <div style="font-size:20px;font-weight:700" id="sell-board-bronze">0</div>
+              <div style="font-size:10px;color:var(--text2)">개</div>
+            </div>
+            <div style="background:var(--bg2);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:11px;color:#a8a9ad;font-weight:600;margin-bottom:4px">루비</div>
+              <div style="font-size:20px;font-weight:700" id="sell-board-silver">0</div>
+              <div style="font-size:10px;color:var(--text2)">개</div>
+            </div>
+            <div style="background:var(--bg2);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:11px;color:#ffd700;font-weight:600;margin-bottom:4px">다이아</div>
+              <div style="font-size:20px;font-weight:700" id="sell-board-gold">0</div>
+              <div style="font-size:10px;color:var(--text2)">개</div>
+            </div>
+          </div>
+          <div id="sell-board-info" style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:10px">선택된 아이템 없음</div>
+          <button id="sell-reserve-btn" onclick="showSellConfirm()" disabled
+            style="width:100%;padding:13px;background:#7b1fa2;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;opacity:0.4">
+            판매 예약하기
+          </button>
+        </div>
+
         <div class="reserve-box">
           <div class="reserve-title">오늘 구매 예약하기</div>
           <div class="r-wrap" id="r-bz-wrap">
@@ -1975,6 +2009,18 @@ async function loadNotifications(){
         <button onclick="closeAdminPanel()" style="padding:7px 14px;background:var(--bg2);border:none;border-radius:8px;color:var(--text1);cursor:pointer">닫기</button>
 
 <div id="toast" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 22px;border-radius:8px;font-size:14px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:9999"></div>
+<!-- 판매예약 확인 모달 -->
+<div class="reserve-confirm-overlay" id="sell-confirm-overlay">
+  <div class="reserve-confirm-box">
+    <h3>🏷️ 판매 예약 확인</h3>
+    <div class="reserve-confirm-rows" id="sell-confirm-rows"></div>
+    <div style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:14px" id="sell-confirm-total"></div>
+    <div class="reserve-confirm-btns">
+      <button class="btn-cancel-res" onclick="closeSellConfirm()">취소</button>
+      <button class="btn-confirm-res" onclick="doSellReservationBulk()">판매 확정</button>
+    </div>
+  </div>
+</div>
 <!-- 구매예약 확인 모달 -->
 <div class="reserve-confirm-overlay" id="reserve-confirm-overlay">
   <div class="reserve-confirm-box">
@@ -2209,6 +2255,110 @@ function showReserveConfirm(){
 function closeReserveConfirm(){
   document.getElementById('reserve-confirm-overlay').classList.remove('show');
 }
+
+// ── 판매예약 보드 ──
+function updateSellBoard(){
+  var counts = {bronze:0, silver:0, gold:0};
+  var names = {bronze:'수정', silver:'루비', gold:'다이아'};
+  // _sellSelected 기반으로 각 바타입별 아이템 ID → 개수 계산
+  // _itemCache에 아이템 정보가 있으면 사용, 없으면 id만으로 표시
+  Object.keys(_sellSelected).forEach(function(id){
+    if(!_sellSelected[id]) return;
+    var info = _itemCache[id];
+    if(info) counts[info.bar_type]++;
+    else counts.bronze++; // fallback
+  });
+  var total = counts.bronze + counts.silver + counts.gold;
+  document.getElementById('sell-board-bronze').textContent = counts.bronze;
+  document.getElementById('sell-board-silver').textContent = counts.silver;
+  document.getElementById('sell-board-gold').textContent = counts.gold;
+  var btn = document.getElementById('sell-reserve-btn');
+  var info = document.getElementById('sell-board-info');
+  if(total > 0){
+    var parts = [];
+    if(counts.bronze) parts.push('수정 '+counts.bronze+'개');
+    if(counts.silver) parts.push('루비 '+counts.silver+'개');
+    if(counts.gold) parts.push('다이아 '+counts.gold+'개');
+    info.textContent = parts.join(' / ') + ' 선택됨';
+    info.style.color = '#7b1fa2';
+    if(btn){ btn.disabled=false; btn.style.opacity='1'; }
+  } else {
+    info.textContent = '선택된 아이템 없음';
+    info.style.color = 'var(--text2)';
+    if(btn){ btn.disabled=true; btn.style.opacity='0.4'; }
+  }
+}
+
+// 아이템 캐시 (id → {bar_type, stage, sell_price})
+var _itemCache = {};
+
+function showSellConfirm(){
+  var names={bronze:'수정',silver:'루비',gold:'다이아'};
+  // 선택된 아이템 목록 구성
+  var selected = Object.keys(_sellSelected).filter(function(id){return _sellSelected[id];});
+  if(!selected.length){ toast('판매예약할 아이템을 선택해주세요.'); return; }
+  var rows = '';
+  var totalPrice = 0;
+  var groupByType = {bronze:[], silver:[], gold:[]};
+  selected.forEach(function(id){
+    var info = _itemCache[id];
+    if(info){
+      groupByType[info.bar_type].push(info);
+      totalPrice += info.sell_price||0;
+    }
+  });
+  Object.keys(groupByType).forEach(function(bt){
+    var list = groupByType[bt];
+    if(!list.length) return;
+    list.forEach(function(it){
+      rows += '<div class="reserve-confirm-row">'
+        +'<span>'+names[bt]+' '+it.stage+'단계</span>'
+        +'<span style="color:#f9a825">'+it.sell_price.toLocaleString()+'원</span>'
+        +'</div>';
+    });
+  });
+  rows += '<div class="reserve-confirm-row total-row">'
+    +'<span>총 '+selected.length+'개 / 예상 수익</span>'
+    +'<span>'+totalPrice.toLocaleString()+'원</span>'
+    +'</div>';
+  document.getElementById('sell-confirm-rows').innerHTML = rows;
+  // 모달 body에 이동 후 표시
+  var ov = document.getElementById('sell-confirm-overlay');
+  if(ov.parentElement !== document.body) document.body.appendChild(ov);
+  ov.classList.add('show');
+}
+
+function closeSellConfirm(){
+  document.getElementById('sell-confirm-overlay').classList.remove('show');
+}
+
+async function doSellReservationBulk(){
+  closeSellConfirm();
+  var selected = Object.keys(_sellSelected).filter(function(id){return _sellSelected[id];});
+  if(!selected.length){ toast('선택된 아이템이 없습니다.'); return; }
+  var btn = document.getElementById('sell-reserve-btn');
+  if(btn){ btn.disabled=true; btn.textContent='예약 중...'; }
+  var successCount = 0, failCount = 0;
+  for(var i=0; i<selected.length; i++){
+    var id = parseInt(selected[i]);
+    var info = _itemCache[id];
+    try{
+      await api('/reservation/sell',{method:'POST',body:JSON.stringify({item_id:id})});
+      _sellSelected[id] = false;
+      successCount++;
+    }catch(e){ failCount++; }
+  }
+  toast(successCount+'개 판매예약 완료!'+(failCount?(' ('+failCount+'개 실패)'):''));
+  _sellSelected = {};
+  updateSellBoard();
+  // 열린 상세보기 새로고침
+  ['bronze','silver','gold'].forEach(function(bt){
+    var panel = document.getElementById('detail-'+bt);
+    if(panel && panel.style.display!=='none') loadItemDetail(bt);
+  });
+  if(btn){ btn.disabled=false; btn.textContent='판매 예약하기'; }
+}
+
 async function doReservation(){
   closeReserveConfirm();
   try{
