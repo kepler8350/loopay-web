@@ -1046,14 +1046,21 @@ function startTimeBar(){
 async function toggleDetail(type){
   var panel=document.getElementById('detail-'+type);
   var card=document.getElementById('card-'+type);
-  var isOpen=panel.style.display!=='none';
+  var masterPanel=document.getElementById('bar-detail-panel');
+  var isOpen=panel&&panel.style.display!=='none';
   ['bronze','silver','gold'].forEach(function(t){
-    document.getElementById('detail-'+t).style.display='none';
-    document.getElementById('card-'+t).classList.remove('selected');
+    var p2=document.getElementById('detail-'+t);
+    var c2=document.getElementById('card-'+t);
+    if(p2) p2.style.display='none';
+    if(c2) c2.classList.remove('selected');
   });
-  if(isOpen) return;
-  panel.style.display='block';
-  card.classList.add('selected');
+  if(isOpen){
+    if(masterPanel) masterPanel.style.display='none';
+    return;
+  }
+  if(masterPanel) masterPanel.style.display='block';
+  if(panel) panel.style.display='block';
+  if(card) card.classList.add('selected');
   await loadItemDetail(type);
 }
 
