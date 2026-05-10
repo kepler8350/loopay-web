@@ -1686,40 +1686,40 @@ async function loadNotifications(){
             </div>
           </div>
         </div>
+        <!-- 오늘 판매예약 보드 -->
+        <div class="reserve-box" id="sell-board" style="margin:8px 0 0">
+          <div class="reserve-title" style="display:flex;justify-content:space-between;align-items:center">
+            <span>오늘 판매예약</span>
+            <span style="font-size:11px;color:var(--text2);font-weight:400">상세보기에서 배지 클릭으로 선택</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0">
+            <div style="background:var(--bg2);border-radius:8px;padding:8px;text-align:center">
+              <div style="font-size:11px;color:#cd7f32;font-weight:600;margin-bottom:2px">수정</div>
+              <div style="font-size:22px;font-weight:700" id="sell-board-bronze">0</div>
+              <div style="font-size:10px;color:var(--text2)">개</div>
+            </div>
+            <div style="background:var(--bg2);border-radius:8px;padding:8px;text-align:center">
+              <div style="font-size:11px;color:#a8a9ad;font-weight:600;margin-bottom:2px">루비</div>
+              <div style="font-size:22px;font-weight:700" id="sell-board-silver">0</div>
+              <div style="font-size:10px;color:var(--text2)">개</div>
+            </div>
+            <div style="background:var(--bg2);border-radius:8px;padding:8px;text-align:center">
+              <div style="font-size:11px;color:#ffd700;font-weight:600;margin-bottom:2px">다이아</div>
+              <div style="font-size:22px;font-weight:700" id="sell-board-gold">0</div>
+              <div style="font-size:10px;color:var(--text2)">개</div>
+            </div>
+          </div>
+          <div id="sell-board-info" style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:8px">선택된 아이템 없음</div>
+          <button id="sell-reserve-btn" onclick="showSellConfirm()" disabled
+            style="width:100%;padding:12px;background:#7b1fa2;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;opacity:0.4">
+            판매 예약하기
+          </button>
+        </div>
+
         <div id="bar-detail-panel" style="display:none;margin-top:8px">
           <div id="detail-bronze" style="display:none"><div class="detail-panel"><div class="detail-panel-title" style="display:flex;justify-content:space-between;align-items:center"><strong>수정 보유 내역</strong><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:#aaa">구매 3일째부터 판매가능</span><button id="bulk-sell-btn-bronze" onclick="toggleBulkSell('bronze')" style="background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">전체판매예약</button></div></div><div id="detail-bronze-items"><div class="loading">불러오는 중...</div></div></div></div>
           <div id="detail-silver" style="display:none"><div class="detail-panel"><div class="detail-panel-title" style="display:flex;justify-content:space-between;align-items:center"><strong>루비 보유 내역</strong><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:#aaa">구매 3일째부터 판매가능</span><button id="bulk-sell-btn-silver" onclick="toggleBulkSell('silver')" style="background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">전체판매예약</button></div></div><div id="detail-silver-items"><div class="loading">불러오는 중...</div></div></div></div>
           <div id="detail-gold" style="display:none"><div class="detail-panel"><div class="detail-panel-title" style="display:flex;justify-content:space-between;align-items:center"><strong>다이아 보유 내역</strong><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:#aaa">구매 3일째부터 판매가능</span><button id="bulk-sell-btn-gold" onclick="toggleBulkSell('gold')" style="background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">전체판매예약</button></div></div><div id="detail-gold-items"><div class="loading">불러오는 중...</div></div></div></div>
-        </div>
-
-        <!-- 오늘 판매예약 보드 -->
-        <div class="reserve-box" id="sell-board" style="margin-bottom:10px">
-          <div class="reserve-title" style="display:flex;justify-content:space-between;align-items:center">
-            <span>오늘 판매예약</span>
-            <span style="font-size:11px;color:var(--text2);font-weight:400">아이템 상세보기에서 선택</span>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0">
-            <div style="background:var(--bg2);border-radius:8px;padding:10px;text-align:center">
-              <div style="font-size:11px;color:#cd7f32;font-weight:600;margin-bottom:4px">수정</div>
-              <div style="font-size:20px;font-weight:700" id="sell-board-bronze">0</div>
-              <div style="font-size:10px;color:var(--text2)">개</div>
-            </div>
-            <div style="background:var(--bg2);border-radius:8px;padding:10px;text-align:center">
-              <div style="font-size:11px;color:#a8a9ad;font-weight:600;margin-bottom:4px">루비</div>
-              <div style="font-size:20px;font-weight:700" id="sell-board-silver">0</div>
-              <div style="font-size:10px;color:var(--text2)">개</div>
-            </div>
-            <div style="background:var(--bg2);border-radius:8px;padding:10px;text-align:center">
-              <div style="font-size:11px;color:#ffd700;font-weight:600;margin-bottom:4px">다이아</div>
-              <div style="font-size:20px;font-weight:700" id="sell-board-gold">0</div>
-              <div style="font-size:10px;color:var(--text2)">개</div>
-            </div>
-          </div>
-          <div id="sell-board-info" style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:10px">선택된 아이템 없음</div>
-          <button id="sell-reserve-btn" onclick="showSellConfirm()" disabled
-            style="width:100%;padding:13px;background:#7b1fa2;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;opacity:0.4">
-            판매 예약하기
-          </button>
         </div>
 
         <div class="reserve-box">
