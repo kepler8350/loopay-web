@@ -1087,27 +1087,32 @@ async function loadItemDetail(barType){
       return;
     }
     var names={bronze:'수정',silver:'루비',gold:'다이아'};
-    // 전체판매예약 버튼 업데이트
     updateBulkSellBtn(barType, items);
     var html=items.map(function(it){
       var dayNum = it.days + 1;
       var canSell = it.days>=2 && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료' && it.status_label!=='판매예약';
       var isSelected = !!_sellSelected[it.id];
-      // 상태 배지
       var rawLabel = it.status_label||'보유중';
       var displayLabel = rawLabel==='reservable'||rawLabel==='매칭예약가능' ? '판매예약가능' : rawLabel;
+      // 배지: 클릭 가능 여부에 따라 cursor/색상 변경 (버튼 없음)
       var badgeColor = isSelected?'#388e3c':canSell?'#7b1fa2':'#546e7a';
-      var badgeText = isSelected?'판매예약':displayLabel;
+      var badgeText = isSelected?'✓ 판매예약':displayLabel;
       var cardBg = isSelected?'rgba(56,142,60,0.12)':'';
-      var statusBadge = '<span id="badge-'+it.id+'" style="display:inline-block;background:'+badgeColor+';color:#fff;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:700;margin-left:6px">'+badgeText+'</span>';
-      // 판매예약 버튼 or 일차 안내
-      var sellBtn = canSell
-        ?'<button id="sellbtn-'+it.id+'" onclick="toggleSellSelect('+it.id+',\''+barType+'\')" style="background:'+(isSelected?'#388e3c':'#7b1fa2')+';color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px">'+(isSelected?'✓ 판매예약':'판매예약')+'</button>'
-        :'<div style="font-size:11px;color:#aaa;margin-top:4px">현재 '+dayNum+'일차 (3일째부터 판매가능)</div>';
+      var cursor = canSell?'cursor:pointer;':'';
+      var badgeTitle = canSell?(isSelected?'클릭하여 취소':'클릭하여 판매예약'):'';
+      // 배지 클릭 → toggleSellSelect (canSell일 때만)
+      var badgeOnclick = canSell?'onclick="toggleSellSelect('+it.id+',\''+barType+'\')" ':' ';
+      var statusBadge = '<span id="badge-'+it.id+'" '+badgeOnclick
+        +'title="'+badgeTitle+'" '
+        +'style="display:inline-block;background:'+badgeColor+';color:#fff;border-radius:12px;'
+        +'padding:3px 10px;font-size:11px;font-weight:700;margin-left:6px;'+cursor+'">'
+        +badgeText+'</span>';
+      // 일차 안내 (canSell 아닐 때만 표시)
+      var dayNote = canSell?'':'<div style="font-size:11px;color:#aaa;margin-top:2px">현재 '+dayNum+'일차 (3일째부터 판매가능)</div>';
       return '<div class="item-detail-card" id="icard-'+it.id+'" style="background:'+cardBg+';transition:background 0.2s">'
         +'<div><div class="item-detail-stage">'+names[barType]+' '+it.stage+'단계'+statusBadge+'</div>'
         +'<div class="item-detail-info">구매일: '+it.purchase_date+' (현재 '+dayNum+'일차)</div>'
-        +sellBtn+'</div>'
+        +dayNote+'</div>'
         +'<div class="item-detail-price"><div style="font-size:14px;font-weight:700;color:#f9a825">판매가 '+it.sell_price.toLocaleString()+'원</div>'
         +'<div>구매가 '+it.buy_price.toLocaleString()+'원</div>'
         +'<div style="color:#66bb6a">수익 '+it.profit.toLocaleString()+'원</div>'
@@ -1143,15 +1148,15 @@ async function toggleBulkSell(barType){
 
 function toggleSellSelect(itemId, barType){
   _sellSelected[itemId] = !_sellSelected[itemId];
-  // UI 즉시 업데이트
   var card = document.getElementById('icard-'+itemId);
   var badge = document.getElementById('badge-'+itemId);
-  var sellBtn = document.getElementById('sellbtn-'+itemId);
   var selected = _sellSelected[itemId];
   if(card) card.style.background = selected?'rgba(56,142,60,0.12)':'';
-  if(badge){ badge.style.background = selected?'#388e3c':'#7b1fa2'; badge.textContent = selected?'판매예약':'판매예약가능'; }
-  if(sellBtn){ sellBtn.style.background = selected?'#388e3c':'#7b1fa2'; sellBtn.textContent = selected?'✓ 판매예약':'판매예약'; }
-  // 전체버튼 상태 갱신
+  if(badge){
+    badge.style.background = selected?'#388e3c':'#7b1fa2';
+    badge.textContent = selected?'✓ 판매예약':'판매예약가능';
+    badge.title = selected?'클릭하여 취소':'클릭하여 판매예약';
+  }
   var bulkBtn = document.getElementById('bulk-sell-btn-'+barType);
   if(bulkBtn && bulkBtn._sellableIds){
     var allSel = bulkBtn._sellableIds.every(function(id){return _sellSelected[id];});
