@@ -1034,13 +1034,7 @@ function updateTimeBar(){
     barEl.style.background='linear-gradient(90deg,'+found.color+' 0%,'+found.color+'cc 100%)';
   }
 }
-// updateTimeBar는 로그인 후 showMainApp()에서 최초 호출됨
-setInterval(function(){
-  if(document.getElementById('main-app') && 
-     document.getElementById('main-app').style.display !== 'none'){
-    updateTimeBar();
-  }
-}, 1000);
+setInterval(updateTimeBar, 1000);
 
 // ── 아이템 상세보기 (판매예약 포함) ──
 async function toggleDetail(type){
