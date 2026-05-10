@@ -23,7 +23,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* Header */
 .header{background:var(--blue);color:#fff;padding:16px;flex-shrink:0padding-bottom:12px;}
-.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.header-top{display:flex;align-items:center;padding:10px 16px 8px;}
 .logo{font-size:18px;font-weight:700;letter-spacing:1px}
 .level-badge{background:rgba(255,255,255,0.2);border-radius:20px;padding:4px 12px;font-size:13px;font-weight:500}
 .total-card{background:rgba(255,255,255,0.15);border-radius:10px;padding:10px 12px;margin-bottom:8px}
@@ -878,6 +878,7 @@ async function doLogin(){
     await loadUserData();
     document.getElementById('login-screen').style.display='none';
     document.getElementById('main-app').style.display='flex';
+    updateTimeBar();
   }catch(e){errEl.textContent='서버 오류: '+e.message;}
 }
 async function doRegister(){
@@ -917,6 +918,7 @@ function demoLogin(btn){
     .then(function(){
       document.getElementById("login-screen").style.display="none";
       document.getElementById("main-app").style.display="flex";
+      updateTimeBar();
       var n=document.querySelector(".nav-btn");if(n)n.click();
     });
   })
@@ -1024,8 +1026,13 @@ function adjustColor(hex){
   // 약간 밝게
   return hex;
 }
-updateTimeBar();
-setInterval(updateTimeBar, 1000);
+// updateTimeBar는 로그인 후 showMainApp()에서 최초 호출됨
+setInterval(function(){
+  if(document.getElementById('main-app') && 
+     document.getElementById('main-app').style.display !== 'none'){
+    updateTimeBar();
+  }
+}, 1000);
 
 // ── 아이템 상세보기 (판매예약 포함) ──
 async function toggleDetail(type){
@@ -1498,15 +1505,17 @@ async function loadNotifications(){
   <!-- MAIN APP (hidden until login) -->
   <div id="main-app" style="display:none;flex-direction:column;height:100vh">
     <div class="header" style="position:relative">
-      <!-- 헤더 상단: 로고 + 사용자배지 + 로그아웃 -->
+      <!-- 헤더 상단: 로고 좌측 / 배지+레벨+로그아웃 우측 -->
       <div class="header-top">
         <span class="logo">LOOPAY</span>
-        <span class="user-id-badge lv-1" id="h-userid-badge">
-          <span class="lv-dot lv-1" id="h-lv-dot"></span>
-          <span id="h-userid"></span>
-        </span>
-        <span class="level-badge" id="h-level" style="margin-left:4px;font-size:11px;padding:3px 8px">1레벨</span>
-        <button onclick="doLogout()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;margin-left:auto">로그아웃</button>
+        <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+          <span class="user-id-badge lv-1" id="h-userid-badge">
+            <span class="lv-dot lv-1" id="h-lv-dot"></span>
+            <span id="h-userid"></span>
+          </span>
+          <span class="level-badge" id="h-level" style="font-size:11px;padding:3px 8px">1레벨</span>
+          <button onclick="doLogout()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">로그아웃</button>
+        </div>
       </div>
 
       <!-- 시간 bar: 로그아웃 아래 -->
@@ -2278,6 +2287,7 @@ function demoLogin(btn){
     .then(function(){
       document.getElementById("login-screen").style.display="none";
       document.getElementById("main-app").style.display="flex";
+      updateTimeBar();
       var n=document.querySelector(".nav-btn");if(n)n.click();
     });
   })
