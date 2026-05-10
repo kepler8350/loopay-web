@@ -222,8 +222,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-confirm-res{background:var(--accent);color:#fff}
 
 /* 시간표 배너 */
-.time-banner{background:var(--blue);color:#fff;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:8px}
-.time-banner .tb-icon{font-size:16px}
+.time-banner{display:none}
+/* 새 time-bar: 로그아웃 아래 별도 bar */
+.time-bar{background:linear-gradient(90deg,#0d47a1 0%,#1565c0 100%);border-top:1px solid rgba(255,255,255,0.15);padding:7px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.time-bar-left{display:flex;flex-direction:column;gap:1px}
+.time-bar-date{font-size:11px;color:rgba(255,255,255,0.7);font-weight:400;letter-spacing:0.3px}
+.time-bar-time{font-size:15px;color:#fff;font-weight:700;letter-spacing:1px;font-variant-numeric:tabular-nums}
+.time-bar-right{font-size:12px;color:#fff;font-weight:600;background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 12px;border:1px solid rgba(255,255,255,0.25);text-align:right;max-width:200px;line-height:1.4}
+/* 레벨별 사용자 ID 배지 */
+.user-id-badge{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;border:2px solid;margin-left:6px}
+.user-id-badge.lv-1{background:rgba(76,175,80,0.2);border-color:#4caf50;color:#a5d6a7}
+.user-id-badge.lv-2{background:rgba(33,150,243,0.2);border-color:#2196f3;color:#90caf9}
+.user-id-badge.lv-3{background:rgba(156,39,176,0.2);border-color:#9c27b0;color:#ce93d8}
+.user-id-badge.lv-4{background:rgba(255,152,0,0.2);border-color:#ff9800;color:#ffcc80}
+.user-id-badge.lv-5{background:rgba(244,67,54,0.2);border-color:#f44336;color:#ef9a9a}
+.lv-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.lv-dot.lv-1{background:#4caf50}
+.lv-dot.lv-2{background:#2196f3}
+.lv-dot.lv-3{background:#9c27b0}
+.lv-dot.lv-4{background:#ff9800}
+.lv-dot.lv-5{background:#f44336}
 /* 아이템 상세 */
 .item-detail-card{background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 .item-detail-info{font-size:13px;color:var(--text2)}
@@ -342,6 +360,12 @@ async function loadUserData(){
 
 function renderHeader(d){
   document.getElementById('h-level').textContent=d.level+'레벨';
+  // 레벨배지 색상 업데이트
+  var lv=d.level||1;
+  var badge=document.getElementById('h-userid-badge');
+  var dot=document.getElementById('h-lv-dot');
+  if(badge){badge.className='user-id-badge lv-'+lv;}
+  if(dot){dot.className='lv-dot lv-'+lv;}
   document.getElementById('h-total').textContent=(d.total_points||0).toLocaleString()+' P';
   var uidEl=document.getElementById('h-userid');
   if(uidEl) uidEl.textContent=d.username||d.nickname||'';;
@@ -967,6 +991,41 @@ function updateTimeBanner(){
 }
 updateTimeBanner();
 setInterval(updateTimeBanner, 60000);
+// ── 시간 bar 실시간 업데이트 ──
+var SCHEDULE_TEXTS=[
+  {s:5,e:13,text:'📅 05:00~13:00 구매·판매 예약 시간',color:'#1565c0'},
+  {s:13,e:14,text:'💸 13:00~14:00 1차 매칭 입금',color:'#b71c1c'},
+  {s:14,e:15,text:'⚡ 14:00~15:00 2차 매칭 준비',color:'#4a148c'},
+  {s:15,e:19,text:'💸 15:00~19:00 2차 매칭 입금',color:'#b71c1c'},
+  {s:19,e:20,text:'✅ 19:00~20:00 미입금 확인',color:'#1b5e20'},
+  {s:20,e:24,text:'🌙 20:00~05:00 매칭 대기',color:'#37474f'},
+  {s:0,e:5,text:'🌙 00:00~05:00 매칭 대기',color:'#37474f'}
+];
+function updateTimeBar(){
+  var now=new Date();
+  var h=now.getHours(), m=now.getMinutes(), s=now.getSeconds();
+  var days=['일','월','화','수','목','금','토'];
+  var dateStr=(now.getMonth()+1)+'/'+now.getDate()+'('+days[now.getDay()]+')';
+  var timeStr=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  var dateEl=document.getElementById('tbar-date');
+  var timeEl=document.getElementById('tbar-time');
+  var schedEl=document.getElementById('tbar-schedule');
+  var barEl=document.getElementById('time-bar');
+  if(dateEl) dateEl.textContent=dateStr;
+  if(timeEl) timeEl.textContent=timeStr;
+  if(schedEl&&barEl){
+    var found=SCHEDULE_TEXTS.find(function(st){return h>=st.s&&h<st.e;});
+    if(!found) found=SCHEDULE_TEXTS[SCHEDULE_TEXTS.length-1];
+    schedEl.textContent=found.text;
+    barEl.style.background='linear-gradient(90deg,'+found.color+' 0%,'+adjustColor(found.color)+' 100%)';
+  }
+}
+function adjustColor(hex){
+  // 약간 밝게
+  return hex;
+}
+updateTimeBar();
+setInterval(updateTimeBar, 1000);
 
 // ── 아이템 상세보기 (판매예약 포함) ──
 async function toggleDetail(type){
@@ -1439,13 +1498,24 @@ async function loadNotifications(){
   <!-- MAIN APP (hidden until login) -->
   <div id="main-app" style="display:none;flex-direction:column;height:100vh">
     <div class="header" style="position:relative">
-      <div id="time-banner" class="time-banner" style="display:none;margin:8px 12px 0"><span class="tb-icon">📅</span><span id="time-banner-text"></span></div>
-      
+      <!-- 헤더 상단: 로고 + 사용자배지 + 로그아웃 -->
       <div class="header-top">
         <span class="logo">LOOPAY</span>
-        <span id="h-userid" style="font-size:12px;color:rgba(255,255,255,0.7);margin-left:6px;font-weight:400"></span>
-        <span class="level-badge" id="h-level">3레벨</span>
-        <button onclick="doLogout()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;margin-left:8px">로그아웃</button>
+        <span class="user-id-badge lv-1" id="h-userid-badge">
+          <span class="lv-dot lv-1" id="h-lv-dot"></span>
+          <span id="h-userid"></span>
+        </span>
+        <span class="level-badge" id="h-level" style="margin-left:4px;font-size:11px;padding:3px 8px">1레벨</span>
+        <button onclick="doLogout()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;margin-left:auto">로그아웃</button>
+      </div>
+
+      <!-- 시간 bar: 로그아웃 아래 -->
+      <div class="time-bar" id="time-bar">
+        <div class="time-bar-left">
+          <span class="time-bar-date" id="tbar-date">--/--/--</span>
+          <span class="time-bar-time" id="tbar-time">--:--:--</span>
+        </div>
+        <div class="time-bar-right" id="tbar-schedule">--</div>
       </div>
       <div class="total-card" style="display:flex;gap:10px;align-items:stretch;padding:14px 16px">
         <div style="flex:1">
@@ -1892,6 +1962,12 @@ function renderHeader(d){
   var uidEl2=document.getElementById('h-userid'); if(uidEl2) uidEl2.textContent=d.username||d.nickname||'';
   document.getElementById('h-maintain').textContent='- P';
   document.getElementById('h-level').textContent=d.level+'레벨';
+  // 레벨배지 색상 업데이트
+  var lv=d.level||1;
+  var badge=document.getElementById('h-userid-badge');
+  var dot=document.getElementById('h-lv-dot');
+  if(badge){badge.className='user-id-badge lv-'+lv;}
+  if(dot){dot.className='lv-dot lv-'+lv;}
   document.getElementById('h-total').textContent=(d.total_points||0).toLocaleString()+' P';
   document.getElementById('h-sub').textContent=`충전 ${(d.charge_points||0).toLocaleString()}P + 전환 ${(d.exchange_points||0).toLocaleString()}P`;
   document.getElementById('h-charge').textContent=(d.charge_points||0).toLocaleString()+' P';
