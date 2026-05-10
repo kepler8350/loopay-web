@@ -745,26 +745,99 @@ def combine_execute():
 @jwt_required()
 def admin_reservation_status():
     conn = get_db()
+    today = get_today().isoformat()
     try:
+        # loopay 계정 ID
+        loopay = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        loopay_id = loopay['id'] if loopay else -1
+
+        # 가격 테이블 로드 (sell_price 기준 분류)
+        prices = {}
+        for row in conn.execute("SELECT bar_type, stage, sell_price FROM prices").fetchall():
+            prices[(row['bar_type'], row['stage'])] = row['sell_price']
+
         result = {}
         for bar_type in ['bronze', 'silver', 'gold']:
-            # reservations 테이블에는 type 컬럼 없음 - match_round로 구매/판매 구분
-            # match_round=1: 구매예약, match_round=2: 판매예약 (또는 전체 pending)
-            total = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND status='pending'",
-                (bar_type,)
+            # 사용자 구매예약 (match_round=1, loopay 제외)
+            user_buy = conn.execute(
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND user_id!=?",
+                (bar_type, loopay_id)
             ).fetchone()['cnt']
-            buy_count = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND status='pending' AND match_round=1",
-                (bar_type,)
+            # loopay 추가예약 (match_round=1)
+            extra_buy = conn.execute(
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND user_id=?",
+                (bar_type, loopay_id)
             ).fetchone()['cnt']
-            sell_count = total - buy_count
-            match_rate = round(sell_count / buy_count * 100, 1) if buy_count > 0 else 0
+            total_buy = user_buy + extra_buy
+
+            # 판매예약 아이템별 가격 분류 (items 조인)
+            sell_rows = conn.execute(
+                """SELECT r.item_id, i.stage, i.bar_type
+                   FROM reservations r
+                   LEFT JOIN items i ON r.item_id = i.id
+                   WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending'""",
+                (bar_type,)
+            ).fetchall()
+
+            sell_under32 = 0  # 32만원 미만
+            sell_33up = 0     # 33만원 이상
+            sell_split = 0    # 분할 (10~33만원 미만)
+
+            for row in sell_rows:
+                sp = prices.get((bar_type, row['stage'] or 1), 0) if row['stage'] else 0
+                if sp >= 330000:
+                    sell_33up += 1
+                elif sp >= 100000:
+                    sell_split += 1
+                else:
+                    sell_under32 += 1
+            sell_total = sell_under32 + sell_33up + sell_split
+
+            # loopay 추가 판매예약
+            extra_sell_rows = conn.execute(
+                "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending' AND r.user_id=?",
+                (bar_type, loopay_id)
+            ).fetchall()
+            extra_sell_under32 = len(extra_sell_rows)  # 추가예약은 기본 32만원 미만으로 처리
+            extra_sell_33up = 0
+            extra_sell_split = 0
+            extra_sell_new = 0
+            extra_sell_total = extra_sell_under32
+
+            total_sell = sell_total + extra_sell_total
+            match_rate = round(total_sell / total_buy * 100, 1) if total_buy > 0 else 0
+
+            # 판매가격대별 (prices 테이블 join)
+            price_bands = {'under10': 0, 'band10_29': 0, 'band29_33': 0, 'over33': 0}
+            all_sell = conn.execute(
+                """SELECT i.stage FROM reservations r
+                   LEFT JOIN items i ON r.item_id=i.id
+                   WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending'""",
+                (bar_type,)
+            ).fetchall()
+            for row in all_sell:
+                sp = prices.get((bar_type, row['stage'] or 1), 0) if row['stage'] else 0
+                if sp < 100000: price_bands['under10'] += 1
+                elif sp < 290000: price_bands['band10_29'] += 1
+                elif sp < 330000: price_bands['band29_33'] += 1
+                else: price_bands['over33'] += 1
+
             result[bar_type] = {
-                'buy_count': buy_count,
-                'sell_count': sell_count,
+                'user_buy': user_buy,
+                'extra_buy': extra_buy,
+                'buy_count': total_buy,
+                'sell_under32': sell_under32,
+                'sell_33up': sell_33up,
+                'sell_split': sell_split,
+                'sell_count': sell_total,
+                'extra_sell_under32': extra_sell_under32,
+                'extra_sell_33up': extra_sell_33up,
+                'extra_sell_split': extra_sell_split,
+                'extra_sell_new': extra_sell_new,
+                'extra_sell_total': extra_sell_total,
+                'total': total_buy + total_sell,
                 'match_rate': match_rate,
-                'total': total
+                'price_bands': price_bands
             }
         return jsonify(result)
     finally:
@@ -790,19 +863,30 @@ def admin_reservations_list():
 @jwt_required()
 def admin_add_reservation():
     data = request.json or {}
-    bar_type = data.get('bar_type')
+    bar_type = data.get('bar_type','bronze')
     res_type = data.get('type', 'buy')
     count = int(data.get('count', 1))
     stage = int(data.get('stage', 1))
     conn = get_db()
     try:
-        # reservations 테이블: item_id, bar_type, match_round, reserve_date, status
+        # loopay 계정 확인/생성
+        loopay_user = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay_user:
+            from werkzeug.security import generate_password_hash
+            conn.execute("INSERT INTO users(username,password_hash,nickname,approved,level,charge_points,exchange_points) VALUES('loopay',?,'루페이',1,1,0,0)",
+                (generate_password_hash('loopay1234'),))
+            conn.commit()
+            loopay_user = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        loopay_id = loopay_user['id']
         today = get_today().isoformat()
+        match_round = 1 if res_type == 'buy' else 2
+        conn.execute("PRAGMA foreign_keys=OFF")
         for _ in range(count):
             conn.execute(
-                "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status) VALUES (1, 0, ?, ?, ?, 'pending')",
-                (bar_type, 1 if res_type == 'buy' else 2, today)
+                "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status) VALUES (?, 0, ?, ?, ?, 'pending')",
+                (loopay_id, bar_type, match_round, today)
             )
+        conn.execute("PRAGMA foreign_keys=ON")
         conn.commit()
         return jsonify({'success': True, 'added': count})
     except Exception as e:
