@@ -93,10 +93,17 @@ def init_db():
         amount INTEGER NOT NULL,
         points INTEGER NOT NULL,
         status TEXT DEFAULT 'pending' CHECK(status IN ('pending','confirmed','rejected')),
+        receipt_phone TEXT DEFAULT '',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         confirmed_at DATETIME,
         FOREIGN KEY(user_id) REFERENCES users(id)
     )''')
+    # 기존 DB에 receipt_phone 컬럼 없으면 추가
+    try:
+        c.execute("ALTER TABLE charge_requests ADD COLUMN receipt_phone TEXT DEFAULT ''")
+        conn.commit()
+    except Exception:
+        pass
 
     c.execute('''CREATE TABLE IF NOT EXISTS penalties (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

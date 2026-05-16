@@ -2117,18 +2117,18 @@ async function loadNotifications(){
 <div id="toast" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 22px;border-radius:8px;font-size:14px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:9999"></div>
 <!-- 충전 확인 모달 -->
 <div class="reserve-confirm-overlay" id="charge-confirm-overlay">
-  <div class="reserve-confirm-box" style="max-width:360px;width:90%;background:#fff;color:#222">
+  <div class="reserve-confirm-box" style="max-width:360px;width:90%;background:#fff!important;color:#222!important;border:1px solid #e0e0e0">
     <h3 style="margin-bottom:16px;color:#1a1a1a">💳 충전 신청 확인</h3>
 
     <!-- 충전 내용 요약 -->
     <div id="charge-confirm-summary" style="background:#f5f7fa;border-radius:10px;padding:14px;margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px">
         <span style="font-size:13px;color:#666">충전 포인트</span>
-        <span id="cc-points" style="font-size:14px;font-weight:700">-</span>
+        <span id="cc-points" style="font-size:14px;font-weight:700;color:#1a1a1a">-</span>
       </div>
       <div style="display:flex;justify-content:space-between">
         <span style="font-size:13px;color:#666">입금 금액</span>
-        <span id="cc-won" style="font-size:14px;font-weight:700;color:var(--accent)">-</span>
+        <span id="cc-won" style="font-size:14px;font-weight:700;color:#d32f2f">-</span>
       </div>
     </div>
 
