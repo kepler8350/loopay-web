@@ -1039,12 +1039,24 @@ function updateTimeBar(){
       if(h>=SCHED[i].s && h<SCHED[i].e){found=SCHED[i];break;}
     }
     if(!found) found=SCHED[1];
-    // 아래줄: 예약시간(05~20) 중에는 숨김, 그 외에만 표시
-    if(h >= 5 && h < 20){
-      schedEl.style.display = 'none';
+    // 아래줄: 시간표 2번째 이하 항목 중 현재 시간에 해당하는 것 표시
+    var SCHED2=[
+      {s:13,e:14,text:'💸 1차 매칭 입금 / 1차 미입금 확인 (13:00~14:00)'},
+      {s:14,e:15,text:'⚡ 2차 매칭 (14:00~15:00)'},
+      {s:15,e:19,text:'💸 2차 매칭 입금 (15:00~19:00)'},
+      {s:19,e:20,text:'✅ 2차 미입금 확인 (19:00~20:00)'},
+      {s:20,e:24,text:'🌙 매칭 실행 대기 (20:00~05:00)'},
+      {s:0,e:5,text:'🌙 매칭 실행 대기 (20:00~05:00)'}
+    ];
+    var found2=null;
+    for(var j=0;j<SCHED2.length;j++){
+      if(h>=SCHED2[j].s && h<SCHED2[j].e){found2=SCHED2[j];break;}
+    }
+    if(found2){
+      schedEl.style.display='';
+      schedEl.textContent=found2.text;
     } else {
-      schedEl.style.display = '';
-      schedEl.textContent = found.text;
+      schedEl.style.display='none';
     }
     barEl.style.background='linear-gradient(90deg,'+found.color+' 0%,'+found.color+'cc 100%)';
   }
