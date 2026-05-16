@@ -505,17 +505,12 @@ def admin_approve_user():
 @app.route('/api/current-time', methods=['GET'])
 def get_current_time():
     """현재 서버 시간 반환 (mock 시간 포함)"""
-    global _RESET_FLAG
     now = get_now()
-    flag = _RESET_FLAG
-    if _RESET_FLAG:
-        _RESET_FLAG = False  # 한 번만 반환 후 초기화
     return jsonify(
         time=now.strftime('%Y-%m-%d %H:%M:%S'),
         hour=now.hour,
         minute=now.minute,
-        is_mock=_MOCK_TIME is not None,
-        clear_mock=flag
+        is_mock=_MOCK_TIME is not None
     )
 
 @app.route('/api/admin/set-time', methods=['POST'])
