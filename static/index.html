@@ -229,7 +229,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .time-bar-date{font-size:11px;color:rgba(255,255,255,0.7);font-weight:400;letter-spacing:0.3px}
 .time-bar-time{font-size:15px;color:#fff;font-weight:700;letter-spacing:1px;font-variant-numeric:tabular-nums}
 .time-bar-right{font-size:12px;color:#fff;font-weight:600;background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 12px;border:1px solid rgba(255,255,255,0.25);white-space:nowrap;flex-shrink:0}
-.time-bar-reserve{font-size:11px;color:rgba(255,255,255,0.85);font-weight:600;background:rgba(255,200,0,0.2);border-radius:20px;padding:3px 10px;border:1px solid rgba(255,200,0,0.4);white-space:nowrap;flex-shrink:0}
+.time-bar-reserve{font-size:12px;color:rgba(255,255,255,0.85);font-weight:600;background:rgba(255,200,0,0.2);border-radius:20px;padding:4px 12px;border:1px solid rgba(255,200,0,0.4);white-space:nowrap;flex-shrink:0}
 .time-bar-rhs{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
 /* 레벨별 사용자 ID 배지 */
 .user-id-badge{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;border:2px solid;margin-left:6px}
@@ -1046,15 +1046,10 @@ function updateTimeBar(){
   var reserveLabel = document.getElementById('tbar-reserve');
   if(reserveLabel){
     if(h >= 5 && h < 20){
+      reserveLabel.style.display = '';
       reserveLabel.textContent = '🟢 구매·판매예약: 05:00~20:00';
-      reserveLabel.style.background = 'rgba(255,200,0,0.2)';
-      reserveLabel.style.border = '1px solid rgba(255,200,0,0.4)';
-      reserveLabel.style.color = 'rgba(255,255,255,0.95)';
     } else {
-      reserveLabel.textContent = '🌙 매칭 대기: 20:00~05:00';
-      reserveLabel.style.background = 'rgba(255,255,255,0.1)';
-      reserveLabel.style.border = '1px solid rgba(255,255,255,0.2)';
-      reserveLabel.style.color = 'rgba(255,255,255,0.65)';
+      reserveLabel.style.display = 'none';
     }
   }
   // ── 구매·판매 예약 버튼 시간 제어 (05:00~20:00만 활성화) ──
