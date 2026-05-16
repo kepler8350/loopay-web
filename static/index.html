@@ -1448,11 +1448,13 @@ function updateResUI(BZ_MIN,BZ_MAX){
   if(mEl) mEl.textContent=maintainPts.toLocaleString()+' P'; var tEl=document.getElementById('h-total'); if(tEl) tEl.textContent=(totalPts-cost).toLocaleString()+' P'; var cEl=document.getElementById('h-charge'); if(cEl) cEl.textContent=remainCharge.toLocaleString()+' P'; var xEl=document.getElementById('h-exchange'); if(xEl) xEl.textContent=remainExchange.toLocaleString()+' P'; var sbEl=document.getElementById('h-sub'); if(sbEl) sbEl.textContent='충전 '+remainCharge.toLocaleString()+'P + 전환 '+remainExchange.toLocaleString()+'P';
   // 버튼 비활성화
   var btn=document.querySelector('.reserve-btn');
+  var total_count = bzCnt + (svCnt||0) + (gdCnt||0);
   var notEnough=(totalPts<cost);
+  var isEmpty=(total_count===0);  // 전부 0이면 비활성화
   if(btn){
-    btn.disabled=notEnough;
-    btn.style.opacity=notEnough?'0.4':'1';
-    btn.style.cursor=notEnough?'not-allowed':'pointer';
+    btn.disabled=(notEnough||isEmpty);
+    btn.style.opacity=(notEnough||isEmpty)?'0.4':'1';
+    btn.style.cursor=(notEnough||isEmpty)?'not-allowed':'pointer';
   }
 }
 function updateReserveDefaults(lv){
@@ -1462,6 +1464,9 @@ function updateReserveDefaults(lv){
   var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
   var todayBz=tr.bronze||0;
   bzCnt = todayBz > 0 ? Math.min(Math.max(todayBz,BZ_MIN),BZ_MAX) : BZ_MIN;
+  // 루비/다이아는 항상 0으로 초기화 (매번 새로 선택)
+  svCnt = 0;
+  gdCnt = 0;
   updateResUI(BZ_MIN, BZ_MAX);
 }
 function renderLevelTab(){
@@ -2253,6 +2258,9 @@ function updateReserveDefaults(lv){
   var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
   var todayBz=tr.bronze||0;
   bzCnt = todayBz > 0 ? Math.min(Math.max(todayBz,BZ_MIN),BZ_MAX) : BZ_MIN;
+  // 루비/다이아는 항상 0으로 초기화 (매번 새로 선택)
+  svCnt = 0;
+  gdCnt = 0;
   updateResUI(BZ_MIN, BZ_MAX);
 }
 function updateResUI(BZ_MIN,BZ_MAX){
@@ -2313,11 +2321,13 @@ function updateResUI(BZ_MIN,BZ_MAX){
   if(mEl) mEl.textContent=maintainPts.toLocaleString()+' P'; var tEl=document.getElementById('h-total'); if(tEl) tEl.textContent=(totalPts-cost).toLocaleString()+' P'; var cEl=document.getElementById('h-charge'); if(cEl) cEl.textContent=remainCharge.toLocaleString()+' P'; var xEl=document.getElementById('h-exchange'); if(xEl) xEl.textContent=remainExchange.toLocaleString()+' P'; var sbEl=document.getElementById('h-sub'); if(sbEl) sbEl.textContent='충전 '+remainCharge.toLocaleString()+'P + 전환 '+remainExchange.toLocaleString()+'P';
   // 버튼 비활성화
   var btn=document.querySelector('.reserve-btn');
+  var total_count = bzCnt + (svCnt||0) + (gdCnt||0);
   var notEnough=(totalPts<cost);
+  var isEmpty=(total_count===0);  // 전부 0이면 비활성화
   if(btn){
-    btn.disabled=notEnough;
-    btn.style.opacity=notEnough?'0.4':'1';
-    btn.style.cursor=notEnough?'not-allowed':'pointer';
+    btn.disabled=(notEnough||isEmpty);
+    btn.style.opacity=(notEnough||isEmpty)?'0.4':'1';
+    btn.style.cursor=(notEnough||isEmpty)?'not-allowed':'pointer';
   }
 }
 
