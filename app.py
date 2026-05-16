@@ -419,7 +419,14 @@ def admin_pending_users():
             FROM users WHERE username IS NOT NULL
             ORDER BY approved ASC, created_at DESC
         """).fetchall()
-        return jsonify(users=[dict(r) for r in rows])
+        users = []
+        for r in rows:
+            u = dict(r)
+            # nickname이 username과 같으면 account_name을 성명으로 사용
+            if u['nickname'] == u['username']:
+                u['nickname'] = u['account_name'] or u['nickname']
+            users.append(u)
+        return jsonify(users=users)
     finally:
         db.close()
 
