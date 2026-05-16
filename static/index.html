@@ -1104,48 +1104,88 @@ function updateTimeBar(){
 }
 // updateTimeBar interval은 로그인 후 startTimeBar()로 등록
 
-// 서버 시간 동기화 (mock time 지원)
-var _serverTimeOffset = 0; // 실제시간용 offset (ms)
+// 서버/로컬 시간 동기화 (mock time 지원 - localStorage 기반)
+var _serverTimeOffset = 0;
 var _isMockTime = false;
-var _mockBaseMs = 0;    // mock 시작 시점의 서버 ms
-var _mockFetchAt = 0;   // mock를 fetch한 클라이언트 ms
+var _mockBaseMs = 0;
+var _mockFetchAt = 0;
+
+function _loadMockFromStorage(){
+  try{
+    var s = localStorage.getItem('lp_mock_time');
+    if(s){
+      var obj = JSON.parse(s);
+      _isMockTime = true;
+      _mockBaseMs = obj.base;
+      _mockFetchAt = obj.at;
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+function _saveMockToStorage(baseMs, fetchAt){
+  try{ localStorage.setItem('lp_mock_time', JSON.stringify({base:baseMs, at:fetchAt})); }catch(e){}
+}
+function _clearMockStorage(){
+  try{ localStorage.removeItem('lp_mock_time'); }catch(e){}
+}
+
 async function syncServerTime(){
   try{
     var fetchStart = Date.now();
     var res = await fetch('/api/current-time');
     var d = await res.json();
     var fetchEnd = Date.now();
-    var latency = (fetchEnd - fetchStart) / 2; // 왕복의 절반
-    _isMockTime = d.is_mock;
-    if(_isMockTime){
-      // mock 시간: 서버 고정 시간 기준으로 클라이언트 시작점 기록
+    var latency = (fetchEnd - fetchStart) / 2;
+    if(d.is_mock){
+      // 서버 mock: localStorage에 저장
+      _isMockTime = true;
       _mockBaseMs = new Date(d.time.replace(' ','T')).getTime();
-      _mockFetchAt = fetchEnd - latency; // 서버 시간 기준 클라이언트 시점
+      _mockFetchAt = fetchEnd - latency;
+      _saveMockToStorage(_mockBaseMs, _mockFetchAt);
       _serverTimeOffset = 0;
     } else {
-      _isMockTime = false;
-      _mockBaseMs = 0;
-      _mockFetchAt = 0;
-      // 실제 시간: 서버-클라이언트 오차 보정
-      var serverMs = new Date(d.time.replace(' ','T')).getTime();
-      _serverTimeOffset = serverMs - (fetchEnd - latency);
+      // 서버 실제 시간 - localStorage mock가 있으면 그걸 우선 사용
+      if(!_isMockTime){
+        _loadMockFromStorage(); // 로컬에 남은 mock 복원 시도
+      }
+      if(!_isMockTime){
+        // mock 없음: 실제 시간
+        _clearMockStorage();
+        _mockBaseMs = 0; _mockFetchAt = 0;
+        var serverMs = new Date(d.time.replace(' ','T')).getTime();
+        _serverTimeOffset = serverMs - (fetchEnd - latency);
+      }
     }
   }catch(e){}
 }
 function getEffectiveDate(){
   if(_isMockTime && _mockFetchAt > 0){
-    // mock: 서버 고정 시간 + (현재 - fetch 시점) 경과 시간
     var elapsed = Date.now() - _mockFetchAt;
     return new Date(_mockBaseMs + elapsed);
   }
   return new Date(Date.now() + _serverTimeOffset);
 }
+// mock 시간 직접 설정 (테스트도구용 - 서버 없이도 동작)
+function setMockTimeLocal(datetimeStr){
+  _isMockTime = true;
+  _mockBaseMs = new Date(datetimeStr.replace(' ','T')).getTime();
+  _mockFetchAt = Date.now();
+  _saveMockToStorage(_mockBaseMs, _mockFetchAt);
+}
+function resetMockTimeLocal(){
+  _isMockTime = false;
+  _mockBaseMs = 0;
+  _mockFetchAt = 0;
+  _clearMockStorage();
+  _serverTimeOffset = 0;
+}
 function startTimeBar(){
-  syncServerTime();
+  _loadMockFromStorage(); // 로컬 mock 먼저 복원
+  syncServerTime();       // 서버 sync (mock이면 갱신, 아니면 실제시간)
   updateTimeBar();
   if(window._tbInterval) clearInterval(window._tbInterval);
   window._tbInterval = setInterval(updateTimeBar, 1000);
-  // 10초마다 서버 시간 동기화
   if(window._syncInterval) clearInterval(window._syncInterval);
   window._syncInterval = setInterval(syncServerTime, 3000);
 }
