@@ -1094,10 +1094,34 @@ def admin_delete_user(uid):
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    db.execute("DELETE FROM users WHERE id=?", (uid,))
-    db.commit()
-    db.close()
-    return jsonify(success=True)
+    try:
+        # 외래키 제약 일시 해제 후 관련 데이터 모두 삭제
+        db.execute("PRAGMA foreign_keys=OFF")
+        # 관련 데이터 전부 삭제
+        db.execute("DELETE FROM reservations WHERE user_id=?", (uid,))
+        db.execute("DELETE FROM items WHERE user_id=?", (uid,))
+        db.execute("DELETE FROM charge_requests WHERE user_id=?", (uid,))
+        db.execute("DELETE FROM notifications WHERE user_id=?", (uid,))
+        # penalties, matches 등 있으면 삭제
+        try:
+            db.execute("DELETE FROM penalties WHERE user_id=?", (uid,))
+        except Exception:
+            pass
+        try:
+            db.execute("DELETE FROM matches WHERE user_id=?", (uid,))
+        except Exception:
+            pass
+        # 마지막으로 사용자 삭제
+        db.execute("DELETE FROM users WHERE id=?", (uid,))
+        db.execute("PRAGMA foreign_keys=ON")
+        db.commit()
+        return jsonify(success=True, message='회원 탈퇴 완료')
+    except Exception as e:
+        db.rollback()
+        db.execute("PRAGMA foreign_keys=ON")
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
 
 
 # ── 판매예약 API ──
