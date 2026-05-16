@@ -513,7 +513,7 @@ def get_current_time():
         time=now.strftime('%Y-%m-%d %H:%M:%S'),
         hour=now.hour,
         minute=now.minute,
-        is_mock=_MOCK_TIME is not None,
+        is_mock=_get_mock_time_from_db() is not None,
         clear_mock=flag
     )
 
@@ -540,7 +540,7 @@ def admin_get_time():
     now = get_now()
     return jsonify(
         current=now.strftime('%Y-%m-%d %H:%M:%S'),
-        is_mock=_MOCK_TIME is not None,
+        is_mock=_get_mock_time_from_db() is not None,
         real=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     )
 
