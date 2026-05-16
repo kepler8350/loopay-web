@@ -1401,8 +1401,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
 
   // 루비: SV_MAX > 0 이면 항상 선택 가능 (수정과 독립, sv_min=0)
   var svUnlocked = SV_MAX > 0;
-  var svCnt = svUnlocked ? sv : 0;
-  document.getElementById('r-sv-v').textContent = svCnt;
+  // svCnt는 전역 변수 - 표시용으로 그대로 사용
+  document.getElementById('r-sv-v').textContent = sv;
   document.getElementById('r-sv-range').textContent = svUnlocked ? '최소 0 / 최대 '+SV_MAX : '해당 레벨 미지원';
   document.getElementById('r-sv-note').textContent = '수정 '+BZ_MAX+'개 예약 시 루비 자동 포함';
   document.getElementById('r-sv-wrap').className = 'r-wrap'+(svUnlocked?'':' locked');
@@ -1413,8 +1413,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
 
   // 다이아: GD_MAX > 0 이면 항상 선택 가능 (루비와 독립, gd_min=0)
   var gdUnlocked = GD_MAX > 0;
-  var gdCnt = gdUnlocked ? gd : 0;
-  document.getElementById('r-gd-v').textContent = gdCnt;
+  // gdCnt는 전역 변수 - 표시용으로 그대로 사용
+  document.getElementById('r-gd-v').textContent = gd;
   document.getElementById('r-gd-range').textContent = gdUnlocked ? '최소 0 / 최대 '+GD_MAX : '해당 레벨 미지원';
   document.getElementById('r-gd-note').textContent = '루비 '+SV_MAX+'개 예약 시 다이아 자동 포함';
   document.getElementById('r-gd-wrap').className = 'r-wrap'+(gdUnlocked?'':' locked');
@@ -1424,10 +1424,10 @@ function updateResUI(BZ_MIN,BZ_MAX){
   if(gdPBtn) gdPBtn.disabled = (!gdUnlocked || gd >= GD_MAX);
 
   // 총계
-  var totalSv = svCnt;
-  var totalGd = gdCnt;
+  var totalSv = sv;
+  var totalGd = gd;
   var total = bzCnt + totalSv + totalGd;
-  document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+(total*40)+'P (수정 '+bzCnt+(totalSv>0?' + 루비 '+totalSv:'')+(totalGd>0?' + 다이아 '+totalGd:'')+')';
+  document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+(total*40)+'P (수정 '+bzCnt+(sv>0?' + 루비 '+sv:'')+(gd>0?' + 다이아 '+gd:'')+')';
   // ── 매칭유지 포인트 계산 ──
   var d2=userData||{};
   var chargePts=d2.charge_points||0;
@@ -2266,8 +2266,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
 
   // 루비: SV_MAX > 0 이면 항상 선택 가능 (수정과 독립, sv_min=0)
   var svUnlocked = SV_MAX > 0;
-  var svCnt = svUnlocked ? sv : 0;
-  document.getElementById('r-sv-v').textContent = svCnt;
+  // svCnt는 전역 변수 - 표시용으로 그대로 사용
+  document.getElementById('r-sv-v').textContent = sv;
   document.getElementById('r-sv-range').textContent = svUnlocked ? '최소 0 / 최대 '+SV_MAX : '해당 레벨 미지원';
   document.getElementById('r-sv-note').textContent = '수정 '+BZ_MAX+'개 예약 시 루비 자동 포함';
   document.getElementById('r-sv-wrap').className = 'r-wrap'+(svUnlocked?'':' locked');
@@ -2278,8 +2278,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
 
   // 다이아: GD_MAX > 0 이면 항상 선택 가능 (루비와 독립, gd_min=0)
   var gdUnlocked = GD_MAX > 0;
-  var gdCnt = gdUnlocked ? gd : 0;
-  document.getElementById('r-gd-v').textContent = gdCnt;
+  // gdCnt는 전역 변수 - 표시용으로 그대로 사용
+  document.getElementById('r-gd-v').textContent = gd;
   document.getElementById('r-gd-range').textContent = gdUnlocked ? '최소 0 / 최대 '+GD_MAX : '해당 레벨 미지원';
   document.getElementById('r-gd-note').textContent = '루비 '+SV_MAX+'개 예약 시 다이아 자동 포함';
   document.getElementById('r-gd-wrap').className = 'r-wrap'+(gdUnlocked?'':' locked');
@@ -2289,10 +2289,10 @@ function updateResUI(BZ_MIN,BZ_MAX){
   if(gdPBtn) gdPBtn.disabled = (!gdUnlocked || gd >= GD_MAX);
 
   // 총계
-  var totalSv = svCnt;
-  var totalGd = gdCnt;
+  var totalSv = sv;
+  var totalGd = gd;
   var total = bzCnt + totalSv + totalGd;
-  document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+(total*40)+'P (수정 '+bzCnt+(totalSv>0?' + 루비 '+totalSv:'')+(totalGd>0?' + 다이아 '+totalGd:'')+')';
+  document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+(total*40)+'P (수정 '+bzCnt+(sv>0?' + 루비 '+sv:'')+(gd>0?' + 다이아 '+gd:'')+')';
   // ── 매칭유지 포인트 계산 ──
   var d2=userData||{};
   var chargePts=d2.charge_points||0;
