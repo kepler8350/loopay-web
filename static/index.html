@@ -432,7 +432,6 @@ async function requestCharge(){
   var pts=parseInt(document.getElementById('charge-amount').value)||0;
   var won=pts*120;
   if(pts<1){toast('충전 포인트를 입력해주세요.');return;}
-  if(won<1000){toast('앙0 이상 충전해주세요.');return;}
 
   // ── 확인 다이얼로그 ──
   var ok=confirm(
