@@ -409,6 +409,7 @@ def charge_request():
         return jsonify(error='최소 1,000원 이상 충전 가능'), 400
     points = amount // 120
     receipt_phone = (data.get('receipt_phone') or '').strip()
+    receipt_name = (data.get('receipt_name') or '').strip()
     try:
         db.execute("INSERT INTO charge_requests(user_id,amount,points,receipt_phone) VALUES(?,?,?,?)", (uid,amount,points,receipt_phone))
     except Exception:

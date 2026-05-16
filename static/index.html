@@ -1830,7 +1830,7 @@ async function loadNotifications(){
           <div class="reserve-title">포인트 충전 신청</div>
           <input class="charge-input" id="charge-amount" type="number" placeholder="충전 포인트 입력 (P)" min="1" oninput="calcCharge()">
           <div class="charge-result" id="charge-result" style="font-size:13px;font-weight:600;color:#1976d2;min-height:18px;margin:4px 0 8px;text-align:center"></div>
-          <button class="charge-btn" onclick="requestCharge()">충전 신청하기</button>
+          <button class="charge-btn" onclick="showChargeConfirm()">충전 신청하기</button>
 <div id="charge-refresh-wrap" style="margin-top:10px;text-align:center"><button onclick="document.getElementById('charge-refresh-wrap').style.display='none';loadUserData();" style="background:transparent;color:#2196f3;border:1.5px solid #2196f3;padding:8px 22px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;width:100%">포인트 새로고침 ↻</button><div style="font-size:11px;color:#888;margin-top:4px">승인 후 클릭하면 포인트가 반영됩니다</div></div>
           <div class="info-block" style="margin-bottom:0;font-size:11px">충전 신청 후 관리자 확인 시 포인트가 지급됩니다. (1P = 120원)</div>
         </div>
@@ -2115,6 +2115,50 @@ async function loadNotifications(){
         <button onclick="closeAdminPanel()" style="padding:7px 14px;background:var(--bg2);border:none;border-radius:8px;color:var(--text1);cursor:pointer">닫기</button>
 
 <div id="toast" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 22px;border-radius:8px;font-size:14px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:9999"></div>
+<!-- 충전 확인 모달 -->
+<div class="reserve-confirm-overlay" id="charge-confirm-overlay">
+  <div class="reserve-confirm-box" style="max-width:360px;width:90%">
+    <h3 style="margin-bottom:16px">💳 충전 신청 확인</h3>
+
+    <!-- 충전 내용 요약 -->
+    <div id="charge-confirm-summary" style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:13px;color:var(--text2)">충전 포인트</span>
+        <span id="cc-points" style="font-size:14px;font-weight:700">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="font-size:13px;color:var(--text2)">입금 금액</span>
+        <span id="cc-won" style="font-size:14px;font-weight:700;color:var(--accent)">-</span>
+      </div>
+    </div>
+
+    <!-- 현금영수증 신청 토글 버튼 -->
+    <button id="receipt-toggle-btn" onclick="toggleReceiptForm()"
+      style="width:100%;padding:10px;background:var(--bg2);color:var(--text1);border:1.5px dashed var(--border);border-radius:8px;font-size:13px;cursor:pointer;margin-bottom:12px">
+      🧾 현금영수증 신청하기 (선택)
+    </button>
+
+    <!-- 현금영수증 입력 영역 (기본 숨김) -->
+    <div id="receipt-form" style="display:none;margin-bottom:14px">
+      <div style="background:rgba(25,118,210,0.08);border:1px solid rgba(25,118,210,0.2);border-radius:10px;padding:12px">
+        <div style="font-size:12px;color:#1976d2;font-weight:600;margin-bottom:10px">🧾 현금영수증 정보 입력</div>
+        <input id="cc-name" type="text" placeholder="이름 입력" maxlength="20"
+          style="width:100%;box-sizing:border-box;padding:9px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text1);font-size:13px;margin-bottom:8px">
+        <input id="cc-phone" type="text" placeholder="핸드폰번호 (-없이 숫자만)" inputmode="numeric" maxlength="11"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+          style="width:100%;box-sizing:border-box;padding:9px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text1);font-size:13px">
+        <div style="font-size:11px;color:var(--text2);margin-top:6px">예: 홍길동 / 01012345678</div>
+      </div>
+    </div>
+
+    <!-- 버튼 -->
+    <div class="reserve-confirm-btns">
+      <button class="btn-cancel-res" onclick="closeChargeConfirm()">취소</button>
+      <button class="btn-confirm-res" onclick="submitCharge()" style="background:#1976d2">신청 확정</button>
+    </div>
+  </div>
+</div>
+
 <!-- 판매예약 확인 모달 -->
 <div class="reserve-confirm-overlay" id="sell-confirm-overlay">
   <div class="reserve-confirm-box">
@@ -2590,16 +2634,80 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('charge-amount').addEventListener('input',calcCharge);
 });
 
-async function requestCharge(){
+// 충전 확인 모달 표시
+function showChargeConfirm(){
   const amt=parseInt(document.getElementById('charge-amount').value)||0;
   if(amt<1000){toast('최소 1,000원 이상 입력해주세요');return;}
-  try{
-    const d=await api('/charge/request',{method:'POST',body:JSON.stringify({amount:amt})});
-    toast(d.message); document.getElementById('charge-amount').value=''; document.getElementById('charge-result').textContent=''; document.getElementById('charge-refresh-wrap').style.display='block';
-  }catch(e){
-    toast(`충전 신청 완료! ${amt.toLocaleString()}원 → ${Math.floor(amt/120)}P (관리자 확인 후 지급)`); document.getElementById('charge-refresh-wrap').style.display='block';
-    document.getElementById('charge-amount').value=''; document.getElementById('charge-result').textContent='';
+  const won=amt*120;
+  // 충전 내용 표시
+  var ptsEl=document.getElementById('cc-points');
+  var wonEl=document.getElementById('cc-won');
+  if(ptsEl) ptsEl.textContent=amt.toLocaleString()+'P';
+  if(wonEl) wonEl.textContent=won.toLocaleString()+'원';
+  // 현금영수증 폼 초기화
+  var form=document.getElementById('receipt-form');
+  var btn=document.getElementById('receipt-toggle-btn');
+  if(form) form.style.display='none';
+  if(btn){ btn.textContent='🧾 현금영수증 신청하기 (선택)'; btn.style.borderColor='var(--border)'; btn.style.color='var(--text1)'; }
+  var nameEl=document.getElementById('cc-name');
+  var phoneEl=document.getElementById('cc-phone');
+  if(nameEl) nameEl.value='';
+  if(phoneEl) phoneEl.value='';
+  // 모달 열기
+  var ov=document.getElementById('charge-confirm-overlay');
+  if(ov){ if(ov.parentElement!==document.body) document.body.appendChild(ov); ov.classList.add('show'); }
+}
+
+function toggleReceiptForm(){
+  var form=document.getElementById('receipt-form');
+  var btn=document.getElementById('receipt-toggle-btn');
+  if(!form) return;
+  var isOpen=form.style.display!=='none';
+  form.style.display=isOpen?'none':'block';
+  if(btn){
+    btn.textContent=isOpen?'🧾 현금영수증 신청하기 (선택)':'🧾 현금영수증 입력 중 ▲';
+    btn.style.borderColor=isOpen?'var(--border)':'#1976d2';
+    btn.style.color=isOpen?'var(--text1)':'#1976d2';
   }
+  // 이름 입력란에 포커스
+  if(!isOpen){ setTimeout(function(){ var n=document.getElementById('cc-name'); if(n) n.focus(); },100); }
+}
+
+function closeChargeConfirm(){
+  var ov=document.getElementById('charge-confirm-overlay');
+  if(ov) ov.classList.remove('show');
+}
+
+async function submitCharge(){
+  const amt=parseInt(document.getElementById('charge-amount').value)||0;
+  const receiptName=(document.getElementById('cc-name')?.value||'').trim();
+  const receiptPhone=(document.getElementById('cc-phone')?.value||'').trim();
+  // 현금영수증 폼이 열려있으면 유효성 검사
+  var form=document.getElementById('receipt-form');
+  if(form && form.style.display!=='none'){
+    if(!receiptName){toast('현금영수증 이름을 입력해주세요');return;}
+    if(!receiptPhone || receiptPhone.length<10){toast('핸드폰번호를 정확히 입력해주세요');return;}
+  }
+  closeChargeConfirm();
+  try{
+    const body={amount:amt};
+    if(receiptName) body.receipt_name=receiptName;
+    if(receiptPhone) body.receipt_phone=receiptPhone;
+    const d=await api('/charge/request',{method:'POST',body:JSON.stringify(body)});
+    toast(d.message||'충전 신청이 완료되었습니다');
+    document.getElementById('charge-amount').value='';
+    document.getElementById('charge-result').textContent='';
+    document.getElementById('charge-refresh-wrap').style.display='block';
+  }catch(e){
+    toast('충전 신청 완료! 관리자 확인 후 지급됩니다');
+    document.getElementById('charge-refresh-wrap').style.display='block';
+    document.getElementById('charge-amount').value='';
+    document.getElementById('charge-result').textContent='';
+  }
+}
+
+async function requestCharge(){
+  showChargeConfirm();
 }
 
 
