@@ -306,6 +306,9 @@ def create_reservation():
     uid = int(get_jwt_identity())
     data = request.json or {}
     bz = int(data.get('bronze_count', 0))
+    # 클라이언트에서 독립적으로 선택한 sv/gd 값 사용 (없으면 자동 계산)
+    sv_from_client = data.get('silver_count')
+    gd_from_client = data.get('gold_count')
     db = get_db()
     u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
     lv = u['level']
@@ -313,8 +316,17 @@ def create_reservation():
     if bz < cfg['bz_min'] or bz > cfg['bz_max']:
         db.close()
         return jsonify(error='예약 수량 범위 초과'), 400
-    sv = get_sv_count(bz) if bz >= cfg['bz_max'] else 0
-    gd = get_gd_count(sv) if sv >= cfg['sv_max'] and cfg['sv_max'] > 0 else 0
+    # sv/gd: 클라이언트 값 우선, 범위 제한
+    sv_max = cfg['sv_max']
+    gd_max = cfg['gd_max']
+    if sv_from_client is not None:
+        sv = max(0, min(int(sv_from_client), sv_max))
+    else:
+        sv = get_sv_count(bz) if bz >= cfg['bz_max'] else 0
+    if gd_from_client is not None:
+        gd = max(0, min(int(gd_from_client), gd_max))
+    else:
+        gd = get_gd_count(sv) if sv >= sv_max and sv_max > 0 else 0
     total = bz + sv + gd
     cost = total * 40
     total_pts = u['charge_points'] + u['exchange_points']

@@ -268,6 +268,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 </style>
 <script>var _sellSelected={}; // 판매예약 선택 상태
+var svCnt=0; var gdCnt=0; // 루비/다이아 선택 수량
 var LEVEL_CFG_JS={
   1:{bz_min:0,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1,cum:150},
   2:{bz_min:0,bz_max:6,sv_min:0,sv_max:3,gd_min:0,gd_max:2,cum:450},
@@ -951,10 +952,15 @@ var LEVEL_CFG_JS = {
 function changeRes(t, delta){
   var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
   var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
+  var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
   if(t==='bz'){
     bzCnt = Math.min(Math.max(bzCnt+delta, BZ_MIN), BZ_MAX);
-    updateResUI(BZ_MIN, BZ_MAX);
+  } else if(t==='sv'){
+    svCnt = Math.min(Math.max(svCnt+delta, 0), SV_MAX);
+  } else if(t==='gd'){
+    gdCnt = Math.min(Math.max(gdCnt+delta, 0), GD_MAX);
   }
+  updateResUI(BZ_MIN, BZ_MAX);
 }
 function getSv(bz){
   var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
@@ -1382,7 +1388,8 @@ function enableReserveSection(){
 function updateResUI(BZ_MIN,BZ_MAX){
   var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
   var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
-  var sv=getSv(bzCnt), gd=getGd(sv);
+  // sv/gd는 전역 변수로 관리 (독립 선택)
+  var sv=svCnt, gd=gdCnt;
 
   // 수정 표시
   document.getElementById('r-bz-v').textContent=bzCnt;
@@ -1392,23 +1399,33 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-bz-m').disabled=(bzCnt<=BZ_MIN);
   document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
 
-  // 루비: 수정이 BZ_MAX 도달해야 활성화
-  var svUnlocked = (bzCnt >= BZ_MAX) && SV_MAX > 0;
-  document.getElementById('r-sv-v').textContent=svUnlocked ? sv : 0;
-  document.getElementById('r-sv-range').textContent=svUnlocked ? sv+'개 (자동)' : '(수정 '+BZ_MAX+'개 시 활성화)';
-  document.getElementById('r-sv-note').textContent='수정 '+BZ_MAX+'개 예약 시 루비 '+SV_MAX+'개 활성화';
-  document.getElementById('r-sv-wrap').className='r-wrap'+(svUnlocked?'':' locked');
+  // 루비: SV_MAX > 0 이면 항상 선택 가능 (수정과 독립, sv_min=0)
+  var svUnlocked = SV_MAX > 0;
+  var svCnt = svUnlocked ? sv : 0;
+  document.getElementById('r-sv-v').textContent = svCnt;
+  document.getElementById('r-sv-range').textContent = svUnlocked ? '최소 0 / 최대 '+SV_MAX : '해당 레벨 미지원';
+  document.getElementById('r-sv-note').textContent = '수정 '+BZ_MAX+'개 예약 시 루비 자동 포함';
+  document.getElementById('r-sv-wrap').className = 'r-wrap'+(svUnlocked?'':' locked');
+  var svMBtn = document.getElementById('r-sv-m');
+  var svPBtn = document.getElementById('r-sv-p');
+  if(svMBtn) svMBtn.disabled = (!svUnlocked || sv <= 0);
+  if(svPBtn) svPBtn.disabled = (!svUnlocked || sv >= SV_MAX);
 
-  // 다이아: 루비가 SV_MAX 도달해야 활성화
-  var gdUnlocked = svUnlocked && (sv >= SV_MAX) && GD_MAX > 0;
-  document.getElementById('r-gd-v').textContent=gdUnlocked ? gd : 0;
-  document.getElementById('r-gd-range').textContent=gdUnlocked ? gd+'개 (자동)' : '(루비 '+SV_MAX+'개 시 활성화)';
-  document.getElementById('r-gd-note').textContent='루비 '+SV_MAX+'개 예약 시 다이아 '+GD_MAX+'개 활성화';
-  document.getElementById('r-gd-wrap').className='r-wrap'+(gdUnlocked?'':' locked');
+  // 다이아: GD_MAX > 0 이면 항상 선택 가능 (루비와 독립, gd_min=0)
+  var gdUnlocked = GD_MAX > 0;
+  var gdCnt = gdUnlocked ? gd : 0;
+  document.getElementById('r-gd-v').textContent = gdCnt;
+  document.getElementById('r-gd-range').textContent = gdUnlocked ? '최소 0 / 최대 '+GD_MAX : '해당 레벨 미지원';
+  document.getElementById('r-gd-note').textContent = '루비 '+SV_MAX+'개 예약 시 다이아 자동 포함';
+  document.getElementById('r-gd-wrap').className = 'r-wrap'+(gdUnlocked?'':' locked');
+  var gdMBtn = document.getElementById('r-gd-m');
+  var gdPBtn = document.getElementById('r-gd-p');
+  if(gdMBtn) gdMBtn.disabled = (!gdUnlocked || gd <= 0);
+  if(gdPBtn) gdPBtn.disabled = (!gdUnlocked || gd >= GD_MAX);
 
   // 총계
-  var totalSv = svUnlocked ? sv : 0;
-  var totalGd = gdUnlocked ? gd : 0;
+  var totalSv = svCnt;
+  var totalGd = gdCnt;
   var total = bzCnt + totalSv + totalGd;
   document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+(total*40)+'P (수정 '+bzCnt+(totalSv>0?' + 루비 '+totalSv:'')+(totalGd>0?' + 다이아 '+totalGd:'')+')';
   // ── 매칭유지 포인트 계산 ──
@@ -1758,7 +1775,7 @@ async function loadNotifications(){
               <span class="r-lbl">루비</span>
               <span class="r-range" id="r-sv-range">4개 (자동)</span>
               <div class="r-ctrl">
-                <button class="cnt-btn" disabled id="r-sv-m">−</button>
+                <button class="cnt-btn" id="r-sv-m" onclick="changeRes('sv',-1)">−</button>
                 <span class="cnt-val" id="r-sv-v">4</span>
                 <button class="cnt-btn" disabled id="r-sv-p">+</button>
               </div>
@@ -1771,7 +1788,7 @@ async function loadNotifications(){
               <span class="r-lbl">다이아</span>
               <span class="r-range" id="r-gd-range">2개 (자동)</span>
               <div class="r-ctrl">
-                <button class="cnt-btn" disabled id="r-gd-m">−</button>
+                <button class="cnt-btn" id="r-gd-m" onclick="changeRes('gd',-1)">−</button>
                 <span class="cnt-val" id="r-gd-v">2</span>
                 <button class="cnt-btn" disabled id="r-gd-p">+</button>
               </div>
@@ -2236,7 +2253,8 @@ function updateReserveDefaults(lv){
 function updateResUI(BZ_MIN,BZ_MAX){
   var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
   var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
-  var sv=getSv(bzCnt), gd=getGd(sv);
+  // sv/gd는 전역 변수로 관리 (독립 선택)
+  var sv=svCnt, gd=gdCnt;
 
   // 수정 표시
   document.getElementById('r-bz-v').textContent=bzCnt;
@@ -2246,23 +2264,33 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-bz-m').disabled=(bzCnt<=BZ_MIN);
   document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
 
-  // 루비: 수정이 BZ_MAX 도달해야 활성화
-  var svUnlocked = (bzCnt >= BZ_MAX) && SV_MAX > 0;
-  document.getElementById('r-sv-v').textContent=svUnlocked ? sv : 0;
-  document.getElementById('r-sv-range').textContent=svUnlocked ? sv+'개 (자동)' : '(수정 '+BZ_MAX+'개 시 활성화)';
-  document.getElementById('r-sv-note').textContent='수정 '+BZ_MAX+'개 예약 시 루비 '+SV_MAX+'개 활성화';
-  document.getElementById('r-sv-wrap').className='r-wrap'+(svUnlocked?'':' locked');
+  // 루비: SV_MAX > 0 이면 항상 선택 가능 (수정과 독립, sv_min=0)
+  var svUnlocked = SV_MAX > 0;
+  var svCnt = svUnlocked ? sv : 0;
+  document.getElementById('r-sv-v').textContent = svCnt;
+  document.getElementById('r-sv-range').textContent = svUnlocked ? '최소 0 / 최대 '+SV_MAX : '해당 레벨 미지원';
+  document.getElementById('r-sv-note').textContent = '수정 '+BZ_MAX+'개 예약 시 루비 자동 포함';
+  document.getElementById('r-sv-wrap').className = 'r-wrap'+(svUnlocked?'':' locked');
+  var svMBtn = document.getElementById('r-sv-m');
+  var svPBtn = document.getElementById('r-sv-p');
+  if(svMBtn) svMBtn.disabled = (!svUnlocked || sv <= 0);
+  if(svPBtn) svPBtn.disabled = (!svUnlocked || sv >= SV_MAX);
 
-  // 다이아: 루비가 SV_MAX 도달해야 활성화
-  var gdUnlocked = svUnlocked && (sv >= SV_MAX) && GD_MAX > 0;
-  document.getElementById('r-gd-v').textContent=gdUnlocked ? gd : 0;
-  document.getElementById('r-gd-range').textContent=gdUnlocked ? gd+'개 (자동)' : '(루비 '+SV_MAX+'개 시 활성화)';
-  document.getElementById('r-gd-note').textContent='루비 '+SV_MAX+'개 예약 시 다이아 '+GD_MAX+'개 활성화';
-  document.getElementById('r-gd-wrap').className='r-wrap'+(gdUnlocked?'':' locked');
+  // 다이아: GD_MAX > 0 이면 항상 선택 가능 (루비와 독립, gd_min=0)
+  var gdUnlocked = GD_MAX > 0;
+  var gdCnt = gdUnlocked ? gd : 0;
+  document.getElementById('r-gd-v').textContent = gdCnt;
+  document.getElementById('r-gd-range').textContent = gdUnlocked ? '최소 0 / 최대 '+GD_MAX : '해당 레벨 미지원';
+  document.getElementById('r-gd-note').textContent = '루비 '+SV_MAX+'개 예약 시 다이아 자동 포함';
+  document.getElementById('r-gd-wrap').className = 'r-wrap'+(gdUnlocked?'':' locked');
+  var gdMBtn = document.getElementById('r-gd-m');
+  var gdPBtn = document.getElementById('r-gd-p');
+  if(gdMBtn) gdMBtn.disabled = (!gdUnlocked || gd <= 0);
+  if(gdPBtn) gdPBtn.disabled = (!gdUnlocked || gd >= GD_MAX);
 
   // 총계
-  var totalSv = svUnlocked ? sv : 0;
-  var totalGd = gdUnlocked ? gd : 0;
+  var totalSv = svCnt;
+  var totalGd = gdCnt;
   var total = bzCnt + totalSv + totalGd;
   document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+(total*40)+'P (수정 '+bzCnt+(totalSv>0?' + 루비 '+totalSv:'')+(totalGd>0?' + 다이아 '+totalGd:'')+')';
   // ── 매칭유지 포인트 계산 ──
@@ -2301,10 +2329,8 @@ function showReserveConfirm(){
   if(ov && ov.parentElement!==document.body) document.body.appendChild(ov);
   var cfg=userData&&userData.level_config||LEVEL_CFG_JS[1];
   var BZ_MAX=cfg.bz_max||3;
-  var svUnlocked=(bzCnt>=BZ_MAX)&&(cfg.sv_max||0)>0;
-  var gdUnlocked=svUnlocked&&(cfg.gd_max||0)>0;
-  var sv=svUnlocked?getSv(bzCnt):0;
-  var gd=gdUnlocked?getGd(sv):0;
+  var sv=svCnt;
+  var gd=gdCnt;
   var total=bzCnt+sv+gd;
   var cost=total*40;
   document.getElementById('rc-bz').textContent=bzCnt+'개';
@@ -2482,7 +2508,7 @@ async function doSellReservationBulk(){
 async function doReservation(){
   closeReserveConfirm();
   try{
-    const d=await api('/reservation/create',{method:'POST',body:JSON.stringify({bronze_count:bzCnt})});
+    const d=await api('/reservation/create',{method:'POST',body:JSON.stringify({bronze_count:bzCnt,silver_count:svCnt,gold_count:gdCnt})});
     if(d.success){
       toast(d.message);
       disableReserveSection();
