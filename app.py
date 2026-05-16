@@ -592,6 +592,22 @@ def admin_confirm_charge(charge_id):
     db.close()
     return jsonify(success=True, message=str(cr['points']) + 'P 충전 완료')
 
+@app.route('/api/admin/charge/delete/<int:charge_id>', methods=['POST'])
+@jwt_required()
+def admin_delete_charge(charge_id):
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    try:
+        db.execute("DELETE FROM charge_requests WHERE id=?", (charge_id,))
+        db.commit()
+        return jsonify(success=True, message='삭제 완료')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/run-matching', methods=['POST'])
 @jwt_required()
 def admin_run_matching():
