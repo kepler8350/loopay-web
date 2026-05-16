@@ -82,14 +82,17 @@ def admin():
 def register():
     """아이디/비밀번호 회원가입"""
     data = request.json or {}
-    username = (data.get('username') or '').strip()
+    username = (data.get('username') or '').strip().lower()
     password = data.get('password', '')
+    real_name = (data.get('real_name') or '').strip()
     phone    = (data.get('phone') or '').strip()
     bank     = (data.get('bank') or '').strip()
     account_no   = (data.get('account_no') or '').strip()
     account_name = (data.get('account_name') or '').strip()
     if not username or not password:
         return jsonify(error='아이디와 비밀번호를 입력해주세요.'), 400
+    if len(username) < 6 or len(username) > 16:
+        return jsonify(error='아이디는 영문 소문자/숫자, 6~16자여야 합니다'), 400
     if len(password) < 4:
         return jsonify(error='비밀번호는 4자 이상이어야 합니다.'), 400
     db = get_db()
@@ -106,8 +109,8 @@ def register():
         # 즉시승인 옵션
         auto_approve = data.get('auto_approve', False)
         if auto_approve:
-            conn.execute('UPDATE users SET approved=1 WHERE username=?', (username,))
-            conn.commit()
+            db.execute('UPDATE users SET approved=1 WHERE username=?', (username,))
+            db.commit()
             return jsonify(success=True, message='회원가입 완료! 즉시 이용 가능합니다.', auto_approved=True)
         return jsonify(success=True, message='회원가입이 완료되었습니다. 관리자 승인 후 이용 가능합니다.', auto_reserve=False)
     except Exception as e:
