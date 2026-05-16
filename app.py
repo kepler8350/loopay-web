@@ -20,11 +20,37 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import datetime, sqlite3, os
 
 # ── 테스트용 시간 조작 ──────────────────────────────────
-_MOCK_TIME = None  # None이면 실제 시간 사용
+
+def _get_mock_time_from_db():
+    """DB의 system_settings에서 mock_time 읽기"""
+    try:
+        db = get_db()
+        row = db.execute("SELECT value FROM system_settings WHERE key='mock_time'").fetchone()
+        db.close()
+        if row and row['value']:
+            return datetime.datetime.strptime(row['value'], '%Y-%m-%d %H:%M:%S')
+    except Exception:
+        pass
+    return None
+
+def _set_mock_time_to_db(dt):
+    """DB의 system_settings에 mock_time 저장 (None이면 삭제)"""
+    try:
+        db = get_db()
+        if dt:
+            val = dt.strftime('%Y-%m-%d %H:%M:%S')
+            db.execute("INSERT OR REPLACE INTO system_settings(key,value) VALUES('mock_time',?)", (val,))
+        else:
+            db.execute("DELETE FROM system_settings WHERE key='mock_time'")
+        db.commit()
+        db.close()
+    except Exception:
+        pass
 
 def get_now():
     """현재 시간 반환 (mock 설정 시 mock 시간)"""
-    return _MOCK_TIME if _MOCK_TIME else datetime.datetime.now()
+    mt = _get_mock_time_from_db()
+    return mt if mt else datetime.datetime.now()
 
 def get_today():
     """오늘 날짜 반환"""
@@ -478,30 +504,34 @@ def admin_approve_user():
 @app.route('/api/current-time', methods=['GET'])
 def get_current_time():
     """현재 서버 시간 반환 (mock 시간 포함)"""
+    global _RESET_FLAG
     now = get_now()
+    flag = _RESET_FLAG
+    if _RESET_FLAG:
+        _RESET_FLAG = False  # 한 번만 반환 후 초기화
     return jsonify(
         time=now.strftime('%Y-%m-%d %H:%M:%S'),
         hour=now.hour,
         minute=now.minute,
-        is_mock=_MOCK_TIME is not None
+        is_mock=_MOCK_TIME is not None,
+        clear_mock=flag
     )
 
 @app.route('/api/admin/set-time', methods=['POST'])
 def admin_set_time():
     if not check_admin_auth():
         return jsonify(error='unauthorized'), 401
-    global _MOCK_TIME
     data = request.json or {}
-    dt_str = data.get('datetime')  # "2026-03-15 09:00:00" or null
-    if dt_str:
-        try:
-            _MOCK_TIME = datetime.datetime.strptime(dt_str, '%Y-%m-%d %H:%M:%S')
-            return jsonify(success=True, mock_time=_MOCK_TIME.strftime('%Y-%m-%d %H:%M:%S'))
-        except Exception as e:
-            return jsonify(error=str(e)), 400
-    else:
-        _MOCK_TIME = None
-        return jsonify(success=True, mock_time=None, message='실제 시간으로 복원됨')
+    dt_str = data.get('datetime')
+    if data.get('reset') or not dt_str:
+        _set_mock_time_to_db(None)
+        return jsonify(success=True, mock_time=None, clear_mock=True, message='실제 시간으로 복원됨')
+    try:
+        mt = datetime.datetime.strptime(dt_str, '%Y-%m-%d %H:%M:%S')
+        _set_mock_time_to_db(mt)
+        return jsonify(success=True, mock_time=mt.strftime('%Y-%m-%d %H:%M:%S'))
+    except Exception as e:
+        return jsonify(error=str(e)), 400
 
 @app.route('/api/admin/get-time', methods=['GET'])
 def admin_get_time():

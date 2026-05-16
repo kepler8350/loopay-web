@@ -685,7 +685,7 @@ async function setMockTime(){
     headers:{'Authorization':'Bearer admin-loopay-2026','Content-Type':'application/json'},
     body:JSON.stringify({datetime:dtVal})});
   var d=await r.json();
-  if(res) res.innerHTML=d.success?'<span style="color:#4fc3f7">✅ 테스트 시간: '+d.mock_time+'</span>':'<span style="color:#c62828">❌ '+d.error+'</span>';
+  if(res) res.innerHTML=d.success?'<span style="color:#4fc3f7">✅ 테스트 시간: '+d.mock_time+' (사용자 화면은 3초 내 자동 반영)</span>':'<span style="color:#c62828">❌ '+d.error+'</span>';
   loadCurrentTime();
 }
 async function resetMockTime(){
@@ -694,7 +694,7 @@ async function resetMockTime(){
     headers:{'Authorization':'Bearer admin-loopay-2026','Content-Type':'application/json'},
     body:JSON.stringify({datetime:null})});
   var d=await r.json();
-  if(res) res.innerHTML=d.success?'<span style="color:#4fc3f7">✅ 실제 시간으로 복원되었습니다.</span>':'<span style="color:#c62828">❌ '+d.error+'</span>';
+  if(res) res.innerHTML=d.success?'<span style="color:#4fc3f7">✅ 실제 시간 복원 (사용자 화면은 새로고침 필요)</span>':'<span style="color:#c62828">❌ '+d.error+'</span>';
   var inp=document.getElementById('mock-datetime-input');
   if(inp) inp.value='';
   loadCurrentTime();
