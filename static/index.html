@@ -209,7 +209,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* 구매예약 확인 모달 */
 .reserve-confirm-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center}
 .reserve-confirm-overlay.show{display:flex}
-.reserve-confirm-box{background:var(--bg1);border-radius:16px;padding:28px 24px;width:320px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.reserve-confirm-box{background:var(--bg1);border-radius:16px;padding:28px 24px;width:320px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.4)}#charge-confirm-overlay .reserve-confirm-box{background:#fff!important;color:#222!important;border:1px solid #e0e0e0}
 .reserve-confirm-box h3{margin:0 0 16px;font-size:17px;color:var(--text1);text-align:center}
 .reserve-confirm-rows{background:var(--bg2);border-radius:10px;padding:14px 16px;margin-bottom:18px}
 .reserve-confirm-row{display:flex;justify-content:space-between;padding:5px 0;font-size:14px;color:var(--text2)}
@@ -2117,7 +2117,7 @@ async function loadNotifications(){
 <div id="toast" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 22px;border-radius:8px;font-size:14px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:9999"></div>
 <!-- 충전 확인 모달 -->
 <div class="reserve-confirm-overlay" id="charge-confirm-overlay">
-  <div class="reserve-confirm-box" style="max-width:360px;width:90%;background:#fff!important;color:#222!important;border:1px solid #e0e0e0">
+  <div class="reserve-confirm-box" style="max-width:360px;width:90%">
     <h3 style="margin-bottom:16px;color:#1a1a1a">💳 충전 신청 확인</h3>
 
     <!-- 충전 내용 요약 -->
