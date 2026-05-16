@@ -1042,6 +1042,21 @@ function updateTimeBar(){
     schedEl.textContent=found.text;
     barEl.style.background='linear-gradient(90deg,'+found.color+' 0%,'+found.color+'cc 100%)';
   }
+  // ── 위쪽 줄: 예약시간/매칭대기 동적 표시 ──
+  var reserveLabel = document.getElementById('tbar-reserve');
+  if(reserveLabel){
+    if(h >= 5 && h < 20){
+      reserveLabel.textContent = '🟢 구매·판매예약: 05:00~20:00';
+      reserveLabel.style.background = 'rgba(255,200,0,0.2)';
+      reserveLabel.style.border = '1px solid rgba(255,200,0,0.4)';
+      reserveLabel.style.color = 'rgba(255,255,255,0.95)';
+    } else {
+      reserveLabel.textContent = '🌙 매칭 대기: 20:00~05:00';
+      reserveLabel.style.background = 'rgba(255,255,255,0.1)';
+      reserveLabel.style.border = '1px solid rgba(255,255,255,0.2)';
+      reserveLabel.style.color = 'rgba(255,255,255,0.65)';
+    }
+  }
   // ── 구매·판매 예약 버튼 시간 제어 (05:00~20:00만 활성화) ──
   var isReserveTime = (h >= 5 && h < 20);
   var reserveBtn = document.getElementById('reserve-btn');
@@ -1668,7 +1683,7 @@ async function loadNotifications(){
           <span class="time-bar-time" id="tbar-time">--:--:--</span>
         </div>
         <div class="time-bar-rhs">
-          <div class="time-bar-reserve">🕐 구매·판매예약: 05:00~20:00</div>
+          <div class="time-bar-reserve" id="tbar-reserve">🕐 구매·판매예약: 05:00~20:00</div>
           <div class="time-bar-right" id="tbar-schedule">--</div>
         </div>
       <button onclick="location.reload()" title="새로고침" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:3px 8px;font-size:14px;cursor:pointer;flex-shrink:0;margin-left:8px">⟳</button>
