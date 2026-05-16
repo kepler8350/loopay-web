@@ -1039,7 +1039,13 @@ function updateTimeBar(){
       if(h>=SCHED[i].s && h<SCHED[i].e){found=SCHED[i];break;}
     }
     if(!found) found=SCHED[1];
-    schedEl.textContent=found.text;
+    // 아래줄: 예약시간(05~20) 중에는 숨김, 그 외에만 표시
+    if(h >= 5 && h < 20){
+      schedEl.style.display = 'none';
+    } else {
+      schedEl.style.display = '';
+      schedEl.textContent = found.text;
+    }
     barEl.style.background='linear-gradient(90deg,'+found.color+' 0%,'+found.color+'cc 100%)';
   }
   // ── 위쪽 줄: 예약시간/매칭대기 동적 표시 ──
