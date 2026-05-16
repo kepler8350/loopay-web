@@ -96,6 +96,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div class="nav-item" data-page="notifications" onclick="showPage('notifications',this)"><span class="nav-icon">🔔</span><span class="nav-label">알림관리</span></div>
 <div class="nav-item" data-page="approve" onclick="showPage('approve',this)"><span class="nav-icon">👥</span>회원승인관리</div>
 <div class="nav-item" data-page="testtools" onclick="showPage('testtools',this)"><span class="nav-icon">⚙️</span>테스트도구</div>
+<div class="nav-item" data-page="settings" onclick="showPage('settings',this);loadSettings()"><span class="nav-icon">🔧</span>시스템 설정</div>
 </nav>
 <div class="sidebar-footer"><button class="logout-btn" onclick="doAdminLogout()">&#128682; &#47196;&#44536;&#50500;&#50883;</button></div>
 </div>
@@ -325,6 +326,60 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 
 
 
+<div id="page-settings" class="page">
+      <h2 class="page-title">시스템 설정</h2>
+      <p class="page-subtitle">플랫폼 운영 설정을 관리합니다</p>
+
+      <!-- 회원승인 방식 -->
+      <div class="card" style="margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <strong style="font-size:15px">회원승인 방식</strong>
+            <p style="font-size:12px;color:#888;margin:4px 0 0">회원가입 후 승인 방식을 설정합니다</p>
+          </div>
+          <span id="settings-status-badge" style="font-size:12px;padding:4px 12px;border-radius:20px;background:#546e7a;color:#fff">로딩 중...</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+          <!-- 수동 승인 카드 -->
+          <div id="card-manual" onclick="selectApproveMode('manual')"
+            style="border:2px solid #546e7a;border-radius:12px;padding:20px;cursor:pointer;transition:all 0.2s;background:#1e1e2e">
+            <div style="font-size:24px;margin-bottom:8px">👤</div>
+            <div style="font-weight:700;font-size:14px;margin-bottom:6px">수동 승인</div>
+            <div style="font-size:12px;color:#aaa;line-height:1.5">
+              회원가입 후 관리자가<br>직접 승인해야 이용 가능
+            </div>
+            <div style="margin-top:12px;font-size:11px;color:#f9a825">
+              ✓ 보안성 높음<br>✓ 스팸 가입 방지
+            </div>
+          </div>
+
+          <!-- 자동 승인 카드 -->
+          <div id="card-auto" onclick="selectApproveMode('auto')"
+            style="border:2px solid #546e7a;border-radius:12px;padding:20px;cursor:pointer;transition:all 0.2s;background:#1e1e2e">
+            <div style="font-size:24px;margin-bottom:8px">⚡</div>
+            <div style="font-weight:700;font-size:14px;margin-bottom:6px">자동 승인</div>
+            <div style="font-size:12px;color:#aaa;line-height:1.5">
+              회원가입 즉시 자동으로<br>승인되어 바로 이용 가능
+            </div>
+            <div style="margin-top:12px;font-size:11px;color:#66bb6a">
+              ✓ 가입 즉시 이용<br>✓ 관리 부담 없음
+            </div>
+          </div>
+        </div>
+
+        <button onclick="saveSettings()"
+          style="width:100%;padding:13px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">
+          💾 설정 저장
+        </button>
+      </div>
+
+      <!-- 현재 설정 상태 표시 -->
+      <div class="card" id="settings-info-box" style="background:#1a1a2e;border:1px solid #333">
+        <div style="font-size:13px;color:#aaa;line-height:1.8" id="settings-info-text">설정을 로딩 중입니다...</div>
+      </div>
+    </div>
+
 <div id="page-testtools" class="page">
       <h2 class="page-title">테스트 도구</h2>
       <div class="card" style="margin-bottom:16px">
@@ -407,7 +462,7 @@ async function doLogin(){
 
 
 function doAdminLogout(){adminToken=null;document.getElementById('admin-app').style.display='none';document.getElementById('login-screen').style.display='flex';}
-function showPage(name,el){var _mn=document.querySelector('.main');if(_mn){document.querySelectorAll('.page').forEach(function(pg){if(pg.parentElement!==_mn)_mn.appendChild(pg);});}var mainEl=document.querySelector('.main');if(mainEl){document.querySelectorAll('.page').forEach(function(pg){if(pg.parentElement!==mainEl)mainEl.appendChild(pg);});}document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));if(el)el.classList.add('active');const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');if(name==='dashboard')loadDashboard();else if(name==='users')loadUsers();else if(name==='members'){var pm=document.getElementById('page-members');var mn=document.querySelector('.main');if(pm&&mn&&pm.parentElement!==mn)mn.appendChild(pm);loadUsers();}else if(name==='approve'){var pa=document.getElementById('page-approve');var mn2=document.querySelector('.main');if(pa&&mn2&&pa.parentElement!==mn2)mn2.appendChild(pa);loadPendingUsers();}else if(name==='charges')loadCharges();else if(name==='matching')loadMatchingStatus();else if(name==='notifications'){var pn=document.getElementById('page-notifications');var mn=document.querySelector('.main');if(pn&&mn&&pn.parentElement!==mn)mn.appendChild(pn);}else if(name==='reservations')loadReservations();else if(name==='testtools')loadTesttools();else if(name==='penalties')loadPenalties();}
+function showPage(name,el){var _mn=document.querySelector('.main');if(_mn){document.querySelectorAll('.page').forEach(function(pg){if(pg.parentElement!==_mn)_mn.appendChild(pg);});}var mainEl=document.querySelector('.main');if(mainEl){document.querySelectorAll('.page').forEach(function(pg){if(pg.parentElement!==mainEl)mainEl.appendChild(pg);});}document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));if(el)el.classList.add('active');const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');if(name==='dashboard')loadDashboard();else if(name==='users')loadUsers();else if(name==='members'){var pm=document.getElementById('page-members');var mn=document.querySelector('.main');if(pm&&mn&&pm.parentElement!==mn)mn.appendChild(pm);loadUsers();}else if(name==='approve'){var pa=document.getElementById('page-approve');var mn2=document.querySelector('.main');if(pa&&mn2&&pa.parentElement!==mn2)mn2.appendChild(pa);loadPendingUsers();}else if(name==='charges')loadCharges();else if(name==='matching')loadMatchingStatus();else if(name==='notifications'){var pn=document.getElementById('page-notifications');var mn=document.querySelector('.main');if(pn&&mn&&pn.parentElement!==mn)mn.appendChild(pn);}else if(name==='reservations')loadReservations();else if(name==='testtools')loadTesttools();else if(name==='penalties')loadPenalties();else if(name==='settings')loadSettings();}
 async function loadDashboard(){try{const s=await apiAdmin('/admin/stats');document.getElementById('s-users').textContent=s.total_users||0;document.getElementById('s-items').textContent=s.total_items||0;document.getElementById('s-charges').textContent=s.pending_charges||0;document.getElementById('s-reservations').textContent=s.today_reservations||0;const charges=await apiAdmin('/admin/charges');const pending=(charges.charges||[]).filter(c=>c.status==='pending').slice(0,5);const dc=document.getElementById('dash-charges');if(pending.length){dc.innerHTML='<table><thead><tr><th>&#45769;&#45348;&#51076;</th><th>&#44552;&#50529;</th><th>&#49345;&#53468;</th></tr></thead><tbody>'+pending.map(c=>'<tr><td>'+c.nickname+'</td><td>'+Math.round((c.amount||0)/120).toLocaleString()+'P<br><small style="color:#aaa">'+(c.amount||0).toLocaleString()+'원</small></td><td><span class="badge badge-warning">&#45824;&#44592;</span></td></tr>').join('')+'</tbody></table>';}else{dc.innerHTML='<div class="empty-state"><div>&#45824;&#44592; &#51473;&#51064; &#52649;&#51204; &#50630;&#51020;</div></div>';}const users=await apiAdmin('/admin/users');document.getElementById('dash-users').innerHTML=(users.users||[]).slice(0,5).map(u=>'<tr><td>'+u.nickname+'</td><td><span class="badge badge-info">'+(u.level||1)+'&#47112;&#48296;</span></td><td>'+(u.charge_points||0).toLocaleString()+'P</td></tr>').join('')||'<tr><td colspan="3">&#54924;&#50896; &#50630;&#51020;</td></tr>';}catch(e){toast('&#45824;&#49884;&#48372;&#46300; &#49892;&#54036;: '+e.message,'error');}}
 async function loadPendingUsers(){
   try{
@@ -874,6 +929,73 @@ async function resolveUnpaid(id){
     loadUnpaidReports();
   }catch(e){toast(e.message,'error');}
 }
+// ── 시스템 설정 ──
+var _currentApproveMode = 'manual'; // 기본값
+
+async function loadSettings(){
+  try{
+    const d = await apiAdmin('/admin/settings');
+    const autoApprove = (d.settings?.auto_approve === '1');
+    _currentApproveMode = autoApprove ? 'auto' : 'manual';
+    updateSettingsUI(_currentApproveMode);
+  }catch(e){
+    console.error('설정 로딩 실패:', e);
+    toast('설정 로딩 실패: ' + e.message, 'error');
+  }
+}
+
+function selectApproveMode(mode){
+  _currentApproveMode = mode;
+  updateSettingsUI(mode);
+}
+
+function updateSettingsUI(mode){
+  const cardManual = document.getElementById('card-manual');
+  const cardAuto = document.getElementById('card-auto');
+  const badge = document.getElementById('settings-status-badge');
+  const infoText = document.getElementById('settings-info-text');
+
+  const isAuto = (mode === 'auto');
+
+  // 카드 선택 스타일
+  if(cardManual){
+    cardManual.style.border = isAuto ? '2px solid #546e7a' : '2px solid #1976d2';
+    cardManual.style.background = isAuto ? '#1e1e2e' : 'rgba(25,118,210,0.12)';
+  }
+  if(cardAuto){
+    cardAuto.style.border = isAuto ? '2px solid #43a047' : '2px solid #546e7a';
+    cardAuto.style.background = isAuto ? 'rgba(67,160,71,0.12)' : '#1e1e2e';
+  }
+
+  // 배지
+  if(badge){
+    badge.textContent = isAuto ? '⚡ 자동 승인 중' : '👤 수동 승인 중';
+    badge.style.background = isAuto ? '#43a047' : '#546e7a';
+  }
+
+  // 안내 텍스트
+  if(infoText){
+    infoText.innerHTML = isAuto
+      ? '🟢 <strong>자동 승인 모드</strong><br>회원가입 즉시 자동으로 승인됩니다. 회원승인관리 페이지에서 별도 승인 없이도 바로 로그인할 수 있습니다.'
+      : '🔵 <strong>수동 승인 모드</strong><br>회원가입 후 관리자가 직접 승인해야 이용할 수 있습니다. 회원승인관리 페이지에서 승인 처리해 주세요.';
+  }
+}
+
+async function saveSettings(){
+  try{
+    const isAuto = (_currentApproveMode === 'auto');
+    await apiAdmin('/admin/settings', {
+      method:'POST',
+      body: JSON.stringify({ auto_approve: isAuto ? '1' : '0' })
+    });
+    toast(isAuto ? '✅ 자동 승인으로 변경되었습니다' : '✅ 수동 승인으로 변경되었습니다');
+    // 배지 즉시 업데이트
+    updateSettingsUI(_currentApproveMode);
+  }catch(e){
+    toast('저장 실패: ' + e.message, 'error');
+  }
+}
+
 async function loadTesttools(){
   // 테스트도구 페이지는 별도 로드 불필요
 }

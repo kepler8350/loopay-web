@@ -161,6 +161,18 @@ def init_db():
             conn.commit()
         except Exception:
             pass
+
+    # system_settings 테이블
+    try:
+        c.execute('''CREATE TABLE IF NOT EXISTS system_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL DEFAULT '0',
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )''')
+        c.execute("INSERT OR IGNORE INTO system_settings(key,value) VALUES('auto_approve','0')")
+        conn.commit()
+    except Exception:
+        pass
     conn.close()
 
 def _seed(conn):

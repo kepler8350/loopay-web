@@ -112,6 +112,12 @@ def register():
             db.execute('UPDATE users SET approved=1 WHERE username=?', (username,))
             db.commit()
             return jsonify(success=True, message='회원가입 완료! 즉시 이용 가능합니다.', auto_approved=True)
+        # 시스템 자동승인 설정 확인
+        sys_auto = get_setting('auto_approve', '0') == '1'
+        if auto_approve or sys_auto:
+            db.execute('UPDATE users SET approved=1 WHERE username=?', (username,))
+            db.commit()
+            return jsonify(success=True, message='회원가입이 완료되었습니다! 바로 로그인하세요.', auto_approved=True)
         return jsonify(success=True, message='회원가입이 완료되었습니다. 관리자 승인 후 이용 가능합니다.', auto_reserve=False)
     except Exception as e:
         db.rollback()
@@ -592,6 +598,52 @@ def admin_run_matching():
     db.commit()
     db.close()
     return jsonify(success=True,matched=matched,message=f'매칭 실행 완료: {matched}건')
+
+
+# ── 시스템 설정 API ──
+@app.route('/api/admin/settings', methods=['GET'])
+@jwt_required()
+def get_settings():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    try:
+        rows = db.execute("SELECT key, value FROM system_settings").fetchall()
+        return jsonify(settings={r['key']: r['value'] for r in rows})
+    finally:
+        db.close()
+
+@app.route('/api/admin/settings', methods=['POST'])
+@jwt_required()
+def update_settings():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    db = get_db()
+    try:
+        for key, value in data.items():
+            db.execute(
+                "INSERT OR REPLACE INTO system_settings(key,value,updated_at) VALUES(?,?,CURRENT_TIMESTAMP)",
+                (key, str(value))
+            )
+        db.commit()
+        return jsonify(success=True, message='설정이 저장되었습니다')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+# 시스템 설정 조회 헬퍼
+def get_setting(key, default='0'):
+    db = get_db()
+    try:
+        row = db.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
+        return row['value'] if row else default
+    except Exception:
+        return default
+    finally:
+        db.close()
 
 @app.route('/api/admin/stats', methods=['GET'])
 @jwt_required()
