@@ -1105,23 +1105,39 @@ function updateTimeBar(){
 // updateTimeBar interval은 로그인 후 startTimeBar()로 등록
 
 // 서버 시간 동기화 (mock time 지원)
-var _serverTimeOffset = 0; // 서버-클라이언트 시간차 (ms)
+var _serverTimeOffset = 0; // 실제시간용 offset (ms)
 var _isMockTime = false;
+var _mockBaseMs = 0;    // mock 시작 시점의 서버 ms
+var _mockFetchAt = 0;   // mock를 fetch한 클라이언트 ms
 async function syncServerTime(){
   try{
+    var fetchStart = Date.now();
     var res = await fetch('/api/current-time');
     var d = await res.json();
+    var fetchEnd = Date.now();
+    var latency = (fetchEnd - fetchStart) / 2; // 왕복의 절반
     _isMockTime = d.is_mock;
     if(_isMockTime){
-      // mock 시간: 서버 시간을 기준으로 offset 계산
-      var serverMs = new Date(d.time.replace(' ','T')).getTime();
-      _serverTimeOffset = serverMs - Date.now();
-    } else {
+      // mock 시간: 서버 고정 시간 기준으로 클라이언트 시작점 기록
+      _mockBaseMs = new Date(d.time.replace(' ','T')).getTime();
+      _mockFetchAt = fetchEnd - latency; // 서버 시간 기준 클라이언트 시점
       _serverTimeOffset = 0;
+    } else {
+      _isMockTime = false;
+      _mockBaseMs = 0;
+      _mockFetchAt = 0;
+      // 실제 시간: 서버-클라이언트 오차 보정
+      var serverMs = new Date(d.time.replace(' ','T')).getTime();
+      _serverTimeOffset = serverMs - (fetchEnd - latency);
     }
   }catch(e){}
 }
 function getEffectiveDate(){
+  if(_isMockTime && _mockFetchAt > 0){
+    // mock: 서버 고정 시간 + (현재 - fetch 시점) 경과 시간
+    var elapsed = Date.now() - _mockFetchAt;
+    return new Date(_mockBaseMs + elapsed);
+  }
   return new Date(Date.now() + _serverTimeOffset);
 }
 function startTimeBar(){
@@ -1131,7 +1147,7 @@ function startTimeBar(){
   window._tbInterval = setInterval(updateTimeBar, 1000);
   // 10초마다 서버 시간 동기화
   if(window._syncInterval) clearInterval(window._syncInterval);
-  window._syncInterval = setInterval(syncServerTime, 10000);
+  window._syncInterval = setInterval(syncServerTime, 3000);
 }
 
 // ── 아이템 상세보기 (판매예약 포함) ──
