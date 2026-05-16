@@ -567,11 +567,19 @@ def admin_users():
 def admin_charges():
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    # 기본: pending만, ?all=1 이면 전체
+    show_all = request.args.get('all', '0') == '1'
     db = get_db()
     try:
-        rows = db.execute("SELECT cr.id, cr.user_id, cr.amount, cr.points, cr.status, cr.receipt_phone, cr.created_at, u.nickname, u.username FROM charge_requests cr JOIN users u ON u.id=cr.user_id WHERE cr.status='pending' ORDER BY cr.created_at DESC").fetchall()
+        if show_all:
+            rows = db.execute("SELECT cr.id, cr.user_id, cr.amount, cr.points, cr.status, cr.receipt_phone, cr.created_at, u.nickname, u.username FROM charge_requests cr JOIN users u ON u.id=cr.user_id ORDER BY cr.created_at DESC").fetchall()
+        else:
+            rows = db.execute("SELECT cr.id, cr.user_id, cr.amount, cr.points, cr.status, cr.receipt_phone, cr.created_at, u.nickname, u.username FROM charge_requests cr JOIN users u ON u.id=cr.user_id WHERE cr.status='pending' ORDER BY cr.created_at DESC").fetchall()
     except Exception:
-        rows = db.execute("SELECT cr.*, u.nickname, u.username FROM charge_requests cr JOIN users u ON u.id=cr.user_id WHERE cr.status='pending' ORDER BY cr.created_at DESC").fetchall()
+        if show_all:
+            rows = db.execute("SELECT cr.*, u.nickname, u.username FROM charge_requests cr JOIN users u ON u.id=cr.user_id ORDER BY cr.created_at DESC").fetchall()
+        else:
+            rows = db.execute("SELECT cr.*, u.nickname, u.username FROM charge_requests cr JOIN users u ON u.id=cr.user_id WHERE cr.status='pending' ORDER BY cr.created_at DESC").fetchall()
     db.close()
     return jsonify(charges=[dict(r) for r in rows])
 
