@@ -651,8 +651,16 @@ def admin_stats():
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    total_users = db.execute("SELECT COUNT(*) as c FROM users").fetchone()['c']
-    total_items = db.execute("SELECT COUNT(*) as c FROM items WHERE status!='sold'").fetchone()['c']
+    # 승인된 일반 회원만 (admin 계정, loopay 계정 제외)
+    total_users = db.execute(
+        "SELECT COUNT(*) as c FROM users WHERE approved=1 AND username NOT IN ('admin','loopay')"
+    ).fetchone()['c']
+    # 일반 유저 아이템만 (loopay 계정 제외)
+    loopay_id_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+    loopay_id = loopay_id_row['id'] if loopay_id_row else -1
+    total_items = db.execute(
+        "SELECT COUNT(*) as c FROM items WHERE status!='sold' AND user_id!=?", (loopay_id,)
+    ).fetchone()['c']
     pending_charges = db.execute("SELECT COUNT(*) as c FROM charge_requests WHERE status='pending'").fetchone()['c']
     today = get_today().isoformat()
     today_reserves = db.execute("SELECT COUNT(*) as c FROM reservations WHERE reserve_date=?", (today,)).fetchone()['c']

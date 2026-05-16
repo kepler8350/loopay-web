@@ -982,17 +982,26 @@ function updateSettingsUI(mode){
 }
 
 async function saveSettings(){
+  var btn = event?.target || document.querySelector('[onclick="saveSettings()"]');
+  var origText = btn ? btn.textContent : '';
   try{
+    if(btn){ btn.textContent = '저장 중...'; btn.disabled = true; }
     const isAuto = (_currentApproveMode === 'auto');
     await apiAdmin('/admin/settings', {
       method:'POST',
       body: JSON.stringify({ auto_approve: isAuto ? '1' : '0' })
     });
-    toast(isAuto ? '✅ 자동 승인으로 변경되었습니다' : '✅ 수동 승인으로 변경되었습니다');
-    // 배지 즉시 업데이트
+    const msg = isAuto ? '✅ 자동 승인으로 변경되었습니다' : '✅ 수동 승인으로 변경되었습니다';
+    toast(msg, 'success');
+    // 저장 버튼 성공 표시
+    if(btn){ btn.textContent = '✅ 저장 완료!'; btn.style.background = '#43a047'; }
+    setTimeout(function(){
+      if(btn){ btn.textContent = '💾 설정 저장'; btn.style.background = ''; btn.disabled = false; }
+    }, 2000);
     updateSettingsUI(_currentApproveMode);
   }catch(e){
     toast('저장 실패: ' + e.message, 'error');
+    if(btn){ btn.textContent = origText; btn.disabled = false; }
   }
 }
 
