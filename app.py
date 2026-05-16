@@ -525,9 +525,18 @@ def admin_users():
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    users = db.execute("SELECT id,username,nickname,email,level,charge_points,exchange_points,cumulative_count,created_at FROM users WHERE approved=1 ORDER BY created_at DESC").fetchall()
+    rows = db.execute("SELECT id,username,nickname,email,level,charge_points,exchange_points,cumulative_count,phone,bank,account_no,account_name,created_at FROM users WHERE approved=1 ORDER BY created_at DESC").fetchall()
     db.close()
-    return jsonify(users=[dict(u) for u in users])
+    users = []
+    for u in rows:
+        d = dict(u)
+        # nickname이 username과 같으면 account_name을 성명으로 사용
+        if d['nickname'] == d['username'] or not d['nickname']:
+            d['real_name'] = d.get('account_name') or d['username']
+        else:
+            d['real_name'] = d['nickname']
+        users.append(d)
+    return jsonify(users=users)
 
 @app.route('/api/admin/charges', methods=['GET'])
 @jwt_required()

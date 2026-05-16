@@ -448,7 +448,7 @@ async function loadUsers(){
     tbody.innerHTML=d.users.map((u,i)=>`<tr>
       <td>${i+1}</td>
       <td>${u.username||'-'}</td>
-      <td>${u.nickname||'-'}</td>
+      <td>${u.real_name||u.nickname||'-'}</td>
       <td><span class="badge badge-info">${u.level||1}L</span></td>
       <td>${u.charge_points||0}</td>
       <td>${u.exchange_points||0}</td>
