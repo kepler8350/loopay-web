@@ -1137,35 +1137,15 @@ async function syncServerTime(){
     var d = await res.json();
     var fetchEnd = Date.now();
     var latency = (fetchEnd - fetchStart) / 2;
-    // 서버에서 mock 해제 신호 → localStorage도 삭제
-    if(d.clear_mock){
-      _clearMockStorage();
-      _isMockTime = false; _mockBaseMs = 0; _mockFetchAt = 0;
-    }
     if(d.is_mock){
-      // 서버가 mock 시간 → 적용
       _isMockTime = true;
       _mockBaseMs = new Date(d.time.replace(' ','T')).getTime();
       _mockFetchAt = fetchEnd - latency;
     } else {
-      // 서버 is_mock=false: localStorage에 mock가 있으면 유지 (Railway 재시작 대응)
-      if(!_isMockTime){
-        _loadMockFromStorage();
-      }
-      if(_isMockTime && _mockFetchAt > 0){
-        var mockAge = Date.now() - _mockFetchAt;
-        if(mockAge > 86400000){ // 24시간 초과 시 자동 만료
-          _isMockTime = false;
-          _clearMockStorage();
-          _mockBaseMs = 0; _mockFetchAt = 0;
-        }
-        // else: 아직 유효한 mock → 계속 사용
-      }
-      if(!_isMockTime){
-        _serverTimeOffset = serverMs - (fetchEnd - latency);
-        var serverMs = new Date(d.time.replace(' ','T')).getTime();
-        _serverTimeOffset = serverMs - (fetchEnd - latency);
-      }
+      _isMockTime = false;
+      _mockBaseMs = 0; _mockFetchAt = 0;
+      var serverMs = new Date(d.time.replace(' ','T')).getTime();
+      _serverTimeOffset = serverMs - (fetchEnd - latency);
     }
   }catch(e){}
 }
