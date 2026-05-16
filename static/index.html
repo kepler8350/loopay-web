@@ -950,7 +950,7 @@ var LEVEL_CFG_JS = {
 };
 function changeRes(t, delta){
   var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
-  var BZ_MIN=cfg.bz_min||1, BZ_MAX=cfg.bz_max||3;
+  var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
   if(t==='bz'){
     bzCnt = Math.min(Math.max(bzCnt+delta, BZ_MIN), BZ_MAX);
     updateResUI(BZ_MIN, BZ_MAX);
@@ -1437,7 +1437,7 @@ function updateReserveDefaults(lv){
   var d=userData||{};
   var tr=d.today_reservations||{};
   var cfg=d.level_config||LEVEL_CFG_JS[lv]||LEVEL_CFG_JS[1];
-  var BZ_MIN=cfg.bz_min||1, BZ_MAX=cfg.bz_max||3;
+  var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
   var todayBz=tr.bronze||0;
   bzCnt = todayBz > 0 ? Math.min(Math.max(todayBz,BZ_MIN),BZ_MAX) : BZ_MIN;
   updateResUI(BZ_MIN, BZ_MAX);
@@ -2228,7 +2228,7 @@ function updateReserveDefaults(lv){
   var d=userData||{};
   var tr=d.today_reservations||{};
   var cfg=d.level_config||LEVEL_CFG_JS[lv]||LEVEL_CFG_JS[1];
-  var BZ_MIN=cfg.bz_min||1, BZ_MAX=cfg.bz_max||3;
+  var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
   var todayBz=tr.bronze||0;
   bzCnt = todayBz > 0 ? Math.min(Math.max(todayBz,BZ_MIN),BZ_MAX) : BZ_MIN;
   updateResUI(BZ_MIN, BZ_MAX);
@@ -2290,7 +2290,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
 
 function changeRes(type,delta){
   var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[userData&&userData.level||1]||LEVEL_CFG_JS[1];
-  var BZ_MIN=cfg.bz_min||1, BZ_MAX=cfg.bz_max||3;
+  var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
   if(type==='bz') bzCnt=Math.max(BZ_MIN,Math.min(BZ_MAX,bzCnt+delta));
   updateResUI(BZ_MIN,BZ_MAX);
 }
