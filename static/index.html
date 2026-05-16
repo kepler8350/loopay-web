@@ -1054,20 +1054,53 @@ function updateTimeBar(){
   }
   // ── 구매·판매 예약 버튼 시간 제어 (05:00~20:00만 활성화) ──
   var isReserveTime = (h >= 5 && h < 20);
+
+  // 구매 예약하기 버튼
   var reserveBtn = document.getElementById('reserve-btn');
-  var sellReserveBtn = document.getElementById('sell-reserve-btn');
   if(reserveBtn && !reserveBtn.dataset.disabledByUser){
     reserveBtn.disabled = !isReserveTime;
     reserveBtn.style.opacity = isReserveTime ? '1' : '0.4';
-    if(!isReserveTime) reserveBtn.title = '구매·판매 예약은 05:00~20:00에만 가능합니다';
-    else reserveBtn.title = '';
+    reserveBtn.title = isReserveTime ? '' : '구매·판매 예약은 05:00~20:00에만 가능합니다';
   }
+  // 판매 예약하기 버튼
+  var sellReserveBtn = document.getElementById('sell-reserve-btn');
   if(sellReserveBtn && !sellReserveBtn.dataset.disabledByUser){
     sellReserveBtn.disabled = !isReserveTime;
     sellReserveBtn.style.opacity = isReserveTime ? '1' : '0.4';
-    if(!isReserveTime) sellReserveBtn.title = '구매·판매 예약은 05:00~20:00에만 가능합니다';
-    else sellReserveBtn.title = '';
+    sellReserveBtn.title = isReserveTime ? '' : '구매·판매 예약은 05:00~20:00에만 가능합니다';
   }
+  // 구매예약 수량 +/- 버튼
+  ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el){ el.disabled = !isReserveTime; el.style.opacity = isReserveTime ? '' : '0.4'; }
+  });
+  // 보유내역 전체판매예약 버튼
+  ['bulk-sell-btn-bronze','bulk-sell-btn-silver','bulk-sell-btn-gold'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el){
+      el.disabled = !isReserveTime;
+      el.style.opacity = isReserveTime ? '1' : '0.4';
+      el.style.cursor = isReserveTime ? '' : 'not-allowed';
+      el.title = isReserveTime ? '' : '구매·판매 예약은 05:00~20:00에만 가능합니다';
+    }
+  });
+  // 보유내역 개별 판매예약 배지 클릭 제어
+  document.querySelectorAll('[id^="badge-"]').forEach(function(badge){
+    if(isReserveTime){
+      // 예약시간: 원래 onclick 복원 (data-onclick에 저장해둔 것)
+      if(badge.dataset.onclick){ badge.setAttribute('onclick', badge.dataset.onclick); delete badge.dataset.onclick; }
+      badge.style.cursor = badge.dataset.canSell === '1' ? 'pointer' : 'default';
+      badge.style.opacity = '1';
+    } else {
+      // 비예약시간: onclick 제거, 클릭 막기
+      if(badge.getAttribute('onclick') && !badge.dataset.onclick){
+        badge.dataset.onclick = badge.getAttribute('onclick');
+      }
+      badge.removeAttribute('onclick');
+      badge.style.cursor = 'not-allowed';
+      badge.style.opacity = '0.5';
+    }
+  });
 }
 // updateTimeBar interval은 로그인 후 startTimeBar()로 등록
 
@@ -1130,10 +1163,12 @@ async function loadItemDetail(barType){
       var badgeColor = isSelected?'#388e3c':canSell?'#7b1fa2':'#546e7a';
       var badgeText = isSelected?'✓ 판매예약':displayLabel;
       var cardBg = isSelected?'rgba(56,142,60,0.12)':'';
-      var cursor = canSell?'cursor:pointer;':'';
+      var cursor = (canSell && _isRT)?'cursor:pointer;':(canSell?'cursor:not-allowed;':'');
       var badgeTitle = canSell?(isSelected?'클릭하여 취소':'클릭하여 판매예약'):'';
       // 배지 클릭 → toggleSellSelect (canSell일 때만)
-      var badgeOnclick = canSell?'onclick="toggleSellSelect('+it.id+',\''+barType+'\')" ':' ';
+      var _isRT = (new Date().getHours()>=5 && new Date().getHours()<20);
+      var badgeOnclick = (canSell && _isRT)?'onclick="toggleSellSelect('+it.id+',\''+barType+'\')" data-onclick="toggleSellSelect('+it.id+',\''+barType+'\')\" ':' ';
+      if(canSell) badgeOnclick += ' data-can-sell="1"';
       var statusBadge = '<span id="badge-'+it.id+'" '+badgeOnclick
         +'title="'+badgeTitle+'" '
         +'style="display:inline-block;background:'+badgeColor+';color:#fff;border-radius:12px;'
