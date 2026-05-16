@@ -2319,7 +2319,10 @@ function updateResUI(BZ_MIN,BZ_MAX){
 function changeRes(type,delta){
   var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[userData&&userData.level||1]||LEVEL_CFG_JS[1];
   var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
+  var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
   if(type==='bz') bzCnt=Math.max(BZ_MIN,Math.min(BZ_MAX,bzCnt+delta));
+  else if(type==='sv') svCnt=Math.max(0,Math.min(SV_MAX,svCnt+delta));
+  else if(type==='gd') gdCnt=Math.max(0,Math.min(GD_MAX,gdCnt+delta));
   updateResUI(BZ_MIN,BZ_MAX);
 }
 
