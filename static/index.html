@@ -2708,10 +2708,7 @@ async function submitCharge(){
     document.getElementById('charge-result').textContent='';
     document.getElementById('charge-refresh-wrap').style.display='block';
   }catch(e){
-    toast('충전 신청 완료! 관리자 확인 후 지급됩니다');
-    document.getElementById('charge-refresh-wrap').style.display='block';
-    document.getElementById('charge-amount').value='';
-    document.getElementById('charge-result').textContent='';
+    toast(e.message||'충전 신청 실패. 다시 시도해주세요.','error');
   }
 }
 

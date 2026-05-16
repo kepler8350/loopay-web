@@ -405,8 +405,8 @@ def charge_request():
     uid = int(get_jwt_identity())
     data = request.json or {}
     amount = int(data.get('amount', 0))
-    if amount < 1000:
-        return jsonify(error='최소 1,000원 이상 충전 가능'), 400
+    if amount < 1:
+        return jsonify(error='1 포인트 이상 충전 가능'), 400
     points = amount // 120
     receipt_phone = (data.get('receipt_phone') or '').strip()
     receipt_name = (data.get('receipt_name') or '').strip()
