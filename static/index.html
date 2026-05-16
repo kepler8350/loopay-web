@@ -1022,7 +1022,7 @@ function updateTimeBar(){
     {s:20,e:24,text:'🌙 20:00~05:00 매칭 대기',color:'#37474f'},
     {s:0,e:5,text:'🌙 00:00~05:00 매칭 대기',color:'#37474f'}
   ];
-  var now=new Date();
+  var now=getEffectiveDate();
   var h=now.getHours(), m=now.getMinutes(), s=now.getSeconds();
   var days=['일','월','화','수','목','금','토'];
   var dateStr=(now.getMonth()+1)+'/'+now.getDate()+'('+days[now.getDay()]+')';
@@ -1104,10 +1104,34 @@ function updateTimeBar(){
 }
 // updateTimeBar interval은 로그인 후 startTimeBar()로 등록
 
+// 서버 시간 동기화 (mock time 지원)
+var _serverTimeOffset = 0; // 서버-클라이언트 시간차 (ms)
+var _isMockTime = false;
+async function syncServerTime(){
+  try{
+    var res = await fetch('/api/current-time');
+    var d = await res.json();
+    _isMockTime = d.is_mock;
+    if(_isMockTime){
+      // mock 시간: 서버 시간을 기준으로 offset 계산
+      var serverMs = new Date(d.time.replace(' ','T')).getTime();
+      _serverTimeOffset = serverMs - Date.now();
+    } else {
+      _serverTimeOffset = 0;
+    }
+  }catch(e){}
+}
+function getEffectiveDate(){
+  return new Date(Date.now() + _serverTimeOffset);
+}
 function startTimeBar(){
+  syncServerTime();
   updateTimeBar();
   if(window._tbInterval) clearInterval(window._tbInterval);
   window._tbInterval = setInterval(updateTimeBar, 1000);
+  // 10초마다 서버 시간 동기화
+  if(window._syncInterval) clearInterval(window._syncInterval);
+  window._syncInterval = setInterval(syncServerTime, 10000);
 }
 
 // ── 아이템 상세보기 (판매예약 포함) ──
@@ -1166,7 +1190,7 @@ async function loadItemDetail(barType){
       var cursor = (canSell && _isRT)?'cursor:pointer;':(canSell?'cursor:not-allowed;':'');
       var badgeTitle = canSell?(isSelected?'클릭하여 취소':'클릭하여 판매예약'):'';
       // 배지 클릭 → toggleSellSelect (canSell일 때만)
-      var _isRT = (new Date().getHours()>=5 && new Date().getHours()<20);
+      var _isRT = (getEffectiveDate().getHours()>=5 && getEffectiveDate().getHours()<20);
       var badgeOnclick = (canSell && _isRT)?'onclick="toggleSellSelect('+it.id+',\''+barType+'\')" data-onclick="toggleSellSelect('+it.id+',\''+barType+'\')\" ':' ';
       if(canSell) badgeOnclick += ' data-can-sell="1"';
       var statusBadge = '<span id="badge-'+it.id+'" '+badgeOnclick
@@ -1433,7 +1457,7 @@ function enableReserveSection(){
     btn.textContent = '구매 예약하기 (40P × 매칭예약수)';
     btn.onclick = function(){ showReserveConfirm(); };
   }
-  var _h2=new Date().getHours();
+  var _h2=getEffectiveDate().getHours();
   var _isRT2=(_h2>=5 && _h2<20);
   ['r-bz-m','r-bz-p'].forEach(function(id){
     var el = document.getElementById(id);
@@ -1450,7 +1474,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
   // sv/gd는 전역 변수로 관리 (독립 선택)
   var sv=svCnt, gd=gdCnt;
   // ── 예약시간 외에는 모든 수량버튼 비활성화 ──
-  var _h=new Date().getHours();
+  var _h=getEffectiveDate().getHours();
   var _isRT=(_h>=5 && _h<20);
 
   // 수정 표시
@@ -2381,7 +2405,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
   // sv/gd는 전역 변수로 관리 (독립 선택)
   var sv=svCnt, gd=gdCnt;
   // ── 예약시간 외에는 모든 수량버튼 비활성화 ──
-  var _h=new Date().getHours();
+  var _h=getEffectiveDate().getHours();
   var _isRT=(_h>=5 && _h<20);
 
   // 수정 표시

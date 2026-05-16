@@ -475,6 +475,17 @@ def admin_approve_user():
     finally:
         db.close()
 
+@app.route('/api/current-time', methods=['GET'])
+def get_current_time():
+    """현재 서버 시간 반환 (mock 시간 포함)"""
+    now = get_now()
+    return jsonify(
+        time=now.strftime('%Y-%m-%d %H:%M:%S'),
+        hour=now.hour,
+        minute=now.minute,
+        is_mock=_MOCK_TIME is not None
+    )
+
 @app.route('/api/admin/set-time', methods=['POST'])
 def admin_set_time():
     if not check_admin_auth():
