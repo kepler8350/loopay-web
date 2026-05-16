@@ -279,6 +279,16 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 
 
 <div id="page-testtools" class="page">
+      <h2 class="page-title">테스트 도구</h2>
+      <div class="card" style="margin-bottom:16px">
+        <strong style="display:block;margin-bottom:12px">즉시승인 회원가입</strong>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <input id="auto-reg-username" class="input" placeholder="아이디 (6~16자)">
+          <input id="auto-reg-name" class="input" placeholder="이름">
+          <input id="auto-reg-password" class="input" type="password" placeholder="비밀번호">
+        </div>
+        <button class="btn btn-primary" onclick="registerWithAutoApprove()">즉시승인으로 회원가입</button>
+      </div>
   <div class="page-header">
     <h2 class="page-title">⚙️ 테스트 도구</h2>
     <p class="page-sub">시스템 테스트용 도구 (실 운영 사용 금지)</p>
@@ -770,6 +780,22 @@ async function loadReservations(){
 
 async function loadTesttools(){
   // 테스트도구 페이지는 별도 로드 불필요
+}
+
+async function registerWithAutoApprove(){
+  var username = document.getElementById('auto-reg-username')?.value?.trim();
+  var password = document.getElementById('auto-reg-password')?.value?.trim();
+  var realName = document.getElementById('auto-reg-name')?.value?.trim();
+  if(!username||!password||!realName){toast('모든 필드를 입력하세요','error');return;}
+  try{
+    var d = await apiAdmin('/auth/register', {method:'POST', body:JSON.stringify({
+      username, password, real_name:realName,
+      phone:'', bank:'', account_no:'', account_name:realName,
+      auto_approve:true
+    })});
+    toast(d.message||'즉시승인 완료');
+    loadPage('users');
+  }catch(e){toast(e.message,'error');}
 }
 
 

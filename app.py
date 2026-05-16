@@ -100,9 +100,15 @@ def register():
         pw_hash = generate_password_hash(password)
         db.execute(
             "INSERT INTO users (username, password_hash, nickname, phone, bank, account_no, account_name, approved) VALUES (?,?,?,?,?,?,?,0)",
-            (username, pw_hash, username, phone, bank, account_no, account_name)
+            (username, pw_hash, real_name or username, phone, bank, account_no, account_name)
         )
         db.commit()
+        # 즉시승인 옵션
+        auto_approve = data.get('auto_approve', False)
+        if auto_approve:
+            conn.execute('UPDATE users SET approved=1 WHERE username=?', (username,))
+            conn.commit()
+            return jsonify(success=True, message='회원가입 완료! 즉시 이용 가능합니다.', auto_approved=True)
         return jsonify(success=True, message='회원가입이 완료되었습니다. 관리자 승인 후 이용 가능합니다.')
     except Exception as e:
         db.rollback()
@@ -381,8 +387,11 @@ def charge_request():
     if amount < 1000:
         return jsonify(error='최소 1,000원 이상 충전 가능'), 400
     points = amount // 120
-    db = get_db()
-    db.execute("INSERT INTO charge_requests(user_id,amount,points) VALUES(?,?,?)", (uid,amount,points))
+    receipt_phone = (data.get('receipt_phone') or '').strip()
+    try:
+        db.execute("INSERT INTO charge_requests(user_id,amount,points,receipt_phone) VALUES(?,?,?,?)", (uid,amount,points,receipt_phone))
+    except Exception:
+        db.execute("INSERT INTO charge_requests(user_id,amount,points) VALUES(?,?,?)", (uid,amount,points))
     db.commit()
     db.close()
     return jsonify(success=True,amount=amount,points=points,message=f'{amount:,}원 → {points}P 충전 요청 완료')

@@ -897,6 +897,8 @@ async function doRegister(){
   errEl.textContent='';
   if(!username||!password){errEl.textContent='아이디와 비밀번호는 필수입니다.';return;}if(!/^[a-z0-9]{4,8}$/.test(username)){errEl.textContent='아이디: 영소문자+숫자 4~8자로 입력해주세요.';return;}
   try{
+    var realName=(document.getElementById('reg-real-name')?.value||'').trim();
+    if(!realName){errEl.textContent='본인 이름을 입력해주세요';return;}
     var r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({username,password,phone,bank,account_no:accountNo,account_name:accountName})});
     var d=await r.json();
@@ -1089,7 +1091,7 @@ async function loadItemDetail(barType){
     var names={bronze:'수정',silver:'루비',gold:'다이아'};
     updateBulkSellBtn(barType, items);
     // 아이템 캐시 업데이트 (판매보드에서 사용)
-    items.forEach(function(it){ _itemCache[it.id]={bar_type:barType,stage:it.stage,sell_price:it.sell_price}; });
+    items.forEach(function(it){ _itemCache[it.id]={bar_type:barType,stage:it.stage,sell_price:it.sell_price,purchase_date:it.purchase_date,days:it.days}; });
     var html=items.map(function(it){
       var dayNum = it.days + 1;
       var canSell = it.days>=2 && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료' && it.status_label!=='판매예약';
@@ -1150,6 +1152,17 @@ async function toggleBulkSell(barType){
 }
 
 function toggleSellSelect(itemId, barType){
+  // 같은날 구매한 아이템만 선택 가능
+  var clickedInfo = _itemCache[itemId];
+  var selectedIds = Object.keys(_sellSelected).filter(function(id){return _sellSelected[id];});
+  if(!_sellSelected[itemId] && selectedIds.length > 0 && clickedInfo){
+    var firstInfo = _itemCache[parseInt(selectedIds[0])];
+    if(firstInfo && firstInfo.purchase_date && clickedInfo.purchase_date !== firstInfo.purchase_date){
+      toast('같은 날 구매한 아이템만 선택 가능합니다
+(이미 선택: '+firstInfo.purchase_date+')');
+      return;
+    }
+  }
   _sellSelected[itemId] = !_sellSelected[itemId];
   var card = document.getElementById('icard-'+itemId);
   var badge = document.getElementById('badge-'+itemId);
@@ -1562,8 +1575,9 @@ async function loadNotifications(){
     <!-- 회원가입 폼 -->
     <div id="register-form" style="display:none">
       <div style="font-size:16px;font-weight:700;text-align:center;margin-bottom:16px;color:#1976d2">회원가입</div>
-      <input id="reg-username" type="text" class="login-input" placeholder="아이디 (영문/숫자, 16자 이하)" autocomplete="username" maxlength="16" oninput="onUsername(this)">
-      <div style="font-size:11px;color:#555;margin-top:-6px;margin-bottom:10px">ℹ️ 영어 소문자와 숫자만 가능， 4자 이상 8자 이하</div>
+      <input id="reg-real-name" type="text" class="login-input" placeholder="본인 이름 (실명 필수)" maxlength="20">
+      <input id="reg-username" type="text" class="login-input" placeholder="아이디 (영문/숫자, 6~16자)" autocomplete="username" maxlength="16" oninput="onUsername(this)">
+      <div style="font-size:11px;color:#555;margin-top:-6px;margin-bottom:10px">ℹ️ 영어 소문자와 숫자만 가능, 6자 이상 16자 이하</div>
       <div id="reg-username-error" style="color:#c62828;font-size:12px;margin-top:-6px;margin-bottom:6px;min-height:14px"></div>
       <input id="reg-password" type="password" class="login-input" placeholder="비밀번호 (필수, 4자 이상)" autocomplete="new-password">
       <div style="position:relative">
@@ -1613,6 +1627,7 @@ async function loadNotifications(){
           <span class="time-bar-time" id="tbar-time">--:--:--</span>
         </div>
         <div class="time-bar-right" id="tbar-schedule">--</div>
+      <button onclick="location.reload()" title="새로고침" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:3px 8px;font-size:14px;cursor:pointer;flex-shrink:0;margin-left:8px">⟳</button>
       </div>
       <div class="total-card" style="display:flex;gap:10px;align-items:stretch;padding:14px 16px">
         <div style="flex:1">
@@ -2378,8 +2393,13 @@ async function doReservation(){
 // --- charge ---------------------------------------------------------------
 function calcCharge(){
   const amt=parseInt(document.getElementById('charge-amount').value)||0;
-  const pts=Math.floor(amt/120);
-  document.getElementById('charge-result').textContent=amt>0?`${amt.toLocaleString()}원 → ${pts.toLocaleString()}P`:'';
+  const won=amt*120;
+  const el=document.getElementById('charge-result');
+  if(amt>0){
+    el.textContent=`${amt.toLocaleString()}P → ${won.toLocaleString()}원`;
+    el.style.color='var(--accent)';
+    el.style.fontWeight='600';
+  } else { el.textContent=''; }
 }
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('charge-amount').addEventListener('input',calcCharge);
