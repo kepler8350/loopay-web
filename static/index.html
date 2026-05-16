@@ -960,10 +960,16 @@ function changeRes(t, delta){
   var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
   if(t==='bz'){
     bzCnt = Math.min(Math.max(bzCnt+delta, BZ_MIN), BZ_MAX);
+    if(bzCnt < BZ_MAX){ svCnt=0; gdCnt=0; }
   } else if(t==='sv'){
-    svCnt = Math.min(Math.max(svCnt+delta, 0), SV_MAX);
+    if(bzCnt >= BZ_MAX && SV_MAX > 0){
+      svCnt = Math.min(Math.max(svCnt+delta, 0), SV_MAX);
+      if(svCnt < SV_MAX) gdCnt=0;
+    }
   } else if(t==='gd'){
-    gdCnt = Math.min(Math.max(gdCnt+delta, 0), GD_MAX);
+    if(bzCnt >= BZ_MAX && svCnt >= SV_MAX && GD_MAX > 0){
+      gdCnt = Math.min(Math.max(gdCnt+delta, 0), GD_MAX);
+    }
   }
   updateResUI(BZ_MIN, BZ_MAX);
 }
@@ -1404,24 +1410,32 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-bz-m').disabled=(bzCnt<=BZ_MIN);
   document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
 
-  // 루비: SV_MAX > 0 이면 항상 선택 가능 (수정과 독립, sv_min=0)
-  var svUnlocked = SV_MAX > 0;
-  // svCnt는 전역 변수 - 표시용으로 그대로 사용
+  // 루비: 수정이 BZ_MAX 도달해야 선택 가능
+  var svUnlocked = (bzCnt >= BZ_MAX) && SV_MAX > 0;
+  // 수정이 BZ_MAX 미달이면 svCnt 강제 0
+  if(!svUnlocked) svCnt = 0;
+  sv = svCnt;
   document.getElementById('r-sv-v').textContent = sv;
-  document.getElementById('r-sv-range').textContent = svUnlocked ? '최소 0 / 최대 '+SV_MAX : '해당 레벨 미지원';
-  document.getElementById('r-sv-note').textContent = '수정 '+BZ_MAX+'개 예약 시 루비 자동 포함';
+  document.getElementById('r-sv-range').textContent = svUnlocked
+    ? '최소 0 / 최대 '+SV_MAX
+    : '(수정 '+BZ_MAX+'개 달성 시 선택 가능)';
+  document.getElementById('r-sv-note').textContent = '수정 '+BZ_MAX+'개 예약 시 루비 선택 가능';
   document.getElementById('r-sv-wrap').className = 'r-wrap'+(svUnlocked?'':' locked');
   var svMBtn = document.getElementById('r-sv-m');
   var svPBtn = document.getElementById('r-sv-p');
   if(svMBtn) svMBtn.disabled = (!svUnlocked || sv <= 0);
   if(svPBtn) svPBtn.disabled = (!svUnlocked || sv >= SV_MAX);
 
-  // 다이아: GD_MAX > 0 이면 항상 선택 가능 (루비와 독립, gd_min=0)
-  var gdUnlocked = GD_MAX > 0;
-  // gdCnt는 전역 변수 - 표시용으로 그대로 사용
+  // 다이아: 루비가 SV_MAX 도달해야 선택 가능
+  var gdUnlocked = svUnlocked && (sv >= SV_MAX) && GD_MAX > 0;
+  // 루비가 SV_MAX 미달이면 gdCnt 강제 0
+  if(!gdUnlocked) gdCnt = 0;
+  gd = gdCnt;
   document.getElementById('r-gd-v').textContent = gd;
-  document.getElementById('r-gd-range').textContent = gdUnlocked ? '최소 0 / 최대 '+GD_MAX : '해당 레벨 미지원';
-  document.getElementById('r-gd-note').textContent = '루비 '+SV_MAX+'개 예약 시 다이아 자동 포함';
+  document.getElementById('r-gd-range').textContent = gdUnlocked
+    ? '최소 0 / 최대 '+GD_MAX
+    : '(루비 '+SV_MAX+'개 달성 시 선택 가능)';
+  document.getElementById('r-gd-note').textContent = '루비 '+SV_MAX+'개 예약 시 다이아 선택 가능';
   document.getElementById('r-gd-wrap').className = 'r-wrap'+(gdUnlocked?'':' locked');
   var gdMBtn = document.getElementById('r-gd-m');
   var gdPBtn = document.getElementById('r-gd-p');
@@ -2277,24 +2291,32 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-bz-m').disabled=(bzCnt<=BZ_MIN);
   document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
 
-  // 루비: SV_MAX > 0 이면 항상 선택 가능 (수정과 독립, sv_min=0)
-  var svUnlocked = SV_MAX > 0;
-  // svCnt는 전역 변수 - 표시용으로 그대로 사용
+  // 루비: 수정이 BZ_MAX 도달해야 선택 가능
+  var svUnlocked = (bzCnt >= BZ_MAX) && SV_MAX > 0;
+  // 수정이 BZ_MAX 미달이면 svCnt 강제 0
+  if(!svUnlocked) svCnt = 0;
+  sv = svCnt;
   document.getElementById('r-sv-v').textContent = sv;
-  document.getElementById('r-sv-range').textContent = svUnlocked ? '최소 0 / 최대 '+SV_MAX : '해당 레벨 미지원';
-  document.getElementById('r-sv-note').textContent = '수정 '+BZ_MAX+'개 예약 시 루비 자동 포함';
+  document.getElementById('r-sv-range').textContent = svUnlocked
+    ? '최소 0 / 최대 '+SV_MAX
+    : '(수정 '+BZ_MAX+'개 달성 시 선택 가능)';
+  document.getElementById('r-sv-note').textContent = '수정 '+BZ_MAX+'개 예약 시 루비 선택 가능';
   document.getElementById('r-sv-wrap').className = 'r-wrap'+(svUnlocked?'':' locked');
   var svMBtn = document.getElementById('r-sv-m');
   var svPBtn = document.getElementById('r-sv-p');
   if(svMBtn) svMBtn.disabled = (!svUnlocked || sv <= 0);
   if(svPBtn) svPBtn.disabled = (!svUnlocked || sv >= SV_MAX);
 
-  // 다이아: GD_MAX > 0 이면 항상 선택 가능 (루비와 독립, gd_min=0)
-  var gdUnlocked = GD_MAX > 0;
-  // gdCnt는 전역 변수 - 표시용으로 그대로 사용
+  // 다이아: 루비가 SV_MAX 도달해야 선택 가능
+  var gdUnlocked = svUnlocked && (sv >= SV_MAX) && GD_MAX > 0;
+  // 루비가 SV_MAX 미달이면 gdCnt 강제 0
+  if(!gdUnlocked) gdCnt = 0;
+  gd = gdCnt;
   document.getElementById('r-gd-v').textContent = gd;
-  document.getElementById('r-gd-range').textContent = gdUnlocked ? '최소 0 / 최대 '+GD_MAX : '해당 레벨 미지원';
-  document.getElementById('r-gd-note').textContent = '루비 '+SV_MAX+'개 예약 시 다이아 자동 포함';
+  document.getElementById('r-gd-range').textContent = gdUnlocked
+    ? '최소 0 / 최대 '+GD_MAX
+    : '(루비 '+SV_MAX+'개 달성 시 선택 가능)';
+  document.getElementById('r-gd-note').textContent = '루비 '+SV_MAX+'개 예약 시 다이아 선택 가능';
   document.getElementById('r-gd-wrap').className = 'r-wrap'+(gdUnlocked?'':' locked');
   var gdMBtn = document.getElementById('r-gd-m');
   var gdPBtn = document.getElementById('r-gd-p');
@@ -2335,9 +2357,23 @@ function changeRes(type,delta){
   var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[userData&&userData.level||1]||LEVEL_CFG_JS[1];
   var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
   var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
-  if(type==='bz') bzCnt=Math.max(BZ_MIN,Math.min(BZ_MAX,bzCnt+delta));
-  else if(type==='sv') svCnt=Math.max(0,Math.min(SV_MAX,svCnt+delta));
-  else if(type==='gd') gdCnt=Math.max(0,Math.min(GD_MAX,gdCnt+delta));
+  if(type==='bz'){
+    bzCnt=Math.max(BZ_MIN,Math.min(BZ_MAX,bzCnt+delta));
+    // 수정이 BZ_MAX 미달이면 루비/다이아 초기화
+    if(bzCnt < BZ_MAX){ svCnt=0; gdCnt=0; }
+  } else if(type==='sv'){
+    // 루비는 수정이 BZ_MAX 도달해야만 조작 가능
+    if(bzCnt >= BZ_MAX && SV_MAX > 0){
+      svCnt=Math.max(0,Math.min(SV_MAX,svCnt+delta));
+      // 루비가 SV_MAX 미달이면 다이아 초기화
+      if(svCnt < SV_MAX) gdCnt=0;
+    }
+  } else if(type==='gd'){
+    // 다이아는 루비가 SV_MAX 도달해야만 조작 가능
+    if(bzCnt >= BZ_MAX && svCnt >= SV_MAX && GD_MAX > 0){
+      gdCnt=Math.max(0,Math.min(GD_MAX,gdCnt+delta));
+    }
+  }
   updateResUI(BZ_MIN,BZ_MAX);
 }
 
