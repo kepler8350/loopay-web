@@ -2637,7 +2637,12 @@ document.addEventListener('DOMContentLoaded',()=>{
 // 충전 확인 모달 표시
 function showChargeConfirm(){
   const amt=parseInt(document.getElementById('charge-amount').value)||0;
-  if(amt<1000){toast('최소 1,000원 이상 입력해주세요');return;}
+  if(amt<1000){
+    var inp=document.getElementById('charge-amount');
+    if(inp){inp.focus();inp.style.border='2px solid #e53935';setTimeout(function(){inp.style.border='';},2000);}
+    toast('충전 포인트를 입력해주세요 (최소 1,000P)');
+    return;
+  }
   const won=amt*120;
   // 충전 내용 표시
   var ptsEl=document.getElementById('cc-points');
