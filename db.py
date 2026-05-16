@@ -65,7 +65,8 @@ def init_db():
         bar_type TEXT NOT NULL,
         match_round INTEGER DEFAULT 1,
         reserve_date DATE NOT NULL,
-        status TEXT DEFAULT 'pending' CHECK(status IN ('pending','matched','unmatched','sold')),
+        status TEXT DEFAULT 'pending' CHECK(status IN ('pending','matched','unmatched','sold','paid','confirmed','unpaid','cancelled')),
+        memo TEXT DEFAULT '',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id)
     )''')

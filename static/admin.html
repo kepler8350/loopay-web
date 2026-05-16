@@ -112,7 +112,29 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div class="table-card"><div class="table-header"><div class="table-title">&#128179; &#52572;&#44540; &#52649;&#51204; &#50836;&#52397;</div><button class="btn btn-secondary" onclick="showPage('charges',document.querySelector('[data-page=charges]'))" style="font-size:12px;padding:6px 12px">&#51204;&#52404; &#48372;&#44592;</button></div><div id="dash-charges"><div class="empty-state"><div>&#47196;&#46377; &#51473;...</div></div></div></div>
 <div class="table-card"><div class="table-header"><div class="table-title">&#128100; &#52572;&#44540; &#44032;&#51077; &#54924;&#50896;</div></div><table><thead><tr><th>&#45769;&#45348;&#51076;</th><th>&#47112;&#48296;</th><th>&#54252;&#51064;&#53944;</th></tr></thead><tbody id="dash-users"></tbody></table></div>
 </div></div>
-<div id="page-users" class="page"><div class="page-title">&#54924;&#50896; &#44288;&#47532;</div><div class="page-sub">&#51204;&#52404; &#54924;&#50896; &#47785;&#47197;</div>
+<div id="page-items" class="page">
+      <h2 class="page-title">아이템 현황</h2>
+      <p class="page-subtitle">단계별 아이템 보유 현황 (유저 + 플랫폼 합계)</p>
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="loadItemStats('bronze')">수정</button>
+        <button class="btn btn-secondary" onclick="loadItemStats('silver')">루비</button>
+        <button class="btn btn-secondary" onclick="loadItemStats('gold')">다이아</button>
+      </div>
+      <div id="item-stats-result">
+        <div style="text-align:center;color:#888;padding:20px">위 버튼을 클릭하여 조회</div>
+      </div>
+    </div>
+    <div id="page-unpaid" class="page">
+      <h2 class="page-title">미입금 신고 현황</h2>
+      <div style="margin-bottom:12px;display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="loadUnpaidReports()">새로고침</button>
+      </div>
+      <table class="data-table" id="unpaid-reports-table">
+        <thead><tr><th>No</th><th>신고자</th><th>예약번호</th><th>아이템</th><th>신고일</th><th>처리</th></tr></thead>
+        <tbody id="unpaid-reports-body"><tr><td colspan="6" style="text-align:center;color:#888;padding:16px">로딩 중...</td></tr></tbody>
+      </table>
+    </div>
+    <div id="page-users" class="page"><div class="page-title">&#54924;&#50896; &#44288;&#47532;</div><div class="page-sub">&#51204;&#52404; &#54924;&#50896; &#47785;&#47197;</div>
 <div class="table-card"><div class="table-header"><div class="table-title">&#54924;&#50896; &#47785;&#47197;</div></div>
 
 <div id="page-charges" class="page"><div class="page-title">&#52649;&#51204; &#44288;&#47532;</div><div class="page-sub">&#52649;&#51204; &#50836;&#52397; &#49849;&#51064; &#48143; &#44288;&#47532;</div>
@@ -753,6 +775,25 @@ async function withdrawUser(uid){
 }
 
 
+async function loadItemStats(barType){
+  var names={bronze:'수정',silver:'루비',gold:'다이아'};
+  var el=document.getElementById('item-stats-result');
+  el.innerHTML='<div style="text-align:center;color:#888;padding:16px">로딩 중...</div>';
+  try{
+    var d=await apiAdmin('/admin/item-stats?bar_type='+barType);
+    var rows=d.stages.map(function(s){
+      return '<tr><td>'+names[barType]+' '+s.stage+'단계</td>'
+        +'<td class="num">'+s.user_count+'</td>'
+        +'<td class="num">'+s.platform_count+'</td>'
+        +'<td class="num bold">'+s.total+'</td>'
+        +'<td class="num">'+s.sell_price.toLocaleString()+'원</td>'
+        +'</tr>';
+    }).join('');
+    el.innerHTML='<table class="data-table" style="font-size:13px">'
+      +'<thead><tr><th>단계</th><th>유저</th><th>플랫폼</th><th>합계</th><th>판매가</th></tr></thead>'
+      +'<tbody>'+rows+'</tbody></table>';
+  }catch(e){el.innerHTML='<div style="color:#ef5350;padding:12px">오류: '+e.message+'</div>';}
+}
 async function loadReservations(){
   try{
     const d=await apiAdmin('/admin/reservations-list');
@@ -778,6 +819,30 @@ async function loadReservations(){
   }catch(e){console.error(e);}
 }
 
+async function loadUnpaidReports(){
+  var tbody=document.getElementById('unpaid-reports-body');
+  if(!tbody)return;
+  try{
+    var d=await apiAdmin('/admin/unpaid-reports');
+    if(!d.reports||!d.reports.length){
+      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#888;padding:16px">신고 없음</td></tr>';
+      return;
+    }
+    var typeMap={bronze:'수정',silver:'루비',gold:'다이아'};
+    tbody.innerHTML=d.reports.map(function(r,i){
+      return '<tr><td>'+(i+1)+'</td><td>'+r.username+'</td><td>'+r.reservation_id+'</td>'
+        +'<td>'+typeMap[r.bar_type]+'</td><td>'+(r.created_at||'').slice(0,10)+'</td>'
+        +'<td><button onclick="resolveUnpaid('+r.id+')" class="btn btn-success" style="font-size:11px;padding:3px 8px">처리완료</button></td></tr>';
+    }).join('');
+  }catch(e){console.error(e);}
+}
+async function resolveUnpaid(id){
+  try{
+    await apiAdmin('/admin/resolve-unpaid/'+id, {method:'POST'});
+    toast('처리 완료');
+    loadUnpaidReports();
+  }catch(e){toast(e.message,'error');}
+}
 async function loadTesttools(){
   // 테스트도구 페이지는 별도 로드 불필요
 }

@@ -334,8 +334,8 @@ async function loadUserData(){
     renderBars(d);
     renderLevelTab();
     updateReserveDefaults(d.level);
-    // 오늘 이미 예약했으면 비활성화
-    if(d.today_reservations && (d.today_reservations.bronze||0) > 0){
+    // 오늘 이미 예약했으면 비활성화 (auto_reserve=false인 신규 가입자는 0)
+    if(d.today_reservations && (d.today_reservations.bronze||0) > 0 && d.auto_reserve !== false){
       disableReserveSection();
     }
     // 다음날 05:00 재활성화 타이머
@@ -1668,6 +1668,8 @@ async function loadNotifications(){
       <button class="nav-btn" onclick="showTab('matching',this)">매칭</button>
       <button class="nav-btn" onclick="showTab('schedule',this)">시간표</button>
       <button class="nav-btn" onclick="showTab('combine',this)">결합판매</button>
+        <button class="nav-btn" onclick="showTab('profile',this);loadProfileForm()">내정보</button>
+        <button class="nav-btn" onclick="showTab('history',this)">거래내역</button>
 <button class="nav-btn" id="nav-notif-btn" onclick="showTab('notif',this)" style="position:relative">🔔<span id="notif-badge" style="display:none;position:absolute;top:2px;right:2px;background:#e53935;color:#fff;font-size:9px;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px"></span></button>
     </div>
 
@@ -1911,12 +1913,12 @@ async function loadNotifications(){
           <tr><th>레벨</th><th>누적횟수</th><th>필요 충전포인트</th><th>기간</th></tr>
           <tr><td>1레벨</td><td>150회</td><td><span class="badge badge-match">무료</span></td><td>—</td></tr>
           <tr><td>2레벨</td><td>450회</td><td><span class="badge badge-match">무료</span></td><td>—</td></tr>
-          <tr><td>3레벨</td><td>960회</td><td>1,000P</td><td>30일</td></tr>
-          <tr><td>4레벨</td><td>1,740회</td><td>1,000P</td><td>30일</td></tr>
-          <tr><td>5레벨</td><td>2,850회</td><td>1,500P</td><td>30일</td></tr>
-          <tr><td>6레벨</td><td>4,350회</td><td>1,500P</td><td>30일</td></tr>
-          <tr><td>7레벨</td><td>6,450회</td><td>2,000P</td><td>30일</td></tr>
-          <tr><td>8레벨</td><td>9,450회</td><td>1,000P</td><td>30일</td></tr>
+          <tr><td>3레벨</td><td>960회</td><td>100P</td><td>30일</td></tr>
+          <tr><td>4레벨</td><td>1,740회</td><td>100P</td><td>30일</td></tr>
+          <tr><td>5레벨</td><td>2,850회</td><td>150P</td><td>30일</td></tr>
+          <tr><td>6레벨</td><td>4,350회</td><td>150P</td><td>30일</td></tr>
+          <tr><td>7레벨</td><td>6,450회</td><td>200P</td><td>30일</td></tr>
+          <tr><td>8레벨</td><td>9,450회</td><td>100P</td><td>30일</td></tr>
           <tr><td>9레벨</td><td>12,450회</td><td>1,000P</td><td>30일</td></tr>
           <tr><td>10레벨</td><td>—</td><td>—</td><td>—</td></tr>
         </table>
@@ -1928,6 +1930,55 @@ async function loadNotifications(){
         <div class="info-block">
           1,000 충전·전환포인트 / 30일<br>
           활성화 시 매칭 시 자동으로 구매예약·판매예약 실행
+        </div>
+      </div>
+
+
+      <!-- 회원정보 변경 -->
+      <div id="tab-profile" class="tab">
+        <div class="sec-title">회원정보 변경</div>
+        <div class="reserve-box">
+          <div style="margin-bottom:10px">
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">닉네임</label>
+            <input id="prof-nickname" class="r-input" type="text" placeholder="닉네임" style="width:100%;box-sizing:border-box">
+          </div>
+          <div style="margin-bottom:10px">
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">휴대폰 번호</label>
+            <input id="prof-phone" class="r-input" type="text" inputmode="numeric" maxlength="11" oninput="onlyDigits(this)" placeholder="01012345678" style="width:100%;box-sizing:border-box">
+          </div>
+          <div style="margin-bottom:10px">
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">은행</label>
+            <select id="prof-bank" class="r-input" style="width:100%;box-sizing:border-box"><option value="">은행 선택</option><option>국민은행</option><option>신한은행</option><option>하나은행</option><option>우리은행</option><option>농협은행</option><option>기업은행</option><option>카카오뱅크</option><option>토스뱅크</option><option>케이뱅크</option></select>
+          </div>
+          <div style="margin-bottom:10px">
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">계좌번호</label>
+            <input id="prof-account-no" class="r-input" type="text" inputmode="numeric" oninput="onlyDigits(this)" placeholder="계좌번호 (숫자만)" style="width:100%;box-sizing:border-box">
+          </div>
+          <div style="margin-bottom:10px">
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">예금주명</label>
+            <input id="prof-account-name" class="r-input" type="text" placeholder="예금주명" style="width:100%;box-sizing:border-box">
+          </div>
+          <div style="margin-bottom:14px">
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">새 비밀번호 (변경 시만 입력)</label>
+            <input id="prof-new-pw" class="r-input" type="password" placeholder="새 비밀번호 (4자 이상)" style="width:100%;box-sizing:border-box">
+          </div>
+          <button onclick="doUpdateProfile()" style="width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">정보 변경하기</button>
+        </div>
+      </div>
+
+      <!-- 거래내역 -->
+      <div id="tab-history" class="tab">
+        <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>거래내역</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input id="hist-start" type="date" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text1)">
+            <span style="font-size:11px">~</span>
+            <input id="hist-end" type="date" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text1)">
+            <button onclick="loadTradeHistory()" style="font-size:11px;padding:4px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer">조회</button>
+          </div>
+        </div>
+        <div id="history-list" style="margin-top:8px">
+          <div style="text-align:center;color:var(--text2);padding:20px;font-size:13px">기간을 선택하고 조회하세요</div>
         </div>
       </div>
 
@@ -2100,8 +2151,8 @@ async function loadUserData(){
     renderHeader(d);
     renderBars(d);
     updateReserveDefaults(d.level);
-    // 오늘 이미 예약했으면 비활성화
-    if(d.today_reservations && (d.today_reservations.bronze||0) > 0){
+    // 오늘 이미 예약했으면 비활성화 (auto_reserve=false인 신규 가입자는 0)
+    if(d.today_reservations && (d.today_reservations.bronze||0) > 0 && d.auto_reserve !== false){
       disableReserveSection();
     }
     // 다음날 05:00 재활성화 타이머 설정
@@ -2345,6 +2396,61 @@ function showSellConfirm(){
 
 function closeSellConfirm(){
   document.getElementById('sell-confirm-overlay').classList.remove('show');
+}
+
+
+// ── 회원정보 변경 ──
+function loadProfileForm(){
+  if(!userData) return;
+  document.getElementById('prof-nickname').value = userData.nickname||'';
+  document.getElementById('prof-phone').value = userData.phone||'';
+  document.getElementById('prof-bank').value = userData.bank||'';
+  document.getElementById('prof-account-no').value = userData.account_no||'';
+  document.getElementById('prof-account-name').value = userData.account_name||'';
+}
+async function doUpdateProfile(){
+  var data={
+    nickname: document.getElementById('prof-nickname').value.trim(),
+    phone: document.getElementById('prof-phone').value.trim(),
+    bank: document.getElementById('prof-bank').value,
+    account_no: document.getElementById('prof-account-no').value.trim(),
+    account_name: document.getElementById('prof-account-name').value.trim(),
+    new_password: document.getElementById('prof-new-pw').value.trim()
+  };
+  try{
+    var d=await api('/user/update-profile',{method:'POST',body:JSON.stringify(data)});
+    if(d.success){ toast('회원정보가 변경되었습니다 ✅'); await loadUserData(); }
+    else toast(d.error||'변경 실패');
+  }catch(e){toast('오류: '+e.message);}
+}
+
+// ── 거래내역 ──
+async function loadTradeHistory(){
+  var start=document.getElementById('hist-start').value;
+  var end=document.getElementById('hist-end').value;
+  var listEl=document.getElementById('history-list');
+  listEl.innerHTML='<div style="text-align:center;color:var(--text2);padding:16px">로딩 중...</div>';
+  try{
+    var url='/user/trade-history';
+    if(start) url+='?start='+start;
+    if(end) url+=(start?'&':'?')+'end='+end;
+    var d=await api(url);
+    if(!d.history||!d.history.length){
+      listEl.innerHTML='<div style="text-align:center;color:var(--text2);padding:20px;font-size:13px">거래내역 없음</div>';
+      return;
+    }
+    var statusColor={'대기':'#f9a825','매칭완료':'#66bb6a','송금완료':'#42a5f5','입금확인':'#4caf50','미입금':'#ef5350','취소':'#9e9e9e'};
+    listEl.innerHTML=d.history.map(function(h){
+      var sc=statusColor[h.status]||'#888';
+      var price=h.type==='판매예약'?(h.sell_price?h.sell_price.toLocaleString()+'원':'-'):(h.buy_price?h.buy_price.toLocaleString()+'원':'-');
+      return '<div style="background:var(--bg2);border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">'
+        +'<div><div style="font-size:13px;font-weight:600">'+h.bar_type+(h.stage?' '+h.stage+'단계':'')+'</div>'
+        +'<div style="font-size:11px;color:var(--text2)">'+h.type+' · '+h.date+'</div></div>'
+        +'<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--text1)">'+price+'</div>'
+        +'<div style="font-size:11px;font-weight:600;color:'+sc+'">'+h.status+'</div></div>'
+        +'</div>';
+    }).join('');
+  }catch(e){listEl.innerHTML='<div style="color:#ef5350;padding:12px;font-size:13px">오류: '+e.message+'</div>';}
 }
 
 async function doSellReservationBulk(){

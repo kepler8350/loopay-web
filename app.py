@@ -109,7 +109,7 @@ def register():
             conn.execute('UPDATE users SET approved=1 WHERE username=?', (username,))
             conn.commit()
             return jsonify(success=True, message='회원가입 완료! 즉시 이용 가능합니다.', auto_approved=True)
-        return jsonify(success=True, message='회원가입이 완료되었습니다. 관리자 승인 후 이용 가능합니다.')
+        return jsonify(success=True, message='회원가입이 완료되었습니다. 관리자 승인 후 이용 가능합니다.', auto_reserve=False)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
@@ -1168,6 +1168,14 @@ def payment_complete():
                 fp.write(base64.b64decode(b64data))
             img_path = f'/uploads/{fname}'
         db.execute("UPDATE reservations SET status='paid' WHERE id=?", (reservation_id,))
+        # 판매자에게 입금 알림
+        matched_res = db.execute(
+            "SELECT * FROM reservations WHERE match_id=? AND id!=? AND match_round=2",
+            (r['match_id'] or reservation_id, reservation_id)
+        ).fetchone() if r.get('match_id') else None
+        if matched_res:
+            db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+                (matched_res['user_id'], 'payment', '입금 알림', f'구매자가 송금완료를 처리했습니다. 입금 내역을 확인해주세요. (예약번호: {reservation_id})'))
         db.commit()
         return jsonify(success=True, message='송금완료 처리됐습니다', image_url=img_path)
     except Exception as e:
@@ -1176,6 +1184,137 @@ def payment_complete():
     finally:
         db.close()
 
+
+@app.route('/api/user/update-profile', methods=['POST'])
+@jwt_required()
+def update_profile():
+    uid = int(get_jwt_identity())
+    data = request.json or {}
+    db = get_db()
+    try:
+        u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+        if not u:
+            return jsonify(error='사용자 없음'), 404
+        # 변경 가능 필드
+        nickname = (data.get('nickname') or u['nickname']).strip()
+        phone = (data.get('phone') or u['phone'] or '').strip()
+        bank = (data.get('bank') or u['bank'] or '').strip()
+        account_no = (data.get('account_no') or u['account_no'] or '').strip()
+        account_name = (data.get('account_name') or u['account_name'] or '').strip()
+        new_pw = data.get('new_password', '').strip()
+        
+        if new_pw:
+            from werkzeug.security import generate_password_hash
+            db.execute("UPDATE users SET nickname=?,phone=?,bank=?,account_no=?,account_name=?,password_hash=? WHERE id=?",
+                (nickname, phone, bank, account_no, account_name, generate_password_hash(new_pw), uid))
+        else:
+            db.execute("UPDATE users SET nickname=?,phone=?,bank=?,account_no=?,account_name=? WHERE id=?",
+                (nickname, phone, bank, account_no, account_name, uid))
+        db.commit()
+        return jsonify(success=True, message='회원정보가 변경되었습니다')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+@app.route('/api/reservation/unpaid-report', methods=['POST'])
+@jwt_required()
+def unpaid_report():
+    uid = int(get_jwt_identity())
+    data = request.json or {}
+    reservation_id = int(data.get('reservation_id', 0))
+    reason = (data.get('reason') or '미입금').strip()
+    db = get_db()
+    try:
+        r = db.execute("SELECT * FROM reservations WHERE id=? AND status IN ('matched','unpaid')", (reservation_id,)).fetchone()
+        if not r:
+            return jsonify(error='해당 예약을 찾을 수 없습니다'), 404
+        try:
+        db.execute("UPDATE reservations SET status='unpaid', memo=? WHERE id=?", (reason, reservation_id))
+    except Exception:
+        db.execute("UPDATE reservations SET status='unpaid' WHERE id=?", (reservation_id,))
+        # 상대방에게 알림 (매칭된 예약 찾기)
+        # match_id로 상대방 찾기
+        other_res = db.execute(
+            "SELECT * FROM reservations WHERE match_id=? AND id!=?",
+            (r['match_id'] or reservation_id, reservation_id)
+        ).fetchone() if r['match_id'] else None
+        if other_res:
+            msg = f"미입금 신고가 접수되었습니다. 예약번호: {reservation_id}"
+            db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+                (other_res['user_id'], 'unpaid', '미입금 신고', msg))
+        # 관리자에게도 알림
+        db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(1,'admin_unpaid','미입금 신고',?)",
+            (f'사용자 ID:{uid}, 예약:{reservation_id}, 사유:{reason}',))
+        db.commit()
+        return jsonify(success=True, message='미입금 신고가 접수되었습니다')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+@app.route('/api/reservation/unpaid-list', methods=['GET'])
+@jwt_required()
+def unpaid_list():
+    uid = int(get_jwt_identity())
+    db = get_db()
+    try:
+        rows = db.execute(
+            """SELECT r.*, u.nickname, u.username FROM reservations r
+               JOIN users u ON r.user_id=u.id
+               WHERE r.status='unpaid' AND (r.user_id=? OR r.match_id IN (
+                   SELECT match_id FROM reservations WHERE user_id=? AND match_id IS NOT NULL
+               ))
+               ORDER BY r.created_at DESC LIMIT 20""",
+            (uid, uid)
+        ).fetchall()
+        return jsonify(reports=[dict(r) for r in rows])
+    finally:
+        db.close()
+
+@app.route('/api/user/trade-history', methods=['GET'])
+@jwt_required()
+def trade_history():
+    uid = int(get_jwt_identity())
+    start_date = request.args.get('start', '')
+    end_date = request.args.get('end', '')
+    db = get_db()
+    try:
+        query = """SELECT r.id, r.bar_type, r.match_round, r.reserve_date, r.status,
+                       r.created_at, i.stage, i.buy_price, i.sell_price
+                    FROM reservations r
+                    LEFT JOIN items i ON r.item_id=i.id
+                    WHERE r.user_id=?"""
+        params = [uid]
+        if start_date:
+            query += " AND r.reserve_date >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND r.reserve_date <= ?"
+            params.append(end_date)
+        query += " ORDER BY r.created_at DESC LIMIT 100"
+        rows = db.execute(query, params).fetchall()
+        type_map = {'bronze':'수정','silver':'루비','gold':'다이아'}
+        round_map = {1:'구매예약',2:'판매예약'}
+        status_map = {'pending':'대기','matched':'매칭완료','paid':'송금완료','confirmed':'입금확인','unpaid':'미입금','cancelled':'취소'}
+        result = []
+        for r in rows:
+            result.append({
+                'id': r['id'],
+                'bar_type': type_map.get(r['bar_type'], r['bar_type']),
+                'type': round_map.get(r['match_round'], '-'),
+                'date': r['reserve_date'],
+                'status': status_map.get(r['status'], r['status']),
+                'stage': r['stage'],
+                'buy_price': r['buy_price'],
+                'sell_price': r['sell_price'],
+                'created_at': r['created_at']
+            })
+        return jsonify(history=result)
+    finally:
+        db.close()
 # ── 입금확인/미입금 API (판매자) ──
 @app.route('/api/reservation/payment-confirm', methods=['POST'])
 @jwt_required()
@@ -1199,5 +1338,66 @@ def payment_confirm():
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+# ── 아이템 단계별 현황 API ──
+@app.route('/api/admin/item-stats', methods=['GET'])
+@jwt_required()
+def admin_item_stats():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    bar_type = request.args.get('bar_type', 'bronze')
+    db = get_db()
+    try:
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        loopay_id = loopay['id'] if loopay else -1
+        prices = {'bronze': BRONZE_PRICES, 'silver': SILVER_PRICES, 'gold': GOLD_PRICES}
+        price_list = prices.get(bar_type, BRONZE_PRICES)
+        result = []
+        for stage, buy_p, sell_p in price_list:
+            user_cnt = db.execute(
+                "SELECT COUNT(*) as c FROM items WHERE bar_type=? AND stage=? AND user_id!=?",
+                (bar_type, stage, loopay_id)
+            ).fetchone()['c']
+            platform_cnt = db.execute(
+                "SELECT COUNT(*) as c FROM items WHERE bar_type=? AND stage=? AND user_id=?",
+                (bar_type, stage, loopay_id)
+            ).fetchone()['c']
+            result.append({'stage': stage, 'user_count': user_cnt, 'platform_count': platform_cnt,
+                           'total': user_cnt + platform_cnt, 'sell_price': sell_p, 'buy_price': buy_p})
+        return jsonify(stages=result)
+    finally:
+        db.close()
+
+# ── 미입금 신고 관리자 API ──
+@app.route('/api/admin/unpaid-reports', methods=['GET'])
+@jwt_required()
+def admin_unpaid_reports():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    try:
+        rows = db.execute(
+            """SELECT r.id, r.bar_type, r.status, r.created_at, r.user_id,
+                      u.username, u.nickname
+               FROM reservations r JOIN users u ON r.user_id=u.id
+               WHERE r.status='unpaid'
+               ORDER BY r.created_at DESC LIMIT 50"""
+        ).fetchall()
+        return jsonify(reports=[dict(r) | {'reservation_id': r['id']} for r in rows])
+    finally:
+        db.close()
+
+@app.route('/api/admin/resolve-unpaid/<int:res_id>', methods=['POST'])
+@jwt_required()
+def admin_resolve_unpaid(res_id):
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    try:
+        db.execute("UPDATE reservations SET status='cancelled' WHERE id=? AND status='unpaid'", (res_id,))
+        db.commit()
+        return jsonify(success=True)
     finally:
         db.close()
