@@ -1231,9 +1231,9 @@ def unpaid_report():
         if not r:
             return jsonify(error='해당 예약을 찾을 수 없습니다'), 404
         try:
-        db.execute("UPDATE reservations SET status='unpaid', memo=? WHERE id=?", (reason, reservation_id))
-    except Exception:
-        db.execute("UPDATE reservations SET status='unpaid' WHERE id=?", (reservation_id,))
+            db.execute("UPDATE reservations SET status='unpaid', memo=? WHERE id=?", (reason, reservation_id))
+        except Exception:
+            db.execute("UPDATE reservations SET status='unpaid' WHERE id=?", (reservation_id,))
         # 상대방에게 알림 (매칭된 예약 찾기)
         # match_id로 상대방 찾기
         other_res = db.execute(
