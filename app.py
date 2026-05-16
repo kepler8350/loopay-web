@@ -410,12 +410,17 @@ def charge_request():
     points = amount // 120
     receipt_phone = (data.get('receipt_phone') or '').strip()
     receipt_name = (data.get('receipt_name') or '').strip()
+    # 이름+전화번호 합산
+    receipt_info = (receipt_name + '/' + receipt_phone) if receipt_name else receipt_phone
+    db = get_db()
     try:
-        db.execute("INSERT INTO charge_requests(user_id,amount,points,receipt_phone) VALUES(?,?,?,?)", (uid,amount,points,receipt_phone))
-    except Exception:
-        db.execute("INSERT INTO charge_requests(user_id,amount,points) VALUES(?,?,?)", (uid,amount,points))
-    db.commit()
-    db.close()
+        try:
+            db.execute("INSERT INTO charge_requests(user_id,amount,points,receipt_phone) VALUES(?,?,?,?)", (uid,amount,points,receipt_info))
+        except Exception:
+            db.execute("INSERT INTO charge_requests(user_id,amount,points) VALUES(?,?,?)", (uid,amount,points))
+        db.commit()
+    finally:
+        db.close()
     return jsonify(success=True,amount=amount,points=points,message=f'{amount:,}원 → {points}P 충전 요청 완료')
 
 @app.route('/api/levels', methods=['GET'])
