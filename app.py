@@ -658,8 +658,13 @@ def admin_stats():
     # 일반 유저 아이템만 (loopay 계정 제외)
     loopay_id_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
     loopay_id = loopay_id_row['id'] if loopay_id_row else -1
+    # 실제 존재하는 승인된 회원의 아이템만 카운트
     total_items = db.execute(
-        "SELECT COUNT(*) as c FROM items WHERE status!='sold' AND user_id!=?", (loopay_id,)
+        """SELECT COUNT(*) as c FROM items
+           WHERE status!='sold'
+           AND user_id!=?
+           AND user_id IN (SELECT id FROM users WHERE approved=1)""",
+        (loopay_id,)
     ).fetchone()['c']
     pending_charges = db.execute("SELECT COUNT(*) as c FROM charge_requests WHERE status='pending'").fetchone()['c']
     today = get_today().isoformat()
