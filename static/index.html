@@ -1138,24 +1138,16 @@ async function syncServerTime(){
     var fetchEnd = Date.now();
     var latency = (fetchEnd - fetchStart) / 2;
     if(d.is_mock){
-      // 서버 mock: localStorage에 저장
+      // 서버가 mock 시간 → 적용
       _isMockTime = true;
       _mockBaseMs = new Date(d.time.replace(' ','T')).getTime();
       _mockFetchAt = fetchEnd - latency;
-      _saveMockToStorage(_mockBaseMs, _mockFetchAt);
-      _serverTimeOffset = 0;
     } else {
-      // 서버 실제 시간 - localStorage mock가 있으면 그걸 우선 사용
-      if(!_isMockTime){
-        _loadMockFromStorage(); // 로컬에 남은 mock 복원 시도
-      }
-      if(!_isMockTime){
-        // mock 없음: 실제 시간
-        _clearMockStorage();
-        _mockBaseMs = 0; _mockFetchAt = 0;
-        var serverMs = new Date(d.time.replace(' ','T')).getTime();
-        _serverTimeOffset = serverMs - (fetchEnd - latency);
-      }
+      // 서버가 실제 시간 → mock 완전 해제
+      _isMockTime = false;
+      _mockBaseMs = 0; _mockFetchAt = 0;
+      var serverMs = new Date(d.time.replace(' ','T')).getTime();
+      _serverTimeOffset = serverMs - (fetchEnd - latency);
     }
   }catch(e){}
 }
@@ -1181,13 +1173,12 @@ function resetMockTimeLocal(){
   _serverTimeOffset = 0;
 }
 function startTimeBar(){
-  _loadMockFromStorage(); // 로컬 mock 먼저 복원
-  syncServerTime();       // 서버 sync (mock이면 갱신, 아니면 실제시간)
+  syncServerTime();  // 서버 시간 동기화 (mock 포함)
   updateTimeBar();
   if(window._tbInterval) clearInterval(window._tbInterval);
   window._tbInterval = setInterval(updateTimeBar, 1000);
   if(window._syncInterval) clearInterval(window._syncInterval);
-  window._syncInterval = setInterval(syncServerTime, 3000);
+  window._syncInterval = setInterval(syncServerTime, 2000);
 }
 
 // ── 아이템 상세보기 (판매예약 포함) ──
