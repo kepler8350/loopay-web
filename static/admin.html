@@ -411,6 +411,7 @@ async function doLogin(){
       localStorage.setItem('admin_token',d.token);
       document.getElementById('login-screen').style.display='none';
       document.getElementById('admin-app').style.display='flex';
+      loadDashboard();
     }else{
       alert(d.error||'로그인 실패');
     }
