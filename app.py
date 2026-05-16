@@ -707,7 +707,7 @@ def admin_stats():
 
 @app.route('/api/schedule', methods=['GET'])
 def get_schedule():
-    return jsonify(schedule=[{'time':'05:00~13:00','label':'구매·판매 예약','detail':'1차·2차 예약 모두 이 시간에 가능'},{'time':'13:00~14:00','label':'1차 매칭 입금','detail':'매칭금액 입금 후 송금완료 버튼 클릭'},{'time':'14:00~15:00','label':'2차 매칭','detail':'관리자 모드에서 실행'},{'time':'15:00~19:00','label':'2차 매칭 입금','detail':'19시 이후 버튼 비활성화'},{'time':'19:00~20:00','label':'2차 미입금 확인','detail':'판매자 입금확인 또는 미입금 버튼'},{'time':'20:00~13:00','label':'매칭 실행','detail':'관리자 모드에서 실행'}])
+    return jsonify(schedule=[{'time':'05:00~20:00','label':'구매·판매 예약','detail':'1차·2차 예약 모두 이 시간에 가능'},{'time':'13:00~14:00','label':'1차 매칭 입금','detail':'매칭금액 입금 후 송금완료 버튼 클릭'},{'time':'14:00~15:00','label':'2차 매칭','detail':'관리자 모드에서 실행'},{'time':'15:00~19:00','label':'2차 매칭 입금','detail':'19시 이후 버튼 비활성화'},{'time':'19:00~20:00','label':'2차 미입금 확인','detail':'판매자 입금확인 또는 미입금 버튼'},{'time':'20:00~13:00','label':'매칭 실행','detail':'관리자 모드에서 실행'}])
 
 @app.route('/api/admin/matching-status', methods=['GET'])
 @jwt_required()

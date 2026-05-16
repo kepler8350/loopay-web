@@ -229,6 +229,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .time-bar-date{font-size:11px;color:rgba(255,255,255,0.7);font-weight:400;letter-spacing:0.3px}
 .time-bar-time{font-size:15px;color:#fff;font-weight:700;letter-spacing:1px;font-variant-numeric:tabular-nums}
 .time-bar-right{font-size:12px;color:#fff;font-weight:600;background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 12px;border:1px solid rgba(255,255,255,0.25);white-space:nowrap;flex-shrink:0}
+.time-bar-reserve{font-size:11px;color:rgba(255,255,255,0.85);font-weight:600;background:rgba(255,200,0,0.2);border-radius:20px;padding:3px 10px;border:1px solid rgba(255,200,0,0.4);white-space:nowrap;flex-shrink:0}
+.time-bar-rhs{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
 /* 레벨별 사용자 ID 배지 */
 .user-id-badge{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;border:2px solid;margin-left:6px}
 .user-id-badge.lv-1{background:rgba(76,175,80,0.2);border-color:#4caf50;color:#a5d6a7}
@@ -983,12 +985,8 @@ function getGd(sv){
 
 // ── 시간표 배너: 현재시간 기준 표시 ──
 var SCHEDULE=[
-  {s:5,e:13,text:'05:00~13:00 구매·판매 예약 시간'},
-  {s:13,e:14,text:'13:00~14:00 1차 매칭 입금 시간'},
-  {s:14,e:15,text:'14:00~15:00 2차 매칭 준비 시간'},
-  {s:15,e:19,text:'15:00~19:00 2차 매칭 입금 시간'},
-  {s:19,e:20,text:'19:00~20:00 2차 미입금 확인 시간'},
-  {s:20,e:24,text:'20:00~13:00 매칭 대기 시간'},
+  {s:5,e:20,text:'05:00~20:00 구매·판매 예약 시간'},
+  {s:20,e:24,text:'20:00~05:00 매칭 대기 시간'},
   {s:0,e:5,text:'00:00~05:00 매칭 대기 시간'}
 ];
 function updateTimeBanner(){
@@ -997,12 +995,8 @@ function updateTimeBanner(){
   var bannerText=document.getElementById('time-banner-text');
   if(!banner||!bannerText)return;
   var SCHED=[
-    {s:5,e:13,text:'📅 05:00~13:00 구매·판매 예약 시간'},
-    {s:13,e:14,text:'💸 13:00~14:00 1차 매칭 입금 시간'},
-    {s:14,e:15,text:'⚡ 14:00~15:00 2차 매칭 준비 시간'},
-    {s:15,e:19,text:'💸 15:00~19:00 2차 매칭 입금 시간'},
-    {s:19,e:20,text:'✅ 19:00~20:00 2차 미입금 확인 시간'},
-    {s:20,e:24,text:'🌙 20:00~13:00 매칭 대기 시간'},
+    {s:5,e:20,text:'📅 05:00~20:00 구매·판매 예약 시간'},
+    {s:20,e:24,text:'🌙 20:00~05:00 매칭 대기 시간'},
     {s:0,e:5,text:'🌙 00:00~05:00 매칭 대기 시간'}
   ];
   var found=null;
@@ -1018,21 +1012,13 @@ updateTimeBanner();
 setInterval(updateTimeBanner, 60000);
 // ── 시간 bar 실시간 업데이트 ──
 var SCHEDULE_TEXTS=[
-  {s:5,e:13,text:'📅 05:00~13:00 구매·판매 예약 시간',color:'#1565c0'},
-  {s:13,e:14,text:'💸 13:00~14:00 1차 매칭 입금',color:'#b71c1c'},
-  {s:14,e:15,text:'⚡ 14:00~15:00 2차 매칭 준비',color:'#4a148c'},
-  {s:15,e:19,text:'💸 15:00~19:00 2차 매칭 입금',color:'#b71c1c'},
-  {s:19,e:20,text:'✅ 19:00~20:00 미입금 확인',color:'#1b5e20'},
+  {s:5,e:20,text:'📅 05:00~20:00 구매·판매 예약 시간',color:'#1565c0'},
   {s:20,e:24,text:'🌙 20:00~05:00 매칭 대기',color:'#37474f'},
   {s:0,e:5,text:'🌙 00:00~05:00 매칭 대기',color:'#37474f'}
 ];
 function updateTimeBar(){
   var SCHED=[
-    {s:5,e:13,text:'📅 05:00~13:00 구매·판매 예약 시간',color:'#0d47a1'},
-    {s:13,e:14,text:'💸 13:00~14:00 1차 매칭 입금',color:'#b71c1c'},
-    {s:14,e:15,text:'⚡ 14:00~15:00 2차 매칭 준비',color:'#4a148c'},
-    {s:15,e:19,text:'💸 15:00~19:00 2차 매칭 입금',color:'#b71c1c'},
-    {s:19,e:20,text:'✅ 19:00~20:00 미입금 확인',color:'#1b5e20'},
+    {s:5,e:20,text:'📅 05:00~20:00 구매·판매 예약 시간',color:'#0d47a1'},
     {s:20,e:24,text:'🌙 20:00~05:00 매칭 대기',color:'#37474f'},
     {s:0,e:5,text:'🌙 00:00~05:00 매칭 대기',color:'#37474f'}
   ];
@@ -1052,9 +1038,25 @@ function updateTimeBar(){
     for(var i=0;i<SCHED.length;i++){
       if(h>=SCHED[i].s && h<SCHED[i].e){found=SCHED[i];break;}
     }
-    if(!found) found=SCHED[5];
+    if(!found) found=SCHED[1];
     schedEl.textContent=found.text;
     barEl.style.background='linear-gradient(90deg,'+found.color+' 0%,'+found.color+'cc 100%)';
+  }
+  // ── 구매·판매 예약 버튼 시간 제어 (05:00~20:00만 활성화) ──
+  var isReserveTime = (h >= 5 && h < 20);
+  var reserveBtn = document.getElementById('reserve-btn');
+  var sellReserveBtn = document.getElementById('sell-reserve-btn');
+  if(reserveBtn && !reserveBtn.dataset.disabledByUser){
+    reserveBtn.disabled = !isReserveTime;
+    reserveBtn.style.opacity = isReserveTime ? '1' : '0.4';
+    if(!isReserveTime) reserveBtn.title = '구매·판매 예약은 05:00~20:00에만 가능합니다';
+    else reserveBtn.title = '';
+  }
+  if(sellReserveBtn && !sellReserveBtn.dataset.disabledByUser){
+    sellReserveBtn.disabled = !isReserveTime;
+    sellReserveBtn.style.opacity = isReserveTime ? '1' : '0.4';
+    if(!isReserveTime) sellReserveBtn.title = '구매·판매 예약은 05:00~20:00에만 가능합니다';
+    else sellReserveBtn.title = '';
   }
 }
 // updateTimeBar interval은 로그인 후 startTimeBar()로 등록
@@ -1347,7 +1349,7 @@ async function doPaymentConfirm(resId, confirmed){
 function disableReserveSection(){
   // 구매 예약하기 버튼 비활성화
   var btn=document.getElementById('reserve-btn');
-  if(btn){btn.disabled=true;btn.style.opacity='0.5';btn.textContent='오늘 예약 완료';}
+  if(btn){btn.disabled=true;btn.style.opacity='0.5';btn.textContent='오늘 예약 완료';btn.dataset.disabledByUser='1';}
   // +/- 버튼 비활성화
   var ids=['r-bz-m','r-bz-p'];
   ids.forEach(function(id){var el=document.getElementById(id);if(el){el.disabled=true;}});
@@ -1665,7 +1667,10 @@ async function loadNotifications(){
           <span class="time-bar-date" id="tbar-date">--/--/--</span>
           <span class="time-bar-time" id="tbar-time">--:--:--</span>
         </div>
-        <div class="time-bar-right" id="tbar-schedule">--</div>
+        <div class="time-bar-rhs">
+          <div class="time-bar-reserve">🕐 구매·판매예약: 05:00~20:00</div>
+          <div class="time-bar-right" id="tbar-schedule">--</div>
+        </div>
       <button onclick="location.reload()" title="새로고침" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:3px 8px;font-size:14px;cursor:pointer;flex-shrink:0;margin-left:8px">⟳</button>
       </div>
       <div class="total-card" style="display:flex;gap:10px;align-items:stretch;padding:14px 16px">
@@ -2069,7 +2074,7 @@ async function loadNotifications(){
       <div id="tab-schedule" class="tab">
         <div class="sec-title">루페이 시간표</div>
       
-        <div class="sched-row"><span class="time-badge">05:00~13:00</span><div><div class="sched-main">구매·판매 예약</div><div class="sched-sub">1차·2차 모두 이 시간에 예약 가능</div></div></div>
+        <div class="sched-row"><span class="time-badge">05:00~20:00</span><div><div class="sched-main">구매·판매 예약</div><div class="sched-sub">1차·2차 모두 이 시간에 예약 가능</div></div></div>
         <div class="sched-row"><span class="time-badge">13:00~14:00</span><div><div class="sched-main">1차 매칭 입금</div><div class="sched-sub">매칭금액 판매자 계좌 입금 후 송금완료 버튼 클릭. 13시 이후 비활성화.</div></div></div>
         <div class="sched-row"><span class="time-badge">13:00~14:00</span><div><div class="sched-main">1차 미입금 확인</div><div class="sched-sub">판매자: 입금확인 버튼 또는 미입금 버튼 클릭</div></div></div>
         <div class="sched-row"><span class="time-badge">14:00~15:00</span><div><div class="sched-main">2차 매칭</div><div class="sched-sub">관리자 모드 실행. 1차 미입금 물량 포함.</div></div></div>
