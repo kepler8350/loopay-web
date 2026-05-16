@@ -533,10 +533,21 @@ async function loadCharges(){try{const d=await apiAdmin('/admin/charges');const 
     +'<td>'+receiptDisplay+'</td>'
     +'<td><span class="badge '+(bM[c.status]||'')+'">&#x200B;'+(sM[c.status]||c.status)+'</span></td>'
     +'<td style="font-size:11px;color:#aaa">'+(c.created_at||'-').slice(0,16)+'</td>'
-    +'<td>'+(c.status==='pending'?'<button class="btn btn-success" style="font-size:11px;padding:4px 10px" onclick="confirmCharge('+c.id+')">승인</button>':'전리료')+'</td>'
+    +'<td style="white-space:nowrap">'
+    +(c.status==='pending'?'<button class="btn btn-success" style="font-size:11px;padding:4px 8px;margin-right:4px" onclick="confirmCharge('+c.id+')">승인</button>':'<span style="font-size:11px;color:#aaa">완료</span> ')
+    +'<button class="btn" style="font-size:11px;padding:4px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;cursor:pointer" onclick="deleteCharge('+c.id+')">삭제</button>'
+    +'</td>'
     +'</tr>';
 }).join('');}catch(e){toast('&#52649;&#51204; &#49892;&#54036;: '+e.message,'error');}}
-async function confirmCharge(id){try{await apiAdmin('/admin/charge/confirm/'+id,{method:'POST'});toast('&#52649;&#51204; &#49849;&#51064; &#50756;&#47308;','success');loadCharges();}catch(e){toast(e.message,'error');}}
+async function confirmCharge(id){try{await apiAdmin('/admin/charge/confirm/'+id,{method:'POST'});toast('충전 승인 완료','success');loadCharges();}catch(e){toast(e.message,'error');}}
+async function deleteCharge(id){
+  if(!confirm('이 충전 요청을 삭제하시겠습니까?')) return;
+  try{
+    await apiAdmin('/admin/charge/delete/'+id,{method:'POST'});
+    toast('충전 요청이 삭제되었습니다','success');
+    loadCharges();
+  }catch(e){toast(e.message,'error');}
+}
 function runLuckyMatching(barType){
   const btn=event.target;
   btn.disabled=true;btn.textContent='&#9203; &#49892;&#54665; &#51473;...';
