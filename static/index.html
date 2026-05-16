@@ -2117,37 +2117,37 @@ async function loadNotifications(){
 <div id="toast" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 22px;border-radius:8px;font-size:14px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:9999"></div>
 <!-- 충전 확인 모달 -->
 <div class="reserve-confirm-overlay" id="charge-confirm-overlay">
-  <div class="reserve-confirm-box" style="max-width:360px;width:90%">
-    <h3 style="margin-bottom:16px">💳 충전 신청 확인</h3>
+  <div class="reserve-confirm-box" style="max-width:360px;width:90%;background:#fff;color:#222">
+    <h3 style="margin-bottom:16px;color:#1a1a1a">💳 충전 신청 확인</h3>
 
     <!-- 충전 내용 요약 -->
-    <div id="charge-confirm-summary" style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:16px">
+    <div id="charge-confirm-summary" style="background:#f5f7fa;border-radius:10px;padding:14px;margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:13px;color:var(--text2)">충전 포인트</span>
+        <span style="font-size:13px;color:#666">충전 포인트</span>
         <span id="cc-points" style="font-size:14px;font-weight:700">-</span>
       </div>
       <div style="display:flex;justify-content:space-between">
-        <span style="font-size:13px;color:var(--text2)">입금 금액</span>
+        <span style="font-size:13px;color:#666">입금 금액</span>
         <span id="cc-won" style="font-size:14px;font-weight:700;color:var(--accent)">-</span>
       </div>
     </div>
 
     <!-- 현금영수증 신청 토글 버튼 -->
     <button id="receipt-toggle-btn" onclick="toggleReceiptForm()"
-      style="width:100%;padding:10px;background:var(--bg2);color:var(--text1);border:1.5px dashed var(--border);border-radius:8px;font-size:13px;cursor:pointer;margin-bottom:12px">
+      style="width:100%;padding:10px;background:#f0f4ff;color:#1976d2;border:1.5px dashed #1976d2;border-radius:8px;font-size:13px;cursor:pointer;margin-bottom:12px;font-weight:600">
       🧾 현금영수증 신청하기 (선택)
     </button>
 
     <!-- 현금영수증 입력 영역 (기본 숨김) -->
     <div id="receipt-form" style="display:none;margin-bottom:14px">
-      <div style="background:rgba(25,118,210,0.08);border:1px solid rgba(25,118,210,0.2);border-radius:10px;padding:12px">
+      <div style="background:#e8f0fe;border:1px solid #90caf9;border-radius:10px;padding:12px">
         <div style="font-size:12px;color:#1976d2;font-weight:600;margin-bottom:10px">🧾 현금영수증 정보 입력</div>
         <input id="cc-name" type="text" placeholder="이름 입력" maxlength="20"
-          style="width:100%;box-sizing:border-box;padding:9px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text1);font-size:13px;margin-bottom:8px">
+          style="width:100%;box-sizing:border-box;padding:9px 12px;background:#fff;border:1px solid #ccc;border-radius:7px;color:#222;font-size:13px;margin-bottom:8px">
         <input id="cc-phone" type="text" placeholder="핸드폰번호 (-없이 숫자만)" inputmode="numeric" maxlength="11"
           oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-          style="width:100%;box-sizing:border-box;padding:9px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text1);font-size:13px">
-        <div style="font-size:11px;color:var(--text2);margin-top:6px">예: 홍길동 / 01012345678</div>
+          style="width:100%;box-sizing:border-box;padding:9px 12px;background:#fff;border:1px solid #ccc;border-radius:7px;color:#222;font-size:13px">
+        <div style="font-size:11px;color:#888;margin-top:6px">예: 홍길동 / 01012345678</div>
       </div>
     </div>
 

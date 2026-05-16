@@ -140,7 +140,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 
 <div id="page-charges" class="page"><div class="page-title">&#52649;&#51204; &#44288;&#47532;</div><div class="page-sub">&#52649;&#51204; &#50836;&#52397; &#49849;&#51064; &#48143; &#44288;&#47532;</div>
 <div class="table-card"><div class="table-header"><div class="table-title">&#52649;&#51204; &#50836;&#52397; &#47785;&#47197;</div></div>
-<table><thead><tr><th>No</th><th>아이디</th><th>성명</th><th>&#44552;&#50529;</th><th>&#49345;&#53468;</th><th>&#49884;&#44033;</th><th>&#52376;&#47532;</th></tr></thead><tbody id="admin-charges"></tbody></table></div></div>
+<table class="data-table" style="font-size:12px"><thead><tr><th>No</th><th>아이디</th><th>성명</th><th>금액</th><th>현금영수증</th><th>상태</th><th>시간</th><th>처리</th></tr></thead><tbody id="admin-charges"></tbody></table></div></div>
 <div id="page-reservations" class="page">
       <h2 class="page-title">예약 현황</h2>
       <p class="page-subtitle">아이템별 구매/판매 예약 현황</p>
@@ -513,7 +513,29 @@ async function loadUsers(){
 
 
 
-async function loadCharges(){try{const d=await apiAdmin('/admin/charges');const tbody=document.getElementById('admin-charges');const charges=d.charges||[];if(!charges.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div>&#52649;&#51204; &#50836;&#52397; &#50630;&#51020;</div></div></td></tr>';return;}const sM={pending:'&#45824;&#44592;',confirmed:'&#49849;&#51064;',rejected:'&#44144;&#51208;'};const bM={pending:'badge-warning',confirmed:'badge-success',rejected:'badge-red'};tbody.innerHTML=charges.map(c=>'<tr><td>'+c.id+'</td><td>'+(c.username||'-')+'</td><td>'+(c.nickname||'-')+'</td><td>'+(c.amount||0).toLocaleString()+'P</td><td><span class="badge '+(bM[c.status]||'')+'">&#x200B;'+(sM[c.status]||c.status)+'</span></td><td>'+(c.created_at||'-')+'</td><td>'+(c.status==='pending'?'<button class="btn btn-success" style="font-size:11px;padding:4px 10px" onclick="confirmCharge('+c.id+')">&#49849;&#51064;</button>':'&#51204;&#47532;&#47308;')+'</td></tr>').join('');}catch(e){toast('&#52649;&#51204; &#49892;&#54036;: '+e.message,'error');}}
+async function loadCharges(){try{const d=await apiAdmin('/admin/charges');const tbody=document.getElementById('admin-charges');const charges=d.charges||[];if(!charges.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div>&#52649;&#51204; &#50836;&#52397; &#50630;&#51020;</div></div></td></tr>';return;}const sM={pending:'&#45824;&#44592;',confirmed:'&#49849;&#51064;',rejected:'&#44144;&#51208;'};const bM={pending:'badge-warning',confirmed:'badge-success',rejected:'badge-red'};tbody.innerHTML=charges.map(c=>{
+  // 현금영수증: receipt_phone에 "이름/번호" 또는 "번호"만 있음
+  var receiptRaw = c.receipt_phone || '';
+  var receiptDisplay = '-';
+  if(receiptRaw){
+    var parts = receiptRaw.split('/');
+    if(parts.length >= 2){
+      receiptDisplay = '<span style="font-size:11px"><strong>'+parts[0]+'</strong><br>'+parts[1]+'</span>';
+    } else {
+      receiptDisplay = receiptRaw;
+    }
+  }
+  return '<tr>'
+    +'<td>'+c.id+'</td>'
+    +'<td>'+(c.username||'-')+'</td>'
+    +'<td>'+(c.nickname||'-')+'</td>'
+    +'<td style="font-weight:700">'+(c.amount||0).toLocaleString()+'P<br><small style="color:#aaa;font-weight:400">'+(Math.round((c.amount||0)*120/1000)*1000/10).toLocaleString()+'원</small></td>'
+    +'<td>'+receiptDisplay+'</td>'
+    +'<td><span class="badge '+(bM[c.status]||'')+'">&#x200B;'+(sM[c.status]||c.status)+'</span></td>'
+    +'<td style="font-size:11px;color:#aaa">'+(c.created_at||'-').slice(0,16)+'</td>'
+    +'<td>'+(c.status==='pending'?'<button class="btn btn-success" style="font-size:11px;padding:4px 10px" onclick="confirmCharge('+c.id+')">승인</button>':'전리료')+'</td>'
+    +'</tr>';
+}).join('');}catch(e){toast('&#52649;&#51204; &#49892;&#54036;: '+e.message,'error');}}
 async function confirmCharge(id){try{await apiAdmin('/admin/charge/confirm/'+id,{method:'POST'});toast('&#52649;&#51204; &#49849;&#51064; &#50756;&#47308;','success');loadCharges();}catch(e){toast(e.message,'error');}}
 function runLuckyMatching(barType){
   const btn=event.target;
