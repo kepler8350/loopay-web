@@ -1433,9 +1433,11 @@ function enableReserveSection(){
     btn.textContent = '구매 예약하기 (40P × 매칭예약수)';
     btn.onclick = function(){ showReserveConfirm(); };
   }
+  var _h2=new Date().getHours();
+  var _isRT2=(_h2>=5 && _h2<20);
   ['r-bz-m','r-bz-p'].forEach(function(id){
     var el = document.getElementById(id);
-    if(el) el.disabled = false;
+    if(el) el.disabled = !_isRT2;
   });
   var info = document.getElementById('r-info');
   if(info){ info.style.color = ''; info.style.fontWeight = ''; }
@@ -1447,14 +1449,17 @@ function updateResUI(BZ_MIN,BZ_MAX){
   var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
   // sv/gd는 전역 변수로 관리 (독립 선택)
   var sv=svCnt, gd=gdCnt;
+  // ── 예약시간 외에는 모든 수량버튼 비활성화 ──
+  var _h=new Date().getHours();
+  var _isRT=(_h>=5 && _h<20);
 
   // 수정 표시
   document.getElementById('r-bz-v').textContent=bzCnt;
   document.getElementById('r-bz-range').textContent='최소 '+BZ_MIN+' / 최대 '+BZ_MAX;
   var bzNote=document.getElementById('r-bz-note');
   if(bzNote) bzNote.textContent='수정 '+BZ_MAX+'개 예약시 루비 '+SV_MAX+'개 활성화 / 루비 '+SV_MAX+'개 예약시 다이아 '+GD_MAX+'개 활성화';
-  document.getElementById('r-bz-m').disabled=(bzCnt<=BZ_MIN);
-  document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
+  document.getElementById('r-bz-m').disabled=(!_isRT || bzCnt<=BZ_MIN);
+  document.getElementById('r-bz-p').disabled=(!_isRT || bzCnt>=BZ_MAX);
 
   // 루비: 수정이 BZ_MAX 도달해야 선택 가능
   var svUnlocked = (bzCnt >= BZ_MAX) && SV_MAX > 0;
@@ -1469,8 +1474,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-sv-wrap').className = 'r-wrap'+(svUnlocked?'':' locked');
   var svMBtn = document.getElementById('r-sv-m');
   var svPBtn = document.getElementById('r-sv-p');
-  if(svMBtn) svMBtn.disabled = (!svUnlocked || sv <= 0);
-  if(svPBtn) svPBtn.disabled = (!svUnlocked || sv >= SV_MAX);
+  if(svMBtn) svMBtn.disabled = (!_isRT || !svUnlocked || sv <= 0);
+  if(svPBtn) svPBtn.disabled = (!_isRT || !svUnlocked || sv >= SV_MAX);
 
   // 다이아: 루비가 SV_MAX 도달해야 선택 가능
   var gdUnlocked = svUnlocked && (sv >= SV_MAX) && GD_MAX > 0;
@@ -1485,8 +1490,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-gd-wrap').className = 'r-wrap'+(gdUnlocked?'':' locked');
   var gdMBtn = document.getElementById('r-gd-m');
   var gdPBtn = document.getElementById('r-gd-p');
-  if(gdMBtn) gdMBtn.disabled = (!gdUnlocked || gd <= 0);
-  if(gdPBtn) gdPBtn.disabled = (!gdUnlocked || gd >= GD_MAX);
+  if(gdMBtn) gdMBtn.disabled = (!_isRT || !gdUnlocked || gd <= 0);
+  if(gdPBtn) gdPBtn.disabled = (!_isRT || !gdUnlocked || gd >= GD_MAX);
 
   // 총계
   var totalSv = sv;
@@ -2375,14 +2380,17 @@ function updateResUI(BZ_MIN,BZ_MAX){
   var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
   // sv/gd는 전역 변수로 관리 (독립 선택)
   var sv=svCnt, gd=gdCnt;
+  // ── 예약시간 외에는 모든 수량버튼 비활성화 ──
+  var _h=new Date().getHours();
+  var _isRT=(_h>=5 && _h<20);
 
   // 수정 표시
   document.getElementById('r-bz-v').textContent=bzCnt;
   document.getElementById('r-bz-range').textContent='최소 '+BZ_MIN+' / 최대 '+BZ_MAX;
   var bzNote=document.getElementById('r-bz-note');
   if(bzNote) bzNote.textContent='수정 '+BZ_MAX+'개 예약시 루비 '+SV_MAX+'개 활성화 / 루비 '+SV_MAX+'개 예약시 다이아 '+GD_MAX+'개 활성화';
-  document.getElementById('r-bz-m').disabled=(bzCnt<=BZ_MIN);
-  document.getElementById('r-bz-p').disabled=(bzCnt>=BZ_MAX);
+  document.getElementById('r-bz-m').disabled=(!_isRT || bzCnt<=BZ_MIN);
+  document.getElementById('r-bz-p').disabled=(!_isRT || bzCnt>=BZ_MAX);
 
   // 루비: 수정이 BZ_MAX 도달해야 선택 가능
   var svUnlocked = (bzCnt >= BZ_MAX) && SV_MAX > 0;
@@ -2397,8 +2405,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-sv-wrap').className = 'r-wrap'+(svUnlocked?'':' locked');
   var svMBtn = document.getElementById('r-sv-m');
   var svPBtn = document.getElementById('r-sv-p');
-  if(svMBtn) svMBtn.disabled = (!svUnlocked || sv <= 0);
-  if(svPBtn) svPBtn.disabled = (!svUnlocked || sv >= SV_MAX);
+  if(svMBtn) svMBtn.disabled = (!_isRT || !svUnlocked || sv <= 0);
+  if(svPBtn) svPBtn.disabled = (!_isRT || !svUnlocked || sv >= SV_MAX);
 
   // 다이아: 루비가 SV_MAX 도달해야 선택 가능
   var gdUnlocked = svUnlocked && (sv >= SV_MAX) && GD_MAX > 0;
@@ -2413,8 +2421,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-gd-wrap').className = 'r-wrap'+(gdUnlocked?'':' locked');
   var gdMBtn = document.getElementById('r-gd-m');
   var gdPBtn = document.getElementById('r-gd-p');
-  if(gdMBtn) gdMBtn.disabled = (!gdUnlocked || gd <= 0);
-  if(gdPBtn) gdPBtn.disabled = (!gdUnlocked || gd >= GD_MAX);
+  if(gdMBtn) gdMBtn.disabled = (!_isRT || !gdUnlocked || gd <= 0);
+  if(gdPBtn) gdPBtn.disabled = (!_isRT || !gdUnlocked || gd >= GD_MAX);
 
   // 총계
   var totalSv = sv;
