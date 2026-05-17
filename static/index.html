@@ -1092,6 +1092,10 @@ function updateTimeBar(){
     sellReserveBtn.title = isReserveTime ? '' : '구매·판매 예약은 05:00~20:00에만 가능합니다';
   }
   // 구매예약 수량 +/- 버튼 (예약시간 외 OR 오늘 이미 예약 완료 시 비활성화)
+  // userData에서 직접 재확인 (비동기 덮어쓰기 방지)
+  if(userData && userData.today_reservations && (userData.today_reservations.bronze||0) > 0){
+    _reservedToday = true;
+  }
   var _shouldDisableButtons = !isReserveTime || _reservedToday;
   ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
     var el = document.getElementById(id);
