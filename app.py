@@ -914,6 +914,142 @@ def combine_execute():
         conn.close()
 
 # == admin reservation management ==
+
+@app.route('/api/admin/lucky-buy/setup', methods=['POST'])
+@jwt_required()
+def admin_lucky_buy_setup():
+    """행운구매 설정: 종류별 셋수 입력 → 랜덤 짝짓기 미리보기"""
+    if not check_admin_auth():
+        return jsonify(error='unauthorized'), 401
+    data = request.json or {}
+    counts = data.get('counts', {})  # {'bronze': 2, 'silver': 1, 'gold': 0}
+    conn = get_db()
+    try:
+        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
+        price_map = {
+            'bronze': {s: (b, sl) for s, b, sl in BRONZE_PRICES},
+            'silver': {s: (b, sl) for s, b, sl in SILVER_PRICES},
+            'gold':   {s: (b, sl) for s, b, sl in GOLD_PRICES},
+        }
+        # 행운 단계 범위 (이 단계에서만 행운구매 가능)
+        lucky_stages = {'bronze': range(1, 11), 'silver': range(1, 9), 'gold': range(1, 8)}
+        
+        result = {}
+        for bar_type, set_count in counts.items():
+            set_count = int(set_count)
+            if set_count <= 0:
+                result[bar_type] = []
+                continue
+            
+            # 해당 단계의 판매예약 아이템 조회
+            rows = conn.execute(
+                """SELECT r.id as res_id, r.item_id, i.stage, i.id as item_id2
+                   FROM reservations r
+                   LEFT JOIN items i ON r.item_id = i.id
+                   WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending'
+                   AND i.stage IN ({})
+                   ORDER BY RANDOM()""".format(','.join('?' * len(lucky_stages[bar_type]))),
+                (bar_type, *lucky_stages[bar_type])
+            ).fetchall()
+            
+            pairs = []
+            used = set()
+            row_list = [r for r in rows if r['item_id'] not in used]
+            
+            for i in range(0, min(set_count * 2, len(row_list)), 2):
+                if i + 1 >= len(row_list):
+                    break
+                a, b = row_list[i], row_list[i+1]
+                sa, sb = a['stage'], b['stage']
+                sell_a = price_map[bar_type].get(sa, (0, 0))[1]
+                sell_b = price_map[bar_type].get(sb, (0, 0))[1]
+                total = sell_a + sell_b
+                
+                # total보다 큰 sell_price 중 2단계 높은 것
+                pm = sorted(price_map[bar_type].items())  # [(stage, (buy, sell))]
+                target_stage = None
+                for idx2, (st, (bp, sp)) in enumerate(pm):
+                    if sp > total:
+                        # 2단계 더 높은 단계
+                        target_idx = idx2 + 2
+                        if target_idx < len(pm):
+                            target_stage = pm[target_idx][0]
+                        else:
+                            target_stage = pm[-1][0]
+                        break
+                if target_stage is None:
+                    target_stage = pm[-1][0]
+                
+                target_buy, target_sell = price_map[bar_type].get(target_stage, (0, 0))
+                pairs.append({
+                    'item_a': {'res_id': a['res_id'], 'item_id': a['item_id'], 'stage': sa, 'sell': sell_a},
+                    'item_b': {'res_id': b['res_id'], 'item_id': b['item_id'], 'stage': sb, 'sell': sell_b},
+                    'total_sell': total,
+                    'new_stage': target_stage,
+                    'new_sell': target_sell,
+                    'new_buy': target_buy,
+                })
+            result[bar_type] = pairs
+        
+        return jsonify(success=True, pairs=result)
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/lucky-buy/confirm', methods=['POST'])
+@jwt_required()
+def admin_lucky_buy_confirm():
+    """행운구매 확정: 기존 아이템 삭제, 예약 완료, 새 아이템 생성"""
+    if not check_admin_auth():
+        return jsonify(error='unauthorized'), 401
+    data = request.json or {}
+    pairs_data = data.get('pairs', {})  # {'bronze': [{item_a, item_b, new_stage},...], ...}
+    conn = get_db()
+    try:
+        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
+        price_map = {
+            'bronze': {s: (b, sl) for s, b, sl in BRONZE_PRICES},
+            'silver': {s: (b, sl) for s, b, sl in SILVER_PRICES},
+            'gold':   {s: (b, sl) for s, b, sl in GOLD_PRICES},
+        }
+        today = get_today().isoformat()
+        results = []
+        
+        for bar_type, pairs in pairs_data.items():
+            for pair in pairs:
+                ia = pair['item_a']
+                ib = pair['item_b']
+                new_stage = int(pair['new_stage'])
+                
+                # 1. 예약 완료 처리
+                conn.execute("UPDATE reservations SET status='matched' WHERE id=? OR id=?",
+                             (ia['res_id'], ib['res_id']))
+                # 2. 기존 아이템 상태 → sold
+                conn.execute("UPDATE items SET status='sold' WHERE id=? OR id=?",
+                             (ia['item_id'], ib['item_id']))
+                # 3. 새 행운 아이템 생성 (loopay 계정 소유)
+                loopay = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+                loopay_id = loopay['id'] if loopay else 1
+                new_buy, new_sell = price_map[bar_type].get(new_stage, (0, 0))
+                conn.execute(
+                    "INSERT INTO items(user_id, bar_type, stage, buy_price, sell_price, status, purchase_date) VALUES(?,?,?,?,?,'reservable',?)",
+                    (loopay_id, bar_type, new_stage, new_buy, new_sell, today)
+                )
+                results.append({
+                    'bar_type': bar_type,
+                    'old_stages': [ia['stage'], ib['stage']],
+                    'new_stage': new_stage,
+                    'new_sell': new_sell,
+                })
+        
+        conn.commit()
+        return jsonify(success=True, results=results)
+    except Exception as e:
+        conn.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        conn.close()
+
 @app.route('/api/admin/reservation-status', methods=['GET'])
 @jwt_required()
 def admin_reservation_status():

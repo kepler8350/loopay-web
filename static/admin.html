@@ -257,6 +257,47 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
         </table>
       </div>
 
+
+      <!-- 행운구매 -->
+      <div class="card" style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <strong>🍀 행운구매</strong>
+          <button id="lucky-buy-btn" class="btn btn-primary" style="font-size:12px;padding:5px 14px;background:#7b1fa2;border:none;opacity:0.4;cursor:not-allowed" disabled onclick="openLuckyBuy()">행운구매 설정</button>
+        </div>
+        <div id="lucky-buy-panel" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+            <div>
+              <label style="font-size:12px;color:#aaa;display:block;margin-bottom:4px">🟤 수정 행운셋수 <small id="lucky-bz-max" style="color:#888">(최대 0)</small></label>
+              <input id="lucky-bz-count" type="number" class="input" value="0" min="0" max="0" style="width:100%">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#aaa;display:block;margin-bottom:4px">⚪ 루비 행운셋수 <small id="lucky-sv-max" style="color:#888">(최대 0)</small></label>
+              <input id="lucky-sv-count" type="number" class="input" value="0" min="0" max="0" style="width:100%">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#aaa;display:block;margin-bottom:4px">🟡 다이아 행운셋수 <small id="lucky-gd-max" style="color:#888">(최대 0)</small></label>
+              <input id="lucky-gd-count" type="number" class="input" value="0" min="0" max="0" style="width:100%">
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-bottom:14px">
+            <button class="btn btn-primary" style="background:#7b1fa2" onclick="previewLuckyBuy()">🎲 랜덤 짝짓기 미리보기</button>
+            <button class="btn btn-secondary" onclick="closeLuckyBuy()">취소</button>
+          </div>
+          <!-- 미리보기 결과 -->
+          <div id="lucky-preview" style="display:none">
+            <div id="lucky-preview-content" style="font-size:13px;margin-bottom:12px"></div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary" style="background:#388e3c" onclick="confirmLuckyBuy()">✅ 행운구매 확정</button>
+              <button class="btn btn-secondary" onclick="previewLuckyBuy()">🔄 다시 뽑기</button>
+            </div>
+          </div>
+          <div id="lucky-result" style="font-size:13px;margin-top:10px"></div>
+        </div>
+        <!-- 상세보기 -->
+        <div id="lucky-history" style="margin-top:8px"></div>
+        <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px;margin-top:6px" onclick="toggleLuckyHistory()">📋 행운구매 결과 상세보기</button>
+      </div>
+
       <!-- 추가예약 입력 -->
       <div class="card" style="margin-bottom:20px">
         <strong style="display:block;margin-bottom:14px">추가 예약 (루페이 계정)</strong>
@@ -668,6 +709,10 @@ function loadReservationStatus(){
             +'</tr>';
         }
       });
+    // 행운구매 버튼 활성화 여부 업데이트
+    var _bands={};
+    ['bronze','silver','gold'].forEach(function(bt){_bands[bt]=(d[bt]&&d[bt].price_bands)||{};});
+    updateLuckyBuyBtn(_bands);
     }).catch(function(e){ toast(e.message,'error'); });
 }
 
@@ -1107,7 +1152,149 @@ async function sendAdminNotif(){
     document.getElementById('notif-message').value='';
     setTimeout(()=>{document.getElementById('notif-result').textContent='';},3000);
   }catch(e){document.getElementById('notif-result').style.color='#e53935';document.getElementById('notif-result').textContent='오류: '+e.message;}
-}</script>
+}
+// ── 행운구매 ──────────────────────────────────────────
+var _luckyPairsData = {}; // 미리보기 결과 저장
+var _luckyHistory = [];   // 행운구매 이력
+var _luckyBandCounts = {bronze:0, silver:0, gold:0}; // 현재 행운단계 수량
+
+function updateLuckyBuyBtn(priceBands){
+  // priceBands: {bronze:{band1:N,...}, silver:..., gold:...}
+  // 수정band1(1~10), 루비band1(1~8), 다이아band1(1~7)
+  var bz = (priceBands.bronze && priceBands.bronze.band1)||0;
+  var sv = (priceBands.silver && priceBands.silver.band1)||0;
+  var gd = (priceBands.gold   && priceBands.gold.band1)  ||0;
+  _luckyBandCounts = {bronze:bz, silver:sv, gold:gd};
+  var maxBz = Math.floor(bz/2), maxSv = Math.floor(sv/2), maxGd = Math.floor(gd/2);
+  document.getElementById('lucky-bz-max').textContent='(최대 '+maxBz+')';
+  document.getElementById('lucky-sv-max').textContent='(최대 '+maxSv+')';
+  document.getElementById('lucky-gd-max').textContent='(최대 '+maxGd+')';
+  document.getElementById('lucky-bz-count').max = maxBz;
+  document.getElementById('lucky-sv-count').max = maxSv;
+  document.getElementById('lucky-gd-count').max = maxGd;
+  var hasAny = (bz >= 2 || sv >= 2 || gd >= 2);
+  var btn = document.getElementById('lucky-buy-btn');
+  btn.disabled = !hasAny;
+  btn.style.opacity = hasAny ? '1' : '0.4';
+  btn.style.cursor = hasAny ? 'pointer' : 'not-allowed';
+}
+
+function openLuckyBuy(){
+  document.getElementById('lucky-buy-panel').style.display='block';
+  document.getElementById('lucky-preview').style.display='none';
+  document.getElementById('lucky-result').textContent='';
+  var maxBz=Math.floor(_luckyBandCounts.bronze/2);
+  var maxSv=Math.floor(_luckyBandCounts.silver/2);
+  var maxGd=Math.floor(_luckyBandCounts.gold/2);
+  document.getElementById('lucky-bz-count').value=maxBz;
+  document.getElementById('lucky-sv-count').value=maxSv;
+  document.getElementById('lucky-gd-count').value=maxGd;
+}
+
+function closeLuckyBuy(){
+  document.getElementById('lucky-buy-panel').style.display='none';
+  document.getElementById('lucky-preview').style.display='none';
+}
+
+async function previewLuckyBuy(){
+  var bz=parseInt(document.getElementById('lucky-bz-count').value)||0;
+  var sv=parseInt(document.getElementById('lucky-sv-count').value)||0;
+  var gd=parseInt(document.getElementById('lucky-gd-count').value)||0;
+  if(bz+sv+gd===0){toast('행운셋수를 1 이상 입력하세요','error');return;}
+  var result=document.getElementById('lucky-result');
+  result.textContent='짝짓기 중...';
+  try{
+    var d=await apiAdmin('/admin/lucky-buy/setup',{method:'POST',body:JSON.stringify({counts:{bronze:bz,silver:sv,gold:gd}})});
+    if(!d.success){result.textContent='오류: '+(d.error||'');return;}
+    _luckyPairsData=d.pairs;
+    result.textContent='';
+    // 미리보기 렌더링
+    var names={bronze:'수정',silver:'루비',gold:'다이아'};
+    var colors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+    var html2='';
+    var totalSets=0;
+    for(var bt of ['bronze','silver','gold']){
+      var pairs=d.pairs[bt]||[];
+      if(!pairs.length) continue;
+      html2+='<div style="margin-bottom:12px"><strong style="color:'+colors[bt]+'">'+names[bt]+'</strong>';
+      html2+='<table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:6px">';
+      html2+='<tr style="background:#1a1a2e;color:#aaa"><th style="padding:4px 8px;text-align:left">세트</th><th>아이템A</th><th>아이템B</th><th>합산판매가</th><th>→ 새 아이템</th></tr>';
+      pairs.forEach(function(p,i){
+        html2+='<tr style="border-top:1px solid #333">';
+        html2+='<td style="padding:4px 8px">'+(i+1)+'세트</td>';
+        html2+='<td style="text-align:center">'+p.item_a.stage+'단계 ('+p.item_a.sell.toLocaleString()+'원)</td>';
+        html2+='<td style="text-align:center">'+p.item_b.stage+'단계 ('+p.item_b.sell.toLocaleString()+'원)</td>';
+        html2+='<td style="text-align:center;color:#f9a825">'+p.total_sell.toLocaleString()+'원</td>';
+        html2+='<td style="text-align:center;color:#66bb6a;font-weight:700">'+p.new_stage+'단계 ('+p.new_sell.toLocaleString()+'원)</td>';
+        html2+='</tr>';
+        totalSets++;
+      });
+      html2+='</table></div>';
+    }
+    if(totalSets===0){html2='<div style="color:#888">짝지을 수 있는 아이템이 없습니다.</div>';}
+    document.getElementById('lucky-preview-content').innerHTML=html2;
+    document.getElementById('lucky-preview').style.display='block';
+  }catch(e){result.textContent='오류: '+e.message;}
+}
+
+async function confirmLuckyBuy(){
+  if(!confirm('행운구매를 확정하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+  var result=document.getElementById('lucky-result');
+  result.textContent='처리 중...';
+  try{
+    // pairs 데이터 정제
+    var pairsToSend={};
+    for(var bt of ['bronze','silver','gold']){
+      if(_luckyPairsData[bt]&&_luckyPairsData[bt].length){
+        pairsToSend[bt]=_luckyPairsData[bt];
+      }
+    }
+    var d=await apiAdmin('/admin/lucky-buy/confirm',{method:'POST',body:JSON.stringify({pairs:pairsToSend})});
+    if(!d.success){result.innerHTML='<span style="color:#ef5350">오류: '+(d.error||'')+'</span>';return;}
+    var names={bronze:'수정',silver:'루비',gold:'다이아'};
+    var summary=d.results.map(function(r){
+      return names[r.bar_type]+' '+r.old_stages.join('+')+'단계 → '+r.new_stage+'단계('+r.new_sell.toLocaleString()+'원)';
+    }).join(', ');
+    result.innerHTML='<span style="color:#66bb6a">✅ 행운구매 완료! '+summary+'</span>';
+    // 이력 저장
+    _luckyHistory.unshift({time:new Date().toLocaleString(),results:d.results,detail:JSON.parse(JSON.stringify(_luckyPairsData))});
+    document.getElementById('lucky-preview').style.display='none';
+    _luckyPairsData={};
+    // 예약현황 새로고침
+    loadReservationStatus();
+  }catch(e){result.innerHTML='<span style="color:#ef5350">오류: '+e.message+'</span>';}
+}
+
+function toggleLuckyHistory(){
+  var div=document.getElementById('lucky-history');
+  if(div.style.display==='block'){div.style.display='none';return;}
+  if(!_luckyHistory.length){div.innerHTML='<div style="color:#888;font-size:12px;padding:8px 0">행운구매 이력이 없습니다.</div>';div.style.display='block';return;}
+  var names={bronze:'수정',silver:'루비',gold:'다이아'};
+  var colors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+  var html2='<div style="max-height:400px;overflow-y:auto">';
+  _luckyHistory.forEach(function(h,hi){
+    html2+='<div style="border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:8px">';
+    html2+='<div style="font-size:12px;color:#888;margin-bottom:6px">'+h.time+'</div>';
+    // 세부 내역
+    for(var bt of ['bronze','silver','gold']){
+      var pairs=(h.detail[bt]||[]);
+      if(!pairs.length) continue;
+      html2+='<div style="margin-bottom:6px"><strong style="color:'+colors[bt]+';font-size:12px">'+names[bt]+'</strong>';
+      pairs.forEach(function(p,i){
+        html2+='<div style="font-size:11px;color:#ccc;padding:2px 0 2px 8px">';
+        html2+='세트'+(i+1)+': '+p.item_a.stage+'단계('+p.item_a.sell.toLocaleString()+')+'+p.item_b.stage+'단계('+p.item_b.sell.toLocaleString()+') ';
+        html2+='→ <span style="color:#66bb6a">'+p.new_stage+'단계('+p.new_sell.toLocaleString()+'원)</span></div>';
+      });
+      html2+='</div>';
+    }
+    html2+='</div>';
+  });
+  html2+='</div>';
+  div.innerHTML=html2;
+  div.style.display='block';
+}
+
+</script>
 
 <div id="user-detail-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;overflow-y:auto">
   <div style="background:#1e1e2e;margin:30px auto;max-width:700px;border-radius:12px;padding:24px;position:relative">
