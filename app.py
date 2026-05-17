@@ -948,8 +948,8 @@ def admin_reservation_status():
                 """SELECT r.item_id, i.stage, i.bar_type
                    FROM reservations r
                    LEFT JOIN items i ON r.item_id = i.id
-                   WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending'""",
-                (bar_type,)
+                   WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending' AND r.user_id!=?""",
+                (bar_type, loopay_id)
             ).fetchall()
 
             sell_under32 = 0  # 32만원 미만
@@ -985,8 +985,8 @@ def admin_reservation_status():
             all_sell = conn.execute(
                 """SELECT i.stage FROM reservations r
                    LEFT JOIN items i ON r.item_id=i.id
-                   WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending'""",
-                (bar_type,)
+                   WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending' AND r.user_id!=?""",
+                (bar_type, loopay_id)
             ).fetchall()
             for row in all_sell:
                 sp = prices.get((bar_type, row['stage'] or 1), 0) if row['stage'] else 0
