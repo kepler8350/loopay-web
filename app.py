@@ -504,12 +504,13 @@ def admin_approve_user():
 @app.route('/api/current-time', methods=['GET'])
 def get_current_time():
     """현재 서버 시간 반환 (mock 시간 포함)"""
-    now = get_now()
+    mt = _get_mock_time_from_db()
+    now = mt if mt else datetime.datetime.now()
     return jsonify(
         time=now.strftime('%Y-%m-%d %H:%M:%S'),
         hour=now.hour,
         minute=now.minute,
-        is_mock=_MOCK_TIME is not None
+        is_mock=mt is not None
     )
 
 @app.route('/api/admin/set-time', methods=['POST'])
