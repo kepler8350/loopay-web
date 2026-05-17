@@ -1265,33 +1265,66 @@ async function confirmLuckyBuy(){
   }catch(e){result.innerHTML='<span style="color:#ef5350">오류: '+e.message+'</span>';}
 }
 
-function toggleLuckyHistory(){
+async function toggleLuckyHistory(){
   var div=document.getElementById('lucky-history');
   if(div.style.display==='block'){div.style.display='none';return;}
-  if(!_luckyHistory.length){div.innerHTML='<div style="color:#888;font-size:12px;padding:8px 0">행운구매 이력이 없습니다.</div>';div.style.display='block';return;}
-  var names={bronze:'수정',silver:'루비',gold:'다이아'};
-  var colors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
-  var html2='<div style="max-height:400px;overflow-y:auto">';
-  _luckyHistory.forEach(function(h,hi){
-    html2+='<div style="border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:8px">';
-    html2+='<div style="font-size:12px;color:#888;margin-bottom:6px">'+h.time+'</div>';
-    // 세부 내역
-    for(var bt of ['bronze','silver','gold']){
-      var pairs=(h.detail[bt]||[]);
-      if(!pairs.length) continue;
-      html2+='<div style="margin-bottom:6px"><strong style="color:'+colors[bt]+';font-size:12px">'+names[bt]+'</strong>';
-      pairs.forEach(function(p,i){
-        html2+='<div style="font-size:11px;color:#ccc;padding:2px 0 2px 8px">';
-        html2+='세트'+(i+1)+': '+p.item_a.stage+'단계('+p.item_a.sell.toLocaleString()+')+'+p.item_b.stage+'단계('+p.item_b.sell.toLocaleString()+') ';
-        html2+='→ <span style="color:#66bb6a">'+p.new_stage+'단계('+p.new_sell.toLocaleString()+'원)</span></div>';
-      });
-      html2+='</div>';
-    }
-    html2+='</div>';
-  });
-  html2+='</div>';
-  div.innerHTML=html2;
+  div.innerHTML='<div style="color:#888;font-size:12px;padding:8px">로딩 중...</div>';
   div.style.display='block';
+  try{
+    var d=await apiAdmin('/admin/lucky-buy/history');
+    if(!d.success||!d.history.length){
+      div.innerHTML='<div style="color:#888;font-size:12px;padding:8px">행운구매 이력이 없습니다.</div>';return;
+    }
+    var colors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+    var html2='<div style="max-height:500px;overflow-y:auto">';
+    d.history.forEach(function(h){
+      html2+='<div style="border:1px solid #333;border-radius:8px;padding:12px;margin-bottom:10px;font-size:12px">';
+      // 헤더
+      html2+='<div style="display:flex;justify-content:space-between;margin-bottom:8px">';
+      html2+='<strong style="color:'+colors[h.bar_type]+'">'+h.bar_name+' 행운구매 #'+h.id+'</strong>';
+      html2+='<span style="color:#888">'+h.created_at+'</span></div>';
+      // 아이템 정보
+      html2+='<table style="width:100%;border-collapse:collapse;margin-bottom:8px">';
+      html2+='<tr style="background:#1a1a2e;color:#aaa;font-size:11px">';
+      html2+='<th style="padding:4px 6px;text-align:left">구분</th>';
+      html2+='<th style="padding:4px 6px">단계/판매가</th>';
+      html2+='<th style="padding:4px 6px">판매자</th>';
+      html2+='<th style="padding:4px 6px">연락처</th>';
+      html2+='<th style="padding:4px 6px">정산계좌</th></tr>';
+      // 아이템A 판매자
+      var sa=h.seller_a||{};
+      html2+='<tr style="border-top:1px solid #333">';
+      html2+='<td style="padding:4px 6px;color:#888">판매자A</td>';
+      html2+='<td style="text-align:center">'+h.item_a.stage+'단계 ('+h.item_a.sell.toLocaleString()+'원)</td>';
+      html2+='<td style="text-align:center">'+(sa.nickname||sa.username||'-')+'</td>';
+      html2+='<td style="text-align:center">'+(sa.phone||'-')+'</td>';
+      html2+='<td style="text-align:center">'+(sa.bank?sa.bank+' '+sa.account_no:'-')+'</td></tr>';
+      // 아이템B 판매자
+      var sb=h.seller_b||{};
+      html2+='<tr style="border-top:1px solid #222">';
+      html2+='<td style="padding:4px 6px;color:#888">판매자B</td>';
+      html2+='<td style="text-align:center">'+h.item_b.stage+'단계 ('+h.item_b.sell.toLocaleString()+'원)</td>';
+      html2+='<td style="text-align:center">'+(sb.nickname||sb.username||'-')+'</td>';
+      html2+='<td style="text-align:center">'+(sb.phone||'-')+'</td>';
+      html2+='<td style="text-align:center">'+(sb.bank?sb.bank+' '+sb.account_no:'-')+'</td></tr>';
+      // 합산 → 새 아이템
+      html2+='<tr style="border-top:2px solid #444;background:#111">';
+      html2+='<td style="padding:4px 6px;color:#f9a825" colspan="2">합산: '+h.total_sell.toLocaleString()+'원 → ';
+      html2+='<span style="color:#66bb6a">'+h.new_stage+'단계 ('+h.new_sell.toLocaleString()+'원)</span></td>';
+      html2+='<td colspan="3"></td></tr>';
+      // 구매자
+      var byr=h.buyer;
+      html2+='<tr style="border-top:1px solid #333;background:#0d1a0d">';
+      html2+='<td style="padding:4px 6px;color:#66bb6a">구매자</td>';
+      html2+='<td style="text-align:center">'+(byr?h.new_stage+'단계':'대기 중')+'</td>';
+      html2+='<td style="text-align:center">'+(byr?byr.nickname||byr.username:'구매 대기')+'</td>';
+      html2+='<td style="text-align:center">'+(byr?byr.phone:'-')+'</td>';
+      html2+='<td style="text-align:center">'+(byr?'':'매칭 후 표시')+'</td></tr>';
+      html2+='</table></div>';
+    });
+    html2+='</div>';
+    div.innerHTML=html2;
+  }catch(e){div.innerHTML='<div style="color:#ef5350;font-size:12px;padding:8px">오류: '+e.message+'</div>';}
 }
 
 </script>

@@ -150,6 +150,23 @@ def init_db():
         is_read INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT (datetime('now','localtime'))
     )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS lucky_buy_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bar_type TEXT NOT NULL,
+        item_a_id INTEGER,
+        item_b_id INTEGER,
+        seller_a_id INTEGER,
+        seller_b_id INTEGER,
+        new_item_id INTEGER,
+        new_stage INTEGER NOT NULL,
+        sell_a INTEGER DEFAULT 0,
+        sell_b INTEGER DEFAULT 0,
+        total_sell INTEGER DEFAULT 0,
+        buyer_id INTEGER DEFAULT NULL,
+        created_at DATETIME DEFAULT (datetime('now','localtime'))
+    )''')
+
     conn.commit()
     _seed(conn)
 

@@ -1031,10 +1031,19 @@ def admin_lucky_buy_confirm():
                 loopay = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
                 loopay_id = loopay['id'] if loopay else 1
                 new_buy, new_sell = price_map[bar_type].get(new_stage, (0, 0))
-                conn.execute(
+                new_item_cur = conn.execute(
                     "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
                     (loopay_id, bar_type, new_stage, today)
                 )
+                new_item_id = new_item_cur.lastrowid
+                res_a = conn.execute('SELECT user_id FROM reservations WHERE id=?', (ia['res_id'],)).fetchone()
+                res_b = conn.execute('SELECT user_id FROM reservations WHERE id=?', (ib['res_id'],)).fetchone()
+                seller_a_id = res_a['user_id'] if res_a else None
+                seller_b_id = res_b['user_id'] if res_b else None
+                lbq = ('INSERT INTO lucky_buy_results(bar_type,item_a_id,item_b_id,seller_a_id,seller_b_id,new_item_id,new_stage,sell_a,sell_b,total_sell)'
+                       ' VALUES(?,?,?,?,?,?,?,?,?,?)')
+                conn.execute(lbq, (bar_type, ia['item_id'], ib['item_id'], seller_a_id, seller_b_id,
+                    new_item_id, new_stage, ia.get('sell',0), ib.get('sell',0), ia.get('sell',0)+ib.get('sell',0)))
                 results.append({
                     'bar_type': bar_type,
                     'old_stages': [ia['stage'], ib['stage']],
@@ -1047,6 +1056,68 @@ def admin_lucky_buy_confirm():
     except Exception as e:
         conn.rollback()
         return jsonify(error=str(e)), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/lucky-buy/history', methods=['GET'])
+@jwt_required()
+def admin_lucky_buy_history():
+    """행운구매 이력 조회 - 판매자/구매자 정보 포함"""
+    if not check_admin_auth():
+        return jsonify(error='unauthorized'), 401
+    conn = get_db()
+    try:
+        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
+        price_map = {
+            'bronze': {s: (b, sl) for s, b, sl in BRONZE_PRICES},
+            'silver': {s: (b, sl) for s, b, sl in SILVER_PRICES},
+            'gold':   {s: (b, sl) for s, b, sl in GOLD_PRICES},
+        }
+        rows = conn.execute(
+            """SELECT lb.*,
+               ua.username as seller_a_name, ua.nickname as seller_a_nick, ua.phone as seller_a_phone, ua.bank as seller_a_bank, ua.account_no as seller_a_acct,
+               ub.username as seller_b_name, ub.nickname as seller_b_nick, ub.phone as seller_b_phone, ub.bank as seller_b_bank, ub.account_no as seller_b_acct,
+               uc.username as buyer_name, uc.nickname as buyer_nick, uc.phone as buyer_phone,
+               ia.stage as stage_a, ib.stage as stage_b, ni.stage as new_item_stage
+               FROM lucky_buy_results lb
+               LEFT JOIN users ua ON lb.seller_a_id = ua.id
+               LEFT JOIN users ub ON lb.seller_b_id = ub.id
+               LEFT JOIN users uc ON lb.buyer_id = uc.id
+               LEFT JOIN items ia ON lb.item_a_id = ia.id
+               LEFT JOIN items ib ON lb.item_b_id = ib.id
+               LEFT JOIN items ni ON lb.new_item_id = ni.id
+               ORDER BY lb.created_at DESC LIMIT 100"""
+        ).fetchall()
+        names = {'bronze': '수정', 'silver': '루비', 'gold': '다이아'}
+        result = []
+        for r in rows:
+            bt = r['bar_type']
+            _, new_sell = price_map[bt].get(r['new_stage'], (0, 0))
+            result.append({
+                'id': r['id'],
+                'bar_type': bt,
+                'bar_name': names.get(bt, bt),
+                'created_at': r['created_at'],
+                'item_a': {'stage': r['stage_a'], 'sell': r['sell_a']},
+                'item_b': {'stage': r['stage_b'], 'sell': r['sell_b']},
+                'total_sell': r['total_sell'],
+                'new_stage': r['new_stage'],
+                'new_sell': new_sell,
+                'seller_a': {
+                    'username': r['seller_a_name'], 'nickname': r['seller_a_nick'],
+                    'phone': r['seller_a_phone'], 'bank': r['seller_a_bank'], 'account_no': r['seller_a_acct']
+                } if r['seller_a_name'] else None,
+                'seller_b': {
+                    'username': r['seller_b_name'], 'nickname': r['seller_b_nick'],
+                    'phone': r['seller_b_phone'], 'bank': r['seller_b_bank'], 'account_no': r['seller_b_acct']
+                } if r['seller_b_name'] else None,
+                'buyer': {
+                    'username': r['buyer_name'], 'nickname': r['buyer_nick'],
+                    'phone': r['buyer_phone']
+                } if r['buyer_name'] else None,
+            })
+        return jsonify(success=True, history=result)
     finally:
         conn.close()
 
