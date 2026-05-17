@@ -337,13 +337,9 @@ async function loadUserData(){
     renderHeader(d);
     renderBars(d);
     renderLevelTab();
-    updateReserveDefaults(d.level);
-    // 로그인/새로고침 시 항상 초기화 후 예약 여부 체크
-    enableReserveSection();
-    if(document.getElementById('reserve-btn')) {
-      document.getElementById('reserve-btn').dataset.disabledByUser = '';
-    }
-    // 오늘 이미 예약했으면 비활성화
+    enableReserveSection();  // 먼저 초기화
+    updateReserveDefaults(d.level);  // UI 업데이트
+    // 오늘 이미 예약했으면 비활성화 (updateReserveDefaults 이후에 호출해야 덮어쓰기 방지)
     if(d.today_reservations && (d.today_reservations.bronze||0) > 0){
       disableReserveSection();
     }
@@ -2387,14 +2383,10 @@ async function loadUserData(){
     userData = d;
     renderHeader(d);
     renderBars(d);
-    updateReserveDefaults(d.level);
-    // 항상 초기화 후 예약 여부 체크
-    enableReserveSection();
-    if(document.getElementById('reserve-btn')) {
-      document.getElementById('reserve-btn').dataset.disabledByUser = '';
-    }
+    enableReserveSection();  // 먼저 초기화
+    updateReserveDefaults(d.level);  // UI 업데이트
     if(d.today_reservations && (d.today_reservations.bronze||0) > 0){
-      disableReserveSection();
+      disableReserveSection();  // 마지막에 비활성화 (덮어쓰기 방지)
     }
     // 다음날 05:00 재활성화 타이머 설정
     scheduleReserveReset();
