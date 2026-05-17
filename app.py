@@ -981,7 +981,14 @@ def admin_reservation_status():
             match_rate = round(total_sell / total_buy * 100, 1) if total_buy > 0 else 0
 
             # 판매가격대별 (prices 테이블 join)
-            price_bands = {'under10': 0, 'band10_29': 0, 'band29_33': 0, 'over33': 0}
+            # 단계 범위 정의 (bar_type별)
+            stage_bands = {
+                'bronze': [(1,10), (11,19), (20,20), (21,99)],   # 수정
+                'silver': [(1,8),  (9,15),  (16,16), (17,99)],   # 루비
+                'gold':   [(1,7),  (8,13),  (14,14), (15,99)],   # 다이아
+            }
+            bands = stage_bands.get(bar_type, [(1,10),(11,19),(20,20),(21,99)])
+            price_bands = {'band1': 0, 'band2': 0, 'band3': 0, 'band4': 0, 'prev_unsold': 0}
             all_sell = conn.execute(
                 """SELECT i.stage FROM reservations r
                    LEFT JOIN items i ON r.item_id=i.id
@@ -989,12 +996,18 @@ def admin_reservation_status():
                 (bar_type, loopay_id)
             ).fetchall()
             for row in all_sell:
-                sp = prices.get((bar_type, row['stage'] or 1), 0) if row['stage'] else 0
-                if sp < 100000: price_bands['under10'] += 1
-                elif sp < 290000: price_bands['band10_29'] += 1
-                elif sp < 330000: price_bands['band29_33'] += 1
-                else: price_bands['over33'] += 1
-
+                stage = row['stage'] or 1
+                matched = False
+                for i, (s_min, s_max) in enumerate(bands):
+                    if s_min <= stage <= s_max:
+                        price_bands[f'band{i+1}'] += 1
+                        matched = True
+                        break
+                if not matched:
+                    price_bands['band4'] += 1
+            # 전날 미판매분 (추후 구현, 현재 0)
+            # price_bands['prev_unsold'] = 0
+            if False: price_bands['under10'] = 0  # 하위호환 dummy
             result[bar_type] = {
                 'user_buy': user_buy,
                 'extra_buy': extra_buy,
