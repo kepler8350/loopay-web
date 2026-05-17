@@ -1091,10 +1091,11 @@ function updateTimeBar(){
     sellReserveBtn.style.opacity = isReserveTime ? '1' : '0.4';
     sellReserveBtn.title = isReserveTime ? '' : '구매·판매 예약은 05:00~20:00에만 가능합니다';
   }
-  // 구매예약 수량 +/- 버튼
+  // 구매예약 수량 +/- 버튼 (예약시간 외 OR 오늘 이미 예약 완료 시 비활성화)
+  var _shouldDisableButtons = !isReserveTime || _reservedToday;
   ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
     var el = document.getElementById(id);
-    if(el){ el.disabled = !isReserveTime; el.style.opacity = isReserveTime ? '' : '0.4'; }
+    if(el){ el.disabled = _shouldDisableButtons; el.style.opacity = _shouldDisableButtons ? '0.4' : ''; }
   });
   // 보유내역 전체판매예약 버튼
   ['bulk-sell-btn-bronze','bulk-sell-btn-silver','bulk-sell-btn-gold'].forEach(function(id){
