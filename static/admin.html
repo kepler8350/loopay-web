@@ -638,15 +638,15 @@ function addReservation(){
   var stage = parseInt(document.getElementById('add-res-stage').value)||1;
   var count = parseInt(document.getElementById('add-res-count').value)||1;
   var result = document.getElementById('add-res-result');
-  result.textContent='&#52628;&#44032; &#51473;...';
+  result.innerHTML='추가 중...';
   apiAdmin('/admin/add-reservation',{method:'POST',body:JSON.stringify({bar_type:barType,type:kind,stage:stage,count:count})})
     .then(function(d){
       result.style.color='#66bb6a';
-      result.textContent='&#52628;&#44032; &#50756;&#47308; ('+count+'&#44060;)';
+      result.innerHTML='추가 완료 ('+count+'개)';
       loadReservationStatus();
     }).catch(function(e){
       result.style.color='#ef5350';
-      result.textContent='&#50724;&#47448;: '+e.message;
+      result.innerHTML='오류: '+e.message;
     });
 }
 function loadPenalties(){document.getElementById('admin-penalties').innerHTML='<tr><td colspan="5"><div class="empty-state" style="padding:20px"><div>&#44592;&#45733; &#44060;&#48156; &#51473;</div></div></td></tr>';}
