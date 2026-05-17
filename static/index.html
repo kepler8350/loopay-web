@@ -337,8 +337,13 @@ async function loadUserData(){
     renderBars(d);
     renderLevelTab();
     updateReserveDefaults(d.level);
-    // 오늘 이미 예약했으면 비활성화 (auto_reserve=false인 신규 가입자는 0)
-    if(d.today_reservations && (d.today_reservations.bronze||0) > 0 && d.auto_reserve !== false){
+    // 로그인/새로고침 시 항상 초기화 후 예약 여부 체크
+    enableReserveSection();
+    if(document.getElementById('reserve-btn')) {
+      document.getElementById('reserve-btn').dataset.disabledByUser = '';
+    }
+    // 오늘 이미 예약했으면 비활성화
+    if(d.today_reservations && (d.today_reservations.bronze||0) > 0){
       disableReserveSection();
     }
     // 다음날 05:00 재활성화 타이머
@@ -2377,8 +2382,12 @@ async function loadUserData(){
     renderHeader(d);
     renderBars(d);
     updateReserveDefaults(d.level);
-    // 오늘 이미 예약했으면 비활성화 (auto_reserve=false인 신규 가입자는 0)
-    if(d.today_reservations && (d.today_reservations.bronze||0) > 0 && d.auto_reserve !== false){
+    // 항상 초기화 후 예약 여부 체크
+    enableReserveSection();
+    if(document.getElementById('reserve-btn')) {
+      document.getElementById('reserve-btn').dataset.disabledByUser = '';
+    }
+    if(d.today_reservations && (d.today_reservations.bronze||0) > 0){
       disableReserveSection();
     }
     // 다음날 05:00 재활성화 타이머 설정
