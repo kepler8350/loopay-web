@@ -1195,7 +1195,7 @@ function startTimeBar(){
   if(window._tbInterval) clearInterval(window._tbInterval);
   window._tbInterval = setInterval(updateTimeBar, 1000);
   if(window._syncInterval) clearInterval(window._syncInterval);
-  window._syncInterval = setInterval(syncServerTime, 2000);
+  window._syncInterval = setInterval(syncServerTime, 1500);
 }
 
 // ── 아이템 상세보기 (판매예약 포함) ──

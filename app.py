@@ -47,19 +47,10 @@ def _set_mock_time_to_db(dt):
     except Exception:
         pass
 
-_MOCK_TIME = None       # 전역 캐시 (설정 시 즉시 반영)
-_MOCK_TIME_CACHE = None # DB 읽기 캐시
-_MOCK_CACHE_AT = 0.0    # 캐시 타임스탬프
+_MOCK_TIME = None  # None이면 실제 시간 사용
 
 def get_now():
-    """현재 시간 반환 (mock 설정 시 mock 시간)"""""
-    import time as _time
-    global _MOCK_TIME, _MOCK_TIME_CACHE, _MOCK_CACHE_AT
-    # 1초마다 DB에서 재조회
-    if _time.time() - _MOCK_CACHE_AT > 1.0:
-        _MOCK_TIME_CACHE = _get_mock_time_from_db()
-        _MOCK_CACHE_AT = _time.time()
-        _MOCK_TIME = _MOCK_TIME_CACHE
+    """현재 시간 반환 (mock 설정 시 mock 시간)"""
     return _MOCK_TIME if _MOCK_TIME else datetime.datetime.now()
 
 def get_today():
