@@ -47,11 +47,10 @@ def _set_mock_time_to_db(dt):
     except Exception:
         pass
 
-_MOCK_TIME = None  # None이면 실제 시간 사용
-
 def get_now():
-    """현재 시간 반환 (mock 설정 시 mock 시간)"""
-    return _MOCK_TIME if _MOCK_TIME else datetime.datetime.now()
+    """현재 시간 반환 - 매번 DB에서 읽어 멀티워커 동기화"""
+    mt = _get_mock_time_from_db()
+    return mt if mt else datetime.datetime.now()
 
 def get_today():
     """오늘 날짜 반환"""
@@ -517,16 +516,13 @@ def get_current_time():
 def admin_set_time():
     if not check_admin_auth():
         return jsonify(error='unauthorized'), 401
-    global _MOCK_TIME
     data = request.json or {}
     dt_str = data.get('datetime')
     if data.get('reset') or not dt_str:
-        _MOCK_TIME = None
         _set_mock_time_to_db(None)
         return jsonify(success=True, mock_time=None, clear_mock=True, message='실제 시간으로 복원됨')
     try:
         mt = datetime.datetime.strptime(dt_str, '%Y-%m-%d %H:%M:%S')
-        _MOCK_TIME = mt
         _set_mock_time_to_db(mt)
         return jsonify(success=True, mock_time=mt.strftime('%Y-%m-%d %H:%M:%S'))
     except Exception as e:
@@ -539,7 +535,7 @@ def admin_get_time():
     now = get_now()
     return jsonify(
         current=now.strftime('%Y-%m-%d %H:%M:%S'),
-        is_mock=_MOCK_TIME is not None,
+        is_mock=_get_mock_time_from_db() is not None,
         real=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     )
 
@@ -800,13 +796,7 @@ def admin_matching_status():
 
 with app.app_context():
     init_db()
-    # DB에서 mock_time 복원 (재배포 후에도 유지)
-    try:
-        _loaded = _get_mock_time_from_db()
-        if _loaded:
-            _MOCK_TIME = _loaded
-    except Exception:
-        pass
+    # get_now()가 매번 DB에서 읽으므로 별도 복원 불필요
 
 
 # == combine sell API ==
