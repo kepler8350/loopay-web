@@ -1121,6 +1121,24 @@ def admin_lucky_buy_history():
     finally:
         conn.close()
 
+
+@app.route('/api/admin/lucky-buy/history/<int:history_id>', methods=['DELETE'])
+@jwt_required()
+def admin_lucky_buy_history_delete(history_id):
+    """행운구매 이력 삭제"""
+    if not check_admin_auth():
+        return jsonify(error='unauthorized'), 401
+    conn = get_db()
+    try:
+        if history_id == 0:
+            conn.execute("DELETE FROM lucky_buy_results")
+        else:
+            conn.execute("DELETE FROM lucky_buy_results WHERE id=?", (history_id,))
+        conn.commit()
+        return jsonify(success=True)
+    finally:
+        conn.close()
+
 @app.route('/api/admin/reservation-status', methods=['GET'])
 @jwt_required()
 def admin_reservation_status():

@@ -295,7 +295,10 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
         </div>
         <!-- 상세보기 -->
         <div id="lucky-history" style="margin-top:8px"></div>
-        <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px;margin-top:6px" onclick="toggleLuckyHistory()">📋 행운구매 결과 상세보기</button>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="toggleLuckyHistory()">📋 행운구매 결과 상세보기</button>
+          <button class="btn btn-danger" style="font-size:11px;padding:4px 10px;background:#c62828;color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="clearLuckyHistory()">🗑️ 이력 전체 삭제</button>
+        </div>
       </div>
 
       <!-- 추가예약 입력 -->
@@ -1280,9 +1283,10 @@ async function toggleLuckyHistory(){
     d.history.forEach(function(h){
       html2+='<div style="border:1px solid #333;border-radius:8px;padding:12px;margin-bottom:10px;font-size:12px">';
       // 헤더
-      html2+='<div style="display:flex;justify-content:space-between;margin-bottom:8px">';
+      html2+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
       html2+='<strong style="color:'+colors[h.bar_type]+'">'+h.bar_name+' 행운구매 #'+h.id+'</strong>';
-      html2+='<span style="color:#888">'+h.created_at+'</span></div>';
+      html2+='<span style="color:#888;font-size:11px">'+h.created_at+'</span>';
+      html2+='<button onclick="deleteLuckyHistory('+h.id+',this)" style="font-size:10px;padding:2px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;cursor:pointer">삭제</button></div>';
       // 아이템 정보
       html2+='<table style="width:100%;border-collapse:collapse;margin-bottom:8px">';
       html2+='<tr style="background:#1a1a2e;color:#aaa;font-size:11px">';
@@ -1295,18 +1299,18 @@ async function toggleLuckyHistory(){
       var sa=h.seller_a||{};
       html2+='<tr style="border-top:1px solid #333">';
       html2+='<td style="padding:4px 6px;color:#888">판매자A</td>';
-      html2+='<td style="text-align:center">'+h.item_a.stage+'단계 ('+h.item_a.sell.toLocaleString()+'원)</td>';
-      html2+='<td style="text-align:center">'+(sa.nickname||sa.username||'-')+'</td>';
-      html2+='<td style="text-align:center">'+(sa.phone||'-')+'</td>';
-      html2+='<td style="text-align:center">'+(sa.bank?sa.bank+' '+sa.account_no:'-')+'</td></tr>';
+      html2+='<td style="text-align:center">'+(h.item_a.stage?h.item_a.stage+'단계':'-')+' ('+h.item_a.sell.toLocaleString()+'원)</td>';
+      html2+='<td style="text-align:center">'+(sa?(sa.nickname||sa.username||'알수없음'):'회원 없음')+'</td>';
+      html2+='<td style="text-align:center">'+(sa?sa.phone||'-':'-')+'</td>';
+      html2+='<td style="text-align:center">'+(sa&&sa.bank?sa.bank+' '+sa.account_no:'-')+'</td></tr>';
       // 아이템B 판매자
       var sb=h.seller_b||{};
       html2+='<tr style="border-top:1px solid #222">';
       html2+='<td style="padding:4px 6px;color:#888">판매자B</td>';
-      html2+='<td style="text-align:center">'+h.item_b.stage+'단계 ('+h.item_b.sell.toLocaleString()+'원)</td>';
-      html2+='<td style="text-align:center">'+(sb.nickname||sb.username||'-')+'</td>';
-      html2+='<td style="text-align:center">'+(sb.phone||'-')+'</td>';
-      html2+='<td style="text-align:center">'+(sb.bank?sb.bank+' '+sb.account_no:'-')+'</td></tr>';
+      html2+='<td style="text-align:center">'+(h.item_b.stage?h.item_b.stage+'단계':'-')+' ('+h.item_b.sell.toLocaleString()+'원)</td>';
+      html2+='<td style="text-align:center">'+(sb?(sb.nickname||sb.username||'알수없음'):'회원 없음')+'</td>';
+      html2+='<td style="text-align:center">'+(sb?sb.phone||'-':'-')+'</td>';
+      html2+='<td style="text-align:center">'+(sb&&sb.bank?sb.bank+' '+sb.account_no:'-')+'</td></tr>';
       // 합산 → 새 아이템
       html2+='<tr style="border-top:2px solid #444;background:#111">';
       html2+='<td style="padding:4px 6px;color:#f9a825" colspan="2">합산: '+h.total_sell.toLocaleString()+'원 → ';
@@ -1325,6 +1329,31 @@ async function toggleLuckyHistory(){
     html2+='</div>';
     div.innerHTML=html2;
   }catch(e){div.innerHTML='<div style="color:#ef5350;font-size:12px;padding:8px">오류: '+e.message+'</div>';}
+}
+
+
+async function deleteLuckyHistory(id, btn){
+  if(!confirm('이 행운구매 이력을 삭제하시겠습니까?')) return;
+  try{
+    var d=await apiAdmin('/admin/lucky-buy/history/'+id, {method:'DELETE'});
+    if(d.success){
+      var row=btn.closest('[style*="border:1px solid"]');
+      if(row) row.remove();
+      toast('삭제됐습니다');
+    }
+  }catch(e){toast('삭제 오류: '+e.message,'error');}
+}
+
+async function clearLuckyHistory(){
+  if(!confirm('행운구매 이력을 전체 삭제하시겠습니까?')) return;
+  try{
+    var d=await apiAdmin('/admin/lucky-buy/history/0', {method:'DELETE'});
+    if(d.success){
+      document.getElementById('lucky-history').innerHTML='';
+      document.getElementById('lucky-history').style.display='none';
+      toast('이력이 전체 삭제됐습니다');
+    }
+  }catch(e){toast('삭제 오류: '+e.message,'error');}
 }
 
 </script>
