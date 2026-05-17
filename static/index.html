@@ -2380,6 +2380,10 @@ async function loadUserData(){
     }
     // 다음날 05:00 재활성화 타이머 설정
     scheduleReserveReset();
+    // 예약완료 상태 강제 재적용 (다른 비동기 코드가 덮어쓰는 것 방지)
+    if(_reservedToday){
+      setTimeout(function(){ if(_reservedToday) disableReserveSection(); }, 300);
+    }
   }catch(e){
   console.error('loadUserData error:', e.message);
   }
