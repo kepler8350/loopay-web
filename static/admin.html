@@ -155,11 +155,11 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
           <thead>
             <!-- 수정(bronze): 1~20단계 / 21단계 -->
             <tr style="background:#1e2240">
-              <th rowspan="2" style="width:70px;color:#cd7f32;font-size:13px;font-weight:700">수정</th>
+              <th rowspan="2" style="width:70px;color:#cd7f32;font-size:13px;font-weight:700;white-space:nowrap">수정</th>
               <th colspan="3" style="text-align:center;border-bottom:2px solid #cd7f32;color:#fff;background:#1e2240">구매예약</th>
               <th colspan="3" style="text-align:center;border-bottom:2px solid #4fc3f7;color:#fff;background:#1e2240;border-left:2px solid #555">판매예약</th>
               <th colspan="4" style="text-align:center;border-bottom:2px solid #81c784;color:#fff;background:#1e2240;border-left:2px solid #555">판매추가예약</th>
-              <th rowspan="2" style="color:#eee">판매총수량</th>
+              <th rowspan="2" style="color:#eee;border-left:3px solid #888">판매총수량</th>
               <th rowspan="2" style="color:#eee">매칭율</th>
             </tr>
             <tr style="background:#1e2240">
@@ -174,11 +174,11 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
           <thead>
             <!-- 루비(silver): 1~16단계 / 17단계 -->
             <tr style="background:#1a2a1a">
-              <th rowspan="2" style="width:70px;color:#a8a9ad;font-size:13px;font-weight:700">루비</th>
-              <th colspan="3" style="text-align:center;border-bottom:2px solid #cd7f32;color:#fff;background:#1a2a1a">구매예약</th>
-              <th colspan="3" style="text-align:center;border-bottom:2px solid #4fc3f7;color:#fff;background:#1a2a1a;border-left:2px solid #555">판매예약</th>
-              <th colspan="4" style="text-align:center;border-bottom:2px solid #81c784;color:#fff;background:#1a2a1a;border-left:2px solid #555">판매추가예약</th>
-              <th rowspan="2" style="color:#eee">판매총수량</th>
+              <th rowspan="2" style="width:70px;color:#a8a9ad;font-size:13px;font-weight:700;white-space:nowrap">루비</th>
+              <th colspan="3" style="text-align:center;border-bottom:2px solid #cd7f32;color:transparent;background:#1a2a1a">　</th>
+              <th colspan="3" style="text-align:center;border-bottom:2px solid #4fc3f7;color:transparent;background:#1a2a1a;border-left:2px solid #555">　</th>
+              <th colspan="4" style="text-align:center;border-bottom:2px solid #81c784;color:transparent;background:#1a2a1a;border-left:2px solid #555">　</th>
+              <th rowspan="2" style="color:#eee;border-left:3px solid #888">판매총수량</th>
               <th rowspan="2" style="color:#eee">매칭율</th>
             </tr>
             <tr style="background:#1a2a1a">
@@ -193,11 +193,11 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
           <thead>
             <!-- 다이아(gold): 1~14단계 / 15단계 -->
             <tr style="background:#2a1a1a">
-              <th rowspan="2" style="width:70px;color:#ffd700;font-size:13px;font-weight:700">다이아</th>
-              <th colspan="3" style="text-align:center;border-bottom:2px solid #cd7f32;color:#fff;background:#2a1a1a">구매예약</th>
-              <th colspan="3" style="text-align:center;border-bottom:2px solid #4fc3f7;color:#fff;background:#2a1a1a;border-left:2px solid #555">판매예약</th>
-              <th colspan="4" style="text-align:center;border-bottom:2px solid #81c784;color:#fff;background:#2a1a1a;border-left:2px solid #555">판매추가예약</th>
-              <th rowspan="2" style="color:#eee">판매총수량</th>
+              <th rowspan="2" style="width:70px;color:#ffd700;font-size:13px;font-weight:700;white-space:nowrap">다이아</th>
+              <th colspan="3" style="text-align:center;border-bottom:2px solid #cd7f32;color:transparent;background:#2a1a1a">　</th>
+              <th colspan="3" style="text-align:center;border-bottom:2px solid #4fc3f7;color:transparent;background:#2a1a1a;border-left:2px solid #555">　</th>
+              <th colspan="4" style="text-align:center;border-bottom:2px solid #81c784;color:transparent;background:#2a1a1a;border-left:2px solid #555">　</th>
+              <th rowspan="2" style="color:#eee;border-left:3px solid #888">판매총수량</th>
               <th rowspan="2" style="color:#eee">매칭율</th>
             </tr>
             <tr style="background:#2a1a1a">
@@ -625,7 +625,7 @@ function loadReservationStatus(){
             +'<td class="num">'+(s.extra_sell_33up||0)+'</td>'
             +'<td class="num">'+(s.extra_sell_split||0)+'</td>'
             +'<td class="num">'+(s.extra_sell_new||0)+'</td>'
-            +'<td class="num bold">'+(s.sell_count||0)+'</td>'
+            +'<td class="num bold" style="border-left:3px solid #888">'+(s.sell_count||0)+'</td>'
             +'<td class="num bold" style="color:'+((s.match_rate||0)>=80?'#66bb6a':(s.match_rate||0)>=50?'#f9a825':'#ef5350')+'">'+(s.match_rate||0)+'%</td>'
             +'</tr>';
         }
