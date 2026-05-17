@@ -1032,8 +1032,8 @@ def admin_lucky_buy_confirm():
                 loopay_id = loopay['id'] if loopay else 1
                 new_buy, new_sell = price_map[bar_type].get(new_stage, (0, 0))
                 conn.execute(
-                    "INSERT INTO items(user_id, bar_type, stage, buy_price, sell_price, status, purchase_date) VALUES(?,?,?,?,?,'reservable',?)",
-                    (loopay_id, bar_type, new_stage, new_buy, new_sell, today)
+                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
+                    (loopay_id, bar_type, new_stage, today)
                 )
                 results.append({
                     'bar_type': bar_type,
@@ -1208,12 +1208,9 @@ def admin_add_reservation():
             item_id = 0
             if res_type == 'sell':
                 # loopay 아이템 생성 후 예약
-                price_row = conn.execute("SELECT buy_price, sell_price FROM prices WHERE bar_type=? AND stage=?", (bar_type, stage)).fetchone()
-                bp = price_row['buy_price'] if price_row else 0
-                sp = price_row['sell_price'] if price_row else 0
                 cur = conn.execute(
-                    "INSERT INTO items(user_id, bar_type, stage, buy_price, sell_price, status, purchase_date) VALUES(?,?,?,?,?,'reservable',?)",
-                    (loopay_id, bar_type, stage, bp, sp, today)
+                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
+                    (loopay_id, bar_type, stage, today)
                 )
                 item_id = cur.lastrowid
             conn.execute(
