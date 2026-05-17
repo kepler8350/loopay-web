@@ -270,6 +270,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 </style>
 <script>var _sellSelected={}; // 판매예약 선택 상태
+var _reservedToday=false; // 오늘 구매예약 완료 여부
 var svCnt=0; var gdCnt=0; // 루비/다이아 선택 수량
 var LEVEL_CFG_JS={
   1:{bz_min:0,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1,cum:150},
@@ -1485,6 +1486,7 @@ async function doPaymentConfirm(resId, confirmed){
 }
 
 function disableReserveSection(){
+  _reservedToday=true;
   // 구매 예약하기 버튼 비활성화
   var btn=document.getElementById('reserve-btn');
   if(btn){btn.disabled=true;btn.style.opacity='0.5';btn.textContent='오늘 예약 완료';btn.dataset.disabledByUser='1';}
@@ -1521,6 +1523,7 @@ function scheduleReserveReset(){
 }
 
 function enableReserveSection(){
+  _reservedToday=false;
   var btn = document.getElementById('reserve-btn');
   if(btn){
     btn.disabled = false;
@@ -1553,7 +1556,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-bz-range').textContent='최소 '+BZ_MIN+' / 최대 '+BZ_MAX;
   var bzNote=document.getElementById('r-bz-note');
   if(bzNote) bzNote.textContent='수정 '+BZ_MAX+'개 예약시 루비 '+SV_MAX+'개 활성화 / 루비 '+SV_MAX+'개 예약시 다이아 '+GD_MAX+'개 활성화';
-  var _byUser = document.getElementById('reserve-btn')?.dataset?.disabledByUser === '1';
+  var _byUser = _reservedToday;
   document.getElementById('r-bz-m').disabled=(_byUser || !_isRT || bzCnt<=BZ_MIN);
   document.getElementById('r-bz-p').disabled=(_byUser || !_isRT || bzCnt>=BZ_MAX);
 
@@ -2489,7 +2492,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
   document.getElementById('r-bz-range').textContent='최소 '+BZ_MIN+' / 최대 '+BZ_MAX;
   var bzNote=document.getElementById('r-bz-note');
   if(bzNote) bzNote.textContent='수정 '+BZ_MAX+'개 예약시 루비 '+SV_MAX+'개 활성화 / 루비 '+SV_MAX+'개 예약시 다이아 '+GD_MAX+'개 활성화';
-  var _byUser = document.getElementById('reserve-btn')?.dataset?.disabledByUser === '1';
+  var _byUser = _reservedToday;
   document.getElementById('r-bz-m').disabled=(_byUser || !_isRT || bzCnt<=BZ_MIN);
   document.getElementById('r-bz-p').disabled=(_byUser || !_isRT || bzCnt>=BZ_MAX);
 
