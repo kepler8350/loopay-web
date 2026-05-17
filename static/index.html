@@ -218,8 +218,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .reserve-confirm-row.total-row span:last-child{color:#f9a825}
 .reserve-confirm-btns{display:flex;gap:10px}
 .reserve-confirm-btns button{flex:1;padding:12px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer}
-.btn-cancel-res{background:var(--bg2);color:var(--text2)}
-.btn-confirm-res{background:var(--accent);color:#fff}
+.btn-cancel-res{background:#e0e0e0;color:#333}
+.btn-confirm-res{background:#1565c0;color:#fff}
 
 /* 시간표 배너 */
 .time-banner{display:none}
@@ -376,7 +376,7 @@ function renderHeader(d){
   var dot=document.getElementById('h-lv-dot');
   if(badge){badge.className='user-id-badge lv-'+lv;}
   if(dot){dot.className='lv-dot lv-'+lv;}
-  document.getElementById('h-total').textContent=(d.total_points||0).toLocaleString()+' P';
+  document.getElementById('h-total').textContent=(d.charge_points||0).toLocaleString()+' P';
   var uidEl=document.getElementById('h-userid');
   if(uidEl) uidEl.textContent=d.username||d.nickname||'';;
   document.getElementById('h-sub').textContent='충전 '+(d.charge_points||0).toLocaleString()+'P + 전환 '+(d.exchange_points||0).toLocaleString()+'P';
@@ -394,7 +394,7 @@ function renderHeader(d){
   document.querySelectorAll('.cum-chip').forEach(c=>c.classList.remove('cur'));
   // 매칭유지 포인트 초기화 (구매예약 전)
   var mEl=document.getElementById('h-maintain');
-  if(mEl) mEl.textContent=(d.total_points||0).toLocaleString()+' P';
+  if(mEl) mEl.textContent=(d.exchange_points||0).toLocaleString()+' P';
 }
 
 function renderBars(d){
