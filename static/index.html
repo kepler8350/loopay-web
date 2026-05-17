@@ -337,11 +337,12 @@ async function loadUserData(){
     renderHeader(d);
     renderBars(d);
     renderLevelTab();
-    enableReserveSection();  // 먼저 초기화
-    updateReserveDefaults(d.level);  // UI 업데이트
-    // 오늘 이미 예약했으면 비활성화 (updateReserveDefaults 이후에 호출해야 덮어쓰기 방지)
-    if(d.today_reservations && (d.today_reservations.bronze||0) > 0){
-      disableReserveSection();
+    enableReserveSection();  // 버튼 텍스트/스타일 초기화
+    // 예약 여부 먼저 플래그 설정 (updateResUI가 이 값을 참조함)
+    _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
+    updateReserveDefaults(d.level);  // UI 업데이트 (내부적으로 updateResUI 호출)
+    if(_reservedToday){
+      disableReserveSection();  // 버튼 텍스트/스타일 최종 적용
     }
     // 다음날 05:00 재활성화 타이머
     scheduleReserveReset();
@@ -2383,10 +2384,11 @@ async function loadUserData(){
     userData = d;
     renderHeader(d);
     renderBars(d);
-    enableReserveSection();  // 먼저 초기화
-    updateReserveDefaults(d.level);  // UI 업데이트
-    if(d.today_reservations && (d.today_reservations.bronze||0) > 0){
-      disableReserveSection();  // 마지막에 비활성화 (덮어쓰기 방지)
+    enableReserveSection();  // 버튼 텍스트/스타일 초기화
+    _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
+    updateReserveDefaults(d.level);
+    if(_reservedToday){
+      disableReserveSection();
     }
     // 다음날 05:00 재활성화 타이머 설정
     scheduleReserveReset();
