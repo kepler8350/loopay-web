@@ -933,13 +933,13 @@ def admin_reservation_status():
         for bar_type in ['bronze', 'silver', 'gold']:
             # 사용자 구매예약 (match_round=1, loopay 제외)
             user_buy = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND user_id!=?",
-                (bar_type, loopay_id)
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND user_id!=? AND reserve_date=?",
+                (bar_type, loopay_id, today)
             ).fetchone()['cnt']
             # loopay 추가예약 (match_round=1)
             extra_buy = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND user_id=?",
-                (bar_type, loopay_id)
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND user_id=? AND reserve_date=?",
+                (bar_type, loopay_id, today)
             ).fetchone()['cnt']
             total_buy = user_buy + extra_buy
 
