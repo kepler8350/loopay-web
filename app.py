@@ -932,7 +932,7 @@ def admin_lucky_buy_setup():
             'gold':   {s: (b, sl) for s, b, sl in GOLD_PRICES},
         }
         # 행운 단계 범위 (이 단계에서만 행운구매 가능)
-        lucky_stages = {'bronze': range(1, 11), 'silver': range(1, 9), 'gold': range(1, 8)}
+        lucky_stages = {'bronze': list(range(1, 11)), 'silver': list(range(1, 9)), 'gold': list(range(1, 8))}
         
         result = {}
         for bar_type, set_count in counts.items():
@@ -945,7 +945,7 @@ def admin_lucky_buy_setup():
             rows = conn.execute(
                 """SELECT r.id as res_id, r.item_id, i.stage, i.id as item_id2
                    FROM reservations r
-                   LEFT JOIN items i ON r.item_id = i.id
+                   JOIN items i ON r.item_id = i.id
                    WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending'
                    AND i.stage IN ({})
                    ORDER BY RANDOM()""".format(','.join('?' * len(lucky_stages[bar_type]))),
@@ -1202,11 +1202,23 @@ def admin_add_reservation():
         loopay_id = loopay_user['id']
         today = get_today().isoformat()
         match_round = 1 if res_type == 'buy' else 2
+        today = get_today().isoformat()
         conn.execute("PRAGMA foreign_keys=OFF")
         for _ in range(count):
+            item_id = 0
+            if res_type == 'sell':
+                # loopay 아이템 생성 후 예약
+                price_row = conn.execute("SELECT buy_price, sell_price FROM prices WHERE bar_type=? AND stage=?", (bar_type, stage)).fetchone()
+                bp = price_row['buy_price'] if price_row else 0
+                sp = price_row['sell_price'] if price_row else 0
+                cur = conn.execute(
+                    "INSERT INTO items(user_id, bar_type, stage, buy_price, sell_price, status, purchase_date) VALUES(?,?,?,?,?,'reservable',?)",
+                    (loopay_id, bar_type, stage, bp, sp, today)
+                )
+                item_id = cur.lastrowid
             conn.execute(
-                "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status) VALUES (?, 0, ?, ?, ?, 'pending')",
-                (loopay_id, bar_type, match_round, today)
+                "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status) VALUES (?, ?, ?, ?, ?, 'pending')",
+                (loopay_id, item_id, bar_type, match_round, today)
             )
         conn.execute("PRAGMA foreign_keys=ON")
         conn.commit()
