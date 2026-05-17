@@ -2388,7 +2388,7 @@ async function loadUserData(){
 
 function renderHeader(d){
   var uidEl2=document.getElementById('h-userid'); if(uidEl2) uidEl2.textContent=d.username||d.nickname||'';
-  document.getElementById('h-maintain').textContent='- P';
+  document.getElementById('h-maintain').textContent=(d.exchange_points||0).toLocaleString()+' P';
   document.getElementById('h-level').textContent=d.level+'레벨';
   // 레벨배지 색상 업데이트
   var lv=d.level||1;
@@ -2396,7 +2396,7 @@ function renderHeader(d){
   var dot=document.getElementById('h-lv-dot');
   if(badge){badge.className='user-id-badge lv-'+lv;}
   if(dot){dot.className='lv-dot lv-'+lv;}
-  document.getElementById('h-total').textContent=(d.total_points||0).toLocaleString()+' P';
+  document.getElementById('h-total').textContent=(d.charge_points||0).toLocaleString()+' P';
   document.getElementById('h-sub').textContent=`충전 ${(d.charge_points||0).toLocaleString()}P + 전환 ${(d.exchange_points||0).toLocaleString()}P`;
   document.getElementById('h-charge').textContent=(d.charge_points||0).toLocaleString()+' P';
   document.getElementById('h-exchange').textContent=(d.exchange_points||0).toLocaleString()+' P';
