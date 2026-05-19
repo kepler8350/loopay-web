@@ -769,7 +769,67 @@ async function updateMatchingBtn(){
 
 function switchRound(num,el){document.querySelectorAll('#page-matching .btn').forEach(function(b){if(b.id&&b.id.startsWith('round-tab-')){b.classList.remove('btn-primary');b.classList.add('btn-secondary');}});el.classList.remove('btn-secondary');el.classList.add('btn-primary');document.getElementById('round-panel-1').style.display=num===1?'block':'none';document.getElementById('round-panel-2').style.display=num===2?'block':'none';}
 async function loadMatchingStatus(){try{const d=await apiAdmin('/admin/matching-status');const sub=document.getElementById('matching-date-sub');if(sub)sub.innerHTML=(d.date||'')+' &#47588;&#52845; &#54788;&#54889; &#48143; &#49892;&#54665;';function renderRound(r,prefix){document.getElementById(prefix+'-buy').textContent=(r.buy_count||0).toLocaleString();document.getElementById(prefix+'-sell').textContent=(r.sell_count||0).toLocaleString();document.getElementById(prefix+'-rate').textContent=(r.match_rate||0)+'%';const typeEl=document.getElementById(prefix+'-by-type');const tMt={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};const cM={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};if(r.by_type&&r.by_type.length){let rows='';r.by_type.forEach(function(t){rows+='<tr><td><strong style="color:'+(cM[t.bar_type]||'#fff')+'">'+(tMt[t.bar_type]||t.bar_type)+'</strong></td><td style="font-weight:700;color:#66bb6a">'+t.count+'</td><td style="color:#546e7a">'+(r.sell_count>0?Math.round(t.count/r.sell_count*100):0)+'%</td></tr>';});typeEl.innerHTML='<table><thead><tr><th>&#50500;&#51060;&#53596;</th><th>&#54032;&#47588;&#50696;&#50557;</th><th>&#48708;&#50984;</th></tr></thead><tbody>'+rows+'</tbody></table>';}else{typeEl.innerHTML='<div class="empty-state"><div>&#54032;&#47588; &#50696;&#50557; &#50630;&#51020;</div></div>';}const stEl=document.getElementById(prefix+'-by-stage');if(r.by_stage&&r.by_stage.length){const tMs={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};let rows='';r.by_stage.forEach(function(s){rows+='<tr><td><span style="color:'+(cM[s.bar_type]||'#fff')+';font-weight:600">'+(tMs[s.bar_type]||s.bar_type)+'</span></td><td style="text-align:center"><strong>'+s.stage+'&#45800;&#44228;</strong></td><td style="text-align:center;font-weight:700;color:#66bb6a">'+s.count+'&#44060;</td></tr>';});stEl.innerHTML='<table><thead><tr><th>&#51333;&#47448;</th><th>&#45800;&#44228;</th><th>&#49688;&#47049;</th></tr></thead><tbody>'+rows+'</tbody></table>';}else{stEl.innerHTML='<div class="empty-state"><div>&#45800;&#44228;&#48324; &#45936;&#51060;&#53552; &#50630;&#51020;</div></div>';}}renderRound(d.round1,'r1');renderRound(d.round2,'r2');}catch(e){toast('&#47588;&#52845; &#47196;&#46300; &#49892;&#54036;: '+e.message,'error');}}
-async function runMatching(roundNum){roundNum=roundNum||1;const btn=event.target;btn.disabled=true;btn.textContent='&#9203; &#49892;&#54665; &#51473;...';const resultId='match-result-'+roundNum;try{const d=await apiAdmin('/admin/run-matching',{method:'POST',body:JSON.stringify({round:roundNum})});toast(d.message||roundNum+'&#52264; &#47588;&#52845; &#50756;&#47308;!','success');document.getElementById(resultId).innerHTML='<div class="match-result"><div style="font-weight:600;margin-bottom:8px;color:#66bb6a">&#9989; '+roundNum+'&#52264; &#47588;&#52845; &#50756;&#47308;</div><div class="match-row"><span>&#52376;&#47532;&#46108; &#50696;&#50557;</span><span><strong>'+(d.matched||0)+'</strong>&#44148;</span></div><div class="match-row"><span>&#50756;&#47308; &#49884;&#44033;</span><span>'+new Date().toLocaleTimeString('ko-KR')+'</span></div></div>';loadMatchingStatus();}catch(e){toast(e.message,'error');document.getElementById(resultId).innerHTML='<div class="match-result" style="border-color:#ef5350"><div style="font-weight:600;color:#ef5350">&#10060; &#47588;&#52845; &#49892;&#54036;</div><div style="font-size:12px;color:#546e7a;margin-top:6px">'+e.message+'</div></div>';}btn.disabled=false;btn.textContent='&#128640; '+roundNum+'&#52264; &#47588;&#52845; &#49892;&#54665;&#54616;&#44592;';}
+async async function runMatching(roundNum){
+  roundNum = roundNum||1;
+  var btn = document.getElementById('btn-run-matching-'+roundNum);
+  var resultEl = document.getElementById('match-result-'+roundNum);
+  if(btn){ btn.disabled=true; btn.textContent='⏳ 실행 중...'; }
+  if(resultEl) resultEl.innerHTML = '<div style="color:#888;padding:8px">매칭 실행 중...</div>';
+  try{
+    var d = await apiAdmin('/admin/run-matching', {method:'POST', body:JSON.stringify({round:roundNum})});
+    if(!d.success){ throw new Error(d.error||'매칭 실패'); }
+    toast(d.message||roundNum+'차 매칭 완료!', 'success');
+    // 결과 테이블 렌더링
+    var pairs = d.pairs||[];
+    if(!pairs.length){
+      if(resultEl) resultEl.innerHTML = '<div style="color:#f9a825;padding:8px">⚠️ 매칭된 쌍이 없습니다. 판매예약 또는 구매예약이 없습니다.</div>';
+    } else {
+      var colors = {bronze:'#cd7f32', silver:'#a8a9ad', gold:'#ffd700'};
+      var html2 = '<div style="margin-top:8px">';
+      html2 += '<div style="font-weight:700;color:#66bb6a;margin-bottom:8px">✅ '+roundNum+'차 매칭 완료 — 총 '+pairs.length+'건</div>';
+      html2 += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+      html2 += '<thead><tr style="background:#1a1a2e;color:#a0a0c0">';
+      html2 += '<th style="padding:6px 8px;text-align:center">No</th>';
+      html2 += '<th style="padding:6px 8px;text-align:center">종류</th>';
+      html2 += '<th style="padding:6px 8px;text-align:center">단계</th>';
+      html2 += '<th style="padding:6px 8px;text-align:left;border-left:2px solid #2d2d5e">구매자</th>';
+      html2 += '<th style="padding:6px 8px;text-align:left">연락처(구매)</th>';
+      html2 += '<th style="padding:6px 8px;text-align:left;border-left:2px solid #2d2d5e">판매자</th>';
+      html2 += '<th style="padding:6px 8px;text-align:left">연락처(판매)</th>';
+      html2 += '<th style="padding:6px 8px;text-align:left">정산계좌</th>';
+      html2 += '<th style="padding:6px 8px;text-align:right">판매가</th>';
+      html2 += '</tr></thead><tbody>';
+      pairs.forEach(function(p,i){
+        var buyer = p.buyer||{};
+        var seller = p.seller||{};
+        var rowBg = i%2===0 ? '#12121f' : '#1a1a2e';
+        html2 += '<tr style="border-bottom:1px solid #2a2a40;background:'+rowBg+'">';
+        html2 += '<td style="padding:5px 8px;text-align:center;color:#888">'+(i+1)+'</td>';
+        html2 += '<td style="padding:5px 8px;text-align:center;color:'+colors[p.bar_type]+'"><strong>'+p.bar_name+'</strong></td>';
+        html2 += '<td style="padding:5px 8px;text-align:center">'+(p.stage||'-')+'단계</td>';
+        // 구매자
+        html2 += '<td style="padding:5px 8px;border-left:2px solid #2d2d5e;color:#64b5f6">'+(buyer.nickname||buyer.username||'-')+'</td>';
+        html2 += '<td style="padding:5px 8px;color:#64b5f6">'+(buyer.phone||'-')+'</td>';
+        // 판매자
+        html2 += '<td style="padding:5px 8px;border-left:2px solid #2d2d5e;color:#a5d6a7">'+(seller.nickname||seller.username||'-')+'</td>';
+        html2 += '<td style="padding:5px 8px;color:#a5d6a7">'+(seller.phone||'-')+'</td>';
+        html2 += '<td style="padding:5px 8px;color:#a5d6a7;font-size:11px">'+(seller.bank?seller.bank+' '+seller.account:'-')+'</td>';
+        html2 += '<td style="padding:5px 8px;text-align:right;color:#f9a825">'+(p.sell_price?p.sell_price.toLocaleString()+'원':'-')+'</td>';
+        html2 += '</tr>';
+      });
+      html2 += '</tbody></table></div></div>';
+      if(resultEl) resultEl.innerHTML = html2;
+    }
+    loadMatchingStatus();
+  }catch(e){
+    toast(e.message||'오류', 'error');
+    if(resultEl) resultEl.innerHTML = '<div style="color:#ef5350;padding:8px">❌ '+e.message+'</div>';
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='⚡ 1차 매칭 실행하기'; }
+    updateMatchingBtn();
+  }
+}
+
 
 function loadMembers(){
   var wrap=document.getElementById('members-table-wrap');

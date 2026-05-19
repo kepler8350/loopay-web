@@ -668,16 +668,119 @@ def admin_delete_charge(charge_id):
 def admin_run_matching():
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    round_num = int(data.get('round', 1))
     db = get_db()
-    today = get_today().isoformat()
-    pending = db.execute("SELECT * FROM reservations WHERE reserve_date=? AND status='pending'", (today,)).fetchall()
-    matched = 0
-    for r in pending:
-        db.execute("UPDATE reservations SET status='matched' WHERE id=?", (r['id'],))
-        matched += 1
-    db.commit()
-    db.close()
-    return jsonify(success=True,matched=matched,message=f'매칭 실행 완료: {matched}건')
+    try:
+        today = get_today().isoformat()
+        import random
+
+        # 판매예약 조회 (match_round=2, pending, loopay 포함)
+        sell_rows = db.execute(
+            """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
+               u.username as seller_username, u.nickname as seller_nickname,
+               u.phone as seller_phone, u.bank as seller_bank, u.account_no as seller_account,
+               i.stage
+               FROM reservations r
+               LEFT JOIN users u ON r.user_id = u.id
+               LEFT JOIN items i ON r.item_id = i.id
+               WHERE r.reserve_date=? AND r.status='pending' AND r.match_round=2""",
+            (today,)
+        ).fetchall()
+
+        # 구매예약 조회 (match_round=1, pending, loopay 제외)
+        buy_rows = db.execute(
+            """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
+               u.username as buyer_username, u.nickname as buyer_nickname,
+               u.phone as buyer_phone
+               FROM reservations r
+               LEFT JOIN users u ON r.user_id = u.id
+               WHERE r.reserve_date=? AND r.status='pending' AND r.match_round=1
+               AND u.username != 'loopay'
+               ORDER BY RANDOM()""",
+            (today,)
+        ).fetchall()
+
+        # 아이템 종류별로 분류
+        sell_by_type = {'bronze': [], 'silver': [], 'gold': []}
+        for r in sell_rows:
+            bt = r['bar_type']
+            if bt in sell_by_type:
+                sell_by_type[bt].append(dict(r))
+
+        buy_by_type = {'bronze': [], 'silver': [], 'gold': []}
+        for r in buy_rows:
+            bt = r['bar_type']
+            if bt in buy_by_type:
+                buy_by_type[bt].append(dict(r))
+
+        names = {'bronze': '수정', 'silver': '루비', 'gold': '다이아'}
+        matched_pairs = []
+        total_matched = 0
+
+        for bt in ['bronze', 'silver', 'gold']:
+            sellers = sell_by_type[bt]
+            buyers = buy_by_type[bt]
+            # 판매 수만큼 구매자 랜덤 선택 (이미 ORDER BY RANDOM())
+            match_count = min(len(sellers), len(buyers))
+            for i in range(match_count):
+                seller = sellers[i]
+                buyer = buyers[i]
+                # 매칭 처리
+                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
+                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
+                # 아이템 상태 업데이트
+                if seller['item_id']:
+                    db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
+                # matches 테이블에 기록
+                sell_price = 0
+                buy_price = 0
+                if seller['item_id']:
+                    pr = db.execute("SELECT * FROM prices WHERE bar_type=? AND stage=?",
+                                   (bt, seller['stage'] or 1)).fetchone()
+                    if pr:
+                        sell_price = pr['sell_price']
+                        buy_price = pr['buy_price']
+                db.execute(
+                    """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
+                       buy_price, sell_price, match_round, match_date, status)
+                       VALUES(?,?,?,?,?,?,?,?,?,'pending')""",
+                    (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
+                     bt, seller['stage'] or 1, buy_price, sell_price, round_num, today)
+                )
+                matched_pairs.append({
+                    'bar_type': bt,
+                    'bar_name': names[bt],
+                    'stage': seller['stage'],
+                    'buyer': {
+                        'username': buyer['buyer_username'],
+                        'nickname': buyer['buyer_nickname'],
+                        'phone': buyer['buyer_phone'],
+                    },
+                    'seller': {
+                        'username': seller['seller_username'],
+                        'nickname': seller['seller_nickname'],
+                        'phone': seller['seller_phone'],
+                        'bank': seller['seller_bank'],
+                        'account': seller['seller_account'],
+                    },
+                    'sell_price': sell_price,
+                    'buy_price': buy_price,
+                })
+                total_matched += 1
+
+        db.commit()
+        return jsonify(
+            success=True,
+            matched=total_matched,
+            message=f'1차 매칭 완료: {total_matched}건',
+            pairs=matched_pairs
+        )
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
 
 
 # ── 시스템 설정 API ──
