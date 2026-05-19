@@ -1929,7 +1929,7 @@ def admin_add_loopay_items():
         today = get_today().isoformat()
         for _ in range(count):
             db.execute(
-                "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'active',?)",
+                "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
                 (lid, bar_type, stage, today)
             )
         db.commit()
