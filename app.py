@@ -679,7 +679,8 @@ def admin_run_matching():
         sell_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
                u.username as seller_username, u.nickname as seller_nickname,
-               u.phone as seller_phone, u.bank as seller_bank, u.account_no as seller_account,
+               u.phone as seller_phone, u.bank as seller_bank,
+               u.account_no as seller_account, u.account_name as seller_account_name,
                i.stage
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
@@ -726,6 +727,22 @@ def admin_run_matching():
             for i in range(match_count):
                 seller = sellers[i]
                 buyer = buyers[i]
+                # loopay 판매자면 system_settings 정보 우선 사용
+                is_loopay = (seller['seller_username'] == 'loopay')
+                if is_loopay:
+                    seller_phone   = db.execute("SELECT value FROM system_settings WHERE key='loopay_phone'").fetchone()
+                    seller_bank    = db.execute("SELECT value FROM system_settings WHERE key='loopay_bank'").fetchone()
+                    seller_account = db.execute("SELECT value FROM system_settings WHERE key='loopay_account'").fetchone()
+                    seller_account_name = db.execute("SELECT value FROM system_settings WHERE key='loopay_account_name'").fetchone()
+                    seller_phone   = seller_phone['value']   if seller_phone   else seller['seller_phone']
+                    seller_bank    = seller_bank['value']    if seller_bank    else seller['seller_bank']
+                    seller_account = seller_account['value'] if seller_account else seller['seller_account']
+                    seller_account_name = seller_account_name['value'] if seller_account_name else seller.get('seller_account_name')
+                else:
+                    seller_phone   = seller['seller_phone']
+                    seller_bank    = seller['seller_bank']
+                    seller_account = seller['seller_account']
+                    seller_account_name = seller.get('seller_account_name')
                 # 매칭 처리
                 db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
                 db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
@@ -759,10 +776,11 @@ def admin_run_matching():
                     },
                     'seller': {
                         'username': seller['seller_username'],
-                        'nickname': seller['seller_nickname'],
-                        'phone': seller['seller_phone'],
-                        'bank': seller['seller_bank'],
-                        'account': seller['seller_account'],
+                        'nickname': seller['seller_nickname'] or seller['seller_username'],
+                        'phone': seller_phone,
+                        'bank': seller_bank,
+                        'account': seller_account,
+                        'account_name': seller_account_name,
                     },
                     'sell_price': sell_price,
                     'buy_price': buy_price,

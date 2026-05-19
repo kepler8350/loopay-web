@@ -430,7 +430,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
       <p class="page-subtitle">플랫폼 운영 설정을 관리합니다</p>
 
       <!-- 회원승인 방식 -->
-      <div class="card" style="padding:14px 16px">
+      <div class="card" style="padding:14px 16px;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
           <strong style="font-size:13px;white-space:nowrap">회원승인 방식</strong>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
@@ -442,11 +442,41 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
             ⚡ 자동 승인
           </label>
           <span id="settings-status-badge" style="font-size:11px;padding:2px 10px;border-radius:12px;background:#546e7a;color:#fff">로딩 중...</span>
-          <button onclick="saveSettings()"
-            style="margin-left:auto;padding:6px 16px;background:#1976d2;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">
-            💾 저장
-          </button>
         </div>
+      </div>
+
+      <!-- 루페이 계정 정보 (추가예약 판매자 정보) -->
+      <div class="card" style="padding:16px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:#64b5f6">🏦 루페이 계좌 정보 (매칭 결과 판매자 정보로 표시)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label style="font-size:11px;color:#888;display:block;margin-bottom:4px">연락처</label>
+            <input id="loopay-phone" type="text" placeholder="01012345678"
+              style="width:100%;padding:7px 10px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:13px">
+          </div>
+          <div>
+            <label style="font-size:11px;color:#888;display:block;margin-bottom:4px">은행명</label>
+            <input id="loopay-bank" type="text" placeholder="국민은행"
+              style="width:100%;padding:7px 10px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:13px">
+          </div>
+          <div>
+            <label style="font-size:11px;color:#888;display:block;margin-bottom:4px">계좌번호</label>
+            <input id="loopay-account" type="text" placeholder="123456789012"
+              style="width:100%;padding:7px 10px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:13px">
+          </div>
+          <div>
+            <label style="font-size:11px;color:#888;display:block;margin-bottom:4px">예금주명</label>
+            <input id="loopay-account-name" type="text" placeholder="홍길동"
+              style="width:100%;padding:7px 10px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:13px">
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:4px">
+        <button onclick="saveSettings()"
+          style="padding:8px 20px;background:#1976d2;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">
+          💾 저장
+        </button>
       </div>
     </div>
 
@@ -797,6 +827,7 @@ async function runMatching(roundNum){
       html2 += '<th style="padding:6px 8px;text-align:left;border-left:2px solid #2d2d5e">판매자</th>';
       html2 += '<th style="padding:6px 8px;text-align:left">연락처(판매)</th>';
       html2 += '<th style="padding:6px 8px;text-align:left">정산계좌</th>';
+      html2 += '<th style="padding:6px 8px;text-align:left">예금주</th>';
       html2 += '<th style="padding:6px 8px;text-align:right">판매가</th>';
       html2 += '</tr></thead><tbody>';
       pairs.forEach(function(p,i){
@@ -814,6 +845,7 @@ async function runMatching(roundNum){
         html2 += '<td style="padding:5px 8px;border-left:2px solid #2d2d5e;color:#a5d6a7">'+(seller.nickname||seller.username||'-')+'</td>';
         html2 += '<td style="padding:5px 8px;color:#a5d6a7">'+(seller.phone||'-')+'</td>';
         html2 += '<td style="padding:5px 8px;color:#a5d6a7;font-size:11px">'+(seller.bank?seller.bank+' '+seller.account:'-')+'</td>';
+        html2 += '<td style="padding:5px 8px;color:#a5d6a7">'+(seller.account_name||'-')+'</td>';
         html2 += '<td style="padding:5px 8px;text-align:right;color:#f9a825">'+(p.sell_price?p.sell_price.toLocaleString()+'원':'-')+'</td>';
         html2 += '</tr>';
       });
@@ -1168,6 +1200,13 @@ async function loadSettings(){
     const autoApprove = (d.settings?.auto_approve === '1');
     _currentApproveMode = autoApprove ? 'auto' : 'manual';
     updateSettingsUI(_currentApproveMode);
+    // 루페이 계좌 정보 로드
+    var s = d.settings || {};
+    var el = function(id){ return document.getElementById(id); };
+    if(el('loopay-phone'))       el('loopay-phone').value       = s.loopay_phone       || '';
+    if(el('loopay-bank'))        el('loopay-bank').value        = s.loopay_bank        || '';
+    if(el('loopay-account'))     el('loopay-account').value     = s.loopay_account     || '';
+    if(el('loopay-account-name'))el('loopay-account-name').value= s.loopay_account_name|| '';
   }catch(e){
     console.error('설정 로딩 실패:', e);
     toast('설정 로딩 실패: ' + e.message, 'error');
@@ -1198,9 +1237,16 @@ async function saveSettings(){
   try{
     if(btn){ btn.textContent = '저장 중...'; btn.disabled = true; }
     const isAuto = (_currentApproveMode === 'auto');
+    var el = function(id){ var e=document.getElementById(id); return e?e.value.trim():''; };
     await apiAdmin('/admin/settings', {
       method:'POST',
-      body: JSON.stringify({ auto_approve: isAuto ? '1' : '0' })
+      body: JSON.stringify({
+        auto_approve: isAuto ? '1' : '0',
+        loopay_phone:        el('loopay-phone'),
+        loopay_bank:         el('loopay-bank'),
+        loopay_account:      el('loopay-account'),
+        loopay_account_name: el('loopay-account-name')
+      })
     });
     const msg = isAuto ? '✅ 자동 승인으로 변경되었습니다' : '✅ 수동 승인으로 변경되었습니다';
     toast(msg, 'success');
