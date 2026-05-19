@@ -96,6 +96,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div class="nav-item" data-page="notifications" onclick="showPage('notifications',this)"><span class="nav-icon">🔔</span><span class="nav-label">알림관리</span></div>
 <div class="nav-item" data-page="approve" onclick="showPage('approve',this)"><span class="nav-icon">👥</span>회원승인관리</div>
 <div class="nav-item" data-page="testtools" onclick="showPage('testtools',this)"><span class="nav-icon">⚙️</span>테스트도구</div>
+<div class="nav-item" data-page="matches" onclick="showPage('matches',this);loadMatchRecords()"><span class="nav-icon">🗂️</span>매치 기록</div>
 <div class="nav-item" data-page="settings" onclick="showPage('settings',this);loadSettings()"><span class="nav-icon">🔧</span>시스템 설정</div>
 </nav>
 <div class="sidebar-footer"><button class="logout-btn" onclick="doAdminLogout()">&#128682; &#47196;&#44536;&#50500;&#50883;</button></div>
@@ -377,7 +378,20 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 
 <div id="page-members" class="page">
 <div class="page-header"><h2 class="page-title">회원 관리</h2><p class="page-sub">전체 회원 목록</p></div>
-<div class="table-card"><div class="table-header"><div class="table-title">회원 목록</div></div><div class="table-wrap"><table><thead><tr><th>No</th><th>아이디</th><th>성명</th><th>레벨</th><th>충전P</th><th>충전금액</th><th>전환P</th><th>예약</th><th colspan=2 style="min-width:100px">관리</th></tr></thead><tbody id="admin-users"></tbody></table></div></div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+    <span id="user-selected-count" style="font-size:12px;color:#888"></span>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button onclick="deleteSelectedUsers()"
+        style="padding:6px 14px;background:#e53935;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">
+        🗑️ 선택 삭제
+      </button>
+      <button onclick="deleteAllUsers()"
+        style="padding:6px 14px;background:#b71c1c;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">
+        🗑️ 전체 삭제
+      </button>
+    </div>
+  </div>
+<div class="table-card"><div class="table-header"><div class="table-title">회원 목록</div></div><div class="table-wrap"><table><thead><tr><th style="width:36px"><input type="checkbox" id="user-select-all" onchange="toggleAllUsers(this.checked)" style="cursor:pointer"></th><th>No</th><th>아이디</th><th>성명</th><th>레벨</th><th>충전P</th><th>충전금액</th><th>전환P</th><th>예약</th><th colspan=2 style="min-width:100px">관리</th></tr></thead><tbody id="admin-users"></tbody></table></div></div>
 </div>
 <div id="page-notifications" class="page">
 <div class="page-header"><h2 class="page-title">알림 관리</h2><p class="page-sub">사용자에게 알림을 보냅니다</p></div>
@@ -424,6 +438,52 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 
 
 
+
+<div id="page-matches" class="page">
+  <h2 class="page-title">매치 기록</h2>
+  <p class="page-subtitle">1차 매칭 실행 기록을 관리합니다</p>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+      <input type="checkbox" id="match-select-all" onchange="toggleAllMatches(this.checked)"
+        style="width:15px;height:15px;cursor:pointer">
+      전체 선택
+    </label>
+    <span id="match-selected-count" style="font-size:12px;color:#888"></span>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button onclick="deleteSelectedMatches()"
+        style="padding:6px 14px;background:#e53935;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">
+        🗑️ 선택 삭제
+      </button>
+      <button onclick="deleteAllMatches()"
+        style="padding:6px 14px;background:#b71c1c;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">
+        🗑️ 전체 삭제
+      </button>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="table-wrap" style="overflow-x:auto">
+      <table id="matches-table" style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#1a1a2e;color:#a0a0c0">
+            <th style="padding:8px;width:36px"></th>
+            <th style="padding:8px;text-align:left">날짜</th>
+            <th style="padding:8px;text-align:center">종류</th>
+            <th style="padding:8px;text-align:center">단계</th>
+            <th style="padding:8px;text-align:left">구매자</th>
+            <th style="padding:8px;text-align:left">연락처</th>
+            <th style="padding:8px;text-align:left">판매자</th>
+            <th style="padding:8px;text-align:left">계좌</th>
+            <th style="padding:8px;text-align:right">판매가</th>
+            <th style="padding:8px;text-align:center">상태</th>
+          </tr>
+        </thead>
+        <tbody id="matches-tbody">
+          <tr><td colspan="10" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
 <div id="page-settings" class="page">
       <h2 class="page-title">시스템 설정</h2>
@@ -608,6 +668,7 @@ async function loadUsers(){
       return;
     }
     tbody.innerHTML=d.users.map((u,i)=>`<tr>
+      <td style="text-align:center"><input type="checkbox" class="user-check" data-id="${u.id}" onchange="updateUserSelectedCount()" style="cursor:pointer;width:15px;height:15px"></td>
       <td>${i+1}</td>
       <td>${u.username||'-'}</td>
       <td>${u.real_name||u.nickname||'-'}</td>
@@ -795,6 +856,108 @@ async function updateMatchingBtn(){
     var btn = document.getElementById('btn-run-matching-1');
     if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
   }
+}
+
+// ── 회원 선택 삭제 ──────────────────────────────────
+function toggleAllUsers(checked){
+  document.querySelectorAll('.user-check').forEach(function(cb){ cb.checked = checked; });
+  updateUserSelectedCount();
+}
+function updateUserSelectedCount(){
+  var n = document.querySelectorAll('.user-check:checked').length;
+  var el = document.getElementById('user-selected-count');
+  if(el) el.textContent = n > 0 ? n+'명 선택됨' : '';
+  var allCb = document.getElementById('user-select-all');
+  var total = document.querySelectorAll('.user-check').length;
+  if(allCb) allCb.checked = (n > 0 && n === total);
+}
+async function deleteSelectedUsers(){
+  var ids = Array.from(document.querySelectorAll('.user-check:checked')).map(function(cb){return parseInt(cb.dataset.id);});
+  if(!ids.length){ toast('선택된 회원이 없습니다.','error'); return; }
+  if(!confirm(ids.length+'명을 삭제하시겠습니까?')) return;
+  try{
+    await apiAdmin('/admin/delete-users',{method:'POST',body:JSON.stringify({user_ids:ids})});
+    toast('삭제 완료','success'); loadUsers();
+  }catch(e){ toast(e.message,'error'); }
+}
+async function deleteAllUsers(){
+  var total = document.querySelectorAll('.user-check').length;
+  if(!confirm('전체 회원 '+total+'명을 삭제하시겠습니까? (admin, loopay 제외)\n이 작업은 되돌릴 수 없습니다.')) return;
+  try{
+    await apiAdmin('/admin/delete-users',{method:'POST',body:JSON.stringify({user_ids:[]})});
+    toast('전체 삭제 완료','success'); loadUsers();
+  }catch(e){ toast(e.message,'error'); }
+}
+
+// ── 매치 기록 ────────────────────────────────────────
+var _matchRecords = [];
+async function loadMatchRecords(){
+  var tbody = document.getElementById('matches-tbody');
+  if(tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
+  try{
+    var d = await apiAdmin('/admin/matches');
+    _matchRecords = d.matches || [];
+    renderMatchRecords();
+  }catch(e){
+    if(tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:#ef5350">'+e.message+'</td></tr>';
+  }
+}
+function renderMatchRecords(){
+  var tbody = document.getElementById('matches-tbody');
+  if(!tbody) return;
+  var colors = {bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+  var statusKr = {pending:'대기',matched:'매칭',completed:'완료',cancelled:'취소'};
+  if(!_matchRecords.length){
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:#888">매치 기록 없음</td></tr>';
+    return;
+  }
+  tbody.innerHTML = _matchRecords.map(function(m,i){
+    var bg = i%2===0 ? '#12121f' : '#1a1a2e';
+    var buyer = m.buyer||{};
+    var seller = m.seller||{};
+    return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
+      +'<td style="padding:6px;text-align:center"><input type="checkbox" class="match-check" data-id="'+m.id+'" onchange="updateMatchSelectedCount()" style="cursor:pointer;width:15px;height:15px"></td>'
+      +'<td style="padding:6px;font-size:11px;color:#888">'+(m.match_date||'-')+'</td>'
+      +'<td style="padding:6px;text-align:center;color:'+colors[m.bar_type]+'"><strong>'+(m.bar_name||'-')+'</strong></td>'
+      +'<td style="padding:6px;text-align:center">'+(m.stage||'-')+'단계</td>'
+      +'<td style="padding:6px;color:#64b5f6">'+(buyer.nickname||buyer.username||'-')+'</td>'
+      +'<td style="padding:6px;color:#64b5f6;font-size:11px">'+(buyer.phone||'-')+'</td>'
+      +'<td style="padding:6px;color:#a5d6a7">'+(seller.nickname||seller.username||'-')+'</td>'
+      +'<td style="padding:6px;color:#a5d6a7;font-size:11px">'+(seller.bank?seller.bank+' '+seller.account:'-')+'</td>'
+      +'<td style="padding:6px;text-align:right;color:#f9a825">'+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</td>'
+      +'<td style="padding:6px;text-align:center;font-size:11px">'+(statusKr[m.status]||m.status||'-')+'</td>'
+      +'</tr>';
+  }).join('');
+  updateMatchSelectedCount();
+}
+function toggleAllMatches(checked){
+  document.querySelectorAll('.match-check').forEach(function(cb){ cb.checked = checked; });
+  updateMatchSelectedCount();
+}
+function updateMatchSelectedCount(){
+  var n = document.querySelectorAll('.match-check:checked').length;
+  var el = document.getElementById('match-selected-count');
+  if(el) el.textContent = n > 0 ? n+'건 선택됨' : '';
+  var allCb = document.getElementById('match-select-all');
+  var total = document.querySelectorAll('.match-check').length;
+  if(allCb) allCb.checked = (n > 0 && n === total);
+}
+async function deleteSelectedMatches(){
+  var ids = Array.from(document.querySelectorAll('.match-check:checked')).map(function(cb){return parseInt(cb.dataset.id);});
+  if(!ids.length){ toast('선택된 기록이 없습니다.','error'); return; }
+  if(!confirm(ids.length+'건의 매치 기록을 삭제하시겠습니까?')) return;
+  try{
+    await apiAdmin('/admin/delete-matches',{method:'POST',body:JSON.stringify({match_ids:ids})});
+    toast('삭제 완료','success'); loadMatchRecords();
+  }catch(e){ toast(e.message,'error'); }
+}
+async function deleteAllMatches(){
+  if(!_matchRecords.length){ toast('삭제할 기록이 없습니다.'); return; }
+  if(!confirm('전체 매치 기록 '+_matchRecords.length+'건을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+  try{
+    await apiAdmin('/admin/delete-matches',{method:'POST',body:JSON.stringify({match_ids:[]})});
+    toast('전체 삭제 완료','success'); loadMatchRecords();
+  }catch(e){ toast(e.message,'error'); }
 }
 
 function switchRound(num,el){document.querySelectorAll('#page-matching .btn').forEach(function(b){if(b.id&&b.id.startsWith('round-tab-')){b.classList.remove('btn-primary');b.classList.add('btn-secondary');}});el.classList.remove('btn-secondary');el.classList.add('btn-primary');document.getElementById('round-panel-1').style.display=num===1?'block':'none';document.getElementById('round-panel-2').style.display=num===2?'block':'none';}

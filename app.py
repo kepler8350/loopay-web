@@ -1546,6 +1546,96 @@ def admin_send_notify():
     db.close()
     return jsonify(success=True)
 
+
+# ── 회원 일괄 삭제 ──────────────────────────────────────
+@app.route('/api/admin/delete-users', methods=['POST'])
+@jwt_required()
+def admin_delete_users():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    uids = data.get('user_ids', [])
+    db = get_db()
+    try:
+        db.execute("PRAGMA foreign_keys=OFF")
+        if uids:
+            for uid in uids:
+                db.execute("DELETE FROM reservations WHERE user_id=?", (uid,))
+                db.execute("DELETE FROM items WHERE user_id=?", (uid,))
+                db.execute("DELETE FROM charge_requests WHERE user_id=?", (uid,))
+                db.execute("DELETE FROM matches WHERE buyer_id=? OR seller_id=?", (uid, uid))
+                db.execute("DELETE FROM users WHERE id=? AND username NOT IN ('admin','loopay')", (uid,))
+        else:
+            db.execute("DELETE FROM reservations WHERE user_id IN (SELECT id FROM users WHERE username NOT IN ('admin','loopay') AND approved=1)")
+            db.execute("DELETE FROM items WHERE user_id IN (SELECT id FROM users WHERE username NOT IN ('admin','loopay') AND approved=1)")
+            db.execute("DELETE FROM charge_requests WHERE user_id IN (SELECT id FROM users WHERE username NOT IN ('admin','loopay') AND approved=1)")
+            db.execute("DELETE FROM matches")
+            db.execute("DELETE FROM users WHERE username NOT IN ('admin','loopay') AND approved=1")
+        db.execute("PRAGMA foreign_keys=ON")
+        db.commit()
+        return jsonify(success=True, message=(str(len(uids)) if uids else '전체') + ' 회원 삭제 완료')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+# ── 매치 기록 조회 ──────────────────────────────────────
+@app.route('/api/admin/matches', methods=['GET'])
+@jwt_required()
+def admin_get_matches():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    try:
+        sql = (
+            "SELECT m.id, m.match_date, m.bar_type, m.stage, m.match_round,"
+            " m.buy_price, m.sell_price, m.status,"
+            " b.username as buyer_username, b.nickname as buyer_nickname, b.phone as buyer_phone,"
+            " s.username as seller_username, s.nickname as seller_nickname, s.phone as seller_phone,"
+            " s.bank as seller_bank, s.account_no as seller_account"
+            " FROM matches m"
+            " LEFT JOIN users b ON m.buyer_id = b.id"
+            " LEFT JOIN users s ON m.seller_id = s.id"
+            " ORDER BY m.id DESC"
+        )
+        rows = db.execute(sql).fetchall()
+        names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+        return jsonify(matches=[{
+            'id': r['id'], 'match_date': r['match_date'],
+            'bar_type': r['bar_type'], 'bar_name': names.get(r['bar_type'], r['bar_type']),
+            'stage': r['stage'], 'match_round': r['match_round'],
+            'buy_price': r['buy_price'], 'sell_price': r['sell_price'], 'status': r['status'],
+            'buyer': {'username': r['buyer_username'], 'nickname': r['buyer_nickname'], 'phone': r['buyer_phone']},
+            'seller': {'username': r['seller_username'], 'nickname': r['seller_nickname'],
+                       'phone': r['seller_phone'], 'bank': r['seller_bank'], 'account': r['seller_account']},
+        } for r in rows])
+    finally:
+        db.close()
+
+# ── 매치 기록 삭제 ──────────────────────────────────────
+@app.route('/api/admin/delete-matches', methods=['POST'])
+@jwt_required()
+def admin_delete_matches():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    match_ids = data.get('match_ids', [])
+    db = get_db()
+    try:
+        if match_ids:
+            for mid in match_ids:
+                db.execute("DELETE FROM matches WHERE id=?", (mid,))
+        else:
+            db.execute("DELETE FROM matches")
+        db.commit()
+        return jsonify(success=True, message=(str(len(match_ids)) if match_ids else '전체') + ' 매치 기록 삭제 완료')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)
