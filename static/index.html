@@ -1096,6 +1096,16 @@ function updateTimeBar(){
     sellReserveBtn.style.opacity = isReserveTime ? '1' : '0.4';
     sellReserveBtn.title = isReserveTime ? '' : '구매·판매 예약은 05:00~20:00에만 가능합니다';
   }
+  // ── 날짜 변경 감지: 날짜 바뀌면 loadUserData 재호출 ──
+  var _todayDate = (now.getMonth()+1)+'-'+now.getDate();
+  if(typeof window._lastKnownDate === 'undefined') window._lastKnownDate = _todayDate;
+  if(window._lastKnownDate !== _todayDate){
+    window._lastKnownDate = _todayDate;
+    if(userData){
+      _reservedToday = false;
+      loadUserData();
+    }
+  }
   // 구매예약 수량 +/- 버튼 (예약시간 외 OR 오늘 이미 예약 완료 시 비활성화)
   // userData에서 직접 재확인 (비동기 덮어쓰기 방지)
   if(userData && userData.today_reservations && (userData.today_reservations.bronze||0) > 0){
@@ -1513,21 +1523,22 @@ function disableReserveSection(){
 }
 
 function scheduleReserveReset(){
-  // 다음날 05:00까지 남은 ms 계산
-  var now = new Date();
-  var next5am = new Date(now);
-  next5am.setDate(next5am.getDate() + 1);
-  next5am.setHours(5, 0, 0, 0);
-  // 현재 시간이 05:00 이전이면 오늘 05:00
-  if(now.getHours() < 5){
-    next5am.setDate(now.getDate());
-    next5am.setHours(5, 0, 0, 0);
-  }
-  var ms = next5am.getTime() - now.getTime();
-  if(window._reserveResetTimer) clearTimeout(window._reserveResetTimer);
-  window._reserveResetTimer = setTimeout(function(){
-    enableReserveSection();
-  }, ms);
+  // 매분마다 서버 시간 확인 → 날짜 바뀌면 loadUserData 재호출
+  if(window._reserveResetTimer) clearInterval(window._reserveResetTimer);
+  window._reserveResetTimer = setInterval(async function(){
+    try{
+      var r = await fetch('/api/current-time');
+      var d = await r.json();
+      var h = d.hour;
+      var dateStr = d.time ? d.time.slice(0,10) : '';
+      // 예약 가능 시간(05:00~20:00)이고, userData의 예약 날짜와 다르면 재로드
+      var isReserveTime = (h >= 5 && h < 20);
+      if(isReserveTime && _reservedToday){
+        // userData.today_reservations는 오늘 예약 기준 → 서버에서 재확인
+        await loadUserData();
+      }
+    }catch(e){}
+  }, 60000);
 }
 
 function enableReserveSection(){
