@@ -1629,7 +1629,7 @@ def admin_delete_matches():
         else:
             db.execute("DELETE FROM matches")
         db.commit()
-        return jsonify(success=True, message=(str(len(match_ids)) if match_ids else '전체') + ' 매치 기록 삭제 완료')
+        return jsonify(success=True, message=(str(len(match_ids)) if match_ids else '전체') + ' 매칭 기록 삭제 완료')
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
