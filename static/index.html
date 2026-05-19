@@ -337,10 +337,11 @@ async function loadUserData(){
     renderHeader(d);
     renderBars(d);
     renderLevelTab();
-    enableReserveSection();  // 버튼 텍스트/스타일 초기화
-    // 예약 여부 먼저 플래그 설정 (updateResUI가 이 값을 참조함)
+    // 예약 여부를 먼저 설정 후 enableReserveSection 호출 (포인트 미리보기 오작동 방지)
     _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
-    updateReserveDefaults(d.level);  // UI 업데이트 (내부적으로 updateResUI 호출)
+    enableReserveSection();  // 버튼 텍스트/스타일 초기화 (_reservedToday=false로 리셋되지만 즉시 재설정됨)
+    _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
+    updateReserveDefaults(d.level);  // UI 업데이트 (내부적으로 updateResUI 호출, _reservedToday 참조)
     if(_reservedToday){
       disableReserveSection();  // 버튼 텍스트/스타일 최종 적용
     }
@@ -1534,15 +1535,7 @@ function enableReserveSection(){
     btn.textContent = '구매 예약하기 (40P × 매칭예약수)';
     btn.onclick = function(){ showReserveConfirm(); };
   }
-  // 원본 포인트 복원 (미리보기 취소)
-  if(userData){
-    var hTotal = document.getElementById('h-total');
-    var hMaintain = document.getElementById('h-maintain');
-    var hSub = document.getElementById('h-sub');
-    if(hTotal) hTotal.textContent = (userData.charge_points||0).toLocaleString()+' P';
-    if(hMaintain) hMaintain.textContent = (userData.exchange_points||0).toLocaleString()+' P';
-    if(hSub) hSub.textContent = '충전 '+(userData.charge_points||0).toLocaleString()+'P + 전환 '+(userData.exchange_points||0).toLocaleString()+'P';
-  }
+  // 원본 포인트 복원은 updateResUI에서 cost=0일 때 처리됨 (bzCnt=0이면 자동 복원)
   var _h2=getEffectiveDate().getHours();
   var _isRT2=(_h2>=5 && _h2<20);
   ['r-bz-m','r-bz-p'].forEach(function(id){
@@ -2402,9 +2395,11 @@ async function loadUserData(){
     userData = d;
     renderHeader(d);
     renderBars(d);
-    enableReserveSection();  // 버튼 텍스트/스타일 초기화
+    // 예약 여부를 먼저 설정
     _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
-    updateReserveDefaults(d.level);
+    enableReserveSection();  // 버튼 초기화 (_reservedToday=false 리셋)
+    _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
+    updateReserveDefaults(d.level);  // updateResUI 호출 (이때 _reservedToday 올바름)
     if(_reservedToday){
       disableReserveSection();
     }
