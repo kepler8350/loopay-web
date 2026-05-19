@@ -739,21 +739,31 @@ function addReservation(){
     });
 }
 function loadPenalties(){document.getElementById('admin-penalties').innerHTML='<tr><td colspan="5"><div class="empty-state" style="padding:20px"><div>&#44592;&#45733; &#44060;&#48156; &#51473;</div></div></td></tr>';}
-function updateMatchingBtn(){
-  // 1차 매칭 실행 가능 시간: 20:00 ~ 다음날 05:00
-  var now = new Date();
-  var h = now.getHours();
-  var isActive = (h >= 20 || h < 5);
-  var btn = document.getElementById('btn-run-matching-1');
-  var notice = document.getElementById('matching-time-notice');
-  if(btn){
-    btn.disabled = !isActive;
-    btn.style.opacity = isActive ? '1' : '0.45';
-    btn.style.cursor = isActive ? 'pointer' : 'not-allowed';
-  }
-  if(notice){
-    notice.textContent = isActive ? '✅ 매칭 가능 시간 (20:00~05:00)' : '⏳ 매칭 실행 가능: 20:00~05:00';
-    notice.style.color = isActive ? '#66bb6a' : '#f9a825';
+async function updateMatchingBtn(){
+  // 서버(mock) 시간 기준으로 활성화 판단
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var res = await fetch('/api/current-time', {headers:{'Authorization':'Bearer '+tok}});
+    var d = await res.json();
+    var h = d.hour;
+    var isActive = (h >= 20 || h < 5);
+    var btn = document.getElementById('btn-run-matching-1');
+    var notice = document.getElementById('matching-time-notice');
+    if(btn){
+      btn.disabled = !isActive;
+      btn.style.opacity = isActive ? '1' : '0.45';
+      btn.style.cursor = isActive ? 'pointer' : 'not-allowed';
+    }
+    if(notice){
+      notice.textContent = isActive
+        ? '✅ 매칭 가능 시간 (20:00~05:00) — 서버시간 '+d.time.slice(11,16)
+        : '⏳ 매칭 실행 가능: 20:00~05:00 (현재 '+d.time.slice(11,16)+')';
+      notice.style.color = isActive ? '#66bb6a' : '#f9a825';
+    }
+  }catch(e){
+    // fallback: 항상 활성화
+    var btn = document.getElementById('btn-run-matching-1');
+    if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
   }
 }
 
@@ -825,6 +835,7 @@ async function resetMockTime(){
   var inp=document.getElementById('mock-datetime-input');
   if(inp) inp.value='';
   loadCurrentTime();
+  updateMatchingBtn();
 }
 async function createTestUsers(){
   var res=document.getElementById('test-users-result');
