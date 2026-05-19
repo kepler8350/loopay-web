@@ -592,9 +592,9 @@ def admin_users():
     rows = db.execute("SELECT id,username,nickname,email,level,charge_points,exchange_points,cumulative_count,phone,bank,account_no,account_name,created_at FROM users WHERE approved=1 ORDER BY created_at DESC").fetchall()
     # 각 사용자별 충전 합계 (confirmed 기준)
     charge_totals = {}
-    charge_rows = db.execute("SELECT user_id, SUM(amount) as total FROM charge_requests WHERE status='confirmed' GROUP BY user_id").fetchall()
+    charge_rows = db.execute("SELECT user_id, SUM(amount) as total_amount, SUM(points) as total_points FROM charge_requests WHERE status='confirmed' GROUP BY user_id").fetchall()
     for row in charge_rows:
-        charge_totals[row['user_id']] = row['total'] or 0
+        charge_totals[row['user_id']] = {'amount': row['total_amount'] or 0, 'points': row['total_points'] or 0}
     db.close()
     users = []
     for u in rows:
@@ -603,7 +603,9 @@ def admin_users():
             d['real_name'] = d.get('account_name') or d['username']
         else:
             d['real_name'] = d['nickname']
-        d['total_charged_amount'] = charge_totals.get(d['id'], 0)
+        ct = charge_totals.get(d['id'], {'amount':0,'points':0})
+        d['total_charged_amount'] = ct['amount']
+        d['total_charged_points'] = ct['points']
         users.append(d)
     return jsonify(users=users)
 
