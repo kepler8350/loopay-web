@@ -1912,6 +1912,34 @@ def payment_confirm():
         db.close()
 
 # ── 아이템 단계별 현황 API ──
+@app.route('/api/admin/add-loopay-items', methods=['POST'])
+@jwt_required()
+def admin_add_loopay_items():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    bar_type = data.get('bar_type', 'bronze')
+    stage = int(data.get('stage', 1))
+    count = int(data.get('count', 5))
+    db = get_db()
+    try:
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay: return jsonify(error='loopay 계정 없음'), 404
+        lid = loopay['id']
+        today = get_today().isoformat()
+        for _ in range(count):
+            db.execute(
+                "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'active',?)",
+                (lid, bar_type, stage, today)
+            )
+        db.commit()
+        return jsonify(success=True, message=f'{bar_type} {stage}단계 {count}개 추가')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/item-stats', methods=['GET'])
 @jwt_required()
 def admin_item_stats():
