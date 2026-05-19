@@ -740,11 +740,21 @@ function addReservation(){
 }
 function loadPenalties(){document.getElementById('admin-penalties').innerHTML='<tr><td colspan="5"><div class="empty-state" style="padding:20px"><div>&#44592;&#45733; &#44060;&#48156; &#51473;</div></div></td></tr>';}
 function updateMatchingBtn(){
-  // 1차 매칭 실행: 항상 활성화
+  // 1차 매칭 실행 가능 시간: 20:00 ~ 다음날 05:00
+  var now = new Date();
+  var h = now.getHours();
+  var isActive = (h >= 20 || h < 5);
   var btn = document.getElementById('btn-run-matching-1');
   var notice = document.getElementById('matching-time-notice');
-  if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
-  if(notice){ notice.textContent=''; }
+  if(btn){
+    btn.disabled = !isActive;
+    btn.style.opacity = isActive ? '1' : '0.45';
+    btn.style.cursor = isActive ? 'pointer' : 'not-allowed';
+  }
+  if(notice){
+    notice.textContent = isActive ? '✅ 매칭 가능 시간 (20:00~05:00)' : '⏳ 매칭 실행 가능: 20:00~05:00';
+    notice.style.color = isActive ? '#66bb6a' : '#f9a825';
+  }
 }
 
 function switchRound(num,el){document.querySelectorAll('#page-matching .btn').forEach(function(b){if(b.id&&b.id.startsWith('round-tab-')){b.classList.remove('btn-primary');b.classList.add('btn-secondary');}});el.classList.remove('btn-secondary');el.classList.add('btn-primary');document.getElementById('round-panel-1').style.display=num===1?'block':'none';document.getElementById('round-panel-2').style.display=num===2?'block':'none';}
