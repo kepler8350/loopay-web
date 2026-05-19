@@ -1602,8 +1602,9 @@ function updateResUI(BZ_MIN,BZ_MAX){
   var totalGd = gd;
   var total = bzCnt + totalSv + totalGd;
   var cost = total * 40;
-  document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+cost+'P (수정 '+bzCnt+(sv>0?' + 루비 '+sv:'')+(gd>0?' + 다이아 '+gd:'')+')';  // ── 포인트 미리보기: 수량 선택 시 실시간 표시 ──
-  if(!_reservedToday && userData){
+  document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+cost+'P (수정 '+bzCnt+(sv>0?' + 루비 '+sv:'')+(gd>0?' + 다이아 '+gd:'')+')';  // ── 포인트 미리보기: 수량 선택 시 실시간 표시 (오늘 예약 완료 시 스킵) ──
+  var _todayReserved = !!(userData && userData.today_reservations && (userData.today_reservations.bronze||0) > 0);
+  if(!_reservedToday && !_todayReserved && userData){
     var chargePts = userData.charge_points || 0;
     var exchangePts = userData.exchange_points || 0;
     var fromExchange = Math.min(exchangePts, cost);
@@ -2545,8 +2546,9 @@ function updateResUI(BZ_MIN,BZ_MAX){
   var total = bzCnt + totalSv + totalGd;
   var cost = total * 40;
   document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+cost+'P (수정 '+bzCnt+(sv>0?' + 루비 '+sv:'')+(gd>0?' + 다이아 '+gd:'')+')';
-  // ── 포인트 미리보기 (수량 선택 시 실시간) ──
-  if(!_reservedToday && userData){
+  // ── 포인트 미리보기 (수량 선택 시 실시간, 오늘 예약 완료 시 스킵) ──
+  var _todayReserved2 = !!(userData && userData.today_reservations && (userData.today_reservations.bronze||0) > 0);
+  if(!_reservedToday && !_todayReserved2 && userData){
     var _chargePts = userData.charge_points || 0;
     var _exchangePts = userData.exchange_points || 0;
     var _fromExchange = Math.min(_exchangePts, cost);
