@@ -1534,6 +1534,15 @@ function enableReserveSection(){
     btn.textContent = '구매 예약하기 (40P × 매칭예약수)';
     btn.onclick = function(){ showReserveConfirm(); };
   }
+  // 원본 포인트 복원 (미리보기 취소)
+  if(userData){
+    var hTotal = document.getElementById('h-total');
+    var hMaintain = document.getElementById('h-maintain');
+    var hSub = document.getElementById('h-sub');
+    if(hTotal) hTotal.textContent = (userData.charge_points||0).toLocaleString()+' P';
+    if(hMaintain) hMaintain.textContent = (userData.exchange_points||0).toLocaleString()+' P';
+    if(hSub) hSub.textContent = '충전 '+(userData.charge_points||0).toLocaleString()+'P + 전환 '+(userData.exchange_points||0).toLocaleString()+'P';
+  }
   var _h2=getEffectiveDate().getHours();
   var _isRT2=(_h2>=5 && _h2<20);
   ['r-bz-m','r-bz-p'].forEach(function(id){
@@ -1599,18 +1608,34 @@ function updateResUI(BZ_MIN,BZ_MAX){
   var totalSv = sv;
   var totalGd = gd;
   var total = bzCnt + totalSv + totalGd;
-  document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+(total*40)+'P (수정 '+bzCnt+(sv>0?' + 루비 '+sv:'')+(gd>0?' + 다이아 '+gd:'')+')';
-  // 버튼 비활성화
-  var btn=document.querySelector('.reserve-btn');
-  var total_count = bzCnt + (svCnt||0) + (gdCnt||0);
-  var notEnough=(totalPts<cost);
-  var isEmpty=(total_count===0);  // 전부 0이면 비활성화
-  if(btn){
-    btn.disabled=(notEnough||isEmpty);
-    btn.style.opacity=(notEnough||isEmpty)?'0.4':'1';
-    btn.style.cursor=(notEnough||isEmpty)?'not-allowed':'pointer';
+  var cost = total * 40;
+  document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+cost+'P (수정 '+bzCnt+(sv>0?' + 루비 '+sv:'')+(gd>0?' + 다이아 '+gd:'')+')';  // ── 포인트 미리보기: 수량 선택 시 실시간 표시 ──
+  if(!_reservedToday && userData){
+    var chargePts = userData.charge_points || 0;
+    var exchangePts = userData.exchange_points || 0;
+    var fromExchange = Math.min(exchangePts, cost);
+    var fromCharge = Math.max(0, cost - fromExchange);
+    var remainCharge = chargePts - fromCharge;
+    var remainExchange = exchangePts - fromExchange;
+    var hTotal = document.getElementById('h-total');
+    var hMaintain = document.getElementById('h-maintain');
+    var hSub = document.getElementById('h-sub');
+    if(hTotal) hTotal.textContent = remainCharge.toLocaleString() + ' P';
+    if(hMaintain) hMaintain.textContent = (cost > 0 ? cost : (exchangePts||0)).toLocaleString() + ' P';
+    if(hSub) hSub.textContent = '충전 '+remainCharge.toLocaleString()+'P + 전환 '+remainExchange.toLocaleString()+'P';
   }
-}
+  // 버튼 활성/비활성
+  var btn = document.getElementById('reserve-btn');
+  var _chP = (userData && userData.charge_points) || 0;
+  var _exP = (userData && userData.exchange_points) || 0;
+  var notEnough = (_chP + _exP < cost);
+  var isEmpty = (total === 0);
+  if(btn && !_reservedToday){
+    btn.disabled = (notEnough || isEmpty);
+    btn.style.opacity = (notEnough || isEmpty) ? '0.4' : '1';
+    btn.style.cursor = (notEnough || isEmpty) ? 'not-allowed' : 'pointer';
+  }
+
 function updateReserveDefaults(lv){
   var d=userData||{};
   var tr=d.today_reservations||{};
