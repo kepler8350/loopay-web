@@ -376,7 +376,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 
 <div id="page-members" class="page">
 <div class="page-header"><h2 class="page-title">회원 관리</h2><p class="page-sub">전체 회원 목록</p></div>
-<div class="table-card"><div class="table-header"><div class="table-title">회원 목록</div></div><div class="table-wrap"><table><thead><tr><th>No</th><th>아이디</th><th>성명</th><th>레벨</th><th>충전P</th><th>전환P</th><th>예약</th><th colspan=2 style="min-width:100px">관리</th></tr></thead><tbody id="admin-users"></tbody></table></div></div>
+<div class="table-card"><div class="table-header"><div class="table-title">회원 목록</div></div><div class="table-wrap"><table><thead><tr><th>No</th><th>아이디</th><th>성명</th><th>레벨</th><th>충전P</th><th>충전금액</th><th>전환P</th><th>예약</th><th colspan=2 style="min-width:100px">관리</th></tr></thead><tbody id="admin-users"></tbody></table></div></div>
 </div>
 <div id="page-notifications" class="page">
 <div class="page-header"><h2 class="page-title">알림 관리</h2><p class="page-sub">사용자에게 알림을 보냅니다</p></div>
@@ -573,7 +573,7 @@ async function loadUsers(){
     const tbody=document.getElementById('admin-users');
     if(!tbody)return;
     if(!d.users||!d.users.length){
-      tbody.innerHTML='<tr><td colspan=8 style="text-align:center;padding:16px;color:#888">회원이 없습니다</td></tr>';
+      tbody.innerHTML='<tr><td colspan=9 style="text-align:center;padding:16px;color:#888">회원이 없습니다</td></tr>';
       return;
     }
     tbody.innerHTML=d.users.map((u,i)=>`<tr>
@@ -582,6 +582,7 @@ async function loadUsers(){
       <td>${u.real_name||u.nickname||'-'}</td>
       <td><span class="badge badge-info">${u.level||1}L</span></td>
       <td>${u.charge_points||0}</td>
+      <td>${(u.total_charged_amount||0).toLocaleString()}원</td>
       <td>${u.exchange_points||0}</td>
       <td>${u.total_reservations||0}</td>
       <td style="white-space:nowrap">
@@ -963,7 +964,14 @@ function showDetailTab(tab){
   if(tab==='charge'){
     apiAdmin('/admin/user/'+uid+'/charges').then(function(d){
       if(con) con.innerHTML = mkTbl(['번호','포인트','입금액','상태','신청일'],
-        (d.charges||[]).map(function(c,i){return mkRow([i+1, (c.points||0)+'P', (c.amount||0).toLocaleString()+'원', c.status||'-', (c.created_at||'').slice(0,10)]);}));
+        (d.charges||[]).map(function(c,i){
+        var statusMap={'pending':'대기중','confirmed':'승인','rejected':'거절','cancelled':'취소'};
+        var statusKr=statusMap[c.status]||c.status||'-';
+        var statusColor={'pending':'#f9a825','confirmed':'#66bb6a','rejected':'#ef5350','cancelled':'#9e9e9e'}[c.status]||'#ccc';
+        return mkRow([i+1, (c.points||0)+'P', (c.amount||0).toLocaleString()+'원',
+          '<span style="color:'+statusColor+';font-weight:600">'+statusKr+'</span>',
+          (c.created_at||'').slice(0,16)]);
+      }));
     }).catch(function(e){if(con)con.textContent=e.message;});
   } else if(tab==='exchange'){
     apiAdmin('/admin/user/'+uid+'/exchanges').then(function(d){
