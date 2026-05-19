@@ -310,7 +310,10 @@ def get_me():
         today_res = {}
     auto_reserve = u['auto_reserve'] if u['auto_reserve'] is not None else 0
     db.close()
-    return jsonify(id=u['id'],username=u['username'],nickname=u['nickname'],level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve)
+    # 오늘 예약 사용 포인트 계산
+    today_reserve_count = today_res.get('bronze',0)+today_res.get('silver',0)+today_res.get('gold',0)
+    today_reserve_cost = today_reserve_count * 40
+    return jsonify(id=u['id'],username=u['username'],nickname=u['nickname'],level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],today_reserve_cost=today_reserve_cost,cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve)
 
 @app.route('/api/reservation/preview', methods=['POST'])
 @jwt_required()
