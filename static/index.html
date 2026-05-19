@@ -2548,9 +2548,24 @@ function updateResUI(BZ_MIN,BZ_MAX){
   var totalSv = sv;
   var totalGd = gd;
   var total = bzCnt + totalSv + totalGd;
-  document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+(total*40)+'P (수정 '+bzCnt+(sv>0?' + 루비 '+sv:'')+(gd>0?' + 다이아 '+gd:'')+')';
-  // 버튼 비활성화
-  // 버튼 활성/비활성 (두번째 인스턴스)
+  var cost = total * 40;
+  document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+cost+'P (수정 '+bzCnt+(sv>0?' + 루비 '+sv:'')+(gd>0?' + 다이아 '+gd:'')+')';
+  // ── 포인트 미리보기 (수량 선택 시 실시간) ──
+  if(!_reservedToday && userData){
+    var _chargePts = userData.charge_points || 0;
+    var _exchangePts = userData.exchange_points || 0;
+    var _fromExchange = Math.min(_exchangePts, cost);
+    var _fromCharge = Math.max(0, cost - _fromExchange);
+    var _remainCharge = _chargePts - _fromCharge;
+    var _remainExchange = _exchangePts - _fromExchange;
+    var hTot = document.getElementById('h-total');
+    var hMnt = document.getElementById('h-maintain');
+    var hSb = document.getElementById('h-sub');
+    if(hTot) hTot.textContent = _remainCharge.toLocaleString() + ' P';
+    if(hMnt) hMnt.textContent = (cost > 0 ? cost : (_exchangePts||0)).toLocaleString() + ' P';
+    if(hSb) hSb.textContent = '충전 '+_remainCharge.toLocaleString()+'P + 전환 '+_remainExchange.toLocaleString()+'P';
+  }
+  // 버튼 활성/비활성
   var btn2 = document.getElementById('reserve-btn');
   var _chP2 = (userData && userData.charge_points) || 0;
   var _exP2 = (userData && userData.exchange_points) || 0;
