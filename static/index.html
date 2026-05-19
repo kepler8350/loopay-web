@@ -3000,8 +3000,21 @@ function getStatusBadge(s){
 function doLogout() {
   localStorage.removeItem('lp_token');
   localStorage.removeItem('lp_kakao_id');
+  // 헤더 포인트 초기화
   document.getElementById('h-total').textContent='0 P';
   document.getElementById('h-maintain').textContent='0 P';
+  // 충전 입력 필드 초기화
+  var ca=document.getElementById('charge-amount'); if(ca) ca.value='';
+  var cr=document.getElementById('charge-result'); if(cr){cr.textContent='';cr.style.color='';}
+  var crw=document.getElementById('charge-refresh-wrap'); if(crw) crw.style.display='none';
+  // 로그인 폼 초기화
+  var lu=document.getElementById('login-username'); if(lu) lu.value='';
+  var lp=document.getElementById('login-password'); if(lp) lp.value='';
+  var le=document.getElementById('login-error'); if(le) le.textContent='';
+  // 전역 상태 초기화
+  userData = null;
+  bzCnt=0; svCnt=0; gdCnt=0;
+  _reservedToday=false;
   document.getElementById('main-app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
 }
