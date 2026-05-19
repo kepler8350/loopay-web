@@ -2550,14 +2550,16 @@ function updateResUI(BZ_MIN,BZ_MAX){
   var total = bzCnt + totalSv + totalGd;
   document.getElementById('r-info').textContent='구매예약 '+total+'회 / 차감 '+(total*40)+'P (수정 '+bzCnt+(sv>0?' + 루비 '+sv:'')+(gd>0?' + 다이아 '+gd:'')+')';
   // 버튼 비활성화
-  var btn=document.querySelector('.reserve-btn');
-  var total_count = bzCnt + (svCnt||0) + (gdCnt||0);
-  var notEnough=(totalPts<cost);
-  var isEmpty=(total_count===0);  // 전부 0이면 비활성화
-  if(btn){
-    btn.disabled=(notEnough||isEmpty);
-    btn.style.opacity=(notEnough||isEmpty)?'0.4':'1';
-    btn.style.cursor=(notEnough||isEmpty)?'not-allowed':'pointer';
+  // 버튼 활성/비활성 (두번째 인스턴스)
+  var btn2 = document.getElementById('reserve-btn');
+  var _chP2 = (userData && userData.charge_points) || 0;
+  var _exP2 = (userData && userData.exchange_points) || 0;
+  var notEnough2 = (_chP2 + _exP2 < cost);
+  var isEmpty2 = (total === 0);
+  if(btn2 && !_reservedToday){
+    btn2.disabled = (notEnough2 || isEmpty2);
+    btn2.style.opacity = (notEnough2 || isEmpty2) ? '0.4' : '1';
+    btn2.style.cursor = (notEnough2 || isEmpty2) ? 'not-allowed' : 'pointer';
   }
 }
 
