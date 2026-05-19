@@ -1926,11 +1926,13 @@ def admin_add_loopay_items():
         loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
         if not loopay: return jsonify(error='loopay 계정 없음'), 404
         lid = loopay['id']
-        today = get_today().isoformat()
+        # purchase_date를 3일 전으로 설정 (즉시 판매예약 가능하도록)
+        import datetime
+        three_days_ago = (get_today() - datetime.timedelta(days=3)).isoformat()
         for _ in range(count):
             db.execute(
                 "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
-                (lid, bar_type, stage, today)
+                (lid, bar_type, stage, three_days_ago)
             )
         db.commit()
         return jsonify(success=True, message=f'{bar_type} {stage}단계 {count}개 추가')
