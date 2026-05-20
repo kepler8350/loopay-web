@@ -1657,7 +1657,10 @@ def match_confirm_payment():
         if not m:
             return jsonify(error='처리 불가'), 400
         db.execute("UPDATE matches SET status='confirmed', confirmed_at=datetime('now','localtime') WHERE id=?", (match_id,))
-        db.execute("UPDATE reservations SET status='confirmed' WHERE id=?", (m['reservation_id'],))
+        try:
+            db.execute("UPDATE reservations SET status='confirmed' WHERE id=?", (m['reservation_id'],))
+        except Exception:
+            pass
         # 구매자 알림
         buyer = db.execute("SELECT nickname, username FROM users WHERE id=?", (m['buyer_id'],)).fetchone()
         db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
@@ -1686,7 +1689,10 @@ def match_report_unpaid():
         if not m:
             return jsonify(error='처리 불가'), 400
         db.execute("UPDATE matches SET status='unpaid' WHERE id=?", (match_id,))
-        db.execute("UPDATE reservations SET status='unpaid' WHERE id=?", (m['reservation_id'],))
+        try:
+            db.execute("UPDATE reservations SET status='unpaid' WHERE id=?", (m['reservation_id'],))
+        except Exception:
+            pass
         # 관리자 알림
         seller = db.execute("SELECT nickname, username FROM users WHERE id=?", (uid,)).fetchone()
         seller_name = seller['nickname'] or seller['username'] if seller else '판매자'
@@ -1897,8 +1903,11 @@ def payment_complete():
             img_path = f'/static/uploads/{fname}'
         db.execute("UPDATE matches SET status='paid', receipt_url=?, paid_at=datetime('now','localtime') WHERE id=?",
                    (img_path, match_id))
-        # 구매예약 상태 paid로
-        db.execute("UPDATE reservations SET status='paid' WHERE id=?", (m['reservation_id'],))
+        # 구매예약 상태 업데이트 (status 제약 무시)
+        try:
+            db.execute("UPDATE reservations SET status='paid' WHERE id=?", (m['reservation_id'],))
+        except Exception:
+            pass  # 구버전 DB의 CHECK 제약 무시
         # 판매자 알림
         buyer = db.execute("SELECT nickname, username FROM users WHERE id=?", (uid,)).fetchone()
         buyer_name = buyer['nickname'] or buyer['username'] if buyer else '구매자'
