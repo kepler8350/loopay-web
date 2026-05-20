@@ -1434,11 +1434,11 @@ function renderMatchBuyList(items){
     }
     return '<div style="border:1px solid #2a2d3e;border-radius:10px;padding:12px;margin-bottom:10px;background:#1a1d2e">'
       +'<div style="display:flex;justify-content:space-between;align-items:center">'
-      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+' '+(m.stage||'')+'단계</strong>'
+      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'
       +'<span style="font-size:12px;color:'+statusColor+';font-weight:600">'+statusLabel+'</span>'
       +'</div>'
       +sellerInfo
-      +'<div style="font-size:11px;color:#888">'+m.match_date+'</div>'
+      +(m.match_date?'<div style="font-size:11px;color:#888">'+m.match_date+'</div>':'')
       +btnHtml
       +'</div>';
   }).join('');
@@ -1475,11 +1475,11 @@ function renderMatchSellList(items){
     }
     return '<div style="border:1px solid #2a2d3e;border-radius:10px;padding:12px;margin-bottom:10px;background:#1a1d2e">'
       +'<div style="display:flex;justify-content:space-between;align-items:center">'
-      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+' '+(m.stage||'')+'단계</strong>'
+      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'
       +'<span style="font-size:12px;color:'+statusColor+';font-weight:600">'+statusLabel+'</span>'
       +'</div>'
       +buyerInfo
-      +'<div style="font-size:11px;color:#888">'+m.match_date+'</div>'
+      +(m.match_date?'<div style="font-size:11px;color:#888">'+m.match_date+'</div>':'')
       +btnHtml
       +'</div>';
   }).join('');
