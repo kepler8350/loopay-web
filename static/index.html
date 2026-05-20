@@ -1396,6 +1396,8 @@ async function loadMatchingTab(){
 
 
 function renderMatchBuyList(items){
+  var TYPE_NAME={bronze:'수정',silver:'루비',gold:'다이아'};
+  var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var el=document.getElementById('match-buy-list');
   if(!items.length){
     el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">매칭된 구매 없음</div>';
@@ -1446,6 +1448,8 @@ function renderMatchBuyList(items){
 }
 
 function renderMatchSellList(items){
+  var TYPE_NAME={bronze:'수정',silver:'루비',gold:'다이아'};
+  var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var el=document.getElementById('match-sell-list');
   if(!items.length){
     el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">매칭된 판매 없음</div>';
