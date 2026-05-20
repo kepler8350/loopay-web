@@ -1374,8 +1374,16 @@ async function loadMatchingTab(){
   if(sellEl) sellEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">로딩 중...</div>';
   try{
     var d = await api('/user/matching');
-    var buys = d.buy || [];
-    var sells = d.sell || [];
+    // 새 버전: {buy:[], sell:[]} / 구버전: 배열
+    var buys = [], sells = [];
+    if(Array.isArray(d)){
+      // 구버전 배열 응답 처리
+      buys = d.filter(function(r){ return r.match_round===1; });
+      sells = d.filter(function(r){ return r.match_round===2; });
+    } else {
+      buys = d.buy || [];
+      sells = d.sell || [];
+    }
     renderMatchBuyList(buys);
     renderMatchSellList(sells);
   }catch(e){
@@ -1399,12 +1407,17 @@ function renderMatchBuyList(items){
     var statusLabel = {pending:'매칭완료',paid:'송금완료',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
     var statusColor = {pending:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
     var sellerInfo = '';
-    if(m.status !== 'pending' || canSend){
-      sellerInfo = '<div style="font-size:12px;color:#aaa;margin:6px 0">'
-        +'<div>📞 판매자: '+(m.seller_phone||'-')+'</div>'
-        +'<div>🏦 계좌: '+(m.seller_bank||'')+' '+(m.seller_account||'')+' ('+(m.seller_account_name||'-')+')</div>'
-        +'<div>💰 입금액: '+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</div>'
-        +'</div>';
+    var hasMatchInfo = !!(m.seller_phone || m.seller_bank || m.seller_account);
+    if(m.status==='matched' || m.status==='paid' || m.status==='confirmed'){
+      if(hasMatchInfo){
+        sellerInfo = '<div style="font-size:12px;color:#aaa;margin:6px 0">'
+          +'<div>📞 판매자: '+(m.seller_phone||'-')+'</div>'
+          +'<div>🏦 계좌: '+(m.seller_bank||'')+' '+(m.seller_account||'')+' ('+(m.seller_account_name||'-')+')</div>'
+          +'<div>💰 입금액: '+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</div>'
+          +'</div>';
+      } else {
+        sellerInfo = '<div style="font-size:12px;color:#f9a825;margin:6px 0">매칭완료 — 판매자 정보는 내일 오전 5시 이후 표시됩니다</div>';
+      }
     }
     var btnHtml = '';
     if(m.status==='pending' && canSend){
@@ -1526,10 +1539,11 @@ async function submitPayment(){
     if(window._receiptBase64) payload.image = window._receiptBase64;
     var d = await api('/reservation/payment-complete', {method:'POST', body:JSON.stringify(payload)});
     closePaymentModal();
-    alert('송금완료 처리됐습니다. 판매자 확인 후 거래가 완료됩니다.');
+    alert(d.message || '송금완료 처리됐습니다. 판매자 확인 후 거래가 완료됩니다.');
     loadMatchingTab();
   }catch(e){
-    alert('오류: '+e.message);
+    // 에러 메시지에서 상세 정보 표시
+    alert('오류: ' + e.message);
   }
 }
 
