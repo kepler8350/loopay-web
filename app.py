@@ -675,7 +675,7 @@ def admin_run_matching():
         today = get_today().isoformat()
         import random
 
-        # 판매예약 조회 (match_round=2, pending, loopay 포함)
+        # 판매예약 조회
         sell_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
                u.username as seller_username, u.nickname as seller_nickname,
@@ -689,7 +689,7 @@ def admin_run_matching():
             (today,)
         ).fetchall()
 
-        # 구매예약 조회 (match_round=1, pending, loopay 제외)
+        # 구매예약 조회 (loopay 제외, 랜덤)
         buy_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
                u.username as buyer_username, u.nickname as buyer_nickname,
@@ -702,7 +702,6 @@ def admin_run_matching():
             (today,)
         ).fetchall()
 
-        # 아이템 종류별로 분류
         sell_by_type = {'bronze': [], 'silver': [], 'gold': []}
         for r in sell_rows:
             bt = r['bar_type']
@@ -722,72 +721,79 @@ def admin_run_matching():
         for bt in ['bronze', 'silver', 'gold']:
             sellers = sell_by_type[bt]
             buyers = buy_by_type[bt]
-            # 판매 수만큼 구매자 랜덤 선택 (이미 ORDER BY RANDOM())
             match_count = min(len(sellers), len(buyers))
+
             for i in range(match_count):
                 seller = sellers[i]
                 buyer = buyers[i]
-                # loopay 판매자면 system_settings 정보 우선 사용
+
+                # loopay 판매자는 system_settings에서 정보 가져옴
                 is_loopay = (seller['seller_username'] == 'loopay')
+                def get_setting(key, fallback):
+                    r2 = db.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
+                    return r2['value'] if r2 else fallback
                 if is_loopay:
-                    seller_phone   = db.execute("SELECT value FROM system_settings WHERE key='loopay_phone'").fetchone()
-                    seller_bank    = db.execute("SELECT value FROM system_settings WHERE key='loopay_bank'").fetchone()
-                    seller_account = db.execute("SELECT value FROM system_settings WHERE key='loopay_account'").fetchone()
-                    seller_account_name = db.execute("SELECT value FROM system_settings WHERE key='loopay_account_name'").fetchone()
-                    seller_phone   = seller_phone['value']   if seller_phone   else seller['seller_phone']
-                    seller_bank    = seller_bank['value']    if seller_bank    else seller['seller_bank']
-                    seller_account = seller_account['value'] if seller_account else seller['seller_account']
-                    seller_account_name = seller_account_name['value'] if seller_account_name else seller.get('seller_account_name')
+                    s_phone = get_setting('loopay_phone', seller['seller_phone'])
+                    s_bank  = get_setting('loopay_bank',  seller['seller_bank'])
+                    s_acct  = get_setting('loopay_account', seller['seller_account'])
+                    s_name  = get_setting('loopay_account_name', seller.get('seller_account_name'))
                 else:
-                    seller_phone   = seller['seller_phone']
-                    seller_bank    = seller['seller_bank']
-                    seller_account = seller['seller_account']
-                    seller_account_name = seller.get('seller_account_name')
-                # 매칭 처리
-                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
-                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
-                # 아이템 상태 업데이트
-                if seller['item_id']:
-                    db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
-                # matches 테이블에 기록
-                sell_price = 0
-                buy_price = 0
+                    s_phone = seller['seller_phone']
+                    s_bank  = seller['seller_bank']
+                    s_acct  = seller['seller_account']
+                    s_name  = seller.get('seller_account_name')
+
+                # 가격 조회
+                sell_price, buy_price = 0, 0
                 if seller['item_id']:
                     pr = db.execute("SELECT * FROM prices WHERE bar_type=? AND stage=?",
                                    (bt, seller['stage'] or 1)).fetchone()
                     if pr:
                         sell_price = pr['sell_price']
-                        buy_price = pr['buy_price']
+                        buy_price  = pr['buy_price']
+
+                # 예약 상태 matched로
+                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
+                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
+                if seller['item_id']:
+                    db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
+
+                # matches 기록 (연락처/계좌 저장)
                 db.execute(
                     """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
-                       buy_price, sell_price, match_round, match_date, status)
-                       VALUES(?,?,?,?,?,?,?,?,?,'pending')""",
+                       buy_price, sell_price, match_round, match_date, status,
+                       seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone)
+                       VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?)""",
                     (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
-                     bt, seller['stage'] or 1, buy_price, sell_price, round_num, today)
+                     bt, seller['stage'] or 1, buy_price, sell_price, round_num, today,
+                     s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'])
                 )
+
+                # 알림 발송 (구매자 + 판매자)
+                buyer_msg = f"{names[bt]} {seller['stage']}단계 매칭완료! 판매자 연락처: {s_phone or '-'}, 계좌: {s_bank} {s_acct} ({s_name})"
+                db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+                           (buyer['buyer_id'], 'match', '매칭 완료', buyer_msg))
+                seller_msg = f"{names[bt]} {seller['stage']}단계 매칭완료! 구매자: {buyer['buyer_nickname'] or buyer['buyer_username']}, 연락처: {buyer['buyer_phone'] or '-'}"
+                db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+                           (seller['seller_id'], 'match', '매칭 완료', seller_msg))
+
                 matched_pairs.append({
-                    'bar_type': bt,
-                    'bar_name': names[bt],
+                    'bar_type': bt, 'bar_name': names[bt],
                     'stage': seller['stage'],
-                    'buyer': {
-                        'username': buyer['buyer_username'],
-                        'nickname': buyer['buyer_nickname'],
-                        'phone': buyer['buyer_phone'],
-                    },
-                    'seller': {
-                        'username': seller['seller_username'],
-                        'nickname': seller['seller_nickname'] or seller['seller_username'],
-                        'phone': seller_phone,
-                        'bank': seller_bank,
-                        'account': seller_account,
-                        'account_name': seller_account_name,
-                    },
-                    'sell_price': sell_price,
-                    'buy_price': buy_price,
+                    'buyer': {'username': buyer['buyer_username'], 'nickname': buyer['buyer_nickname'], 'phone': buyer['buyer_phone']},
+                    'seller': {'username': seller['seller_username'], 'nickname': seller['seller_nickname'],
+                               'phone': s_phone, 'bank': s_bank, 'account': s_acct, 'account_name': s_name},
+                    'sell_price': sell_price, 'buy_price': buy_price,
                 })
                 total_matched += 1
 
+            # 매칭 안 된 구매예약도 matched로 (판매 없으면 대기)
+            # 요구사항: 구매예약수 0으로 → 매칭된 것만 matched, 나머지는 pending 유지
+            # (판매자 없으면 다음날로 넘어감)
+
         db.commit()
+
+        # 알림: 구매예약은 있는데 매칭 못 된 경우 → 별도 처리 없이 pending 유지
         return jsonify(
             success=True,
             matched=total_matched,
@@ -795,13 +801,12 @@ def admin_run_matching():
             pairs=matched_pairs
         )
     except Exception as e:
+        import traceback
         db.rollback()
-        return jsonify(error=str(e)), 500
+        return jsonify(error=str(e), trace=traceback.format_exc()), 500
     finally:
         db.close()
 
-
-# ── 시스템 설정 API ──
 @app.route('/api/admin/settings', methods=['GET'])
 @jwt_required()
 def get_settings():
@@ -1636,6 +1641,65 @@ def admin_delete_matches():
     finally:
         db.close()
 
+# ── 판매자: 입금확인 ──────────────────────────────────
+@app.route('/api/match/confirm-payment', methods=['POST'])
+@jwt_required()
+def match_confirm_payment():
+    uid = int(get_jwt_identity())
+    data = request.json or {}
+    match_id = int(data.get('match_id', 0))
+    db = get_db()
+    try:
+        m = db.execute(
+            "SELECT * FROM matches WHERE id=? AND seller_id=? AND status='paid'",
+            (match_id, uid)
+        ).fetchone()
+        if not m:
+            return jsonify(error='처리 불가'), 400
+        db.execute("UPDATE matches SET status='confirmed', confirmed_at=datetime('now','localtime') WHERE id=?", (match_id,))
+        db.execute("UPDATE reservations SET status='confirmed' WHERE id=?", (m['reservation_id'],))
+        # 구매자 알림
+        buyer = db.execute("SELECT nickname, username FROM users WHERE id=?", (m['buyer_id'],)).fetchone()
+        db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+            (m['buyer_id'], 'confirmed', '입금 확인 완료', f'판매자가 입금을 확인했습니다. 거래가 완료되었습니다. (매치 #{match_id})'))
+        db.commit()
+        return jsonify(success=True, message='입금 확인 완료')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+# ── 판매자: 미입금 신고 ──────────────────────────────
+@app.route('/api/match/report-unpaid', methods=['POST'])
+@jwt_required()
+def match_report_unpaid():
+    uid = int(get_jwt_identity())
+    data = request.json or {}
+    match_id = int(data.get('match_id', 0))
+    db = get_db()
+    try:
+        m = db.execute(
+            "SELECT * FROM matches WHERE id=? AND seller_id=? AND status IN ('pending','paid')",
+            (match_id, uid)
+        ).fetchone()
+        if not m:
+            return jsonify(error='처리 불가'), 400
+        db.execute("UPDATE matches SET status='unpaid' WHERE id=?", (match_id,))
+        db.execute("UPDATE reservations SET status='unpaid' WHERE id=?", (m['reservation_id'],))
+        # 관리자 알림
+        seller = db.execute("SELECT nickname, username FROM users WHERE id=?", (uid,)).fetchone()
+        seller_name = seller['nickname'] or seller['username'] if seller else '판매자'
+        db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+            (1, 'unpaid', '미입금 신고', f'{seller_name}님이 매치 #{match_id} 미입금 신고했습니다.'))
+        db.commit()
+        return jsonify(success=True, message='미입금 신고 완료')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)
@@ -1771,32 +1835,38 @@ def user_matching():
     db = get_db()
     try:
         today = get_today().isoformat()
-        rows = db.execute(
-            """SELECT r.*, i.stage, i.purchase_date,
-                      p.buy_price, p.sell_price
-               FROM reservations r
-               LEFT JOIN items i ON r.item_id = i.id
-               LEFT JOIN prices p ON p.bar_type=r.bar_type AND p.stage=i.stage
-               WHERE r.user_id=? AND r.reserve_date=?
-               ORDER BY r.id DESC""",
+        # matches 테이블에서 내 매칭 기록 조회 (최근 30일)
+        buy_matches = db.execute(
+            """SELECT m.*, 
+               su.nickname as seller_nickname, su.username as seller_username
+               FROM matches m
+               LEFT JOIN users su ON m.seller_id = su.id
+               WHERE m.buyer_id=? AND m.match_date >= date(?, '-30 days')
+               ORDER BY m.id DESC""",
             (uid, today)
         ).fetchall()
-        result = []
-        for r in rows:
-            result.append({
-                'id': r['id'],
-                'bar_type': r['bar_type'],
-                'stage': r['stage'],
-                'match_round': r['match_round'],
-                'status': r['status'],
-                'reserve_date': r['reserve_date'],
-                'buy_price': r['buy_price'] or 0,
-                'sell_price': r['sell_price'] or 0,
-                'item_id': r['item_id']
-            })
-        return jsonify(result)
+        sell_matches = db.execute(
+            """SELECT m.*,
+               bu.nickname as buyer_nickname, bu.username as buyer_username, bu.phone as buyer_phone2
+               FROM matches m
+               LEFT JOIN users bu ON m.buyer_id = bu.id
+               WHERE m.seller_id=? AND m.match_date >= date(?, '-30 days')
+               ORDER BY m.id DESC""",
+            (uid, today)
+        ).fetchall()
+        names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+        def fmt_match(m, role):
+            d = dict(m)
+            d['bar_name'] = names.get(d.get('bar_type',''), d.get('bar_type',''))
+            d['role'] = role
+            return d
+        return jsonify(
+            buy=[fmt_match(m,'buyer') for m in buy_matches],
+            sell=[fmt_match(m,'seller') for m in sell_matches]
+        )
     finally:
         db.close()
+
 
 # ── 송금완료 API (구매자) ──
 @app.route('/api/reservation/payment-complete', methods=['POST'])
@@ -1804,38 +1874,37 @@ def user_matching():
 def payment_complete():
     uid = int(get_jwt_identity())
     data = request.json or {}
-    reservation_id = int(data.get('reservation_id', 0))
-    image_b64 = data.get('image', '')  # base64 이미지
+    match_id = int(data.get('match_id', 0))
+    image_b64 = data.get('image', '')
     db = get_db()
     try:
-        r = db.execute(
-            "SELECT * FROM reservations WHERE id=? AND user_id=? AND match_round=1 AND status='matched'",
-            (reservation_id, uid)
+        m = db.execute(
+            "SELECT * FROM matches WHERE id=? AND buyer_id=? AND status='pending'",
+            (match_id, uid)
         ).fetchone()
-        if not r:
-            return jsonify(error='송금완료 처리 불가'), 400
-        # 이미지 저장 (static/uploads 폴더)
+        if not m:
+            return jsonify(error='송금완료 처리 불가 (매칭 없음 또는 이미 처리됨)'), 400
         img_path = ''
         if image_b64 and image_b64.startswith('data:image'):
             import base64, uuid as _uuid
             upload_dir = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
             os.makedirs(upload_dir, exist_ok=True)
-            ext = 'jpg'
-            if 'png' in image_b64[:30]: ext = 'png'
+            ext = 'png' if 'png' in image_b64[:30] else 'jpg'
             header, b64data = image_b64.split(',', 1)
-            fname = f'pay_{reservation_id}_{_uuid.uuid4().hex[:8]}.{ext}'
+            fname = f'pay_{match_id}_{_uuid.uuid4().hex[:8]}.{ext}'
             with open(os.path.join(upload_dir, fname), 'wb') as fp:
                 fp.write(base64.b64decode(b64data))
-            img_path = f'/uploads/{fname}'
-        db.execute("UPDATE reservations SET status='paid' WHERE id=?", (reservation_id,))
-        # 판매자에게 입금 알림
-        matched_res = db.execute(
-            "SELECT * FROM reservations WHERE match_id=? AND id!=? AND match_round=2",
-            (r['match_id'] or reservation_id, reservation_id)
-        ).fetchone() if r.get('match_id') else None
-        if matched_res:
-            db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                (matched_res['user_id'], 'payment', '입금 알림', f'구매자가 송금완료를 처리했습니다. 입금 내역을 확인해주세요. (예약번호: {reservation_id})'))
+            img_path = f'/static/uploads/{fname}'
+        db.execute("UPDATE matches SET status='paid', receipt_url=?, paid_at=datetime('now','localtime') WHERE id=?",
+                   (img_path, match_id))
+        # 구매예약 상태 paid로
+        db.execute("UPDATE reservations SET status='paid' WHERE id=?", (m['reservation_id'],))
+        # 판매자 알림
+        buyer = db.execute("SELECT nickname, username FROM users WHERE id=?", (uid,)).fetchone()
+        buyer_name = buyer['nickname'] or buyer['username'] if buyer else '구매자'
+        db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+            (m['seller_id'], 'payment', '입금 알림',
+             f'{buyer_name}님이 송금완료했습니다. 입금을 확인해주세요. (매치 #{match_id})'))
         db.commit()
         return jsonify(success=True, message='송금완료 처리됐습니다', image_url=img_path)
     except Exception as e:
@@ -1843,7 +1912,6 @@ def payment_complete():
         return jsonify(error=str(e)), 500
     finally:
         db.close()
-
 
 @app.route('/api/user/update-profile', methods=['POST'])
 @jwt_required()

@@ -1368,14 +1368,18 @@ async function doSellReservation(itemId, barType){
 
 // ── 매칭 탭 로드 ──
 async function loadMatchingTab(){
+  var buyEl = document.getElementById('match-buy-list');
+  var sellEl = document.getElementById('match-sell-list');
+  if(buyEl) buyEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">로딩 중...</div>';
+  if(sellEl) sellEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">로딩 중...</div>';
   try{
-    var list=await api('/user/matching');
-    var buys=list.filter(function(r){return r.match_round===1;});
-    var sells=list.filter(function(r){return r.match_round===2;});
+    var d = await api('/user/matching');
+    var buys = d.buy || [];
+    var sells = d.sell || [];
     renderMatchBuyList(buys);
     renderMatchSellList(sells);
   }catch(e){
-    document.getElementById('match-buy-list').innerHTML='<div style="color:#ef5350;padding:12px">오류: '+e.message+'</div>';
+    if(buyEl) buyEl.innerHTML='<div style="color:#ef5350;padding:12px">오류: '+e.message+'</div>';
   }
 }
 
@@ -1384,55 +1388,171 @@ var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
 
 function renderMatchBuyList(items){
   var el=document.getElementById('match-buy-list');
-  if(!items.length){el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">오늘 구매예약 없음</div>';return;}
-  // 시간 체크 (13:00~14:00 송금, 15:00~19:00 2차 송금)
-  var h=new Date().getHours();
-  var canSend1=(h>=13&&h<14), canSend2=(h>=15&&h<19);
-  el.innerHTML=items.map(function(r){
-    var statusBadge=r.status==='matched'?'<span class="match-type-badge badge-matched">매칭완료</span>'
-      :r.status==='paid'?'<span class="match-type-badge badge-paid">송금완료</span>'
-      :'<span class="match-type-badge badge-pending">대기중</span>';
-    var canSendNow=(r.status==='matched')&&(canSend1||canSend2);
-    var sendBtn=canSendNow
-      ?'<button class="match-btn btn-send" onclick="doPaymentComplete('+r.id+')">💸 송금완료</button>'
-      :(r.status==='matched'?'<button class="match-btn btn-disabled" disabled title="13:00~14:00 또는 15:00~19:00에 활성화">송금완료</button>':'');
-    return '<div class="match-row">'
-      +'<div><strong style="color:'+TYPE_COLOR[r.bar_type]+'">'+TYPE_NAME[r.bar_type]+'</strong> '
-      +(r.stage?r.stage+'단계':'')
-      +' '+statusBadge+'</div>'
-      +'<div style="text-align:right"><div style="font-size:12px;color:#aaa">구매가 '+(r.buy_price?r.buy_price.toLocaleString()+'원':'-')+'</div>'
-      +sendBtn+'</div></div>';
+  if(!items.length){
+    el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">매칭된 구매 없음</div>';
+    return;
+  }
+  // 서버 mock 시간 기준
+  var h = getEffectiveDate ? getEffectiveDate().getHours() : new Date().getHours();
+  var canSend = (h>=5 && h<13); // 1차 매칭 입금: 05:00~13:00
+  el.innerHTML = items.map(function(m){
+    var statusLabel = {pending:'매칭완료',paid:'송금완료',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
+    var statusColor = {pending:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
+    var sellerInfo = '';
+    if(m.status !== 'pending' || canSend){
+      sellerInfo = '<div style="font-size:12px;color:#aaa;margin:6px 0">'
+        +'<div>📞 판매자: '+(m.seller_phone||'-')+'</div>'
+        +'<div>🏦 계좌: '+(m.seller_bank||'')+' '+(m.seller_account||'')+' ('+(m.seller_account_name||'-')+')</div>'
+        +'<div>💰 입금액: '+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</div>'
+        +'</div>';
+    }
+    var btnHtml = '';
+    if(m.status==='pending' && canSend){
+      btnHtml = '<button onclick="openPaymentModal('+m.id+')" style="padding:7px 14px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;margin-top:6px">💸 송금완료</button>';
+    } else if(m.status==='pending' && !canSend){
+      btnHtml = '<div style="font-size:11px;color:#888;margin-top:6px">05:00~13:00에 송금 가능</div>';
+    } else if(m.status==='paid'){
+      btnHtml = '<div style="font-size:11px;color:#1976d2;margin-top:6px">✅ 송금완료 — 판매자 확인 대기</div>';
+      if(m.receipt_url){
+        btnHtml += '<a href="'+m.receipt_url+'" target="_blank" style="font-size:11px;color:#90caf9">영수증 보기</a>';
+      }
+    } else if(m.status==='confirmed'){
+      btnHtml = '<div style="font-size:11px;color:#66bb6a;margin-top:6px">✅ 거래 완료</div>';
+    }
+    return '<div style="border:1px solid #2a2d3e;border-radius:10px;padding:12px;margin-bottom:10px;background:#1a1d2e">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center">'
+      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+' '+(m.stage||'')+'단계</strong>'
+      +'<span style="font-size:12px;color:'+statusColor+';font-weight:600">'+statusLabel+'</span>'
+      +'</div>'
+      +sellerInfo
+      +'<div style="font-size:11px;color:#888">'+m.match_date+'</div>'
+      +btnHtml
+      +'</div>';
   }).join('');
 }
 
 function renderMatchSellList(items){
   var el=document.getElementById('match-sell-list');
-  if(!items.length){el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">오늘 판매예약 없음</div>';return;}
-  var h=new Date().getHours();
-  var canConfirm1=(h>=13&&h<14), canConfirm2=(h>=19&&h<20);
-  el.innerHTML=items.map(function(r){
-    var statusBadge=r.status==='matched'?'<span class="match-type-badge badge-matched">매칭완료</span>'
-      :r.status==='confirmed'?'<span class="match-type-badge" style="background:#1b5e20;color:#fff">입금확인</span>'
-      :r.status==='unpaid'?'<span class="match-type-badge badge-buy">미입금처리</span>'
-      :'<span class="match-type-badge badge-pending">대기중</span>';
-    var canAct=r.status==='matched'&&(canConfirm1||canConfirm2);
-    var actBtns=canAct
-      ?'<button class="match-btn btn-confirm-pay" onclick="doPaymentConfirm('+r.id+',true)">✅ 입금확인</button>'
-       +'<button class="match-btn btn-unpaid" onclick="doPaymentConfirm('+r.id+',false)">❌ 미입금</button>'
-      :(r.status==='matched'?'<button class="match-btn btn-disabled" disabled title="13:00~14:00 또는 19:00~20:00에 활성화">입금확인</button>':'');
-    return '<div class="match-row">'
-      +'<div><strong style="color:'+TYPE_COLOR[r.bar_type]+'">'+TYPE_NAME[r.bar_type]+'</strong> '
-      +(r.stage?r.stage+'단계':'')
-      +' '+statusBadge+'</div>'
-      +'<div style="text-align:right"><div style="font-size:12px;color:#aaa">판매가 '+(r.sell_price?r.sell_price.toLocaleString()+'원':'-')+'</div>'
-      +actBtns+'</div></div>';
+  if(!items.length){
+    el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">매칭된 판매 없음</div>';
+    return;
+  }
+  var h = getEffectiveDate ? getEffectiveDate().getHours() : new Date().getHours();
+  el.innerHTML = items.map(function(m){
+    var statusLabel = {pending:'입금대기',paid:'입금확인중',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
+    var statusColor = {pending:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
+    var buyerInfo = '<div style="font-size:12px;color:#aaa;margin:6px 0">'
+      +'<div>👤 구매자: '+(m.buyer_nickname||m.buyer_username||'-')+'</div>'
+      +'<div>📞 연락처: '+(m.buyer_phone||'-')+'</div>'
+      +'<div>💰 수령액: '+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</div>'
+      +'</div>';
+    var btnHtml = '';
+    if(m.status==='paid'){
+      btnHtml = '<div style="display:flex;gap:8px;margin-top:8px">'
+        +'<button onclick="doConfirmPayment('+m.id+')" style="padding:7px 14px;background:#388e3c;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">✅ 입금확인</button>'
+        +'<button onclick="doReportUnpaid('+m.id+')" style="padding:7px 14px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">❌ 미입금</button>'
+        +'</div>';
+      if(m.receipt_url){
+        btnHtml += '<a href="'+m.receipt_url+'" target="_blank" style="font-size:11px;color:#90caf9;display:block;margin-top:4px">영수증 보기</a>';
+      }
+    } else if(m.status==='pending'){
+      btnHtml = '<div style="display:flex;gap:8px;margin-top:8px">'
+        +'<button onclick="doReportUnpaid('+m.id+')" style="padding:7px 14px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">❌ 미입금</button>'
+        +'</div>';
+    }
+    return '<div style="border:1px solid #2a2d3e;border-radius:10px;padding:12px;margin-bottom:10px;background:#1a1d2e">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center">'
+      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+' '+(m.stage||'')+'단계</strong>'
+      +'<span style="font-size:12px;color:'+statusColor+';font-weight:600">'+statusLabel+'</span>'
+      +'</div>'
+      +buyerInfo
+      +'<div style="font-size:11px;color:#888">'+m.match_date+'</div>'
+      +btnHtml
+      +'</div>';
   }).join('');
 }
 
-async function doPaymentComplete(resId){
-  // 이미지 업로드 모달 표시
-  showPaymentModal(resId);
+// ── 송금완료 모달 ──────────────────────────────────
+var _payMatchId = null;
+
+function openPaymentModal(matchId){
+  _payMatchId = matchId;
+  var modal = document.getElementById('payment-modal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'payment-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center';
+    modal.innerHTML = '<div style="background:#1a1d2e;border-radius:14px;padding:24px;width:90%;max-width:380px;border:1px solid #2a2d3e">'
+      +'<div style="font-size:16px;font-weight:700;margin-bottom:16px">💸 송금완료 확인</div>'
+      +'<div style="font-size:13px;color:#aaa;margin-bottom:12px">판매자 계좌로 송금 후 영수증을 첨부해주세요.</div>'
+      +'<div style="margin-bottom:12px">'
+      +'<label style="display:block;font-size:12px;color:#888;margin-bottom:6px">영수증 이미지 (선택)</label>'
+      +'<input type="file" id="receipt-file" accept="image/*" style="width:100%;font-size:13px">'
+      +'</div>'
+      +'<div id="receipt-preview" style="margin-bottom:12px"></div>'
+      +'<div style="display:flex;gap:10px">'
+      +'<button onclick="closePaymentModal()" style="flex:1;padding:10px;background:#2a2d3e;color:#e8eaf6;border:none;border-radius:8px;font-size:13px;cursor:pointer">취소</button>'
+      +'<button onclick="submitPayment()" style="flex:1;padding:10px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">송금완료</button>'
+      +'</div>'
+      +'</div>';
+    document.body.appendChild(modal);
+    document.getElementById('receipt-file').onchange = function(e){
+      var file = e.target.files[0];
+      if(!file) return;
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        window._receiptBase64 = ev.target.result;
+        document.getElementById('receipt-preview').innerHTML = '<img src="'+ev.target.result+'" style="width:100%;border-radius:8px;max-height:200px;object-fit:contain">';
+      };
+      reader.readAsDataURL(file);
+    };
+  } else {
+    modal.style.display = 'flex';
+    document.getElementById('receipt-preview').innerHTML = '';
+    if(document.getElementById('receipt-file')) document.getElementById('receipt-file').value='';
+    window._receiptBase64 = null;
+  }
 }
+
+function closePaymentModal(){
+  var m = document.getElementById('payment-modal');
+  if(m) m.style.display='none';
+}
+
+async function submitPayment(){
+  if(!_payMatchId){ alert('오류'); return; }
+  try{
+    var payload = {match_id: _payMatchId};
+    if(window._receiptBase64) payload.image = window._receiptBase64;
+    var d = await api('/reservation/payment-complete', {method:'POST', body:JSON.stringify(payload)});
+    closePaymentModal();
+    alert('송금완료 처리됐습니다. 판매자 확인 후 거래가 완료됩니다.');
+    loadMatchingTab();
+  }catch(e){
+    alert('오류: '+e.message);
+  }
+}
+
+async function doConfirmPayment(matchId){
+  if(!confirm('입금을 확인하시겠습니까?')) return;
+  try{
+    await api('/match/confirm-payment', {method:'POST', body:JSON.stringify({match_id:matchId})});
+    alert('입금 확인 완료!');
+    loadMatchingTab();
+  }catch(e){ alert('오류: '+e.message); }
+}
+
+async function doReportUnpaid(matchId){
+  if(!confirm('미입금 신고하시겠습니까?')) return;
+  try{
+    await api('/match/report-unpaid', {method:'POST', body:JSON.stringify({match_id:matchId})});
+    alert('미입금 신고 완료');
+    loadMatchingTab();
+  }catch(e){ alert('오류: '+e.message); }
+}
+
+function doPaymentComplete(resId){ openPaymentModal(resId); }
+
 
 function showPaymentModal(resId){
   var ov = document.getElementById('payment-modal-overlay');

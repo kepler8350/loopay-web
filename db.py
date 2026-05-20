@@ -82,10 +82,31 @@ def init_db():
         sell_price INTEGER NOT NULL,
         match_round INTEGER DEFAULT 1,
         match_date DATE NOT NULL,
-        status TEXT DEFAULT 'pending' CHECK(status IN ('pending','paid','confirmed','failed')),
+        status TEXT DEFAULT 'pending' CHECK(status IN ('pending','paid','confirmed','failed','unpaid')),
+        receipt_url TEXT,
+        paid_at DATETIME,
+        confirmed_at DATETIME,
+        seller_bank TEXT,
+        seller_account TEXT,
+        seller_account_name TEXT,
+        seller_phone TEXT,
+        buyer_phone TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(reservation_id) REFERENCES reservations(id)
     )''')
+    # 기존 테이블에 컬럼 추가 (이미 있으면 무시)
+    for col_def in [
+        "ALTER TABLE matches ADD COLUMN receipt_url TEXT",
+        "ALTER TABLE matches ADD COLUMN paid_at DATETIME",
+        "ALTER TABLE matches ADD COLUMN confirmed_at DATETIME",
+        "ALTER TABLE matches ADD COLUMN seller_bank TEXT",
+        "ALTER TABLE matches ADD COLUMN seller_account TEXT",
+        "ALTER TABLE matches ADD COLUMN seller_account_name TEXT",
+        "ALTER TABLE matches ADD COLUMN seller_phone TEXT",
+        "ALTER TABLE matches ADD COLUMN buyer_phone TEXT",
+    ]:
+        try: c.execute(col_def)
+        except: pass
 
     c.execute('''CREATE TABLE IF NOT EXISTS charge_requests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
