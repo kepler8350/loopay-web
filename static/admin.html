@@ -1033,7 +1033,7 @@ async function deleteAllMatches(){
 }
 
 function switchRound(num,el){document.querySelectorAll('#page-matching .btn').forEach(function(b){if(b.id&&b.id.startsWith('round-tab-')){b.classList.remove('btn-primary');b.classList.add('btn-secondary');}});el.classList.remove('btn-secondary');el.classList.add('btn-primary');document.getElementById('round-panel-1').style.display=num===1?'block':'none';document.getElementById('round-panel-2').style.display=num===2?'block':'none';}
-async async function loadReservationStatus(){
+async function loadReservationStatus(){
   var colors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var names={bronze:'수정',silver:'루비',gold:'다이아'};
   // 상단 요약 테이블 렌더링 헬퍼
