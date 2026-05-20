@@ -1367,6 +1367,9 @@ async function doSellReservation(itemId, barType){
 }
 
 // ── 매칭 탭 로드 ──
+var TYPE_NAME={bronze:'수정',silver:'루비',gold:'다이아'};
+var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+
 async function loadMatchingTab(){
   var buyEl = document.getElementById('match-buy-list');
   var sellEl = document.getElementById('match-sell-list');
@@ -1391,8 +1394,6 @@ async function loadMatchingTab(){
   }
 }
 
-var TYPE_NAME={bronze:'수정',silver:'루비',gold:'다이아'};
-var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
 
 function renderMatchBuyList(items){
   var el=document.getElementById('match-buy-list');
