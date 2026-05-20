@@ -1537,7 +1537,7 @@ function closePaymentModal(){
   if(m) m.style.display='none';
 }
 
-async async function submitPayment(){
+async function submitPayment(){
   if(!_payMatchId){ return; }
   var btn = document.querySelector('#payment-modal button:last-child');
   if(btn){ btn.textContent='처리 중...'; btn.disabled=true; }
