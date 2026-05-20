@@ -1537,22 +1537,23 @@ function closePaymentModal(){
   if(m) m.style.display='none';
 }
 
+async 
 async function submitPayment(){
-  if(!_payMatchId){ return; }
+  if(!window._payMatchId){ closePaymentModal(); return; }
   var btn = document.querySelector('#payment-modal button:last-child');
+  if(btn && btn.disabled) return;
   if(btn){ btn.textContent='처리 중...'; btn.disabled=true; }
   try{
-    var payload = {match_id: _payMatchId};
+    var payload = {match_id: window._payMatchId};
     if(window._receiptBase64) payload.image = window._receiptBase64;
     var d = await api('/reservation/payment-complete', {method:'POST', body:JSON.stringify(payload)});
+    var m = document.getElementById('payment-modal');
+    if(m) m.style.display='none';
     window._receiptBase64 = null;
     window._payMatchId = null;
-    closePaymentModal();
-    if(typeof toast==='function') toast(d.message||'송금완료! 판매자 확인 대기 중','success');
     loadMatchingTab();
   }catch(e){
     if(btn){ btn.textContent='송금완료'; btn.disabled=false; }
-    if(typeof toast==='function') toast('오류: '+e.message,'error');
   }
 }
 
@@ -1577,75 +1578,13 @@ async function doReportUnpaid(matchId){
 function doPaymentComplete(resId){ openPaymentModal(resId); }
 
 
-function showPaymentModal(resId){
-  var ov = document.getElementById('payment-modal-overlay');
-  if(!ov){
-    ov = document.createElement('div');
-    ov.id = 'payment-modal-overlay';
-    ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:2000;display:flex;align-items:center;justify-content:center';
-    ov.innerHTML = '<div style="background:var(--bg1);border-radius:16px;padding:24px;width:300px;max-width:90vw">'
-      +'<h3 style="margin:0 0 14px;font-size:16px;text-align:center">💸 송금완료 처리</h3>'
-      +'<p style="font-size:13px;color:var(--text2);margin-bottom:14px">입금 영수증 이미지를 첨부하면 송금완료가 처리됩니다.</p>'
-      +'<input type="file" id="payment-img-input" accept="image/*" capture="environment" style="width:100%;margin-bottom:12px;font-size:13px">'
-      +'<div id="payment-preview" style="text-align:center;margin-bottom:12px"></div>'
-      +'<div style="display:flex;gap:8px">'
-      +'<button onclick="closePaymentModal()" style="flex:1;padding:10px;border:1px solid var(--border);background:none;color:var(--text2);border-radius:8px;font-size:14px;cursor:pointer">취소</button>'
-      +'<button id="payment-submit-btn" onclick="submitPayment()" style="flex:1;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">송금완료</button>'
-      +'</div></div>';
-    document.body.appendChild(ov);
-    document.getElementById('payment-img-input').addEventListener('change', function(e){
-      var file = e.target.files[0];
-      if(file){
-        var reader = new FileReader();
-        reader.onload = function(ev){
-          document.getElementById('payment-preview').innerHTML = '<img src="'+ev.target.result+'" style="max-width:100%;max-height:120px;border-radius:8px">';
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-  }
-  ov._resId = resId;
-  ov.style.display = 'flex';
-  document.getElementById('payment-img-input').value = '';
-  document.getElementById('payment-preview').innerHTML = '';
-}
 
 function closePaymentModal(){
   var ov = document.getElementById('payment-modal-overlay');
   if(ov) ov.style.display = 'none';
 }
 
-async function submitPayment(){
-  var ov = document.getElementById('payment-modal-overlay');
-  var resId = ov._resId;
-  var fileInput = document.getElementById('payment-img-input');
-  var file = fileInput.files[0];
-  if(!file){ toast('입금 영수증 이미지를 첨부해주세요.'); return; }
-  var btn = document.getElementById('payment-submit-btn');
-  btn.disabled = true; btn.textContent = '처리 중...';
-  try{
-    // 이미지를 base64로 변환 후 전송
-    var b64 = await new Promise(function(res,rej){
-      var fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(file);
-    });
-    await api('/reservation/payment-complete',{method:'POST',body:JSON.stringify({reservation_id:resId,image:b64})});
-    toast('송금완료 처리됐습니다 ✅');
-    closePaymentModal();
-    await loadMatchingTab();
-  }catch(e){ toast('오류: '+e.message); }
-  finally{ btn.disabled=false; btn.textContent='송금완료'; }
-}
-
-async function doPaymentConfirm(resId, confirmed){
-  var msg = confirmed ? '입금확인 처리하시겠습니까?' : '미입금 처리하시겠습니까?';
-  if(!confirm(msg)) return;
-  try{
-    await api('/reservation/payment-confirm',{method:'POST',body:JSON.stringify({reservation_id:resId,confirmed:confirmed})});
-    toast(confirmed?'입금확인 처리됐습니다':'미입금 처리됐습니다');
-    await loadMatchingTab();
-  }catch(e){ toast('오류: '+e.message); }
-}
-
+async 
 function disableReserveSection(){
   _reservedToday=true;
   // 구매 예약하기 버튼 비활성화
