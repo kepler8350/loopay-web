@@ -1407,11 +1407,11 @@ function renderMatchBuyList(items){
   var h = getEffectiveDate ? getEffectiveDate().getHours() : new Date().getHours();
   var canSend = (h>=5 && h<13); // 1차 매칭 입금: 05:00~13:00
   el.innerHTML = items.map(function(m){
-    var statusLabel = {pending:'매칭완료',paid:'송금완료',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
-    var statusColor = {pending:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
+    var statusLabel = {pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
+    var statusColor = {pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
     var sellerInfo = '';
     var hasMatchInfo = !!(m.seller_phone || m.seller_bank || m.seller_account);
-    if(m.status==='matched' || m.status==='paid' || m.status==='confirmed'){
+    if(m.status==='pending' || m.status==='matched' || m.status==='paid' || m.status==='confirmed'){
       if(hasMatchInfo){
         sellerInfo = '<div style="font-size:12px;color:#aaa;margin:6px 0">'
           +'<div>📞 판매자: '+(m.seller_phone||'-')+'</div>'
