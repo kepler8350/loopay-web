@@ -1706,6 +1706,40 @@ def match_report_unpaid():
     finally:
         db.close()
 
+# ── 시스템(loopay) 아이템 현황 조회 ──────────────────
+@app.route('/api/admin/loopay-items', methods=['GET'])
+@jwt_required()
+def admin_loopay_items():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    try:
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay: return jsonify(items=[], total=0)
+        lid = loopay['id']
+        rows = db.execute(
+            """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date,
+               r.reserve_date
+               FROM items i
+               LEFT JOIN reservations r ON r.item_id = i.id AND r.status IN ('pending','matched')
+               WHERE i.user_id = ?
+               ORDER BY i.id DESC""",
+            (lid,)
+        ).fetchall()
+        return jsonify(
+            items=[{
+                'id': r['id'],
+                'bar_type': r['bar_type'],
+                'stage': r['stage'],
+                'status': r['status'],
+                'purchase_date': r['purchase_date'],
+                'reserve_date': r['reserve_date'],
+            } for r in rows],
+            total=len(rows)
+        )
+    finally:
+        db.close()
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)

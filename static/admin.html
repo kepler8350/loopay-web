@@ -96,6 +96,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div class="nav-item" data-page="notifications" onclick="showPage('notifications',this)"><span class="nav-icon">🔔</span><span class="nav-label">알림관리</span></div>
 <div class="nav-item" data-page="approve" onclick="showPage('approve',this)"><span class="nav-icon">👥</span>회원승인관리</div>
 <div class="nav-item" data-page="testtools" onclick="showPage('testtools',this)"><span class="nav-icon">⚙️</span>테스트도구</div>
+<div class="nav-item" data-page="system-items" onclick="showPage('system-items',this);loadSystemItems()"><span class="nav-icon">📦</span>시스템아이템현황</div>
 <div class="nav-item" data-page="matches" onclick="showPage('matches',this);loadMatchRecords()"><span class="nav-icon">🗂️</span>매칭 기록</div>
 <div class="nav-item" data-page="settings" onclick="showPage('settings',this);loadSettings()"><span class="nav-icon">🔧</span>시스템 설정</div>
 </nav>
@@ -154,10 +155,10 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
           <thead>
             <!-- 수정(bronze): 1~20단계 / 21단계 -->
             <tr style="background:#1e2240">
-              <th rowspan="2" style="width:70px;color:#cd7f32;font-size:13px;font-weight:700;white-space:nowrap">수정</th>
+              <th rowspan="2" style="width:70px;color:#cd7f32;font-size:13px;font-weight:700;white-space:nowrap"></th>
               <th colspan="3" style="text-align:center;border-bottom:2px solid #cd7f32;color:#fff;background:#1e2240">구매예약</th>
               <th colspan="3" style="text-align:center;border-bottom:2px solid #4fc3f7;color:#fff;background:#1e2240;border-left:2px solid #555">판매예약</th>
-              <th colspan="4" style="text-align:center;border-bottom:2px solid #81c784;color:#fff;background:#1e2240;border-left:2px solid #555">판매추가예약</th>
+              <th colspan="4" style="text-align:center;border-bottom:2px solid #81c784;color:#fff;background:#1e2240;border-left:2px solid #555">시스템판매예약</th>
               <th rowspan="2" style="color:#eee;border-left:3px solid #888">판매총수량</th>
               <th rowspan="2" style="color:#eee">매칭율</th>
             </tr>
@@ -173,7 +174,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
           <thead>
             <!-- 루비(silver): 1~16단계 / 17단계 -->
             <tr style="background:#1a2a1a">
-              <th style="width:70px;color:#a8a9ad;font-size:13px;font-weight:700;white-space:nowrap">루비</th>
+              <th style="width:70px;color:#a8a9ad;font-size:13px;font-weight:700;white-space:nowrap"></th>
               <th style="color:#eee">구매예약</th><th style="color:#eee">추가예약</th><th style="background:#1a2a3a;color:#fff">구매총예약수량</th>
               <th style="color:#eee;border-left:2px solid #555">1~16단계</th><th style="color:#eee">17단계</th><th style="color:#eee">분할</th>
               <th style="color:#eee;border-left:2px solid #555">1~16단계</th><th style="color:#eee">17단계</th><th style="color:#eee">분할</th><th style="color:#eee">신규발행</th>
@@ -187,7 +188,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
           <thead>
             <!-- 다이아(gold): 1~14단계 / 15단계 -->
             <tr style="background:#2a1a1a">
-              <th style="width:70px;color:#ffd700;font-size:13px;font-weight:700;white-space:nowrap">다이아</th>
+              <th style="width:70px;color:#ffd700;font-size:13px;font-weight:700;white-space:nowrap"></th>
               <th style="color:#eee">구매예약</th><th style="color:#eee">추가예약</th><th style="background:#1a2a3a;color:#fff">구매총예약수량</th>
               <th style="color:#eee;border-left:2px solid #555">1~14단계</th><th style="color:#eee">15단계</th><th style="color:#eee">분할</th>
               <th style="color:#eee;border-left:2px solid #555">1~14단계</th><th style="color:#eee">15단계</th><th style="color:#eee">분할</th><th style="color:#eee">신규발행</th>
@@ -224,7 +225,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
           <!-- 루비 -->
           <thead>
             <tr style="background:#1a2a1a">
-              <th style="color:#a8a9ad;font-weight:700;white-space:nowrap">루비</th>
+              <th style="color:#a8a9ad;font-weight:700;white-space:nowrap"></th>
               <th style="color:#eee">1~8단계</th>
               <th style="color:#eee">9~15단계</th>
               <th style="color:#eee">16단계</th>
@@ -240,7 +241,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
           <!-- 다이아 -->
           <thead>
             <tr style="background:#2a1a1a">
-              <th style="color:#ffd700;font-weight:700;white-space:nowrap">다이아</th>
+              <th style="color:#ffd700;font-weight:700;white-space:nowrap"></th>
               <th style="color:#eee">1~7단계</th>
               <th style="color:#eee">8~13단계</th>
               <th style="color:#eee">14단계</th>
@@ -436,6 +437,52 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 
 
 
+
+<div id="page-system-items" class="page">
+  <h2 class="page-title">시스템 아이템 현황</h2>
+  <p class="page-subtitle">루페이 계정이 보유한 아이템 내역</p>
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <button onclick="loadSystemItems()" style="padding:6px 14px;background:#1976d2;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🔄 새로고침</button>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <select id="si-filter-type" onchange="renderSystemItems()" style="padding:5px 10px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:12px">
+        <option value="">전체 종류</option>
+        <option value="bronze">수정</option>
+        <option value="silver">루비</option>
+        <option value="gold">다이아</option>
+      </select>
+      <select id="si-filter-status" onchange="renderSystemItems()" style="padding:5px 10px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:12px">
+        <option value="">전체 상태</option>
+        <option value="reservable">판매가능</option>
+        <option value="waiting">대기중</option>
+        <option value="matched">매칭완료</option>
+        <option value="sold">판매완료</option>
+      </select>
+    </div>
+  </div>
+  <!-- 요약 카드 -->
+  <div id="si-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px"></div>
+  <!-- 아이템 목록 테이블 -->
+  <div class="table-card">
+    <div class="table-wrap" style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#1a1a2e;color:#a0a0c0">
+            <th style="padding:8px;text-align:left">ID</th>
+            <th style="padding:8px;text-align:center">종류</th>
+            <th style="padding:8px;text-align:center">단계</th>
+            <th style="padding:8px;text-align:center">상태</th>
+            <th style="padding:8px;text-align:left">구매일</th>
+            <th style="padding:8px;text-align:left">예약일</th>
+          </tr>
+        </thead>
+        <tbody id="si-tbody">
+          <tr><td colspan="6" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div id="si-total" style="font-size:12px;color:#888;margin-top:8px;text-align:right"></div>
+</div>
 
 <div id="page-matches" class="page">
   <h2 class="page-title">매칭 기록</h2>
@@ -887,6 +934,68 @@ async function deleteAllUsers(){
   }catch(e){ toast(e.message,'error'); }
 }
 
+// ── 시스템아이템현황 ────────────────────────────────
+var _systemItems = [];
+async function loadSystemItems(){
+  var tbody = document.getElementById('si-tbody');
+  var summary = document.getElementById('si-summary');
+  if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
+  try{
+    var d = await apiAdmin('/admin/loopay-items');
+    _systemItems = d.items || [];
+    var types = {bronze:{name:'수정',color:'#cd7f32'}, silver:{name:'루비',color:'#a8a9ad'}, gold:{name:'다이아',color:'#ffd700'}};
+    if(summary){
+      summary.innerHTML = Object.keys(types).map(function(t){
+        var all = _systemItems.filter(function(i){return i.bar_type===t;});
+        var reservable = all.filter(function(i){return i.status==='reservable';}).length;
+        var matched = all.filter(function(i){return i.status==='matched';}).length;
+        var sold = all.filter(function(i){return i.status==='sold';}).length;
+        return '<div style="background:#1a1d2e;border:1px solid #2a2d40;border-radius:8px;padding:12px">'
+          +'<div style="font-size:13px;font-weight:700;color:'+types[t].color+';margin-bottom:8px">'+types[t].name+' ('+all.length+'개)</div>'
+          +'<div style="font-size:11px;color:#aaa">판매가능: <span style="color:#66bb6a;font-weight:600">'+reservable+'</span></div>'
+          +'<div style="font-size:11px;color:#aaa">매칭완료: <span style="color:#f9a825;font-weight:600">'+matched+'</span></div>'
+          +'<div style="font-size:11px;color:#aaa">판매완료: <span style="color:#888;font-weight:600">'+sold+'</span></div>'
+          +'</div>';
+      }).join('');
+    }
+    renderSystemItems();
+  }catch(e){
+    if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="color:#ef5350;text-align:center;padding:16px">오류: '+e.message+'</td></tr>';
+  }
+}
+function renderSystemItems(){
+  var tbody = document.getElementById('si-tbody');
+  var totalEl = document.getElementById('si-total');
+  if(!tbody) return;
+  var typeFilter = (document.getElementById('si-filter-type')||{}).value || '';
+  var statusFilter = (document.getElementById('si-filter-status')||{}).value || '';
+  var filtered = _systemItems.filter(function(i){
+    if(typeFilter && i.bar_type !== typeFilter) return false;
+    if(statusFilter && i.status !== statusFilter) return false;
+    return true;
+  });
+  if(totalEl) totalEl.textContent = '총 '+filtered.length+'개 (전체 '+_systemItems.length+'개)';
+  if(!filtered.length){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888">아이템 없음</td></tr>';
+    return;
+  }
+  var tC={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+  var tN={bronze:'수정',silver:'루비',gold:'다이아'};
+  var sL={reservable:'판매가능',waiting:'대기중',matched:'매칭완료',sold:'판매완료',active:'보유중'};
+  var sC={reservable:'#66bb6a',waiting:'#f9a825',matched:'#1976d2',sold:'#888',active:'#aaa'};
+  tbody.innerHTML = filtered.map(function(item,i){
+    var bg = i%2===0?'#12121f':'#1a1a2e';
+    return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
+      +'<td style="padding:6px 8px;color:#555">'+item.id+'</td>'
+      +'<td style="padding:6px 8px;text-align:center;color:'+(tC[item.bar_type]||'#fff')+'"><strong>'+(tN[item.bar_type]||item.bar_type)+'</strong></td>'
+      +'<td style="padding:6px 8px;text-align:center">'+(item.stage||'-')+'단계</td>'
+      +'<td style="padding:6px 8px;text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(sC[item.status]||'#555')+'33;color:'+(sC[item.status]||'#aaa')+'">'+(sL[item.status]||item.status)+'</span></td>'
+      +'<td style="padding:6px 8px;color:#888;font-size:11px">'+(item.purchase_date||'-')+'</td>'
+      +'<td style="padding:6px 8px;color:#888;font-size:11px">'+(item.reserve_date||'-')+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
 // ── 매치 기록 ────────────────────────────────────────
 var _matchRecords = [];
 async function loadMatchRecords(){
@@ -959,7 +1068,7 @@ async function deleteAllMatches(){
 }
 
 function switchRound(num,el){document.querySelectorAll('#page-matching .btn').forEach(function(b){if(b.id&&b.id.startsWith('round-tab-')){b.classList.remove('btn-primary');b.classList.add('btn-secondary');}});el.classList.remove('btn-secondary');el.classList.add('btn-primary');document.getElementById('round-panel-1').style.display=num===1?'block':'none';document.getElementById('round-panel-2').style.display=num===2?'block':'none';}
-async function loadMatchingStatus(){try{const d=await apiAdmin('/admin/matching-status');const sub=document.getElementById('matching-date-sub');if(sub)sub.innerHTML=(d.date||'')+' &#47588;&#52845; &#54788;&#54889; &#48143; &#49892;&#54665;';function renderRound(r,prefix){document.getElementById(prefix+'-buy').textContent=(r.buy_count||0).toLocaleString();document.getElementById(prefix+'-sell').textContent=(r.sell_count||0).toLocaleString();document.getElementById(prefix+'-rate').textContent=(r.match_rate||0)+'%';const typeEl=document.getElementById(prefix+'-by-type');const tMt={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};const cM={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};if(r.by_type&&r.by_type.length){let rows='';r.by_type.forEach(function(t){rows+='<tr><td><strong style="color:'+(cM[t.bar_type]||'#fff')+'">'+(tMt[t.bar_type]||t.bar_type)+'</strong></td><td style="font-weight:700;color:#66bb6a">'+t.count+'</td><td style="color:#546e7a">'+(r.sell_count>0?Math.round(t.count/r.sell_count*100):0)+'%</td></tr>';});typeEl.innerHTML='<table><thead><tr><th>&#50500;&#51060;&#53596;</th><th>&#54032;&#47588;&#50696;&#50557;</th><th>&#48708;&#50984;</th></tr></thead><tbody>'+rows+'</tbody></table>';}else{typeEl.innerHTML='<div class="empty-state"><div>&#54032;&#47588; &#50696;&#50557; &#50630;&#51020;</div></div>';}const stEl=document.getElementById(prefix+'-by-stage');if(r.by_stage&&r.by_stage.length){const tMs={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};let rows='';r.by_stage.forEach(function(s){rows+='<tr><td><span style="color:'+(cM[s.bar_type]||'#fff')+';font-weight:600">'+(tMs[s.bar_type]||s.bar_type)+'</span></td><td style="text-align:center"><strong>'+s.stage+'&#45800;&#44228;</strong></td><td style="text-align:center;font-weight:700;color:#66bb6a">'+s.count+'&#44060;</td></tr>';});stEl.innerHTML='<table><thead><tr><th>&#51333;&#47448;</th><th>&#45800;&#44228;</th><th>&#49688;&#47049;</th></tr></thead><tbody>'+rows+'</tbody></table>';}else{stEl.innerHTML='<div class="empty-state"><div>&#45800;&#44228;&#48324; &#45936;&#51060;&#53552; &#50630;&#51020;</div></div>';}}renderRound(d.round1,'r1');renderRound(d.round2,'r2');}catch(e){toast('&#47588;&#52845; &#47196;&#46300; &#49892;&#54036;: '+e.message,'error');}}
+async function loadMatchingStatus(){try{const d=await apiAdmin('/admin/matching-status');const sub=document.getElementById('matching-date-sub');if(sub)sub.innerHTML=(d.date||'')+' &#47588;&#52845; &#54788;&#54889; &#48143; &#49892;&#54665;';function renderRound(r,prefix){document.getElementById(prefix+'-buy').textContent=(r.buy_count||0).toLocaleString();document.getElementById(prefix+'-sell').textContent=(r.sell_count||0).toLocaleString();document.getElementById(prefix+'-rate').textContent=(r.match_rate||0)+'%';const typeEl=document.getElementById(prefix+'-by-type'); if(!typeEl) return;const tMt={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};const cM={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};if(r.by_type&&r.by_type.length){let rows='';r.by_type.forEach(function(t){rows+='<tr><td><strong style="color:'+(cM[t.bar_type]||'#fff')+'">'+(tMt[t.bar_type]||t.bar_type)+'</strong></td><td style="font-weight:700;color:#66bb6a">'+t.count+'</td><td style="color:#546e7a">'+(r.sell_count>0?Math.round(t.count/r.sell_count*100):0)+'%</td></tr>';});typeEl.innerHTML='<table><thead><tr><th>종류</th><th>판매예약</th><th>비율</th></tr></thead><tbody>'+rows+'</tbody></table>';}else{typeEl.innerHTML='<div class="empty-state"><div>&#54032;&#47588; &#50696;&#50557; &#50630;&#51020;</div></div>';}const stEl=document.getElementById(prefix+'-by-stage'); if(!stEl) return;if(r.by_stage&&r.by_stage.length){const tMs={bronze:'&#49688;&#51221;',silver:'&#47336;&#48708;',gold:'&#45796;&#51060;&#50500;'};let rows='';r.by_stage.forEach(function(s){rows+='<tr><td><span style="color:'+(cM[s.bar_type]||'#fff')+';font-weight:600">'+(tMs[s.bar_type]||s.bar_type)+'</span></td><td style="text-align:center"><strong>'+s.stage+'&#45800;&#44228;</strong></td><td style="text-align:center;font-weight:700;color:#66bb6a">'+s.count+'&#44060;</td></tr>';});stEl.innerHTML='<table><thead><tr><th>&#51333;&#47448;</th><th>&#45800;&#44228;</th><th>&#49688;&#47049;</th></tr></thead><tbody>'+rows+'</tbody></table>';}else{stEl.innerHTML='<div class="empty-state"><div>&#45800;&#44228;&#48324; &#45936;&#51060;&#53552; &#50630;&#51020;</div></div>';}}renderRound(d.round1,'r1');renderRound(d.round2,'r2');}catch(e){toast('&#47588;&#52845; &#47196;&#46300; &#49892;&#54036;: '+e.message,'error');}}
 async function runMatching(roundNum){
   roundNum = roundNum||1;
   var btn = document.getElementById('btn-run-matching-'+roundNum);
@@ -1393,8 +1502,14 @@ function updateSettingsUI(mode){
 }
 
 async function saveSettings(){
-  var btn = event?.target || document.querySelector('[onclick="saveSettings()"]');
+  var btn = (typeof event!=='undefined' && event && event.target && event.target.tagName==='BUTTON') ? event.target : document.querySelector('[onclick="saveSettings()"]');
   var origText = btn ? btn.textContent : '';
+  // 라디오 버튼에서 현재 선택값 직접 읽기
+  var radioAuto = document.getElementById('radio-auto');
+  var radioManual = document.getElementById('radio-manual');
+  if(radioAuto && radioManual) {
+    _currentApproveMode = radioAuto.checked ? 'auto' : 'manual';
+  }
   try{
     if(btn){ btn.textContent = '저장 중...'; btn.disabled = true; }
     const isAuto = (_currentApproveMode === 'auto');
