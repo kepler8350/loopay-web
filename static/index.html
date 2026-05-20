@@ -1403,7 +1403,7 @@ function renderMatchBuyList(items){
     el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">매칭된 구매 없음</div>';
     return;
   }
-  // 서버 mock 시간 기준
+  // 서버 mock 시간 기준 (v2)
   var h = getEffectiveDate ? getEffectiveDate().getHours() : new Date().getHours();
   var canSend = (h>=5 && h<13); // 1차 매칭 입금: 05:00~13:00
   el.innerHTML = items.map(function(m){
