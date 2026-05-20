@@ -822,7 +822,7 @@ function loadReservationStatus(){
         var tbl=document.getElementById('res-summary-tbody-'+bt);
         if(tbl){
           tbl.innerHTML='<tr>'
-            +'<td><strong style="color:'+colors[bt]+'">'+names[bt]+'</strong></td>'
+            +'<td></td>'
             +'<td class="num">'+(s.user_buy||0)+'</td>'
             +'<td class="num">'+(s.extra_buy||0)+'</td>'
             +'<td class="num bold">'+(s.buy_count||0)+'</td>'
@@ -841,7 +841,7 @@ function loadReservationStatus(){
         var tblP=document.getElementById('res-price-tbody-'+bt);
         if(tblP){
           tblP.innerHTML='<tr>'
-            +'<td><strong style="color:'+colors[bt]+'">'+names[bt]+'</strong></td>'
+            +'<td></td>'
             +'<td class="num">'+(pb.band1||0)+'</td>'
             +'<td class="num">'+(pb.band2||0)+'</td>'
             +'<td class="num">'+(pb.band3||0)+'</td>'
