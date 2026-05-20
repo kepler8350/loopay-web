@@ -353,7 +353,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div class="table-card" style="margin-top:8px">
   <div style="padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
     <button id="btn-run-matching-1" class="btn btn-success" style="padding:8px 20px;font-size:13px;font-weight:600" onclick="runMatching(1)">⚡ 1차 매칭 실행하기</button>
-    <button class="btn btn-secondary" style="padding:8px 16px;font-size:13px" onclick="runLuckyMatching('bronze')">🍀 행운 매칭</button>
+    
     <span id="matching-time-notice" style="font-size:12px;color:#888"></span>
     <div id="match-result-1" style="width:100%;margin-top:4px;font-size:13px"></div>
   </div>
@@ -443,8 +443,10 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div id="page-system-items" class="page">
   <h2 class="page-title">시스템 아이템 현황</h2>
   <p class="page-subtitle">루페이 계정이 보유한 아이템 내역</p>
-  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
     <button onclick="loadSystemItems()" style="padding:6px 14px;background:#1976d2;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🔄 새로고침</button>
+    <button onclick="deleteSelectedItems()" id="si-delete-btn" style="padding:6px 14px;background:#c62828;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;display:none">🗑️ 선택삭제</button>
+    <button onclick="deleteAllItems()" style="padding:6px 14px;background:#424242;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🗑️ 전체삭제</button>
     <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
       <select id="si-filter-type" onchange="renderSystemItems()" style="padding:5px 10px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:12px">
         <option value="">전체 종류</option>
@@ -469,6 +471,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
           <tr style="background:#1a1a2e;color:#a0a0c0">
+            <th style="padding:8px;text-align:center;width:40px"><input type="checkbox" id="si-check-all" onchange="toggleAllItems(this)" style="cursor:pointer"></th>
             <th style="padding:8px;text-align:left">ID</th>
             <th style="padding:8px;text-align:center">종류</th>
             <th style="padding:8px;text-align:center">단계</th>
@@ -589,14 +592,8 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 
 <div id="page-testtools" class="page">
       <h2 class="page-title">테스트 도구</h2>
-      <div class="card" style="margin-bottom:16px">
-        <strong style="display:block;margin-bottom:12px">즉시승인 회원가입</strong>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-          <input id="auto-reg-username" class="input" placeholder="아이디 (6~16자)">
-          <input id="auto-reg-name" class="input" placeholder="이름">
-          <input id="auto-reg-password" class="input" type="password" placeholder="비밀번호">
-        </div>
-        <button class="btn btn-primary" onclick="registerWithAutoApprove()">즉시승인으로 회원가입</button>
+      
+        
       </div>
   <div class="page-header">
     <h2 class="page-title">⚙️ 테스트 도구</h2>
@@ -822,7 +819,7 @@ function loadReservationStatus(){
         var tbl=document.getElementById('res-summary-tbody-'+bt);
         if(tbl){
           tbl.innerHTML='<tr>'
-            +'<td></td>'
+            +'<td style="color:'+colors[bt]+';font-weight:700;font-size:13px">'+names[bt]+'</td>'
             +'<td class="num">'+(s.user_buy||0)+'</td>'
             +'<td class="num">'+(s.extra_buy||0)+'</td>'
             +'<td class="num bold">'+(s.buy_count||0)+'</td>'
@@ -841,7 +838,7 @@ function loadReservationStatus(){
         var tblP=document.getElementById('res-price-tbody-'+bt);
         if(tblP){
           tblP.innerHTML='<tr>'
-            +'<td></td>'
+            +'<td style="color:'+colors[bt]+';font-weight:700;font-size:13px">'+names[bt]+'</td>'
             +'<td class="num">'+(pb.band1||0)+'</td>'
             +'<td class="num">'+(pb.band2||0)+'</td>'
             +'<td class="num">'+(pb.band3||0)+'</td>'
@@ -937,6 +934,50 @@ async function deleteAllUsers(){
 }
 
 // ── 시스템아이템현황 ────────────────────────────────
+function updateDeleteBtn(){
+  var checked = document.querySelectorAll('.si-item-check:checked');
+  var btn = document.getElementById('si-delete-btn');
+  if(btn) btn.style.display = checked.length > 0 ? 'inline-block' : 'none';
+  if(btn && checked.length > 0) btn.textContent = '🗑️ 선택삭제 ('+checked.length+'개)';
+  var allCheck = document.getElementById('si-check-all');
+  if(allCheck){
+    var all = document.querySelectorAll('.si-item-check');
+    allCheck.checked = all.length > 0 && checked.length === all.length;
+    allCheck.indeterminate = checked.length > 0 && checked.length < all.length;
+  }
+}
+function toggleAllItems(cb){
+  document.querySelectorAll('.si-item-check').forEach(function(el){ el.checked = cb.checked; });
+  updateDeleteBtn();
+}
+async function deleteSelectedItems(){
+  var checked = document.querySelectorAll('.si-item-check:checked');
+  if(!checked.length){ alert('선택된 아이템이 없습니다.'); return; }
+  if(!confirm(checked.length+'개 아이템을 삭제하시겠습니까?')) return;
+  var ids = Array.from(checked).map(function(el){ return parseInt(el.getAttribute('data-id')); });
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var r = await fetch('/api/admin/delete-loopay-items', {method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body: JSON.stringify({item_ids: ids})});
+    var d = await r.json();
+    if(d.success){ toast('✅ '+ids.length+'개 아이템 삭제 완료', 'success'); loadSystemItems(); }
+    else{ toast('오류: '+(d.error||'삭제 실패'), 'error'); }
+  }catch(e){ toast('오류: '+e.message, 'error'); }
+}
+async function deleteAllItems(){
+  if(!confirm('loopay 계정의 모든 아이템을 삭제하시겠습니까? (되돌릴 수 없습니다)')) return;
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var r = await fetch('/api/admin/delete-loopay-items', {method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body: JSON.stringify({item_ids: 'all'})});
+    var d = await r.json();
+    if(d.success){ toast('✅ 전체 아이템 삭제 완료', 'success'); loadSystemItems(); }
+    else{ toast('오류: '+(d.error||'삭제 실패'), 'error'); }
+  }catch(e){ toast('오류: '+e.message, 'error'); }
+}
+
 var _systemItems = [];
 async function loadSystemItems(){
   var tbody = document.getElementById('si-tbody');
@@ -988,6 +1029,7 @@ function renderSystemItems(){
   tbody.innerHTML = filtered.map(function(item,i){
     var bg = i%2===0?'#12121f':'#1a1a2e';
     return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
+      +'<td style="padding:6px 8px;text-align:center"><input type=\"checkbox\" class=\"si-item-check\" data-id=\"'+item.id+'\" onchange=\"updateDeleteBtn()\" style=\"cursor:pointer\"></td>'
       +'<td style="padding:6px 8px;color:#555">'+item.id+'</td>'
       +'<td style="padding:6px 8px;text-align:center;color:'+(tC[item.bar_type]||'#fff')+'"><strong>'+(tN[item.bar_type]||item.bar_type)+'</strong></td>'
       +'<td style="padding:6px 8px;text-align:center">'+(item.stage||'-')+'단계</td>'
@@ -1549,25 +1591,6 @@ async function saveSettings(){
 async function loadTesttools(){
   // 테스트도구 페이지는 별도 로드 불필요
 }
-
-async function registerWithAutoApprove(){
-  var username = document.getElementById('auto-reg-username')?.value?.trim();
-  var password = document.getElementById('auto-reg-password')?.value?.trim();
-  var realName = document.getElementById('auto-reg-name')?.value?.trim();
-  if(!username||!password||!realName){toast('모든 필드를 입력하세요','error');return;}
-  try{
-    var d = await apiAdmin('/auth/register', {method:'POST', body:JSON.stringify({
-      username, password, real_name:realName,
-      phone:'', bank:'', account_no:'', account_name:realName,
-      auto_approve:true
-    })});
-    toast(d.message||'즉시승인 완료');
-    loadPage('users');
-  }catch(e){toast(e.message,'error');}
-}
-
-
-
 
 
 async function sendAdminNotif(){

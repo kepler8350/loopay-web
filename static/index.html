@@ -1968,7 +1968,7 @@ async function loadNotifications(){
       <button class="nav-btn" onclick="showTab('combine',this)">결합판매</button>
         <button class="nav-btn" onclick="showTab('profile',this);loadProfileForm()">내정보</button>
         <button class="nav-btn" onclick="showTab('history',this)">거래내역</button>
-<button class="nav-btn" id="nav-notif-btn" onclick="showTab('notif',this)" style="position:relative">🔔<span id="notif-badge" style="display:none;position:absolute;top:2px;right:2px;background:#e53935;color:#fff;font-size:9px;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px"></span></button>
+<button class="nav-btn" id="nav-notif-btn" onclick="showTab('notif',this);loadNotifications()" style="position:relative">🔔 알림<span id="notif-badge" style="display:none;position:absolute;top:2px;right:2px;background:#e53935;color:#fff;font-size:9px;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px"></span></button>
     </div>
 
     <div class="tab-content">

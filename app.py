@@ -1740,6 +1740,45 @@ def admin_loopay_items():
     finally:
         db.close()
 
+# ── 시스템(loopay) 아이템 삭제 ──────────────────────
+@app.route('/api/admin/delete-loopay-items', methods=['POST'])
+@jwt_required()
+def admin_delete_loopay_items():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    item_ids = data.get('item_ids', [])
+    db = get_db()
+    try:
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay: return jsonify(error='loopay 계정 없음'), 404
+        lid = loopay['id']
+        if item_ids == 'all':
+            result = db.execute("DELETE FROM items WHERE user_id=?", (lid,))
+            deleted = result.rowcount
+        else:
+            if not isinstance(item_ids, list) or not item_ids:
+                return jsonify(error='item_ids 필요'), 400
+            placeholders = ','.join('?' * len(item_ids))
+            result = db.execute(
+                f"DELETE FROM items WHERE user_id=? AND id IN ({placeholders})",
+                [lid] + [int(i) for i in item_ids]
+            )
+            deleted = result.rowcount
+            # 해당 아이템의 예약도 정리
+            if item_ids != 'all':
+                db.execute(
+                    f"UPDATE reservations SET item_id=NULL WHERE user_id=? AND item_id IN ({placeholders}) AND status='pending'",
+                    [lid] + [int(i) for i in item_ids]
+                )
+        db.commit()
+        return jsonify(success=True, deleted=deleted)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)
