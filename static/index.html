@@ -1537,7 +1537,6 @@ function closePaymentModal(){
   if(m) m.style.display='none';
 }
 
-async 
 async function submitPayment(){
   if(!window._payMatchId){ closePaymentModal(); return; }
   var btn = document.querySelector('#payment-modal button:last-child');
