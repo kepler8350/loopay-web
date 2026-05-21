@@ -1264,6 +1264,72 @@ async function loadReservationStatus(){
 }
 
 
+async function loadMatchingStatus(){
+  var names={bronze:'수정',silver:'루비',gold:'다이아'};
+  var colors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+  try{
+    var tok=localStorage.getItem('admin_token');
+    var d=await fetch('/api/admin/matching-status',{headers:{'Authorization':'Bearer '+tok}}).then(function(r){return r.json();});
+    // 날짜 표시
+    var sub=document.getElementById('matching-date-sub');
+    if(sub) sub.innerHTML=(d.date||'')+'  매칭 현황 및 실행';
+
+    // ── 1차 매칭 ──
+    var r1=d.round1||{};
+    var set=function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v!=null?v:'-'; };
+    set('r1-buy', r1.buy_count!=null ? r1.buy_count : '-');
+    set('r1-sell', r1.sell_count!=null ? r1.sell_count : '-');
+    set('r1-rate', r1.match_rate!=null ? r1.match_rate+'%' : '-');
+
+    // 1차 아이템별/단계별 (있을 경우)
+    var byType1=document.getElementById('r1-by-type');
+    if(byType1 && r1.by_type && r1.by_type.length){
+      byType1.innerHTML='<table style="width:100%;font-size:12px;border-collapse:collapse">'
+        +'<thead><tr style="background:#1a1d2e"><th style="padding:6px 8px;text-align:left">아이템</th><th style="padding:6px 8px;text-align:center">판매예약</th></tr></thead>'
+        +'<tbody>'+r1.by_type.map(function(row){
+          return '<tr style="border-bottom:1px solid #2a2a40"><td style="padding:6px 8px;color:'+(colors[row.bar_type]||'#fff')+';font-weight:700">'+(names[row.bar_type]||row.bar_type)+'</td>'
+            +'<td style="padding:6px 8px;text-align:center">'+row.count+'</td></tr>';
+        }).join('')+'</tbody></table>';
+    }
+    var byStage1=document.getElementById('r1-by-stage');
+    if(byStage1 && r1.by_stage && r1.by_stage.length){
+      byStage1.innerHTML='<table style="width:100%;font-size:12px;border-collapse:collapse">'
+        +'<thead><tr style="background:#1a1d2e"><th style="padding:6px 8px;text-align:left">아이템</th><th style="padding:6px 8px;text-align:center">단계</th><th style="padding:6px 8px;text-align:center">판매예약</th></tr></thead>'
+        +'<tbody>'+r1.by_stage.map(function(row){
+          return '<tr style="border-bottom:1px solid #2a2a40"><td style="padding:6px 8px;color:'+(colors[row.bar_type]||'#fff')+';font-weight:700">'+(names[row.bar_type]||row.bar_type)+'</td>'
+            +'<td style="padding:6px 8px;text-align:center">'+row.stage+'단계</td>'
+            +'<td style="padding:6px 8px;text-align:center">'+row.count+'</td></tr>';
+        }).join('')+'</tbody></table>';
+    }
+
+    // ── 2차 매칭 ──
+    var r2=d.round2||{};
+    set('r2-buy', r2.buy_count!=null ? r2.buy_count : '-');
+    set('r2-sell', r2.sell_count!=null ? r2.sell_count : '-');
+    set('r2-rate', r2.match_rate!=null ? r2.match_rate+'%' : '-');
+
+    var byType2=document.getElementById('r2-by-type');
+    if(byType2 && r2.by_type && r2.by_type.length){
+      byType2.innerHTML='<table style="width:100%;font-size:12px;border-collapse:collapse">'
+        +'<thead><tr style="background:#1a1d2e"><th style="padding:6px 8px;text-align:left">아이템</th><th style="padding:6px 8px;text-align:center">판매예약</th></tr></thead>'
+        +'<tbody>'+r2.by_type.map(function(row){
+          return '<tr style="border-bottom:1px solid #2a2a40"><td style="padding:6px 8px;color:'+(colors[row.bar_type]||'#fff')+';font-weight:700">'+(names[row.bar_type]||row.bar_type)+'</td>'
+            +'<td style="padding:6px 8px;text-align:center">'+row.count+'</td></tr>';
+        }).join('')+'</tbody></table>';
+    }
+    var byStage2=document.getElementById('r2-by-stage');
+    if(byStage2 && r2.by_stage && r2.by_stage.length){
+      byStage2.innerHTML='<table style="width:100%;font-size:12px;border-collapse:collapse">'
+        +'<thead><tr style="background:#1a1d2e"><th style="padding:6px 8px;text-align:left">아이템</th><th style="padding:6px 8px;text-align:center">단계</th><th style="padding:6px 8px;text-align:center">판매예약</th></tr></thead>'
+        +'<tbody>'+r2.by_stage.map(function(row){
+          return '<tr style="border-bottom:1px solid #2a2a40"><td style="padding:6px 8px;color:'+(colors[row.bar_type]||'#fff')+';font-weight:700">'+(names[row.bar_type]||row.bar_type)+'</td>'
+            +'<td style="padding:6px 8px;text-align:center">'+row.stage+'단계</td>'
+            +'<td style="padding:6px 8px;text-align:center">'+row.count+'</td></tr>';
+        }).join('')+'</tbody></table>';
+    }
+  }catch(e){ console.error('loadMatchingStatus:',e); }
+}
+
 async function runMatching(roundNum){
   roundNum = roundNum||1;
   var btn = document.getElementById('btn-run-matching-'+roundNum);
