@@ -1298,10 +1298,15 @@ def admin_reservation_status():
                 (bar_type, loopay_id, today)
             ).fetchone()['cnt']
             # loopay 추가예약 (match_round=1)
-            extra_buy = conn.execute(
+            extra_buy_pending = conn.execute(
                 "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND user_id=? AND reserve_date=?",
                 (bar_type, loopay_id, today)
             ).fetchone()['cnt']
+            extra_buy_confirmed = conn.execute(
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND confirmed=1 AND user_id=? AND reserve_date=?",
+                (bar_type, loopay_id, today)
+            ).fetchone()['cnt']
+            extra_buy = extra_buy_pending + extra_buy_confirmed
             total_buy = user_buy + extra_buy
 
             # 판매예약 아이템별 가격 분류 (items 조인)
@@ -1332,6 +1337,12 @@ def admin_reservation_status():
                 "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending' AND r.user_id=?",
                 (bar_type, loopay_id)
             ).fetchall()
+            # 확정된 추가 판매예약도 포함
+            extra_sell_confirmed = conn.execute(
+                "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.match_round=2 AND r.confirmed=1 AND r.user_id=?",
+                (bar_type, loopay_id)
+            ).fetchall()
+            extra_sell_rows = extra_sell_rows + extra_sell_confirmed
             extra_sell_under32 = len(extra_sell_rows)  # 추가예약은 기본 32만원 미만으로 처리
             extra_sell_33up = 0
             extra_sell_split = 0
@@ -1377,7 +1388,7 @@ def admin_reservation_status():
                 'sell_under32': sell_under32,
                 'sell_33up': sell_33up,
                 'sell_split': sell_split,
-                'sell_count': sell_total,
+                'sell_count': total_sell,
                 'extra_sell_under32': extra_sell_under32,
                 'extra_sell_33up': extra_sell_33up,
                 'extra_sell_split': extra_sell_split,
