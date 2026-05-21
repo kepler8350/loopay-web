@@ -1874,22 +1874,23 @@ def admin_confirm_extra_reservations():
         lid = loopay['id']
         today = get_today().isoformat()
         ph = ','.join('?'*len(ids))
-        # 확정할 예약들 조회 (pending만)
+        # 확정할 예약들 조회 (confirmed=0인 것만)
         rows = conn.execute(
-            f"SELECT * FROM reservations WHERE id IN ({ph}) AND user_id=? AND status='pending'",
+            f"SELECT * FROM reservations WHERE id IN ({ph}) AND user_id=? AND confirmed=0",
             [int(i) for i in ids] + [lid]
         ).fetchall()
         if not rows:
-            return jsonify(error='확정 가능한 항목 없음 (이미 확정됐거나 pending 아님)'), 400
+            return jsonify(error='확정 가능한 항목 없음 (이미 확정됨)'), 400
         confirmed_ids = []
+        conn.execute("PRAGMA foreign_keys=OFF")
         for row in rows:
             r_id = row['id']
             bar_type = row['bar_type']
             match_round = row['match_round']
             stage = row['stage'] or 1
             item_id = row['item_id'] or 0
-            # 구매예약(match_round=1): 아이템 새로 생성해서 연결
             if match_round == 1:
+                # 구매예약: 아이템 새로 생성 후 confirmed=1
                 cur = conn.execute(
                     "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
                     (lid, bar_type, stage, today)
@@ -1900,15 +1901,17 @@ def admin_confirm_extra_reservations():
                     (new_item_id, r_id)
                 )
             else:
-                # 판매예약(match_round=2): 기존 아이템 상태 업데이트
+                # 판매예약: 기존 아이템 상태 업데이트 + confirmed=1
                 if item_id:
                     conn.execute("UPDATE items SET status='reservable' WHERE id=? AND user_id=?", (item_id, lid))
-                conn.execute("UPDATE reservations SET status='confirmed' WHERE id=?", (r_id,))
+                conn.execute("UPDATE reservations SET confirmed=1 WHERE id=?", (r_id,))
             confirmed_ids.append(r_id)
+        conn.execute("PRAGMA foreign_keys=ON")
         conn.commit()
         return jsonify(success=True, confirmed=len(confirmed_ids))
     except Exception as e:
         conn.rollback()
+        conn.execute("PRAGMA foreign_keys=ON")
         return jsonify(error=str(e)), 500
     finally:
         conn.close()
