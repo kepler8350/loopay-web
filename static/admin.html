@@ -1,4 +1,4 @@
-<!DOCTYPE html><!-- v1779291054 -->
+<!DOCTYPE html><!-- v1779368616 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -954,6 +954,10 @@ async function loadSystemItems(){
       }).join('');
     }
     renderSystemItems();
+    // 체크박스 상태 초기화
+    var allCb = document.getElementById('si-check-all');
+    if(allCb){ allCb.checked=false; allCb.indeterminate=false; }
+    updateDeleteBtn();
   }catch(e){
     if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="color:#ef5350;text-align:center;padding:16px">오류: '+e.message+'</td></tr>';
   }

@@ -1754,23 +1754,28 @@ def admin_delete_loopay_items():
         if not loopay: return jsonify(error='loopay 계정 없음'), 404
         lid = loopay['id']
         if item_ids == 'all':
+            # 연결된 예약 먼저 삭제 (FOREIGN KEY 제약 해제)
+            db.execute("PRAGMA foreign_keys=OFF")
+            db.execute("DELETE FROM reservations WHERE user_id=? AND item_id IN (SELECT id FROM items WHERE user_id=?)", (lid, lid))
             result = db.execute("DELETE FROM items WHERE user_id=?", (lid,))
             deleted = result.rowcount
+            db.execute("PRAGMA foreign_keys=ON")
         else:
             if not isinstance(item_ids, list) or not item_ids:
                 return jsonify(error='item_ids 필요'), 400
             placeholders = ','.join('?' * len(item_ids))
+            # 연결된 예약 먼저 삭제
+            db.execute("PRAGMA foreign_keys=OFF")
+            db.execute(
+                f"DELETE FROM reservations WHERE user_id=? AND item_id IN ({placeholders})",
+                [lid] + [int(i) for i in item_ids]
+            )
             result = db.execute(
                 f"DELETE FROM items WHERE user_id=? AND id IN ({placeholders})",
                 [lid] + [int(i) for i in item_ids]
             )
             deleted = result.rowcount
-            # 해당 아이템의 예약도 정리
-            if item_ids != 'all':
-                db.execute(
-                    f"UPDATE reservations SET item_id=NULL WHERE user_id=? AND item_id IN ({placeholders}) AND status='pending'",
-                    [lid] + [int(i) for i in item_ids]
-                )
+            db.execute("PRAGMA foreign_keys=ON")
         db.commit()
         return jsonify(success=True, deleted=deleted)
     except Exception as e:
