@@ -1779,6 +1779,65 @@ def admin_delete_loopay_items():
     finally:
         db.close()
 
+# ── 루페이 추가예약 내역 조회 ─────────────────────────────
+@app.route('/api/admin/loopay-extra-reservations', methods=['GET'])
+@jwt_required()
+def admin_loopay_extra_reservations():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    conn = get_db()
+    try:
+        loopay = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay: return jsonify(reservations=[])
+        lid = loopay['id']
+        rows = conn.execute("""
+            SELECT r.id, r.bar_type, r.status, r.reserve_date,
+                   r.match_round,
+                   CASE r.match_round WHEN 1 THEN 'buy' ELSE 'sell' END as type,
+                   COALESCE(i.stage, 0) as stage
+            FROM reservations r
+            LEFT JOIN items i ON r.item_id = i.id
+            WHERE r.user_id = ? AND r.status = 'pending'
+            ORDER BY r.id DESC
+        """, (lid,)).fetchall()
+        return jsonify(reservations=[dict(r) for r in rows])
+    finally:
+        conn.close()
+
+# ── 루페이 추가예약 선택 삭제 ─────────────────────────────
+@app.route('/api/admin/delete-extra-reservations', methods=['POST'])
+@jwt_required()
+def admin_delete_extra_reservations():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    ids = data.get('ids', [])
+    if not ids: return jsonify(error='ids 필요'), 400
+    conn = get_db()
+    try:
+        loopay = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay: return jsonify(error='loopay 계정 없음'), 404
+        lid = loopay['id']
+        ph = ','.join('?'*len(ids))
+        # 판매예약의 경우 연결된 아이템도 삭제
+        sell_rows = conn.execute(
+            f"SELECT item_id FROM reservations WHERE id IN ({ph}) AND user_id=? AND match_round=2 AND item_id>0",
+            [int(i) for i in ids] + [lid]
+        ).fetchall()
+        if sell_rows:
+            item_ids = [r['item_id'] for r in sell_rows]
+            conn.execute(f"DELETE FROM items WHERE id IN ({','.join('?'*len(item_ids))}) AND user_id=?",
+                        item_ids + [lid])
+        conn.execute(f"DELETE FROM reservations WHERE id IN ({ph}) AND user_id=?",
+                    [int(i) for i in ids] + [lid])
+        conn.commit()
+        return jsonify(success=True, deleted=len(ids))
+    except Exception as e:
+        conn.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        conn.close()
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)

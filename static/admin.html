@@ -332,6 +332,31 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
         <div id="add-res-result" style="margin-top:10px;font-size:13px;height:20px"></div>
       </div>
 
+      <!-- 추가예약 내역 -->
+      <div class="card" style="margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <strong>추가예약 내역 (루페이 계정)</strong>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button onclick="deleteSelectedExtraRes()" id="del-extra-btn" style="display:none;padding:4px 12px;background:#c62828;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🗑️ 선택삭제</button>
+            <button onclick="loadExtraReservations()" style="padding:4px 12px;background:#1976d2;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🔄 새로고침</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" style="font-size:12px">
+            <thead>
+              <tr style="background:#1a1d2e">
+                <th style="width:36px;text-align:center"><input type="checkbox" id="extra-check-all" onchange="toggleAllExtraRes(this)" style="cursor:pointer"></th>
+                <th>No</th><th>아이템</th><th>구분</th><th>단계</th><th>예약일</th><th>상태</th>
+              </tr>
+            </thead>
+            <tbody id="extra-res-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:12px;color:#888">로딩 중...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="extra-res-count" style="font-size:12px;color:#888;margin-top:8px;text-align:right"></div>
+      </div>
+
 
     </div>
 
@@ -662,7 +687,7 @@ async function doLogin(){
 
 
 function doAdminLogout(){adminToken=null;document.getElementById('admin-app').style.display='none';document.getElementById('login-screen').style.display='flex';}
-function showPage(name,el){var _mn=document.querySelector('.main');if(_mn){document.querySelectorAll('.page').forEach(function(pg){if(pg.parentElement!==_mn)_mn.appendChild(pg);});}var mainEl=document.querySelector('.main');if(mainEl){document.querySelectorAll('.page').forEach(function(pg){if(pg.parentElement!==mainEl)mainEl.appendChild(pg);});}document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));if(el)el.classList.add('active');const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');if(name==='dashboard')loadDashboard();else if(name==='users')loadUsers();else if(name==='members'){var pm=document.getElementById('page-members');var mn=document.querySelector('.main');if(pm&&mn&&pm.parentElement!==mn)mn.appendChild(pm);loadUsers();}else if(name==='approve'){var pa=document.getElementById('page-approve');var mn2=document.querySelector('.main');if(pa&&mn2&&pa.parentElement!==mn2)mn2.appendChild(pa);loadPendingUsers();}else if(name==='charges')loadCharges();else if(name==='matching'){loadMatchingStatus();updateMatchingBtn();}else if(name==='notifications'){var pn=document.getElementById('page-notifications');var mn=document.querySelector('.main');if(pn&&mn&&pn.parentElement!==mn)mn.appendChild(pn);}else if(name==='reservations'){loadReservationStatus();}else if(name==='testtools')loadTesttools();else if(name==='penalties')loadPenalties();else if(name==='settings')loadSettings();}
+function showPage(name,el){var _mn=document.querySelector('.main');if(_mn){document.querySelectorAll('.page').forEach(function(pg){if(pg.parentElement!==_mn)_mn.appendChild(pg);});}var mainEl=document.querySelector('.main');if(mainEl){document.querySelectorAll('.page').forEach(function(pg){if(pg.parentElement!==mainEl)mainEl.appendChild(pg);});}document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));if(el)el.classList.add('active');const pg=document.getElementById('page-'+name);if(pg)pg.classList.add('active');if(name==='dashboard')loadDashboard();else if(name==='users')loadUsers();else if(name==='members'){var pm=document.getElementById('page-members');var mn=document.querySelector('.main');if(pm&&mn&&pm.parentElement!==mn)mn.appendChild(pm);loadUsers();}else if(name==='approve'){var pa=document.getElementById('page-approve');var mn2=document.querySelector('.main');if(pa&&mn2&&pa.parentElement!==mn2)mn2.appendChild(pa);loadPendingUsers();}else if(name==='charges')loadCharges();else if(name==='matching'){loadMatchingStatus();updateMatchingBtn();}else if(name==='notifications'){var pn=document.getElementById('page-notifications');var mn=document.querySelector('.main');if(pn&&mn&&pn.parentElement!==mn)mn.appendChild(pn);}else if(name==='reservations'){loadReservationStatus();loadExtraReservations();}else if(name==='testtools')loadTesttools();else if(name==='penalties')loadPenalties();else if(name==='settings')loadSettings();}
 async function loadDashboard(){try{const s=await apiAdmin('/admin/stats');document.getElementById('s-users').textContent=s.total_users||0;document.getElementById('s-items').textContent=s.total_items||0;document.getElementById('s-charges').textContent=s.pending_charges||0;document.getElementById('s-reservations').textContent=s.today_reservations||0;const charges=await apiAdmin('/admin/charges');const pending=(charges.charges||[]).filter(c=>c.status==='pending').slice(0,5);const dc=document.getElementById('dash-charges');if(pending.length){dc.innerHTML='<table><thead><tr><th>&#45769;&#45348;&#51076;</th><th>&#44552;&#50529;</th><th>&#49345;&#53468;</th></tr></thead><tbody>'+pending.map(c=>'<tr><td>'+c.nickname+'</td><td>'+(c.points||0).toLocaleString()+'P<br><small style="color:#aaa">'+(c.amount||0).toLocaleString()+'원</small></td><td><span class="badge badge-warning">&#45824;&#44592;</span></td></tr>').join('')+'</tbody></table>';}else{dc.innerHTML='<div class="empty-state"><div>&#45824;&#44592; &#51473;&#51064; &#52649;&#51204; &#50630;&#51020;</div></div>';}const users=await apiAdmin('/admin/users');document.getElementById('dash-users').innerHTML=(users.users||[]).slice(0,5).map(u=>'<tr>'
   +'<td style="font-size:11px">'+(u.username||'-')+'</td>'
   +'<td style="font-size:11px">'+(u.real_name||u.nickname||'-')+'</td>'
@@ -1032,6 +1057,105 @@ async function deleteAllMatches(){
 }
 
 function switchRound(num,el){document.querySelectorAll('#page-matching .btn').forEach(function(b){if(b.id&&b.id.startsWith('round-tab-')){b.classList.remove('btn-primary');b.classList.add('btn-secondary');}});el.classList.remove('btn-secondary');el.classList.add('btn-primary');document.getElementById('round-panel-1').style.display=num===1?'block':'none';document.getElementById('round-panel-2').style.display=num===2?'block':'none';}
+// ── 추가예약 (루페이 계정) ────────────────────────────────
+async function addReservation(){
+  var barType = document.getElementById('add-res-type').value;
+  var kind = document.getElementById('add-res-kind').value;
+  var stage = parseInt(document.getElementById('add-res-stage').value) || 1;
+  var count = parseInt(document.getElementById('add-res-count').value) || 1;
+  var resultEl = document.getElementById('add-res-result');
+  if(resultEl) resultEl.textContent = '처리 중...';
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var r = await fetch('/api/admin/add-reservation',{method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body: JSON.stringify({bar_type:barType, type:kind, stage:stage, count:count})});
+    var d = await r.json();
+    if(d.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:#66bb6a">✅ '+count+'건 추가예약 완료</span>';
+      loadReservationStatus();
+      loadExtraReservations();
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:#ef5350">❌ '+(d.error||'실패')+'</span>';
+    }
+  }catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:#ef5350">❌ '+e.message+'</span>';
+  }
+}
+
+async function loadExtraReservations(){
+  var tbody = document.getElementById('extra-res-tbody');
+  var countEl = document.getElementById('extra-res-count');
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:12px;color:#888">로딩 중...</td></tr>';
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var d = await fetch('/api/admin/loopay-extra-reservations',{headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
+    var list = d.reservations || [];
+    if(!list.length){
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:12px;color:#888">추가예약 내역 없음</td></tr>';
+      if(countEl) countEl.textContent = '총 0건';
+      return;
+    }
+    var names={bronze:'수정',silver:'루비',gold:'다이아'};
+    var colors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+    tbody.innerHTML = list.map(function(item,i){
+      var bg = i%2===0?'#12121f':'#1a1a2e';
+      var kindLabel = item.type==='buy'?'<span style="color:#4fc3f7">구매</span>':'<span style="color:#81c784">판매</span>';
+      var statusLabel = item.status==='pending'?'<span style="color:#ffd700">대기</span>':'<span style="color:#888">'+item.status+'</span>';
+      return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
+        +'<td style="text-align:center"><input type="checkbox" class="extra-res-check" data-id="'+item.id+'" onchange="updateExtraDelBtn()" style="cursor:pointer"></td>'
+        +'<td style="padding:6px 8px;color:#888">'+(i+1)+'</td>'
+        +'<td style="padding:6px 8px;color:'+colors[item.bar_type]+';font-weight:700">'+(names[item.bar_type]||item.bar_type)+'</td>'
+        +'<td style="padding:6px 8px">'+kindLabel+'</td>'
+        +'<td style="padding:6px 8px;text-align:center">'+item.stage+'단계</td>'
+        +'<td style="padding:6px 8px;color:#888">'+item.reserve_date+'</td>'
+        +'<td style="padding:6px 8px">'+statusLabel+'</td>'
+        +'</tr>';
+    }).join('');
+    if(countEl) countEl.textContent = '총 '+list.length+'건';
+    // 전체선택 체크박스 리셋
+    var allCb = document.getElementById('extra-check-all');
+    if(allCb){ allCb.checked=false; allCb.indeterminate=false; }
+    updateExtraDelBtn();
+  }catch(e){
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:12px;color:#ef5350">오류: '+e.message+'</td></tr>';
+  }
+}
+
+function toggleAllExtraRes(cb){
+  document.querySelectorAll('.extra-res-check').forEach(function(el){ el.checked=cb.checked; });
+  updateExtraDelBtn();
+}
+
+function updateExtraDelBtn(){
+  var checked = document.querySelectorAll('.extra-res-check:checked');
+  var btn = document.getElementById('del-extra-btn');
+  if(btn){ btn.style.display=checked.length>0?'inline-block':'none'; btn.textContent='🗑️ 선택삭제 ('+checked.length+'건)'; }
+  var allCb = document.getElementById('extra-check-all');
+  if(allCb){
+    var all = document.querySelectorAll('.extra-res-check');
+    allCb.checked = all.length>0 && checked.length===all.length;
+    allCb.indeterminate = checked.length>0 && checked.length<all.length;
+  }
+}
+
+async function deleteSelectedExtraRes(){
+  var checked = document.querySelectorAll('.extra-res-check:checked');
+  if(!checked.length){ alert('선택된 항목이 없습니다.'); return; }
+  if(!confirm(checked.length+'건을 삭제하시겠습니까?')) return;
+  var ids = Array.from(checked).map(function(el){ return parseInt(el.getAttribute('data-id')); });
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var r = await fetch('/api/admin/delete-extra-reservations',{method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body: JSON.stringify({ids: ids})});
+    var d = await r.json();
+    if(d.success){ toast('✅ '+ids.length+'건 삭제 완료','success'); loadExtraReservations(); loadReservationStatus(); }
+    else{ toast('오류: '+(d.error||'삭제 실패'),'error'); }
+  }catch(e){ toast('오류: '+e.message,'error'); }
+}
+
 async function loadReservationStatus(){
   var colors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var names={bronze:'수정',silver:'루비',gold:'다이아'};
