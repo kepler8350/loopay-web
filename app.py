@@ -1440,8 +1440,8 @@ def admin_add_reservation():
                 )
                 item_id = cur.lastrowid
             conn.execute(
-                "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status) VALUES (?, ?, ?, ?, ?, 'pending')",
-                (loopay_id, item_id, bar_type, match_round, today)
+                "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
+                (loopay_id, item_id, bar_type, match_round, today, stage)
             )
         conn.execute("PRAGMA foreign_keys=ON")
         conn.commit()
@@ -1794,7 +1794,7 @@ def admin_loopay_extra_reservations():
             SELECT r.id, r.bar_type, r.status, r.reserve_date,
                    r.match_round,
                    CASE r.match_round WHEN 1 THEN 'buy' ELSE 'sell' END as type,
-                   COALESCE(i.stage, 0) as stage
+                   COALESCE(r.stage, COALESCE(i.stage, 0)) as stage
             FROM reservations r
             LEFT JOIN items i ON r.item_id = i.id
             WHERE r.user_id = ? AND r.status = 'pending'

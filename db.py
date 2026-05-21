@@ -104,6 +104,7 @@ def init_db():
         "ALTER TABLE matches ADD COLUMN seller_account_name TEXT",
         "ALTER TABLE matches ADD COLUMN seller_phone TEXT",
         "ALTER TABLE matches ADD COLUMN buyer_phone TEXT",
+        "ALTER TABLE reservations ADD COLUMN stage INTEGER DEFAULT 0",
     ]:
         try: c.execute(col_def)
         except: pass
