@@ -1110,7 +1110,7 @@ async function loadExtraReservations(){
     tbody.innerHTML = list.map(function(item,i){
       var bg = i%2===0?'#12121f':'#1a1a2e';
       var kindLabel = item.type==='buy'?'<span style="color:#4fc3f7">구매</span>':'<span style="color:#81c784">판매</span>';
-      var isConfirmed = item.status==='confirmed';
+      var isConfirmed = item.confirmed===1 || item.confirmed==='1';
       var statusLabel = isConfirmed
         ? '<span style="color:#66bb6a;font-weight:700">✅확정</span>'
         : (item.status==='pending'?'<span style="color:#ffd700">대기</span>':'<span style="color:#888">'+item.status+'</span>');

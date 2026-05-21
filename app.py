@@ -636,7 +636,7 @@ def admin_confirm_charge(charge_id):
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    cr = db.execute("SELECT * FROM charge_requests WHERE id=? AND status='pending'", (charge_id,)).fetchone()
+    cr = db.execute("SELECT * FROM charge_requests WHERE id=? AND confirmed=0", (charge_id,)).fetchone()
     if not cr: return jsonify(error='Not found'), 404
     db.execute("UPDATE charge_requests SET status='confirmed', confirmed_at=CURRENT_TIMESTAMP WHERE id=?", (charge_id,))
     db.execute("UPDATE users SET charge_points=charge_points+? WHERE id=?", (cr['points'], cr['user_id']))
@@ -685,7 +685,7 @@ def admin_run_matching():
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                LEFT JOIN items i ON r.item_id = i.id
-               WHERE r.reserve_date=? AND r.status='pending' AND r.match_round=2""",
+               WHERE r.reserve_date=? AND r.confirmed=0 AND r.match_round=2""",
             (today,)
         ).fetchall()
 
@@ -1793,11 +1793,12 @@ def admin_loopay_extra_reservations():
         rows = conn.execute("""
             SELECT r.id, r.bar_type, r.status, r.reserve_date,
                    r.match_round,
+                   COALESCE(r.confirmed,0) as confirmed,
                    CASE r.match_round WHEN 1 THEN 'buy' ELSE 'sell' END as type,
                    COALESCE(r.stage, COALESCE(i.stage, 0)) as stage
             FROM reservations r
             LEFT JOIN items i ON r.item_id = i.id
-            WHERE r.user_id = ? AND r.status IN ('pending','confirmed')
+            WHERE r.user_id = ? AND r.status = 'pending'
             ORDER BY r.id DESC
         """, (lid,)).fetchall()
         return jsonify(reservations=[dict(r) for r in rows])
@@ -1876,7 +1877,7 @@ def admin_confirm_extra_reservations():
                 )
                 new_item_id = cur.lastrowid
                 conn.execute(
-                    "UPDATE reservations SET status='confirmed', item_id=? WHERE id=?",
+                    "UPDATE reservations SET confirmed=1, item_id=? WHERE id=?",
                     (new_item_id, r_id)
                 )
             else:
