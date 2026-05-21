@@ -1825,6 +1825,7 @@ def admin_delete_extra_reservations():
         if not loopay: return jsonify(error='loopay 계정 없음'), 404
         lid = loopay['id']
         ph = ','.join('?'*len(ids))
+        conn.execute("PRAGMA foreign_keys=OFF")
         # 판매예약의 경우 연결된 아이템도 삭제
         sell_rows = conn.execute(
             f"SELECT item_id FROM reservations WHERE id IN ({ph}) AND user_id=? AND match_round=2 AND item_id>0",
@@ -1834,12 +1835,14 @@ def admin_delete_extra_reservations():
             item_ids = [r['item_id'] for r in sell_rows]
             conn.execute(f"DELETE FROM items WHERE id IN ({','.join('?'*len(item_ids))}) AND user_id=?",
                         item_ids + [lid])
-        conn.execute(f"DELETE FROM reservations WHERE id IN ({ph}) AND user_id=? AND status='pending'",
+        conn.execute(f"DELETE FROM reservations WHERE id IN ({ph}) AND user_id=? AND confirmed=0",
                     [int(i) for i in ids] + [lid])
+        conn.execute("PRAGMA foreign_keys=ON")
         conn.commit()
         return jsonify(success=True, deleted=len(ids))
     except Exception as e:
         conn.rollback()
+        conn.execute("PRAGMA foreign_keys=ON")
         return jsonify(error=str(e)), 500
     finally:
         conn.close()
