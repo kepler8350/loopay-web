@@ -1797,7 +1797,7 @@ def admin_loopay_extra_reservations():
                    COALESCE(r.stage, COALESCE(i.stage, 0)) as stage
             FROM reservations r
             LEFT JOIN items i ON r.item_id = i.id
-            WHERE r.user_id = ? AND r.status = 'pending'
+            WHERE r.user_id = ? AND r.status IN ('pending','confirmed')
             ORDER BY r.id DESC
         """, (lid,)).fetchall()
         return jsonify(reservations=[dict(r) for r in rows])
@@ -1828,10 +1828,65 @@ def admin_delete_extra_reservations():
             item_ids = [r['item_id'] for r in sell_rows]
             conn.execute(f"DELETE FROM items WHERE id IN ({','.join('?'*len(item_ids))}) AND user_id=?",
                         item_ids + [lid])
-        conn.execute(f"DELETE FROM reservations WHERE id IN ({ph}) AND user_id=?",
+        conn.execute(f"DELETE FROM reservations WHERE id IN ({ph}) AND user_id=? AND status='pending'",
                     [int(i) for i in ids] + [lid])
         conn.commit()
         return jsonify(success=True, deleted=len(ids))
+    except Exception as e:
+        conn.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        conn.close()
+
+# ── 루페이 추가예약 확정 ─────────────────────────────────
+@app.route('/api/admin/confirm-extra-reservations', methods=['POST'])
+@jwt_required()
+def admin_confirm_extra_reservations():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    ids = data.get('ids', [])
+    if not ids: return jsonify(error='ids 필요'), 400
+    conn = get_db()
+    try:
+        loopay = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay: return jsonify(error='loopay 계정 없음'), 404
+        lid = loopay['id']
+        today = get_today().isoformat()
+        ph = ','.join('?'*len(ids))
+        # 확정할 예약들 조회 (pending만)
+        rows = conn.execute(
+            f"SELECT * FROM reservations WHERE id IN ({ph}) AND user_id=? AND status='pending'",
+            [int(i) for i in ids] + [lid]
+        ).fetchall()
+        if not rows:
+            return jsonify(error='확정 가능한 항목 없음 (이미 확정됐거나 pending 아님)'), 400
+        confirmed_ids = []
+        for row in rows:
+            r_id = row['id']
+            bar_type = row['bar_type']
+            match_round = row['match_round']
+            stage = row['stage'] or 1
+            item_id = row['item_id'] or 0
+            # 구매예약(match_round=1): 아이템 새로 생성해서 연결
+            if match_round == 1:
+                cur = conn.execute(
+                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
+                    (lid, bar_type, stage, today)
+                )
+                new_item_id = cur.lastrowid
+                conn.execute(
+                    "UPDATE reservations SET status='confirmed', item_id=? WHERE id=?",
+                    (new_item_id, r_id)
+                )
+            else:
+                # 판매예약(match_round=2): 기존 아이템 상태 업데이트
+                if item_id:
+                    conn.execute("UPDATE items SET status='reservable' WHERE id=? AND user_id=?", (item_id, lid))
+                conn.execute("UPDATE reservations SET status='confirmed' WHERE id=?", (r_id,))
+            confirmed_ids.append(r_id)
+        conn.commit()
+        return jsonify(success=True, confirmed=len(confirmed_ids))
     except Exception as e:
         conn.rollback()
         return jsonify(error=str(e)), 500

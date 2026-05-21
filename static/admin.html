@@ -338,6 +338,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
           <strong>추가예약 내역 (루페이 계정)</strong>
           <div style="display:flex;gap:8px;align-items:center">
             <button onclick="deleteSelectedExtraRes()" id="del-extra-btn" style="display:none;padding:4px 12px;background:#c62828;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🗑️ 선택삭제</button>
+            <button onclick="confirmSelectedExtraRes()" id="confirm-extra-btn" style="display:none;padding:4px 12px;background:#2e7d32;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">✅ 선택확정</button>
             <button onclick="loadExtraReservations()" style="padding:4px 12px;background:#1976d2;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🔄 새로고침</button>
           </div>
         </div>
@@ -345,12 +346,18 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
           <table class="data-table" style="font-size:12px">
             <thead>
               <tr style="background:#1a1d2e">
-                <th style="width:36px;text-align:center"><input type="checkbox" id="extra-check-all" onchange="toggleAllExtraRes(this)" style="cursor:pointer"></th>
-                <th>No</th><th>아이템</th><th>구분</th><th>단계</th><th>예약일</th><th>상태</th>
+                <th style="width:36px;text-align:center;padding:6px 4px"><input type="checkbox" id="extra-check-all" onchange="toggleAllExtraRes(this)" style="cursor:pointer"></th>
+                <th style="padding:6px 8px">No</th>
+                <th style="padding:6px 8px">아이템</th>
+                <th style="padding:6px 8px">구분</th>
+                <th style="padding:6px 8px;text-align:center">단계</th>
+                <th style="padding:6px 8px">예약일</th>
+                <th style="padding:6px 8px;text-align:center">상태</th>
+                <th style="padding:6px 8px;text-align:center">확정</th>
               </tr>
             </thead>
             <tbody id="extra-res-tbody">
-              <tr><td colspan="7" style="text-align:center;padding:12px;color:#888">로딩 중...</td></tr>
+              <tr><td colspan="8" style="text-align:center;padding:12px;color:#888">로딩 중...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1087,14 +1094,15 @@ async function loadExtraReservations(){
   var tbody = document.getElementById('extra-res-tbody');
   var countEl = document.getElementById('extra-res-count');
   if(!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:12px;color:#888">로딩 중...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:12px;color:#888">로딩 중...</td></tr>';
   try{
     var tok = localStorage.getItem('admin_token');
     var d = await fetch('/api/admin/loopay-extra-reservations',{headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
     var list = d.reservations || [];
     if(!list.length){
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:12px;color:#888">추가예약 내역 없음</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:12px;color:#888">추가예약 내역 없음</td></tr>';
       if(countEl) countEl.textContent = '총 0건';
+      updateExtraDelBtn();
       return;
     }
     var names={bronze:'수정',silver:'루비',gold:'다이아'};
@@ -1102,26 +1110,38 @@ async function loadExtraReservations(){
     tbody.innerHTML = list.map(function(item,i){
       var bg = i%2===0?'#12121f':'#1a1a2e';
       var kindLabel = item.type==='buy'?'<span style="color:#4fc3f7">구매</span>':'<span style="color:#81c784">판매</span>';
-      var statusLabel = item.status==='pending'?'<span style="color:#ffd700">대기</span>':'<span style="color:#888">'+item.status+'</span>';
+      var isConfirmed = item.status==='confirmed';
+      var statusLabel = isConfirmed
+        ? '<span style="color:#66bb6a;font-weight:700">✅확정</span>'
+        : (item.status==='pending'?'<span style="color:#ffd700">대기</span>':'<span style="color:#888">'+item.status+'</span>');
+      // 체크박스: 확정된 항목은 비활성화
+      var checkbox = isConfirmed
+        ? '<input type="checkbox" disabled style="cursor:not-allowed;opacity:0.3">'
+        : '<input type="checkbox" class="extra-res-check" data-id="'+item.id+'" onchange="updateExtraDelBtn()" style="cursor:pointer">';
+      // 확정 버튼 (대기 상태만)
+      var confirmBtn = isConfirmed
+        ? '<span style="color:#66bb6a;font-size:11px">확정됨</span>'
+        : '<button onclick="confirmSingleExtraRes('+item.id+')" style="padding:2px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">확정</button>';
       return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
-        +'<td style="text-align:center"><input type="checkbox" class="extra-res-check" data-id="'+item.id+'" onchange="updateExtraDelBtn()" style="cursor:pointer"></td>'
+        +'<td style="padding:6px 4px;text-align:center">'+checkbox+'</td>'
         +'<td style="padding:6px 8px;color:#888">'+(i+1)+'</td>'
         +'<td style="padding:6px 8px;color:'+colors[item.bar_type]+';font-weight:700">'+(names[item.bar_type]||item.bar_type)+'</td>'
         +'<td style="padding:6px 8px">'+kindLabel+'</td>'
         +'<td style="padding:6px 8px;text-align:center">'+item.stage+'단계</td>'
         +'<td style="padding:6px 8px;color:#888">'+item.reserve_date+'</td>'
-        +'<td style="padding:6px 8px">'+statusLabel+'</td>'
+        +'<td style="padding:6px 8px;text-align:center">'+statusLabel+'</td>'
+        +'<td style="padding:6px 8px;text-align:center">'+confirmBtn+'</td>'
         +'</tr>';
     }).join('');
-    if(countEl) countEl.textContent = '총 '+list.length+'건';
-    // 전체선택 체크박스 리셋
+    if(countEl) countEl.textContent = '총 '+list.length+'건 (대기: '+list.filter(function(r){return r.status==='pending';}).length+'건)';
     var allCb = document.getElementById('extra-check-all');
     if(allCb){ allCb.checked=false; allCb.indeterminate=false; }
     updateExtraDelBtn();
   }catch(e){
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:12px;color:#ef5350">오류: '+e.message+'</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:12px;color:#ef5350">오류: '+e.message+'</td></tr>';
   }
 }
+
 
 function toggleAllExtraRes(cb){
   document.querySelectorAll('.extra-res-check').forEach(function(el){ el.checked=cb.checked; });
@@ -1130,14 +1150,46 @@ function toggleAllExtraRes(cb){
 
 function updateExtraDelBtn(){
   var checked = document.querySelectorAll('.extra-res-check:checked');
-  var btn = document.getElementById('del-extra-btn');
-  if(btn){ btn.style.display=checked.length>0?'inline-block':'none'; btn.textContent='🗑️ 선택삭제 ('+checked.length+'건)'; }
+  var delBtn = document.getElementById('del-extra-btn');
+  var confBtn = document.getElementById('confirm-extra-btn');
+  if(delBtn){ delBtn.style.display=checked.length>0?'inline-block':'none'; delBtn.textContent='🗑️ 선택삭제 ('+checked.length+'건)'; }
+  if(confBtn){ confBtn.style.display=checked.length>0?'inline-block':'none'; confBtn.textContent='✅ 선택확정 ('+checked.length+'건)'; }
   var allCb = document.getElementById('extra-check-all');
   if(allCb){
     var all = document.querySelectorAll('.extra-res-check');
     allCb.checked = all.length>0 && checked.length===all.length;
     allCb.indeterminate = checked.length>0 && checked.length<all.length;
   }
+}
+
+async function confirmSingleExtraRes(id){
+  if(!confirm('이 예약을 확정하시겠습니까? 확정 후 수정/삭제가 불가합니다.')) return;
+  await _doConfirmExtraRes([id]);
+}
+
+async function confirmSelectedExtraRes(){
+  var checked = document.querySelectorAll('.extra-res-check:checked');
+  if(!checked.length){ alert('선택된 항목이 없습니다.'); return; }
+  if(!confirm(checked.length+'건을 확정하시겠습니까? 확정 후 수정/삭제가 불가합니다.')) return;
+  var ids = Array.from(checked).map(function(el){ return parseInt(el.getAttribute('data-id')); });
+  await _doConfirmExtraRes(ids);
+}
+
+async function _doConfirmExtraRes(ids){
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var r = await fetch('/api/admin/confirm-extra-reservations',{method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body: JSON.stringify({ids: ids})});
+    var d = await r.json();
+    if(d.success){
+      toast('✅ '+ids.length+'건 확정 완료 - 시스템아이템현황에 반영됨','success');
+      loadExtraReservations();
+      loadReservationStatus();
+    } else {
+      toast('오류: '+(d.error||'확정 실패'),'error');
+    }
+  }catch(e){ toast('오류: '+e.message,'error'); }
 }
 
 async function deleteSelectedExtraRes(){
