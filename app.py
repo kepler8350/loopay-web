@@ -1294,17 +1294,17 @@ def admin_reservation_status():
         for bar_type in ['bronze', 'silver', 'gold']:
             # 사용자 구매예약 (match_round=1, loopay 제외)
             user_buy = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND user_id!=? AND reserve_date=?",
-                (bar_type, loopay_id, today)
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND confirmed=0 AND user_id!=?",
+                (bar_type, loopay_id)
             ).fetchone()['cnt']
             # loopay 추가예약 (match_round=1)
             extra_buy_pending = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND confirmed=0 AND user_id=? AND reserve_date=?",
-                (bar_type, loopay_id, today)
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND confirmed=0 AND user_id=?",
+                (bar_type, loopay_id)
             ).fetchone()['cnt']
             extra_buy_confirmed = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND confirmed=1 AND user_id=? AND reserve_date=?",
-                (bar_type, loopay_id, today)
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND confirmed=1 AND user_id=?",
+                (bar_type, loopay_id)
             ).fetchone()['cnt']
             extra_buy = extra_buy_pending + extra_buy_confirmed
             total_buy = user_buy + extra_buy
