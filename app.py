@@ -1299,7 +1299,7 @@ def admin_reservation_status():
             ).fetchone()['cnt']
             # loopay 추가예약 (match_round=1)
             extra_buy_pending = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND user_id=? AND reserve_date=?",
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND confirmed=0 AND user_id=? AND reserve_date=?",
                 (bar_type, loopay_id, today)
             ).fetchone()['cnt']
             extra_buy_confirmed = conn.execute(
@@ -1332,17 +1332,17 @@ def admin_reservation_status():
                     sell_under32 += 1
             sell_total = sell_under32 + sell_33up + sell_split
 
-            # loopay 추가 판매예약
-            extra_sell_rows = conn.execute(
-                "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending' AND r.user_id=?",
+            # loopay 추가 판매예약 (미확정: pending + confirmed=0)
+            extra_sell_pending = conn.execute(
+                "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending' AND r.confirmed=0 AND r.user_id=?",
                 (bar_type, loopay_id)
             ).fetchall()
-            # 확정된 추가 판매예약도 포함
+            # 확정된 추가 판매예약 (confirmed=1)
             extra_sell_confirmed = conn.execute(
                 "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.match_round=2 AND r.confirmed=1 AND r.user_id=?",
                 (bar_type, loopay_id)
             ).fetchall()
-            extra_sell_rows = extra_sell_rows + extra_sell_confirmed
+            extra_sell_rows = extra_sell_pending + extra_sell_confirmed
             extra_sell_under32 = len(extra_sell_rows)  # 추가예약은 기본 32만원 미만으로 처리
             extra_sell_33up = 0
             extra_sell_split = 0
