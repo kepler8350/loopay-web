@@ -2087,8 +2087,9 @@ def user_matching():
         buy_matches = db.execute(
             """SELECT m.*, su.nickname as seller_nickname,
                       su.phone as seller_phone,
-                      su.bank as seller_bank_name,
-                      su.account as seller_account_no,
+                      su.bank as seller_bank,
+                      su.account_no as seller_account,
+                      su.account_name as seller_account_name,
                       'match' as source
                FROM matches m
                LEFT JOIN users su ON m.seller_id = su.id
