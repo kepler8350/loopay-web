@@ -845,6 +845,19 @@ function executeCombine(){
   });
 }
 
+function toggleHeader(){
+  var el = document.getElementById('header-collapsible');
+  var icon = document.getElementById('header-toggle-icon');
+  if(!el) return;
+  if(el.style.display === 'none'){
+    el.style.display = '';
+    icon.textContent = '▲ 접기';
+  } else {
+    el.style.display = 'none';
+    icon.textContent = '▼ 펼치기';
+  }
+}
+
 function doLogout() {
   localStorage.removeItem('lp_token');
   localStorage.removeItem('lp_kakao_id');
@@ -1930,6 +1943,11 @@ async function loadNotifications(){
         </div>
       <button onclick="location.reload()" title="새로고침" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:3px 8px;font-size:14px;cursor:pointer;flex-shrink:0;margin-left:8px">⟳</button>
       </div>
+      <!-- 접기/펼치기 토글 버튼 -->
+      <div id="header-toggle-btn" onclick="toggleHeader()" style="display:flex;justify-content:center;align-items:center;padding:3px 0;cursor:pointer;background:rgba(255,255,255,0.08);border-top:1px solid rgba(255,255,255,0.15)">
+        <span id="header-toggle-icon" style="color:rgba(255,255,255,0.7);font-size:11px;letter-spacing:1px">▲ 접기</span>
+      </div>
+      <div id="header-collapsible">
       <div class="total-card" style="display:flex;gap:10px;align-items:stretch;padding:14px 16px">
         <div style="flex:1">
           <div class="total-lbl">총 포인트 (1P = 120원)</div>
@@ -1958,6 +1976,7 @@ async function loadNotifications(){
         </div>
         <div class="prog-bar"><div class="prog-fill" id="h-progfill" style="width:0%"></div></div>
       </div>
+      </div><!-- /header-collapsible -->
     </div>
 
     <div class="nav">
