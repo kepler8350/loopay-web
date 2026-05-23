@@ -1400,16 +1400,19 @@ function renderMatchBuyList(items){
   var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var el=document.getElementById('match-buy-list');
   if(!items.length){
-    el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">매칭된 구매 없음</div>';
+    el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">구매예약 없음</div>';
     return;
   }
   // 서버 mock 시간 기준 (v2)
   var h = getEffectiveDate ? getEffectiveDate().getHours() : new Date().getHours();
   var canSend = (h>=5 && h<13); // 1차 매칭 입금: 05:00~13:00
   el.innerHTML = items.map(function(m){
-    var statusLabel = {pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
-    var statusColor = {pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
+    var statusLabel = {waiting:'예약대기',pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
+    var statusColor = {waiting:'#90caf9',pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
     var sellerInfo = '';
+    if(m.status==='waiting'){
+      sellerInfo='<div style="font-size:12px;color:#90caf9;margin:6px 0">⏳ 매칭 대기 중...</div>';
+    }
     var hasMatchInfo = !!(m.seller_phone || m.seller_bank || m.seller_account);
     if(m.status==='pending' || m.status==='matched' || m.status==='paid' || m.status==='confirmed'){
       if(hasMatchInfo){
@@ -1423,6 +1426,7 @@ function renderMatchBuyList(items){
       }
     }
     var btnHtml = '';
+    if(m.status==='waiting'){ btnHtml=''; } else
     if(m.status==='pending' && canSend){
       btnHtml = '<button onclick="openPaymentModal('+m.id+')" style="padding:7px 14px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;margin-top:6px">💸 송금완료</button>';
     } else if(m.status==='pending' && !canSend){
@@ -1441,7 +1445,8 @@ function renderMatchBuyList(items){
       +'<span style="font-size:12px;color:'+statusColor+';font-weight:600">'+statusLabel+'</span>'
       +'</div>'
       +sellerInfo
-      +(m.match_date?'<div style="font-size:11px;color:#888">'+m.match_date+'</div>':'')
+      +(m.source==='reservation'?'<div style="font-size:11px;color:#90caf9">예약일: '+m.reserve_date+'</div>':'')
+      +(m.match_date?'<div style="font-size:11px;color:#888">매칭일: '+m.match_date+'</div>':'')
       +btnHtml
       +'</div>';
   }).join('');
@@ -1452,14 +1457,16 @@ function renderMatchSellList(items){
   var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var el=document.getElementById('match-sell-list');
   if(!items.length){
-    el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">매칭된 판매 없음</div>';
+    el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">판매예약 없음</div>';
     return;
   }
   var h = getEffectiveDate ? getEffectiveDate().getHours() : new Date().getHours();
   el.innerHTML = items.map(function(m){
-    var statusLabel = {pending:'입금대기',paid:'입금확인중',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
-    var statusColor = {pending:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
-    var buyerInfo = '<div style="font-size:12px;color:#aaa;margin:6px 0">'
+    var statusLabel = {waiting:'예약대기',pending:'입금대기',paid:'입금확인중',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
+    var statusColor = {waiting:'#90caf9',pending:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
+    var buyerInfo = m.status==='waiting'
+      ? '<div style="font-size:12px;color:#90caf9;margin:6px 0">⏳ 매칭 대기 중...</div>'
+      : '<div style="font-size:12px;color:#aaa;margin:6px 0">'
       +'<div>👤 구매자: '+(m.buyer_nickname||m.buyer_username||'-')+'</div>'
       +'<div>📞 연락처: '+(m.buyer_phone||'-')+'</div>'
       +'<div>💰 수령액: '+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</div>'
@@ -1484,7 +1491,8 @@ function renderMatchSellList(items){
       +'<span style="font-size:12px;color:'+statusColor+';font-weight:600">'+statusLabel+'</span>'
       +'</div>'
       +buyerInfo
-      +(m.match_date?'<div style="font-size:11px;color:#888">'+m.match_date+'</div>':'')
+      +(m.source==='reservation'?'<div style="font-size:11px;color:#90caf9">예약일: '+m.reserve_date+'</div>':'')
+      +(m.match_date?'<div style="font-size:11px;color:#888">매칭일: '+m.match_date+'</div>':'')
       +btnHtml
       +'</div>';
   }).join('');

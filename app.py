@@ -2070,35 +2070,74 @@ def user_matching():
     db = get_db()
     try:
         today = get_today().isoformat()
-        # matches 테이블에서 내 매칭 기록 조회 (최근 30일)
+        names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+
+        # ── 구매: 1) 예약 대기 중 ──
+        buy_reservations = db.execute(
+            """SELECT r.id, r.bar_type, r.status as res_status,
+                      COALESCE(r.stage,1) as stage, r.reserve_date,
+                      'reservation' as source
+               FROM reservations r
+               WHERE r.user_id=? AND r.match_round=1
+                 AND r.status='pending' AND r.confirmed=0
+               ORDER BY r.id DESC""",
+            (uid,)
+        ).fetchall()
+        # ── 구매: 2) 매칭 완료 기록 ──
         buy_matches = db.execute(
-            """SELECT m.*, 
-               su.nickname as seller_nickname, su.username as seller_username
+            """SELECT m.*, su.nickname as seller_nickname,
+                      su.phone as seller_phone,
+                      su.bank as seller_bank_name,
+                      su.account as seller_account_no,
+                      'match' as source
                FROM matches m
                LEFT JOIN users su ON m.seller_id = su.id
                WHERE m.buyer_id=? AND m.match_date >= date(?, '-30 days')
                ORDER BY m.id DESC""",
             (uid, today)
         ).fetchall()
+
+        # ── 판매: 1) 예약 대기 중 ──
+        sell_reservations = db.execute(
+            """SELECT r.id, r.bar_type, r.status as res_status,
+                      COALESCE(r.stage, COALESCE(i.stage,1)) as stage,
+                      r.reserve_date,
+                      'reservation' as source
+               FROM reservations r
+               LEFT JOIN items i ON r.item_id=i.id
+               WHERE r.user_id=? AND r.match_round=2
+                 AND r.status='pending' AND r.confirmed=0
+               ORDER BY r.id DESC""",
+            (uid,)
+        ).fetchall()
+        # ── 판매: 2) 매칭 완료 기록 ──
         sell_matches = db.execute(
-            """SELECT m.*,
-               bu.nickname as buyer_nickname, bu.username as buyer_username, bu.phone as buyer_phone2
+            """SELECT m.*, bu.nickname as buyer_nickname,
+                      bu.username as buyer_username, bu.phone as buyer_phone2,
+                      'match' as source
                FROM matches m
                LEFT JOIN users bu ON m.buyer_id = bu.id
                WHERE m.seller_id=? AND m.match_date >= date(?, '-30 days')
                ORDER BY m.id DESC""",
             (uid, today)
         ).fetchall()
-        names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+
+        def fmt_reservation(r):
+            d = dict(r)
+            d['bar_name'] = names.get(d.get('bar_type',''), d.get('bar_type',''))
+            d['status'] = 'waiting'   # 예약 대기
+            return d
+
         def fmt_match(m, role):
             d = dict(m)
             d['bar_name'] = names.get(d.get('bar_type',''), d.get('bar_type',''))
             d['role'] = role
             return d
-        return jsonify(
-            buy=[fmt_match(m,'buyer') for m in buy_matches],
-            sell=[fmt_match(m,'seller') for m in sell_matches]
-        )
+
+        buy_list = [fmt_reservation(r) for r in buy_reservations] + [fmt_match(m,'buyer') for m in buy_matches]
+        sell_list = [fmt_reservation(r) for r in sell_reservations] + [fmt_match(m,'seller') for m in sell_matches]
+
+        return jsonify(buy=buy_list, sell=sell_list)
     finally:
         db.close()
 
