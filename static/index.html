@@ -845,6 +845,12 @@ function executeCombine(){
   });
 }
 
+function refreshApp(){
+  // 페이지 리로드 없이 데이터만 갱신 (로그인 상태 유지)
+  if(typeof loadUserData === 'function') loadUserData();
+  if(typeof updateTimeBanner === 'function') updateTimeBanner();
+}
+
 function toggleHeader(){
   var el = document.getElementById('header-collapsible');
   var icon = document.getElementById('header-toggle-icon');
@@ -1941,7 +1947,7 @@ async function loadNotifications(){
           <div class="time-bar-reserve" id="tbar-reserve">🕐 구매·판매예약: 05:00~20:00</div>
           <div class="time-bar-right" id="tbar-schedule">--</div>
         </div>
-      <button onclick="location.reload()" title="새로고침" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:3px 8px;font-size:14px;cursor:pointer;flex-shrink:0;margin-left:8px">⟳</button>
+      <button onclick="refreshApp()" title="새로고침" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:6px;padding:3px 8px;font-size:14px;cursor:pointer;flex-shrink:0;margin-left:8px">⟳</button>
       </div>
       <!-- 접기/펼치기 토글 버튼 -->
       <div id="header-toggle-btn" onclick="toggleHeader()" style="display:flex;justify-content:center;align-items:center;padding:3px 0;cursor:pointer;background:rgba(255,255,255,0.08);border-top:1px solid rgba(255,255,255,0.15)">
