@@ -675,7 +675,7 @@ def admin_run_matching():
         today = get_today().isoformat()
         import random
 
-        # 판매예약 조회
+        # 판매예약 조회 (confirmed 0/1 모두 - 확정여부 무관, pending 상태인 것)
         sell_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
                u.username as seller_username, u.nickname as seller_nickname,
@@ -685,7 +685,7 @@ def admin_run_matching():
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                LEFT JOIN items i ON r.item_id = i.id
-               WHERE r.reserve_date=? AND r.confirmed=0 AND r.match_round=2""",
+               WHERE r.reserve_date=? AND r.status='pending' AND r.match_round=2""",
             (today,)
         ).fetchall()
 
