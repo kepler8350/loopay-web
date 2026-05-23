@@ -1351,18 +1351,12 @@ def admin_reservation_status():
                     sell_under32 += 1
             sell_total = sell_under32 + sell_33up + sell_split
 
-            # loopay 추가 판매예약 (미확정: pending + confirmed=0)
-            extra_sell_pending = conn.execute(
-                "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending' AND r.confirmed=0 AND r.user_id=?",
-                (bar_type, loopay_id)
-            ).fetchall()
-            # 확정된 추가 판매예약 (confirmed=1)
-            extra_sell_confirmed = conn.execute(
+            # loopay 추가 판매예약 - 확정된 수량만 반영 (confirmed=1)
+            extra_sell_confirmed_rows = conn.execute(
                 "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.match_round=2 AND r.confirmed=1 AND r.user_id=?",
                 (bar_type, loopay_id)
             ).fetchall()
-            extra_sell_rows = extra_sell_pending + extra_sell_confirmed
-            extra_sell_under32 = len(extra_sell_rows)  # 추가예약은 기본 32만원 미만으로 처리
+            extra_sell_under32 = len(extra_sell_confirmed_rows)  # 확정된 추가예약만
             extra_sell_33up = 0
             extra_sell_split = 0
             extra_sell_new = 0

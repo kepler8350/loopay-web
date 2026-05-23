@@ -385,7 +385,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
   <div class="table-card"><div class="table-header"><div class="table-title">구매예약 아이템별</div></div><div id="r1-buy-by-type"><div class="empty-state"><div>로딩 중...</div></div></div></div>
   <div class="table-card"><div class="table-header"><div class="table-title">판매예약 아이템별</div></div><div id="r1-by-type"><div class="empty-state"><div>로딩 중...</div></div></div></div>
 </div>
-<div class="table-card" style="margin-bottom:16px"><div class="table-header"><div class="table-title">판매예약 단계별</div></div><div id="r1-by-stage"><div class="empty-state"><div>로딩 중...</div></div></div></div>
+
 <div class="table-card" style="margin-top:8px">
   <div style="padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
     <button id="btn-run-matching-1" class="btn btn-success" style="padding:8px 20px;font-size:13px;font-weight:600" onclick="runMatching(1)">⚡ 1차 매칭 실행하기</button>
@@ -405,7 +405,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 </div>
 <div class="two-col">
 <div class="table-card"><div class="table-header"><div class="table-title">&#50500;&#51060;&#53596;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r2-by-type"><div class="empty-state"><div>&#47196;&#46377; &#51473;...</div></div></div></div>
-<div class="table-card"><div class="table-header"><div class="table-title">&#45800;&#44228;&#48324; &#54032;&#47588;&#50696;&#50557;</div></div><div id="r2-by-stage"><div class="empty-state"><div>&#47196;&#46377; &#51473;...</div></div></div></div>
+</div>
 </div>
 <div class="table-card" style="margin-top:16px"><div class="table-header"><div class="table-title">&#9889; 2&#52264; &#47588;&#52845; &#49892;&#54665;</div></div>
 <div style="padding:20px"><button class="btn btn-success" style="width:100%;padding:14px;font-size:15px;font-weight:700" onclick="runMatching(2)">&#128640; 2&#52264; &#47588;&#52845; &#49892;&#54665;&#54616;&#44592;</button><div id="match-result-2" style="margin-top:14px"></div></div></div>
@@ -1318,7 +1318,7 @@ async function loadMatchingStatus(){
     if(rateEl1){ rateEl1.textContent=mr1+'%'; rateEl1.style.color=mrc(mr1); }
     var bb1=document.getElementById('r1-buy-by-type'); if(bb1) bb1.innerHTML=mkTypeTable(r1.buy_by_type);
     var bt1=document.getElementById('r1-by-type'); if(bt1) bt1.innerHTML=mkTypeTable(r1.by_type);
-    var bs1=document.getElementById('r1-by-stage'); if(bs1) bs1.innerHTML=mkStageTable(r1.by_stage);
+
 
     // ── 2차 매칭 ──
     var r2=d.round2||{};
@@ -1328,7 +1328,7 @@ async function loadMatchingStatus(){
     var rateEl2=document.getElementById('r2-rate');
     if(rateEl2){ rateEl2.textContent=mr2+'%'; rateEl2.style.color=mrc(mr2); }
     var bt2=document.getElementById('r2-by-type'); if(bt2) bt2.innerHTML=mkTypeTable(r2.by_type);
-    var bs2=document.getElementById('r2-by-stage'); if(bs2) bs2.innerHTML=mkStageTable(r2.by_stage);
+
   }catch(e){ console.error('loadMatchingStatus:',e); }
 }
 
