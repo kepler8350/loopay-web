@@ -46,9 +46,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .nav-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
 
 /* Tabs */
-.tab-content{flex:1;overflow-y:auto}
-.tab{display:none;padding:14px;overflow-y:auto}
-.tab.active{display:block}
+.tab-content{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.tab{display:none;padding:14px}
+.tab.active{display:flex;flex-direction:column;flex:1;min-height:0}
 .sec-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px}
 
 /* Bar cards */
