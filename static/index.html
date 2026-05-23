@@ -46,9 +46,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .nav-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
 
 /* Tabs */
-.tab-content{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.tab-content{flex:1;overflow-y:auto}
 .tab{display:none;padding:14px}
-.tab.active{display:flex;flex-direction:column;flex:1;min-height:0}
+.tab.active{display:block}
 .sec-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px}
 
 /* Bar cards */
@@ -2095,7 +2095,6 @@ async function loadNotifications(){
 <div id="charge-refresh-wrap" style="margin-top:10px;text-align:center"><button onclick="document.getElementById('charge-refresh-wrap').style.display='none';loadUserData();" style="background:transparent;color:#2196f3;border:1.5px solid #2196f3;padding:8px 22px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;width:100%">포인트 새로고침 ↻</button><div style="font-size:11px;color:#888;margin-top:4px">승인 후 클릭하면 포인트가 반영됩니다</div></div>
           <div class="info-block" style="margin-bottom:0;font-size:11px">충전 신청 후 관리자 확인 시 포인트가 지급됩니다. (1P = 120원)</div>
         </div>
-      </div>
 
       <!-- PRICE -->
       <div id="tab-price" class="tab">
@@ -2353,6 +2352,7 @@ async function loadNotifications(){
 <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between">알림<button onclick="loadNotifications()" style="background:transparent;border:1px solid #aaa;color:#aaa;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer">새로고침</button></div>
 <div id="notif-list" style="margin-top:4px"><div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px">알림이 없습니다</div></div>
 </div>
+  </div><!-- /tab-content -->
   </div>
 
   <!-- Admin modal overlay -->
