@@ -47,7 +47,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* Tabs */
 .tab-content{flex:1;overflow-y:auto}
-.tab{display:none;padding:14px}
+.tab{display:none;padding:14px;overflow-y:auto}
 .tab.active{display:block}
 .sec-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px}
 
@@ -1442,15 +1442,13 @@ function renderMatchBuyList(items){
     } else if(m.status==='confirmed'){
       btnHtml = '<div style="font-size:11px;color:#66bb6a;margin-top:6px">✅ 거래 완료</div>';
     }
-    return '<div style="border:1px solid #2a2d3e;border-radius:10px;padding:12px;margin-bottom:10px;background:#1a1d2e">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center">'
-      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'
-      +'<span style="font-size:12px;color:'+statusColor+';font-weight:600">'+statusLabel+'</span>'
-      +'</div>'
-      +sellerInfo
-      +(m.source==='reservation'?'<div style="font-size:11px;color:#90caf9">예약일: '+m.reserve_date+'</div>':'')
-      +(m.match_date?'<div style="font-size:11px;color:#888">매칭일: '+m.match_date+'</div>':'')
-      +btnHtml
+    var subTxt=m.status==='waiting'?'⏳ 대기':hasMatchInfo?'📞 '+m.seller_phone:(m.status==='pending'||m.status==='matched')?'매칭완료':m.status==='paid'?'✅ 송금완료':m.status==='confirmed'?'✅ 거래완료':'';
+    var dateTxt=m.source==='reservation'?m.reserve_date:(m.match_date||'');
+    return '<div style="display:flex;align-items:center;gap:6px;padding:8px 10px;margin-bottom:5px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">'
+      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+';font-size:12px;white-space:nowrap">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'
+      +'<span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+subTxt+'</span>'
+      +(dateTxt?'<span style="font-size:10px;color:var(--text2);white-space:nowrap">'+dateTxt+'</span>':'')
+      +'<span style="font-size:11px;color:'+statusColor+';font-weight:600;white-space:nowrap">'+statusLabel+'</span>'
       +'</div>';
   }).join('');
 }
@@ -1488,15 +1486,13 @@ function renderMatchSellList(items){
         +'<button onclick="doReportUnpaid('+m.id+')" style="padding:7px 14px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">❌ 미입금</button>'
         +'</div>';
     }
-    return '<div style="border:1px solid #2a2d3e;border-radius:10px;padding:12px;margin-bottom:10px;background:#1a1d2e">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center">'
-      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'
-      +'<span style="font-size:12px;color:'+statusColor+';font-weight:600">'+statusLabel+'</span>'
-      +'</div>'
-      +buyerInfo
-      +(m.source==='reservation'?'<div style="font-size:11px;color:#90caf9">예약일: '+m.reserve_date+'</div>':'')
-      +(m.match_date?'<div style="font-size:11px;color:#888">매칭일: '+m.match_date+'</div>':'')
-      +btnHtml
+    var sellSub=m.status==='waiting'?'⏳ 대기':'👤 '+(m.buyer_nickname||m.buyer_username||'-')+(m.sell_price?' · '+m.sell_price.toLocaleString()+'원':'');
+    var sellDate=m.source==='reservation'?m.reserve_date:(m.match_date||'');
+    return '<div style="display:flex;align-items:center;gap:6px;padding:8px 10px;margin-bottom:5px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">'
+      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+';font-size:12px;white-space:nowrap">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'
+      +'<span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+sellSub+'</span>'
+      +(sellDate?'<span style="font-size:10px;color:var(--text2);white-space:nowrap">'+sellDate+'</span>':'')
+      +'<span style="font-size:11px;color:'+statusColor+';font-weight:600;white-space:nowrap">'+statusLabel+'</span>'
       +'</div>';
   }).join('');
 }
@@ -1970,14 +1966,14 @@ async function loadNotifications(){
 
     <div class="nav">
       <button class="nav-btn active" onclick="showTab('home',this)">홈</button>
-      <button class="nav-btn" id="nav-notif-btn" onclick="showTab('notif',this);loadNotifications()" style="position:relative">알림<span id="notif-badge" style="display:none;position:absolute;top:2px;right:2px;background:#e53935;color:#fff;font-size:9px;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px"></span></button>
+      <button class="nav-btn" id="nav-notif-btn" onclick="showTab('notif',this);loadNotifications()" style="position:relative">🔔 알림<span id="notif-badge" style="display:none;position:absolute;top:2px;right:2px;background:#e53935;color:#fff;font-size:9px;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px"></span></button>
       <button class="nav-btn" onclick="showTab('matching',this)">매칭</button>
+      <button class="nav-btn" onclick="showTab('combine',this)">결합판매</button>
       <button class="nav-btn" onclick="showTab('schedule',this)">시간표</button>
       <button class="nav-btn" onclick="showTab('price',this)">가격표</button>
       <button class="nav-btn" onclick="showTab('level',this)">레벨</button>
       <button class="nav-btn" onclick="showTab('point',this)">포인트</button>
       <button class="nav-btn" onclick="showTab('penalty',this)">패널티</button>
-      <button class="nav-btn" onclick="showTab('combine',this)">결합판매</button>
       <button class="nav-btn" onclick="showTab('profile',this);loadProfileForm()">내정보</button>
       <button class="nav-btn" onclick="showTab('history',this)">거래내역</button>
     </div>
@@ -2357,9 +2353,9 @@ async function loadNotifications(){
     </div>
 
 <!-- NOTIF TAB -->
-<div id="tab-notif" class="tab">
+<div id="tab-notif" class="tab" style="padding-top:10px">
 <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between">알림<button onclick="loadNotifications()" style="background:transparent;border:1px solid #aaa;color:#aaa;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer">새로고침</button></div>
-<div id="notif-list" style="margin-top:8px"><div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px">알림이 없습니다</div></div>
+<div id="notif-list" style="margin-top:4px"><div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px">알림이 없습니다</div></div>
 </div>
   </div>
 
