@@ -636,8 +636,8 @@ def admin_confirm_charge(charge_id):
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    cr = db.execute("SELECT * FROM charge_requests WHERE id=? AND confirmed=0", (charge_id,)).fetchone()
-    if not cr: return jsonify(error='Not found'), 404
+    cr = db.execute("SELECT * FROM charge_requests WHERE id=? AND status='pending'", (charge_id,)).fetchone()
+    if not cr: return jsonify(error='Not found or already processed'), 404
     db.execute("UPDATE charge_requests SET status='confirmed', confirmed_at=CURRENT_TIMESTAMP WHERE id=?", (charge_id,))
     db.execute("UPDATE users SET charge_points=charge_points+? WHERE id=?", (cr['points'], cr['user_id']))
     notif_title = '충전 포인트 지급 완료'
