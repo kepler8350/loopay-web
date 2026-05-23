@@ -6,23 +6,25 @@
 <title>LOOPAY</title>
 <style>
 :root{
-  --blue:#1a4fa3;--blue-light:#e6f1fb;--blue-dark:#174399;
-  --bronze-bg:#fdf3e3;--bronze-text:#8B5E3C;
-  --silver-bg:#f0f0f5;--silver-text:#5A5A7A;
-  --gold-bg:#fefae8;--gold-text:#856900;
-  --bg:#fff;--bg2:#f7f8fa;--border:#e0e4ea;
-  --text:#1a1a2e;--text2:#6b7280;
-  --green:#3b6d11;--green-bg:#eaf3de;
-  --red:#a32d2d;--red-bg:#fcebeb;
-  --warn-bg:#fff7e6;--warn-border:#f5cc80;--warn-text:#7a4f00;
-  --radius:10px;--shadow:0 2px 12px rgba(0,0,0,0.08);
+  --blue:#5b8dee;--blue-light:#deeafd;--blue-dark:#4577d6;
+  --bronze-bg:#fdf0e4;--bronze-text:#a0653a;
+  --silver-bg:#eef0f8;--silver-text:#5a6a8a;
+  --gold-bg:#fdf8e4;--gold-text:#9a7a00;
+  --bg:#f4f7ff;--bg2:#edf1fa;--border:#d5ddf0;
+  --text:#2d3561;--text2:#7a87b0;
+  --green:#3b7d4f;--green-bg:#e3f5eb;
+  --red:#c0404a;--red-bg:#fce8ea;
+  --warn-bg:#fff8e8;--warn-border:#f0cc7a;--warn-text:#8a6000;
+  --radius:12px;--shadow:0 2px 16px rgba(91,141,238,0.10);
+  --header-bg:linear-gradient(135deg,#6fa3ef 0%,#a18cd1 100%);
+  --card-bg:#ffffff;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg2);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;font-size:14px}
 .app{width:100%;max-width:430px;min-height:100vh;background:var(--bg);display:flex;flex-direction:column;position:relative}
 
 /* Header */
-.header{background:var(--blue);color:#fff;padding:16px;flex-shrink:0padding-bottom:12px;}
+.header{background:var(--header-bg);color:#fff;padding:14px 16px;flex-shrink:0;padding-bottom:12px;}
 .header-top{display:flex;align-items:center;padding:10px 16px 8px;}
 .logo{font-size:18px;font-weight:700;letter-spacing:1px}
 .level-badge{background:rgba(255,255,255,0.2);border-radius:20px;padding:4px 12px;font-size:13px;font-weight:500}
@@ -40,16 +42,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .prog-fill{background:#fff;height:100%;border-radius:20px;transition:width .5s}
 
 /* Nav */
-.nav{display:flex;border-bottom:1px solid var(--border);background:var(--bg);overflow-x:auto;flex-shrink:0}
+.nav{display:flex;border-bottom:1px solid var(--border);background:#eef2ff;overflow-x:auto;flex-shrink:0}
 .nav::-webkit-scrollbar{display:none}
-.nav-btn{flex:none;padding:11px 12px;background:none;border:none;font-size:12px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-weight:500}
+.nav-btn{flex:none;padding:9px 10px;background:none;border:none;font-size:11px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-weight:500}
 .nav-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
 
 /* Tabs */
-.tab-content{flex:1;overflow-y:auto}
+.tab-content{flex:1;overflow-y:auto;background:var(--bg)}
 .tab{display:none;padding:14px}
 .tab.active{display:block}
-.sec-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px}
+.sec-title{font-size:12px;font-weight:600;color:var(--text2);margin:0 0 8px}
 
 /* Bar cards */
 .bar-row{display:flex;gap:8px;margin-bottom:14px}
@@ -156,7 +158,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .loading{display:flex;align-items:center;justify-content:center;height:100px;color:var(--text2);font-size:13px}
 
 /* Toast */
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:320px;text-align:center}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--bg2);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:320px;text-align:center}
 .toast.show{opacity:1}
 
 /* Charge */
@@ -169,7 +171,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 .combine-desc{font-size:13px;color:#aaa;margin-bottom:16px;line-height:1.5}
 .combine-list{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
-.combine-group{background:#1a1d2e;border-radius:10px;overflow:hidden;border:1px solid #2a2d3e}
+.combine-group{background:var(--bg2);border-radius:10px;overflow:hidden;border:1px solid var(--border)}
 .combine-group-title{padding:8px 14px;font-size:12px;font-weight:700;color:#4fc3f7;background:#232640;border-bottom:1px solid #2a2d3e}
 .combine-group-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px}
 .combine-item-card{background:#1e2235;border:2px solid #2a2d3e;border-radius:7px;padding:8px 10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px}
@@ -639,18 +641,18 @@ function renderCombineList(){
   var validTypes=barOrder.filter(function(bt){ return grouped[bt]&&grouped[bt].length>=2; });
 
   if(items.length===0){
-    list.innerHTML='<div class="empty-msg" style="padding:20px;text-align:center;color:#888"><div style="font-size:32px;margin-bottom:8px">📦</div>아이템이 없습니다.<br><span style="font-size:12px">우선 아이템을 구매하세요.</span></div>';
+    list.innerHTML='<div class="empty-msg" style="padding:20px;text-align:center;color:var(--text2)"><div style="font-size:32px;margin-bottom:8px">📦</div>아이템이 없습니다.<br><span style="font-size:12px">우선 아이템을 구매하세요.</span></div>';
     return;
   }
   if(!validTypes.length){
     var hasList=barOrder.filter(function(bt){ return grouped[bt]&&grouped[bt].length>=1; });
     var msg='결합판매는 각 종류별 2개 이상 필요합니다.';
     if(hasList.length){
-      msg+='<br><span style="font-size:12px;color:#aaa">현재 보유: ';
+      msg+='<br><span style="font-size:12px;color:var(--text2)">현재 보유: ';
       msg+=hasList.map(function(bt){ return barNames[bt]+' '+grouped[bt].length+'개'; }).join(', ');
       msg+='</span>';
     }
-    list.innerHTML='<div class="empty-msg" style="padding:20px;text-align:center;color:#888"><div style="font-size:32px;margin-bottom:8px">🔗</div>'+msg+'</div>';
+    list.innerHTML='<div class="empty-msg" style="padding:20px;text-align:center;color:var(--text2)"><div style="font-size:32px;margin-bottom:8px">🔗</div>'+msg+'</div>';
     return;
   }
 
@@ -740,12 +742,12 @@ function renderCombinePairs(){
       // 뱃지 줄
       html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">';
       html+='<span style="background:'+c1[0]+';color:'+c1[1]+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700">'+barName(pair.item1.barType)+' '+pair.item1.stage+'단계</span>';
-      html+='<span style="color:#aaa">+</span>';
+      html+='<span style="color:var(--text2)">+</span>';
       html+='<span style="background:'+c2[0]+';color:'+c2[1]+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700">'+barName(pair.item2.barType)+' '+pair.item2.stage+'단계</span>';
       html+='<button onclick="removeFromCombine('+pi+')" style="margin-left:auto;background:#c62828;border:none;color:#fff;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px">전체 삭제</button>';
       html+='</div>';
       // 결과 영역 (id로 나중에 채움)
-      html+='<div id="pair-preview-'+pi+'" style="font-size:12px;color:#aaa">계산 중...</div>';
+      html+='<div id="pair-preview-'+pi+'" style="font-size:12px;color:var(--text2)">계산 중...</div>';
       html+='</div>';
     });
     // 대기 중인 첫 번째 선택
@@ -754,7 +756,7 @@ function renderCombinePairs(){
       html+='<div style="margin-bottom:14px;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px dashed #555;border-radius:10px">';
       html+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
       html+='<span style="background:'+c[0]+';color:'+c[1]+';padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700">'+barName(pendingItem.barType)+' '+pendingItem.stage+'단계</span>';
-      html+='<span style="color:#aaa;font-size:12px">하나 더 선택하세요</span>';
+      html+='<span style="color:var(--text2);font-size:12px">하나 더 선택하세요</span>';
       html+='<button onclick="cancelPending()" style="margin-left:auto;background:#555;border:none;color:#fff;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px">취소</button>';
       html+='</div>';
       html+='</div>';
@@ -894,6 +896,9 @@ async function doLogin(){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('main-app').style.display='flex';
     startTimeBar();
+    // 로그인 후 홈 탭 기본 표시
+    var homeBtn=document.querySelector(".nav-btn[onclick*=\"'home'\"]");
+    if(homeBtn) showTab('home',homeBtn);
   }catch(e){errEl.textContent='서버 오류: '+e.message;}
 }
 async function doRegister(){
@@ -1258,7 +1263,7 @@ async function loadItemDetail(barType){
   try{
     var items=await api('/items?bar_type='+barType);
     if(!items.length){
-      container.innerHTML='<div style="text-align:center;color:#aaa;padding:20px">보유 아이템 없음</div>';
+      container.innerHTML='<div style="text-align:center;color:var(--text2);padding:20px">보유 아이템 없음</div>';
       return;
     }
     var names={bronze:'수정',silver:'루비',gold:'다이아'};
@@ -1287,7 +1292,7 @@ async function loadItemDetail(barType){
         +'padding:3px 10px;font-size:11px;font-weight:700;margin-left:6px;'+cursor+'">'
         +badgeText+'</span>';
       // 일차 안내 (canSell 아닐 때만 표시)
-      var dayNote = canSell?'':'<div style="font-size:11px;color:#aaa;margin-top:2px">현재 '+dayNum+'일차 (3일째부터 판매가능)</div>';
+      var dayNote = canSell?'':'<div style="font-size:11px;color:var(--text2);margin-top:2px">현재 '+dayNum+'일차 (3일째부터 판매가능)</div>';
       return '<div class="item-detail-card" id="icard-'+it.id+'" style="background:'+cardBg+';transition:background 0.2s">'
         +'<div><div class="item-detail-stage">'+names[barType]+' '+it.stage+'단계'+statusBadge+'</div>'
         +'<div class="item-detail-info">구매일: '+it.purchase_date+' (현재 '+dayNum+'일차)</div>'
@@ -1373,8 +1378,8 @@ var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
 async function loadMatchingTab(){
   var buyEl = document.getElementById('match-buy-list');
   var sellEl = document.getElementById('match-sell-list');
-  if(buyEl) buyEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">로딩 중...</div>';
-  if(sellEl) sellEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">로딩 중...</div>';
+  if(buyEl) buyEl.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px;font-size:12px">로딩 중...</div>';
+  if(sellEl) sellEl.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px;font-size:12px">로딩 중...</div>';
   try{
     var d = await api('/user/matching');
     // 새 버전: {buy:[], sell:[]} / 구버전: 배열
@@ -1400,7 +1405,7 @@ function renderMatchBuyList(items){
   var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var el=document.getElementById('match-buy-list');
   if(!items.length){
-    el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">구매예약 없음</div>';
+    el.innerHTML='<div style="text-align:center;color:var(--text2);padding:20px;font-size:12px">구매예약 없음</div>';
     return;
   }
   // 서버 mock 시간 기준 (v2)
@@ -1411,12 +1416,12 @@ function renderMatchBuyList(items){
     var statusColor = {waiting:'#90caf9',pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
     var sellerInfo = '';
     if(m.status==='waiting'){
-      sellerInfo='<div style="font-size:12px;color:#90caf9;margin:6px 0">⏳ 매칭 대기 중...</div>';
+      sellerInfo='<div style="font-size:12px;color:#5b8dee;margin:6px 0">⏳ 매칭 대기 중...</div>';
     }
     var hasMatchInfo = !!(m.seller_phone || m.seller_bank || m.seller_account);
     if(m.status==='pending' || m.status==='matched' || m.status==='paid' || m.status==='confirmed'){
       if(hasMatchInfo){
-        sellerInfo = '<div style="font-size:12px;color:#aaa;margin:6px 0">'
+        sellerInfo = '<div style="font-size:12px;color:var(--text2);margin:6px 0">'
           +'<div>📞 판매자: '+(m.seller_phone||'-')+'</div>'
           +'<div>🏦 계좌: '+(m.seller_bank||'')+' '+(m.seller_account||'')+' ('+(m.seller_account_name||'-')+')</div>'
           +'<div>💰 입금액: '+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</div>'
@@ -1430,23 +1435,23 @@ function renderMatchBuyList(items){
     if(m.status==='pending' && canSend){
       btnHtml = '<button onclick="openPaymentModal('+m.id+')" style="padding:7px 14px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;margin-top:6px">💸 송금완료</button>';
     } else if(m.status==='pending' && !canSend){
-      btnHtml = '<div style="font-size:11px;color:#888;margin-top:6px">05:00~13:00에 송금 가능</div>';
+      btnHtml = '<div style="font-size:11px;color:var(--text2);margin-top:6px">05:00~13:00에 송금 가능</div>';
     } else if(m.status==='paid'){
       btnHtml = '<div style="font-size:11px;color:#1976d2;margin-top:6px">✅ 송금완료 — 판매자 확인 대기</div>';
       if(m.receipt_url){
-        btnHtml += '<a href="'+m.receipt_url+'" target="_blank" style="font-size:11px;color:#90caf9">영수증 보기</a>';
+        btnHtml += '<a href="'+m.receipt_url+'" target="_blank" style="font-size:11px;color:#5b8dee">영수증 보기</a>';
       }
     } else if(m.status==='confirmed'){
       btnHtml = '<div style="font-size:11px;color:#66bb6a;margin-top:6px">✅ 거래 완료</div>';
     }
-    return '<div style="border:1px solid #2a2d3e;border-radius:10px;padding:12px;margin-bottom:10px;background:#1a1d2e">'
+    return '<div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--bg2)">'
       +'<div style="display:flex;justify-content:space-between;align-items:center">'
       +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'
       +'<span style="font-size:12px;color:'+statusColor+';font-weight:600">'+statusLabel+'</span>'
       +'</div>'
       +sellerInfo
-      +(m.source==='reservation'?'<div style="font-size:11px;color:#90caf9">예약일: '+m.reserve_date+'</div>':'')
-      +(m.match_date?'<div style="font-size:11px;color:#888">매칭일: '+m.match_date+'</div>':'')
+      +(m.source==='reservation'?'<div style="font-size:11px;color:#5b8dee">예약일: '+m.reserve_date+'</div>':'')
+      +(m.match_date?'<div style="font-size:11px;color:var(--text2)">매칭일: '+m.match_date+'</div>':'')
       +btnHtml
       +'</div>';
   }).join('');
@@ -1457,7 +1462,7 @@ function renderMatchSellList(items){
   var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var el=document.getElementById('match-sell-list');
   if(!items.length){
-    el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">판매예약 없음</div>';
+    el.innerHTML='<div style="text-align:center;color:var(--text2);padding:20px;font-size:12px">판매예약 없음</div>';
     return;
   }
   var h = getEffectiveDate ? getEffectiveDate().getHours() : new Date().getHours();
@@ -1465,8 +1470,8 @@ function renderMatchSellList(items){
     var statusLabel = {waiting:'예약대기',pending:'입금대기',paid:'입금확인중',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
     var statusColor = {waiting:'#90caf9',pending:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
     var buyerInfo = m.status==='waiting'
-      ? '<div style="font-size:12px;color:#90caf9;margin:6px 0">⏳ 매칭 대기 중...</div>'
-      : '<div style="font-size:12px;color:#aaa;margin:6px 0">'
+      ? '<div style="font-size:12px;color:#5b8dee;margin:6px 0">⏳ 매칭 대기 중...</div>'
+      : '<div style="font-size:12px;color:var(--text2);margin:6px 0">'
       +'<div>👤 구매자: '+(m.buyer_nickname||m.buyer_username||'-')+'</div>'
       +'<div>📞 연락처: '+(m.buyer_phone||'-')+'</div>'
       +'<div>💰 수령액: '+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</div>'
@@ -1478,21 +1483,21 @@ function renderMatchSellList(items){
         +'<button onclick="doReportUnpaid('+m.id+')" style="padding:7px 14px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">❌ 미입금</button>'
         +'</div>';
       if(m.receipt_url){
-        btnHtml += '<a href="'+m.receipt_url+'" target="_blank" style="font-size:11px;color:#90caf9;display:block;margin-top:4px">영수증 보기</a>';
+        btnHtml += '<a href="'+m.receipt_url+'" target="_blank" style="font-size:11px;color:#5b8dee;display:block;margin-top:4px">영수증 보기</a>';
       }
     } else if(m.status==='pending'){
       btnHtml = '<div style="display:flex;gap:8px;margin-top:8px">'
         +'<button onclick="doReportUnpaid('+m.id+')" style="padding:7px 14px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">❌ 미입금</button>'
         +'</div>';
     }
-    return '<div style="border:1px solid #2a2d3e;border-radius:10px;padding:12px;margin-bottom:10px;background:#1a1d2e">'
+    return '<div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--bg2)">'
       +'<div style="display:flex;justify-content:space-between;align-items:center">'
       +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'
       +'<span style="font-size:12px;color:'+statusColor+';font-weight:600">'+statusLabel+'</span>'
       +'</div>'
       +buyerInfo
-      +(m.source==='reservation'?'<div style="font-size:11px;color:#90caf9">예약일: '+m.reserve_date+'</div>':'')
-      +(m.match_date?'<div style="font-size:11px;color:#888">매칭일: '+m.match_date+'</div>':'')
+      +(m.source==='reservation'?'<div style="font-size:11px;color:#5b8dee">예약일: '+m.reserve_date+'</div>':'')
+      +(m.match_date?'<div style="font-size:11px;color:var(--text2)">매칭일: '+m.match_date+'</div>':'')
       +btnHtml
       +'</div>';
   }).join('');
@@ -1508,11 +1513,11 @@ function openPaymentModal(matchId){
     modal = document.createElement('div');
     modal.id = 'payment-modal';
     modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center';
-    modal.innerHTML = '<div style="background:#1a1d2e;border-radius:14px;padding:24px;width:90%;max-width:380px;border:1px solid #2a2d3e">'
+    modal.innerHTML = '<div style="background:var(--bg2);border-radius:14px;padding:24px;width:90%;max-width:380px;border:1px solid var(--border)">'
       +'<div style="font-size:16px;font-weight:700;margin-bottom:16px">💸 송금완료 확인</div>'
-      +'<div style="font-size:13px;color:#aaa;margin-bottom:12px">판매자 계좌로 송금 후 영수증을 첨부해주세요.</div>'
+      +'<div style="font-size:13px;color:var(--text2);margin-bottom:12px">판매자 계좌로 송금 후 영수증을 첨부해주세요.</div>'
       +'<div style="margin-bottom:12px">'
-      +'<label style="display:block;font-size:12px;color:#888;margin-bottom:6px">영수증 이미지 (선택)</label>'
+      +'<label style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px">영수증 이미지 (선택)</label>'
       +'<input type="file" id="receipt-file" accept="image/*" style="width:100%;font-size:13px">'
       +'</div>'
       +'<div id="receipt-preview" style="margin-bottom:12px"></div>'
@@ -1827,7 +1832,7 @@ async function loadNotifications(){
     const list=document.getElementById('notif-list');
     if(!list) return;
     if(!d.notifications||d.notifications.length===0){
-      list.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 0">알림이 없습니다</div>';
+      list.innerHTML='<div style="text-align:center;color:var(--text2);padding:40px 0">알림이 없습니다</div>';
       return;
     }
     list.innerHTML=d.notifications.map(n=>{
@@ -1841,7 +1846,7 @@ async function loadNotifications(){
         +(isRead?'':'<span style="background:#2196f3;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:auto">NEW</span>')
         +'</div>'
         +'<div style="font-size:13px;color:#555;margin-left:24px">'+n.message+'</div>'
-        +'<div style="font-size:11px;color:#aaa;margin-left:24px;margin-top:4px">'+date+'</div>'
+        +'<div style="font-size:11px;color:var(--text2);margin-left:24px;margin-top:4px">'+date+'</div>'
         +'</div>';
     }).join('');
     // 읽음 처리
@@ -1967,16 +1972,16 @@ async function loadNotifications(){
 
     <div class="nav">
       <button class="nav-btn active" onclick="showTab('home',this)">홈</button>
+      <button class="nav-btn" id="nav-notif-btn" onclick="showTab('notif',this);loadNotifications()" style="position:relative">알림<span id="notif-badge" style="display:none;position:absolute;top:2px;right:2px;background:#e53935;color:#fff;font-size:9px;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px"></span></button>
+      <button class="nav-btn" onclick="showTab('matching',this)">매칭</button>
+      <button class="nav-btn" onclick="showTab('schedule',this)">시간표</button>
       <button class="nav-btn" onclick="showTab('price',this)">가격표</button>
       <button class="nav-btn" onclick="showTab('level',this)">레벨</button>
       <button class="nav-btn" onclick="showTab('point',this)">포인트</button>
       <button class="nav-btn" onclick="showTab('penalty',this)">패널티</button>
-      <button class="nav-btn" onclick="showTab('matching',this)">매칭</button>
-      <button class="nav-btn" id="nav-notif-btn" onclick="showTab('notif',this);loadNotifications()" style="position:relative">🔔 알림<span id="notif-badge" style="display:none;position:absolute;top:2px;right:2px;background:#e53935;color:#fff;font-size:9px;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px"></span></button>
-      <button class="nav-btn" onclick="showTab('schedule',this)">시간표</button>
       <button class="nav-btn" onclick="showTab('combine',this)">결합판매</button>
-        <button class="nav-btn" onclick="showTab('profile',this);loadProfileForm()">내정보</button>
-        <button class="nav-btn" onclick="showTab('history',this)">거래내역</button>
+      <button class="nav-btn" onclick="showTab('profile',this);loadProfileForm()">내정보</button>
+      <button class="nav-btn" onclick="showTab('history',this)">거래내역</button>
     </div>
 
     <div class="tab-content">
@@ -2320,7 +2325,7 @@ async function loadNotifications(){
             🛒 오늘 구매예약
             <span style="font-size:11px;color:#aaa">수정이 매칭되면 송금 버튼 활성화</span>
           </div>
-          <div id="match-buy-list"><div style="text-align:center;color:#aaa;padding:20px;font-size:13px">로딩 중...</div></div>
+          <div id="match-buy-list"><div style="text-align:center;color:var(--text2);padding:20px;font-size:12px">로딩 중...</div></div>
         </div>
 
         <!-- 오늘 판매예약 -->
@@ -2329,7 +2334,7 @@ async function loadNotifications(){
             💰 오늘 판매예약
             <span style="font-size:11px;color:#aaa">매칭 후 입금확인/미입금 버튼 활성화</span>
           </div>
-          <div id="match-sell-list"><div style="text-align:center;color:#aaa;padding:20px;font-size:13px">로딩 중...</div></div>
+          <div id="match-sell-list"><div style="text-align:center;color:var(--text2);padding:20px;font-size:12px">로딩 중...</div></div>
         </div>
       </div>
 
