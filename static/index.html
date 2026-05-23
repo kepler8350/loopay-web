@@ -28,7 +28,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .header-top{display:flex;align-items:center;padding:10px 16px 8px;}
 .logo{font-size:18px;font-weight:700;letter-spacing:1px}
 .level-badge{background:rgba(255,255,255,0.2);border-radius:20px;padding:4px 12px;font-size:13px;font-weight:500}
-.total-card{background:rgba(255,255,255,0.15);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.total-card{background:rgba(255,255,255,0.22);border-radius:10px;padding:10px 12px;margin-bottom:8px}
 .total-lbl{font-size:11px;opacity:.75;margin-bottom:2px}
 .total-val{font-size:24px;font-weight:700}
 .total-sub{font-size:11px;opacity:.8;margin-top:3px}
@@ -49,13 +49,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* Tabs */
 .tab-content{flex:1;overflow-y:auto;background:var(--bg)}
-.tab{display:none;padding:14px}
+.tab{display:none;padding:14px;background:var(--bg)}
 .tab.active{display:block}
 .sec-title{font-size:12px;font-weight:600;color:var(--text2);margin:0 0 8px}
 
 /* Bar cards */
 .bar-row{display:flex;gap:8px;margin-bottom:14px}
-.bar-card{flex:1;border-radius:var(--radius);padding:11px 10px;border:1.5px solid var(--border);cursor:pointer;transition:border-color .15s}
+.bar-card{flex:1;border-radius:var(--radius);padding:11px 10px;border:1.5px solid var(--border);background:var(--card-bg);cursor:pointer;transition:border-color .15s;box-shadow:0 1px 6px rgba(91,141,238,0.07)}
 .bar-card.selected,.bar-card:active{border-color:var(--blue)}
 .bar-bronze{background:var(--bronze-bg)}
 .bar-silver{background:var(--silver-bg)}
@@ -83,8 +83,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .item-price{font-size:12px;color:var(--text2);margin-top:2px}
 
 /* Reserve */
-.reserve-box{background:var(--bg);border-radius:var(--radius);padding:14px;border:1px solid var(--border)}
-.reserve-title{font-size:14px;font-weight:700;margin-bottom:12px}
+.reserve-box{background:var(--card-bg);border-radius:var(--radius);padding:14px;border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:10px}
+.reserve-title{font-size:13px;font-weight:700;margin-bottom:10px}
 .r-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .r-lbl{font-size:13px;min-width:52px}
 .r-range{font-size:11px;color:var(--text2);min-width:88px}
@@ -212,11 +212,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .reserve-confirm-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center}
 .reserve-confirm-overlay.show{display:flex}
 .reserve-confirm-box{background:#ffffff;color:#222;border-radius:16px;padding:28px 24px;width:320px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.4)}#charge-confirm-overlay .reserve-confirm-box{background:#fff!important;color:#222!important;border:1px solid #e0e0e0}
-.reserve-confirm-box h3{margin:0 0 16px;font-size:17px;color:var(--text1);text-align:center}
+.reserve-confirm-box h3{margin:0 0 16px;font-size:17px;color:var(--text);text-align:center}
 .reserve-confirm-rows{background:#f5f5f5;border-radius:10px;padding:14px 16px;margin-bottom:18px}
 .reserve-confirm-row{display:flex;justify-content:space-between;padding:5px 0;font-size:14px;color:#555}
 .reserve-confirm-row span:last-child{font-weight:700;color:#111}
-.reserve-confirm-row.total-row{border-top:1px solid var(--border);margin-top:6px;padding-top:10px;color:var(--text1);font-size:15px}
+.reserve-confirm-row.total-row{border-top:1px solid var(--border);margin-top:6px;padding-top:10px;color:var(--text);font-size:15px}
 .reserve-confirm-row.total-row span:last-child{color:#f9a825}
 .reserve-confirm-btns{display:flex;gap:10px}
 .reserve-confirm-btns button{flex:1;padding:12px;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer}
@@ -249,13 +249,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* 아이템 상세 */
 .item-detail-card{background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 .item-detail-info{font-size:13px;color:var(--text2)}
-.item-detail-stage{font-weight:700;color:var(--text1);font-size:15px}
+.item-detail-stage{font-weight:700;color:var(--text);font-size:15px}
 .item-detail-price{font-size:12px;color:#aaa;text-align:right}
 .sell-badge{font-size:11px;background:#1976d2;color:#fff;border-radius:4px;padding:2px 7px;margin-left:6px}
 .sellable-badge{font-size:11px;background:#388e3c;color:#fff;border-radius:4px;padding:2px 7px;margin-left:6px}
 /* 매칭 탭 */
-.match-card{background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px}
-.match-card-title{font-size:13px;font-weight:700;color:var(--text1);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.match-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}
+.match-card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
 .match-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
 .match-row:last-child{border-bottom:none}
 .match-type-badge{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:700}
@@ -1946,7 +1946,7 @@ async function loadNotifications(){
           <div class="total-val" id="h-total">0 P</div>
           <div class="total-sub" id="h-sub">충전 0P + 전환 0P</div>
         </div>
-        <div style="flex:1;background:rgba(255,213,79,0.2);border:1px solid rgba(255,213,79,0.5);border-radius:10px;padding:10px;display:flex;flex-direction:column;justify-content:center">
+        <div style="flex:1;background:rgba(255,230,100,0.25);border:1px solid rgba(255,210,50,0.45);border-radius:10px;padding:10px;display:flex;flex-direction:column;justify-content:center">
           <div class="total-lbl" style="color:rgba(255,255,255,0.7)">매칭유지 포인트</div>
           <div class="total-val" id="h-maintain" style="color:#ffd54f">0 P</div>
         </div>
@@ -2282,9 +2282,9 @@ async function loadNotifications(){
         <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">
           <span>거래내역</span>
           <div style="display:flex;gap:6px;align-items:center">
-            <input id="hist-start" type="date" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text1)">
+            <input id="hist-start" type="date" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text)">
             <span style="font-size:11px">~</span>
-            <input id="hist-end" type="date" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text1)">
+            <input id="hist-end" type="date" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text)">
             <button onclick="loadTradeHistory()" style="font-size:11px;padding:4px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer">조회</button>
           </div>
         </div>
@@ -2383,7 +2383,7 @@ async function loadNotifications(){
     <div style="padding:16px;max-width:430px;margin:0 auto">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <div style="font-size:18px;font-weight:700">관리자 패널</div>
-        <button onclick="closeAdminPanel()" style="padding:7px 14px;background:var(--bg2);border:none;border-radius:8px;color:var(--text1);cursor:pointer">닫기</button>
+        <button onclick="closeAdminPanel()" style="padding:7px 14px;background:var(--bg2);border:none;border-radius:8px;color:var(--text);cursor:pointer">닫기</button>
 
 <div id="toast" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 22px;border-radius:8px;font-size:14px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:9999"></div>
 <!-- 충전 확인 모달 -->
@@ -2858,7 +2858,7 @@ async function loadTradeHistory(){
       return '<div style="background:var(--bg2);border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">'
         +'<div><div style="font-size:13px;font-weight:600">'+h.bar_type+(h.stage?' '+h.stage+'단계':'')+'</div>'
         +'<div style="font-size:11px;color:var(--text2)">'+h.type+' · '+h.date+'</div></div>'
-        +'<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--text1)">'+price+'</div>'
+        +'<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--text)">'+price+'</div>'
         +'<div style="font-size:11px;font-weight:600;color:'+sc+'">'+h.status+'</div></div>'
         +'</div>';
     }).join('');
