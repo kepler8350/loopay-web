@@ -2315,7 +2315,7 @@ async function loadNotifications(){
             🛒 오늘 구매예약
             <span style="font-size:11px;color:#aaa">수정이 매칭되면 송금 버튼 활성화</span>
           </div>
-          <div id="match-buy-list"><div style="text-align:center;color:#aaa;padding:20px;font-size:13px">로딩 중...</div></div>
+          <div id="match-buy-list"></div>
         </div>
 
         <!-- 오늘 판매예약 -->
@@ -2324,7 +2324,7 @@ async function loadNotifications(){
             💰 오늘 판매예약
             <span style="font-size:11px;color:#aaa">매칭 후 입금확인/미입금 버튼 활성화</span>
           </div>
-          <div id="match-sell-list"><div style="text-align:center;color:#aaa;padding:20px;font-size:13px">로딩 중...</div></div>
+          <div id="match-sell-list"></div>
         </div>
       </div>
 
@@ -2346,13 +2346,13 @@ async function loadNotifications(){
       </div>
     
       <div id="tab-combine" class="tab"><div class="sec-title">결합판매</div><div class="combine-desc">결합 판매 (250P 소모)</div><div id="combine-items-list" class="combine-list"><div class="empty-msg">로딩 중...</div></div><div id="combine-selected" class="combine-selected" style="display:none"><div class="combine-sel-title">선택된 아이템</div><div id="combine-sel-info"></div><div id="combine-preview-result" class="combine-preview"></div><button id="combine-exec-btn" onclick="executeCombine()" style="width:100%;padding:14px;background:#1976d2;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;display:none">결합판매 실행 (250P)</button></div></div>
-    </div>
 
 <!-- NOTIF TAB -->
 <div id="tab-notif" class="tab">
 <div class="sec-title" style="display:flex;align-items:center;justify-content:space-between">알림<button onclick="loadNotifications()" style="background:transparent;border:1px solid #aaa;color:#aaa;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer">새로고침</button></div>
 <div id="notif-list" style="margin-top:8px"><div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px">알림이 없습니다</div></div>
 </div>
+    </div>
   </div>
 
   <!-- Admin modal overlay -->
