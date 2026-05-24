@@ -1643,8 +1643,9 @@ def admin_get_matches():
             "SELECT m.id, m.match_date, m.bar_type, m.stage, m.match_round,"
             " m.buy_price, m.sell_price, m.status,"
             " b.username as buyer_username, b.nickname as buyer_nickname, b.phone as buyer_phone,"
+            " b.account_no as buyer_account, b.account_name as buyer_account_name,"
             " s.username as seller_username, s.nickname as seller_nickname, s.phone as seller_phone,"
-            " s.bank as seller_bank, s.account_no as seller_account"
+            " s.bank as seller_bank, s.account_no as seller_account, s.account_name as seller_account_name"
             " FROM matches m"
             " LEFT JOIN users b ON m.buyer_id = b.id"
             " LEFT JOIN users s ON m.seller_id = s.id"
@@ -1657,9 +1658,11 @@ def admin_get_matches():
             'bar_type': r['bar_type'], 'bar_name': names.get(r['bar_type'], r['bar_type']),
             'stage': r['stage'], 'match_round': r['match_round'],
             'buy_price': r['buy_price'], 'sell_price': r['sell_price'], 'status': r['status'],
-            'buyer': {'username': r['buyer_username'], 'nickname': r['buyer_nickname'], 'phone': r['buyer_phone']},
+            'buyer': {'username': r['buyer_username'], 'nickname': r['buyer_nickname'], 'phone': r['buyer_phone'],
+                     'account': r['buyer_account'], 'account_name': r['buyer_account_name']},
             'seller': {'username': r['seller_username'], 'nickname': r['seller_nickname'],
-                       'phone': r['seller_phone'], 'bank': r['seller_bank'], 'account': r['seller_account']},
+                       'phone': r['seller_phone'], 'bank': r['seller_bank'],
+                       'account': r['seller_account'], 'account_name': r['seller_account_name']},
         } for r in rows])
     finally:
         db.close()
