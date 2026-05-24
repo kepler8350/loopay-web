@@ -1421,50 +1421,39 @@ function renderMatchBuyList(items){
     el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">구매예약 없음</div>';
     return;
   }
-  // 서버 mock 시간 기준 (v2)
   var h = getEffectiveDate ? getEffectiveDate().getHours() : new Date().getHours();
-  var canSend = (h>=5 && h<13); // 1차 매칭 입금: 05:00~13:00
+  var canSend = (h>=5 && h<13);
   el.innerHTML = items.map(function(m){
     var statusLabel = {waiting:'예약대기',pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
     var statusColor = {waiting:'#90caf9',pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
-    var sellerInfo = '';
-    if(m.status==='waiting'){
-      sellerInfo='<div style="font-size:12px;color:#90caf9;margin:6px 0">⏳ 매칭 대기 중...</div>';
-    }
     var hasMatchInfo = !!(m.seller_phone || m.seller_bank || m.seller_account);
-    if(m.status==='pending' || m.status==='matched' || m.status==='paid' || m.status==='confirmed'){
-      if(hasMatchInfo){
-        sellerInfo = '<div style="font-size:12px;color:#aaa;margin:6px 0">'
-          +'<div>📞 판매자: '+(m.seller_phone||'-')+'</div>'
-          +'<div>🏦 계좌: '+(m.seller_bank||'')+' '+(m.seller_account||'')+' ('+(m.seller_account_name||'-')+')</div>'
-          +'<div>💰 입금액: '+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</div>'
-          +'</div>';
-      } else {
-        sellerInfo = '<div style="font-size:12px;color:#f9a825;margin:6px 0">매칭완료 — 판매자 정보는 내일 오전 5시 이후 표시됩니다</div>';
-      }
+    var dateTxt = m.source==='reservation'?m.reserve_date:(m.match_date||'');
+
+    if(m.status==='waiting'){
+      return '<div style="padding:10px 12px;margin-bottom:6px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">'        +'<div style="display:flex;justify-content:space-between;align-items:center">'        +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'        +'<span style="font-size:11px;color:'+statusColor+'">'+statusLabel+'</span>'        +'</div>'        +'<div style="font-size:11px;color:var(--text2);margin-top:4px">⏳ 매칭 대기 중'+(dateTxt?' · '+dateTxt:'')+'</div>'        +'</div>';
     }
+
+    var infoHtml = '';
+    if(hasMatchInfo){
+      infoHtml = '<div style="font-size:12px;color:var(--text2);margin:6px 0;line-height:1.9">'        +'<div>📞 연락처: <span style="color:var(--text)">'+m.seller_phone+'</span></div>'        +'<div>🏦 은행: <span style="color:var(--text)">'+(m.seller_bank||'-')+'</span></div>'        +'<div>💳 계좌: <span style="color:var(--text);font-weight:600">'+(m.seller_account||'-')+'</span></div>'        +'<div>👤 예금주: <span style="color:var(--text)">'+(m.seller_account_name||'-')+'</span></div>'        +'<div>💰 입금액: <span style="color:#f9a825;font-weight:600">'+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</span></div>'        +'</div>';
+    } else if(m.status==='pending'||m.status==='matched'){
+      infoHtml = '<div style="font-size:11px;color:#f9a825;margin:6px 0">매칭완료 — 판매자 정보 확인 중</div>';
+    }
+
     var btnHtml = '';
-    if(m.status==='waiting'){ btnHtml=''; } else
-    if(m.status==='pending' && canSend){
-      btnHtml = '<button onclick="openPaymentModal('+m.id+')" style="padding:7px 14px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;margin-top:6px">💸 송금완료</button>';
-    } else if(m.status==='pending' && !canSend){
-      btnHtml = '<div style="font-size:11px;color:#888;margin-top:6px">05:00~13:00에 송금 가능</div>';
-    } else if(m.status==='paid'){
-      btnHtml = '<div style="font-size:11px;color:#1976d2;margin-top:6px">✅ 송금완료 — 판매자 확인 대기</div>';
-      if(m.receipt_url){
-        btnHtml += '<a href="'+m.receipt_url+'" target="_blank" style="font-size:11px;color:#90caf9">영수증 보기</a>';
+    if((m.status==='pending'||m.status==='matched') && hasMatchInfo){
+      if(canSend){
+        btnHtml = '<button onclick="openPaymentModal('+m.id+')" style="margin-top:8px;padding:8px 16px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600;width:100%">💸 송금 완료</button>';
+      } else {
+        btnHtml = '<div style="font-size:11px;color:#888;margin-top:6px">송금: 05:00~13:00 사이에 가능</div>';
       }
+    } else if(m.status==='paid'){
+      btnHtml = '<div style="font-size:12px;color:#1976d2;margin-top:6px;font-weight:600">✅ 송금완료 — 판매자 확인 대기</div>';
     } else if(m.status==='confirmed'){
-      btnHtml = '<div style="font-size:11px;color:#66bb6a;margin-top:6px">✅ 거래 완료</div>';
+      btnHtml = '<div style="font-size:12px;color:#66bb6a;margin-top:6px;font-weight:600">✅ 거래 완료</div>';
     }
-    var subTxt=m.status==='waiting'?'⏳ 대기':hasMatchInfo?'📞 '+m.seller_phone:(m.status==='pending'||m.status==='matched')?'매칭완료':m.status==='paid'?'✅ 송금완료':m.status==='confirmed'?'✅ 거래완료':'';
-    var dateTxt=m.source==='reservation'?m.reserve_date:(m.match_date||'');
-    return '<div style="display:flex;align-items:center;gap:6px;padding:8px 10px;margin-bottom:5px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">'
-      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+';font-size:12px;white-space:nowrap">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'
-      +'<span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+subTxt+'</span>'
-      +(dateTxt?'<span style="font-size:10px;color:var(--text2);white-space:nowrap">'+dateTxt+'</span>':'')
-      +'<span style="font-size:11px;color:'+statusColor+';font-weight:600;white-space:nowrap">'+statusLabel+'</span>'
-      +'</div>';
+
+    return '<div style="padding:10px 12px;margin-bottom:6px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">'      +'<div style="display:flex;justify-content:space-between;align-items:center">'      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'      +'<span style="font-size:11px;color:'+statusColor+';font-weight:600">'+statusLabel+'</span>'      +'</div>'      +(dateTxt?'<div style="font-size:10px;color:var(--text2);margin-top:2px">'+dateTxt+'</div>':'')      +infoHtml+btnHtml      +'</div>';
   }).join('');
 }
 

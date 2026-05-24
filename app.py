@@ -693,7 +693,7 @@ def admin_run_matching():
         buy_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
                u.username as buyer_username, u.nickname as buyer_nickname,
-               u.phone as buyer_phone
+               u.phone as buyer_phone, u.account_name as buyer_account_name
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                WHERE r.reserve_date=? AND r.status='pending' AND r.match_round=1
@@ -770,7 +770,7 @@ def admin_run_matching():
                 )
 
                 # 알림 발송 (구매자 + 판매자)
-                buyer_msg = f"{names[bt]} {seller['stage']}단계 매칭완료! 판매자 연락처: {s_phone or '-'}, 계좌: {s_bank} {s_acct} ({s_name})"
+                buyer_msg = f"{names[bt]} {seller['stage']}단계 매칭완료! 판매자 정보를 매칭탭에서 확인하세요."
                 db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
                            (buyer['buyer_id'], 'match', '매칭 완료', buyer_msg))
                 seller_msg = f"{names[bt]} {seller['stage']}단계 매칭완료! 구매자: {buyer['buyer_nickname'] or buyer['buyer_username']}, 연락처: {buyer['buyer_phone'] or '-'}"
@@ -780,7 +780,8 @@ def admin_run_matching():
                 matched_pairs.append({
                     'bar_type': bt, 'bar_name': names[bt],
                     'stage': seller['stage'],
-                    'buyer': {'username': buyer['buyer_username'], 'nickname': buyer['buyer_nickname'], 'phone': buyer['buyer_phone']},
+                    'buyer': {'username': buyer['buyer_username'], 'nickname': buyer['buyer_nickname'],
+                              'phone': buyer['buyer_phone'], 'account_name': buyer.get('buyer_account_name')},
                     'seller': {'username': seller['seller_username'], 'nickname': seller['seller_nickname'],
                                'phone': s_phone, 'bank': s_bank, 'account': s_acct, 'account_name': s_name},
                     'sell_price': sell_price, 'buy_price': buy_price,
