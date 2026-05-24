@@ -1010,7 +1010,7 @@ function renderSystemItems(){
 
 // ── 매치 기록 ────────────────────────────────────────
 var _matchRecords = [];
-async function loadMatchRecords(){
+async async function loadMatchRecords(){
   var tbody = document.getElementById('matches-tbody');
   if(tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
   try{
@@ -1018,7 +1018,7 @@ async function loadMatchRecords(){
     _matchRecords = d.matches || [];
     renderMatchRecords();
   }catch(e){
-    if(tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:#ef5350">'+e.message+'</td></tr>';
+    if(tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:16px;color:#ef5350">'+e.message+'</td></tr>';
   }
 }
 function renderMatchRecords(){
