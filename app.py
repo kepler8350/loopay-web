@@ -987,10 +987,9 @@ def admin_matching_status():
             (round_num, loopay_id)
         ).fetchall()
 
-        # ── 판매예약: loopay의 match_round=2 confirmed=1 예약 ──
-        # 1차/2차 모두 loopay 아이템에서 판매하므로 동일
-        # 1차: loopay pending 예약 전체, 2차: 1차 매칭 후 남은 것 (status='pending'만)
-        # pending 예약 먼저, 없으면 reservable 아이템으로 집계
+        # ── 판매예약 ──
+        # 1차: loopay pending 예약 없으면 reservable/matched 아이템으로 집계 (fallback)
+        # 2차: pending 예약만 (1차 매칭 후 남은 것, 없으면 0)
         _pending_sell = db.execute(
             """SELECT COUNT(*) as c FROM reservations
                WHERE match_round=2 AND status='pending' AND user_id=?""",
@@ -998,13 +997,16 @@ def admin_matching_status():
         ).fetchone()['c']
         if _pending_sell > 0:
             sell_count = _pending_sell
-        else:
-            # pending 예약 없으면: reservable 아이템 + matched지만 아직 confirmed 안 된 아이템
+        elif round_num == 1:
+            # 1차에서만: pending 없으면 loopay 아이템으로 fallback
             sell_count = db.execute(
                 """SELECT COUNT(*) as c FROM items
                    WHERE user_id=? AND status IN ('reservable','matched')""",
                 (loopay_id,)
             ).fetchone()['c']
+        else:
+            # 2차: pending만 (없으면 0)
+            sell_count = 0
 
         rate = round(min(buy_count, sell_count) / buy_count * 100, 1) if buy_count > 0 else 0.0
 
@@ -1024,7 +1026,8 @@ def admin_matching_status():
                    ORDER BY r.bar_type, stage""",
                 (loopay_id,)
             ).fetchall()
-        else:
+        elif round_num == 1:
+            # 1차 fallback: loopay 아이템 기준
             by_type_rows = db.execute(
                 """SELECT bar_type, COUNT(*) as cnt FROM items
                    WHERE user_id=? AND status IN ('reservable','matched')
@@ -1037,6 +1040,9 @@ def admin_matching_status():
                    GROUP BY bar_type, stage ORDER BY bar_type, stage""",
                 (loopay_id,)
             ).fetchall()
+        else:
+            by_type_rows = []
+            by_stage_rows = []
         by_type = [{'bar_type': r['bar_type'], 'count': r['cnt']} for r in by_type_rows]
         by_stage = [{'bar_type': r['bar_type'], 'stage': r['stage'], 'count': r['cnt']} for r in by_stage_rows]
         return {
