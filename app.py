@@ -1742,19 +1742,27 @@ def match_confirm_payment():
         if m['reservation_id']:
             db.execute("UPDATE reservations SET status='confirmed' WHERE id=?", (m['reservation_id'],))
 
-        # 3. item을 buyer에게 이전 (seller가 loopay인 경우)
-        # seller의 아이템 중 매칭된 것을 buyer에게 이전
+        # 3. item을 buyer에게 이전 (seller 아이템은 sold, buyer에게 새 아이템 추가)
+        from datetime import date as _date
         seller_item = db.execute(
-            """SELECT i.id FROM items i
+            """SELECT i.id, i.bar_type, i.stage FROM items i
                WHERE i.user_id=? AND i.bar_type=? AND i.status='matched'
                ORDER BY i.id DESC LIMIT 1""",
             (m['seller_id'], m['bar_type'])
         ).fetchone()
         if seller_item:
-            db.execute(
-                "UPDATE items SET user_id=?, status='matched' WHERE id=?",
-                (m['buyer_id'], seller_item['id'])
-            )
+            # seller 아이템 sold 처리
+            db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
+            # buyer에게 새 아이템 추가 (reservable 상태로 보유)
+            try:
+                db.execute(
+                    """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
+                       VALUES(?, ?, ?, ?, 'reservable')""",
+                    (m['buyer_id'], seller_item['bar_type'], seller_item['stage'] or m['stage'] or 1,
+                     _date.today().isoformat())
+                )
+            except Exception:
+                pass
 
         # 4. 구매자 알림 (거래 완료)
         db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
