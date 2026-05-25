@@ -1768,9 +1768,13 @@ def admin_loopay_items():
         lid = loopay['id']
         rows = db.execute(
             """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date,
-               r.reserve_date
+               r.reserve_date,
+               m.id as match_id, m.status as match_status,
+               bu.username as buyer_username
                FROM items i
                LEFT JOIN reservations r ON r.item_id = i.id AND r.status IN ('pending','matched')
+               LEFT JOIN matches m ON m.reservation_id = r.id
+               LEFT JOIN users bu ON m.buyer_id = bu.id
                WHERE i.user_id = ?
                ORDER BY i.id DESC""",
             (lid,)
@@ -1783,6 +1787,9 @@ def admin_loopay_items():
                 'status': r['status'],
                 'purchase_date': r['purchase_date'],
                 'reserve_date': r['reserve_date'],
+                'match_id': r['match_id'],
+                'match_status': r['match_status'],
+                'buyer_username': r['buyer_username'],
             } for r in rows],
             total=len(rows)
         )

@@ -516,12 +516,14 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
             <th style="padding:8px;text-align:center">종류</th>
             <th style="padding:8px;text-align:center">단계</th>
             <th style="padding:8px;text-align:center">상태</th>
+            <th style="padding:8px;text-align:center">매칭상태</th>
             <th style="padding:8px;text-align:left">구매일</th>
             <th style="padding:8px;text-align:left">예약일</th>
+            <th style="padding:8px;text-align:left">액션</th>
           </tr>
         </thead>
         <tbody id="si-tbody">
-          <tr><td colspan="6" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>
+          <tr><td colspan="9" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>
         </tbody>
       </table>
     </div>
@@ -899,6 +901,48 @@ async function deleteAllUsers(){
 }
 
 // ── 시스템아이템현황 ────────────────────────────────
+
+async function adminConfirmPayment(matchId){
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var r = await fetch('/api/match/confirm-payment',{method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify({match_id:matchId})});
+    var d = await r.json();
+    if(d.success){toast('송금 확인 완료','success');loadSystemItems();}
+    else toast(d.error||'오류','error');
+  }catch(e){toast(e.message,'error');}
+}
+async function adminReportUnpaid(matchId){
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var r = await fetch('/api/match/report-unpaid',{method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify({match_id:matchId})});
+    var d = await r.json();
+    if(d.success){toast('미입금 처리 완료','success');loadSystemItems();}
+    else toast(d.error||'오류','error');
+  }catch(e){toast(e.message,'error');}
+}
+
+async function adminConfirmPayment(matchId){
+  try{
+    var tok=localStorage.getItem('admin_token');
+    var r=await fetch('/api/match/confirm-payment',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({match_id:matchId})});
+    var d=await r.json();
+    if(d.success){toast('송금 확인 완료','success');loadSystemItems();}
+    else toast(d.error||'오류','error');
+  }catch(e){toast(e.message,'error');}
+}
+async function adminReportUnpaid(matchId){
+  try{
+    var tok=localStorage.getItem('admin_token');
+    var r=await fetch('/api/match/report-unpaid',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({match_id:matchId})});
+    var d=await r.json();
+    if(d.success){toast('미입금 처리 완료','success');loadSystemItems();}
+    else toast(d.error||'오류','error');
+  }catch(e){toast(e.message,'error');}
+}
 function updateDeleteBtn(){
   var checked = document.querySelectorAll('.si-item-check:checked');
   var btn = document.getElementById('si-delete-btn');
@@ -947,7 +991,7 @@ var _systemItems = [];
 async function loadSystemItems(){
   var tbody = document.getElementById('si-tbody');
   var summary = document.getElementById('si-summary');
-  if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
+  if(tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
   try{
     var d = await apiAdmin('/admin/loopay-items');
     _systemItems = d.items || [];
@@ -988,23 +1032,34 @@ function renderSystemItems(){
   });
   if(totalEl) totalEl.textContent = '총 '+filtered.length+'개 (전체 '+_systemItems.length+'개)';
   if(!filtered.length){
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888">아이템 없음</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">아이템 없음</td></tr>';
     return;
   }
   var tC={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var tN={bronze:'수정',silver:'루비',gold:'다이아'};
   var sL={reservable:'판매가능',waiting:'대기중',matched:'매칭완료',sold:'판매완료',active:'보유중'};
   var sC={reservable:'#66bb6a',waiting:'#f9a825',matched:'#1976d2',sold:'#888',active:'#aaa'};
+  var matchStatusKr={pending:'대기',matched:'매칭완료',paid:'송금',completed:'거래완료',cancelled:'취소'};
+  var matchStatusColor={pending:'#888',matched:'#f9a825',paid:'#42a5f5',completed:'#66bb6a',cancelled:'#ef5350'};
   tbody.innerHTML = filtered.map(function(item,i){
     var bg = i%2===0?'#12121f':'#1a1a2e';
+    var ms = item.match_status;
+    var matchBadge = ms
+      ? '<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(matchStatusColor[ms]||'#888')+'33;color:'+(matchStatusColor[ms]||'#888')+'">'+(matchStatusKr[ms]||ms)+'</span>'
+      : '<span style="color:#555;font-size:11px">-</span>';
+    var actionBtns = (ms==='paid' && item.match_id)
+      ? '<button onclick="adminConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 송금확인</button>'        +'<button onclick="adminReportUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">⚠ 미입금</button>'
+      : '';
     return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
       +'<td style="padding:6px 8px;text-align:center"><input type=\"checkbox\" class=\"si-item-check\" data-id=\"'+item.id+'\" onchange=\"updateDeleteBtn()\" style=\"cursor:pointer\"></td>'
       +'<td style="padding:6px 8px;color:#555">'+item.id+'</td>'
       +'<td style="padding:6px 8px;text-align:center;color:'+(tC[item.bar_type]||'#fff')+'"><strong>'+(tN[item.bar_type]||item.bar_type)+'</strong></td>'
       +'<td style="padding:6px 8px;text-align:center">'+(item.stage||'-')+'단계</td>'
       +'<td style="padding:6px 8px;text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(sC[item.status]||'#555')+'33;color:'+(sC[item.status]||'#aaa')+'">'+(sL[item.status]||item.status)+'</span></td>'
+      +'<td style="padding:6px 8px;text-align:center">'+matchBadge+'</td>'
       +'<td style="padding:6px 8px;color:#888;font-size:11px">'+(item.purchase_date||'-')+'</td>'
       +'<td style="padding:6px 8px;color:#888;font-size:11px">'+(item.reserve_date||'-')+'</td>'
+      +'<td style="padding:6px 8px">'+actionBtns+'</td>'
       +'</tr>';
   }).join('');
 }
@@ -1026,7 +1081,7 @@ function renderMatchRecords(){
   var tbody = document.getElementById('matches-tbody');
   if(!tbody) return;
   var colors = {bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
-  var statusKr = {pending:'대기',matched:'매칭',completed:'완료',cancelled:'취소'};
+  var statusKr = {pending:'대기',matched:'매칭',paid:'송금',completed:'완료',cancelled:'취소'};
   if(!_matchRecords.length){
     tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">매치 기록 없음</td></tr>';
     return;
@@ -1374,10 +1429,10 @@ async function runMatching(roundNum){
       html2 += '<th style="padding:6px 8px;text-align:center">단계</th>';
       html2 += '<th style="padding:6px 8px;text-align:left;border-left:2px solid #2d2d5e">구매자ID</th>';
       html2 += '<th style="padding:6px 8px;text-align:left">예금주(구)</th>';
-      html2 += '<th style="padding:6px 8px;text-align:left">연락처(구)</th>';
+      html2 += '<th style="padding:6px 8px;text-align:left">계좌번호(구)</th>';
       html2 += '<th style="padding:6px 8px;text-align:left;border-left:2px solid #2d2d5e">판매자ID</th>';
       html2 += '<th style="padding:6px 8px;text-align:left">예금주(판)</th>';
-      html2 += '<th style="padding:6px 8px;text-align:left">연락처(판)</th>';
+      html2 += '<th style="padding:6px 8px;text-align:left">계좌번호(판)</th>';
       html2 += '<th style="padding:6px 8px;text-align:right">판매가</th>';
       html2 += '</tr></thead><tbody>';
       pairs.forEach(function(p,i){
@@ -1390,10 +1445,10 @@ async function runMatching(roundNum){
         html2 += '<td style="padding:5px 8px;text-align:center">'+(p.stage||'-')+'단계</td>';
         html2 += '<td style="padding:5px 8px;border-left:2px solid #2d2d5e;color:#64b5f6">'+(buyer.username||'-')+'</td>';
         html2 += '<td style="padding:5px 8px;color:#64b5f6">'+(buyer.account_name||'-')+'</td>';
-        html2 += '<td style="padding:5px 8px;color:#64b5f6">'+(buyer.phone||'-')+'</td>';
+        html2 += '<td style="padding:5px 8px;color:#64b5f6">'+(buyer.account||'-')+'</td>';
         html2 += '<td style="padding:5px 8px;border-left:2px solid #2d2d5e;color:#a5d6a7">'+(seller.username||'-')+'</td>';
         html2 += '<td style="padding:5px 8px;color:#a5d6a7">'+(seller.account_name||'-')+'</td>';
-        html2 += '<td style="padding:5px 8px;color:#a5d6a7">'+(seller.phone||'-')+'</td>';
+        html2 += '<td style="padding:5px 8px;color:#a5d6a7">'+(seller.account||'-')+'</td>';
         html2 += '<td style="padding:5px 8px;text-align:right;color:#f9a825">'+(p.sell_price?p.sell_price.toLocaleString()+'원':'-')+'</td>';
         html2 += '</tr>';
       });
