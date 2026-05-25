@@ -1404,10 +1404,18 @@ async function runMatching(roundNum){
     var pairs = d.pairs||[];
     // 매칭 실행 후 구매예약 아이템별 숨기기
     if(pairs.length){
-      var buyTypeEl = document.getElementById('r'+roundNum+'-buy-by-type');
-      if(buyTypeEl) buyTypeEl.closest('.two-col').style.display='none';
+      // stat-grid(구매예약수/판매예약수/매칭율 카드) 숨기기
       var statGridEl = document.getElementById('r'+roundNum+'-stat-grid');
       if(statGridEl) statGridEl.style.display='none';
+      // two-col(구매예약 아이템별 + 판매예약 아이템별) 숨기기
+      var buyTypeEl = document.getElementById('r'+roundNum+'-buy-by-type');
+      if(buyTypeEl){
+        var twoCol = buyTypeEl.closest('.two-col');
+        if(twoCol) twoCol.style.display='none';
+      }
+      // r1/r2-type-section id가 있는 경우도 숨기기
+      var typeSec = document.getElementById('r'+roundNum+'-type-section');
+      if(typeSec) typeSec.style.display='none';
     }
     if(!pairs.length){
       if(resultEl) resultEl.innerHTML = '<div style="color:#f9a825;padding:8px">⚠️ 매칭된 쌍이 없습니다. 판매예약 또는 구매예약이 없습니다.</div>';
