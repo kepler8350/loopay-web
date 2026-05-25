@@ -938,6 +938,34 @@ async function adminReportUnpaid(matchId){
   }catch(e){toast(e.message,'error');}
 }
 
+async function adminWarnUnpaid(matchId){
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var r = await fetch('/api/match/report-unpaid',{method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify({match_id:matchId})});
+    var d = await r.json();
+    if(d.success){
+      _unpaidClickedAt[matchId] = Date.now();
+      toast('미입금 알림 발송 (10분 후 재활성화)','success');
+      loadSystemItems();
+    } else toast(d.error||'오류','error');
+  }catch(e){toast(e.message,'error');}
+}
+
+async function adminConfirmUnpaid(matchId){
+  if(!confirm('미입금을 확정하시겠습니까? 구매자의 예약이 2차 매칭으로 이전됩니다.')) return;
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var r = await fetch('/api/admin/confirm-unpaid',{method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify({match_id:matchId})});
+    var d = await r.json();
+    if(d.success){toast('미입금 확정 완료 - 2차 매칭 이전','success');loadSystemItems();}
+    else toast(d.error||'오류','error');
+  }catch(e){toast(e.message,'error');}
+}
+
 async function adminConfirmPayment(matchId){
   try{
     var tok=localStorage.getItem('admin_token');
@@ -1001,6 +1029,7 @@ async function deleteAllItems(){
 }
 
 var _systemItems = [];
+var _unpaidClickedAt = {}; // matchId → 마지막 클릭 시각(ms)
 async function loadSystemItems(){
   var tbody = document.getElementById('si-tbody');
   var summary = document.getElementById('si-summary');
@@ -1066,17 +1095,32 @@ function renderSystemItems(){
     var matchBadge = ms
       ? '<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(matchStatusColor[ms]||'#888')+'33;color:'+(matchStatusColor[ms]||'#888')+'">'+(matchStatusKr[ms]||ms)+'</span>'
       : '<span style="color:#555;font-size:11px">-</span>';
-        // 미입금 버튼: 30분 전부터 10분 단위 3번 활성화 (12:30,12:40,12:50)
+        // 서버 시간 기반 버튼 활성화 제어
     var _h = _serverHour||0; var _m = _serverMin||0;
     var _totalMin = _h*60+_m;
-    // 1차 마감 13:00 = 780분, 활성화: 750,760,770분 (12:30,12:40,12:50)
-    var _unpaidActive = (_totalMin>=750 && _totalMin<780) || (_totalMin>=820 && _totalMin<850);
-    var actionBtns = (ms==='paid' && item.match_id)
-      ? '<button onclick="adminConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>'
-        +(_unpaidActive
-          ? '<button onclick="adminReportUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">⚠ 미입금</button>'
-          : '<button disabled style="padding:3px 8px;background:#555;color:#888;border:none;border-radius:4px;font-size:11px;cursor:not-allowed">⚠ 미입금</button>')
-      : '';
+    // 12:30~13:00(750~780): 미입금 알림 버튼 활성화 (누르면 10분 쿨타임)
+    var _inWarnWindow = (_totalMin >= 750 && _totalMin < 780);
+    // 13:00~14:00(780~840): 미입금확인 버튼 활성화
+    var _inConfirmWindow = (_totalMin >= 780 && _totalMin < 840);
+    // 미입금 알림 버튼 쿨타임 체크 (10분=600000ms)
+    var _lastClick = _unpaidClickedAt[item.match_id] || 0;
+    var _coolOk = (Date.now() - _lastClick) >= 600000;
+    var _warnBtnActive = _inWarnWindow && _coolOk && ms === 'paid';
+
+    var actionBtns = '';
+    if (ms === 'paid' && item.match_id) {
+      // 입금확인 버튼 (항상)
+      actionBtns += '<button onclick="adminConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>';
+      // 미입금 알림 버튼 (12:30~13:00, 쿨타임 포함)
+      if (_inWarnWindow) {
+        actionBtns += _warnBtnActive
+          ? '<button onclick="adminWarnUnpaid('+item.match_id+')" style="padding:3px 8px;background:#e65100;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">⚠ 미입금</button>'
+          : '<button disabled title="10분 후 재활성화" style="padding:3px 8px;background:#555;color:#888;border:none;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">⚠ 미입금</button>';
+      }
+    } else if ((ms === 'paid' || ms === 'unpaid') && item.match_id && _inConfirmWindow) {
+      // 미입금확인 버튼 (13:00~14:00)
+      actionBtns += '<button onclick="adminConfirmUnpaid('+item.match_id+')" style="padding:3px 8px;background:#6a1b9a;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🚫 미입금확정</button>';
+    }
     return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
       +'<td style="padding:6px 8px;text-align:center"><input type=\"checkbox\" class=\"si-item-check\" data-id=\"'+item.id+'\" onchange=\"updateDeleteBtn()\" style=\"cursor:pointer\"></td>'
       +'<td style="padding:6px 8px;color:#555">'+item.id+'</td>'

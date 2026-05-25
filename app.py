@@ -1843,15 +1843,23 @@ def match_confirm_payment():
 @app.route('/api/match/report-unpaid', methods=['POST'])
 @jwt_required()
 def match_report_unpaid():
-    uid = int(get_jwt_identity())
+    identity = get_jwt_identity()
+    is_admin = str(identity).startswith('admin:')
+    uid = None if is_admin else int(identity)
     data = request.json or {}
     match_id = int(data.get('match_id', 0))
     db = get_db()
     try:
-        m = db.execute(
-            "SELECT * FROM matches WHERE id=? AND seller_id=? AND status IN ('pending','paid')",
-            (match_id, uid)
-        ).fetchone()
+        if is_admin:
+            m = db.execute(
+                "SELECT * FROM matches WHERE id=? AND status IN ('pending','paid')",
+                (match_id,)
+            ).fetchone()
+        else:
+            m = db.execute(
+                "SELECT * FROM matches WHERE id=? AND seller_id=? AND status IN ('pending','paid')",
+                (match_id, uid)
+            ).fetchone()
         if not m:
             return jsonify(error='처리 불가'), 400
         db.execute("UPDATE matches SET status='unpaid' WHERE id=?", (match_id,))
@@ -1862,8 +1870,10 @@ def match_report_unpaid():
         # 관리자 알림
         seller = db.execute("SELECT nickname, username FROM users WHERE id=?", (uid,)).fetchone()
         seller_name = seller['nickname'] or seller['username'] if seller else '판매자'
+        # 판매자(loopay)에게 미입금 알림
         db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-            (1, 'unpaid', '미입금 신고', f'{seller_name}님이 매치 #{match_id} 미입금 신고했습니다.'))
+            (m['seller_id'], 'unpaid', '미입금 알림',
+             f'매치 #{match_id} 구매자 미입금 알림이 발송됐습니다. 13:00까지 미입금 확정 가능합니다.'))
         # 구매자에게 미입금 알림
         buyer_row = db.execute("SELECT nickname, username FROM users WHERE id=?", (m['buyer_id'],)).fetchone()
         buyer_name_str = buyer_row['nickname'] or buyer_row['username'] if buyer_row else '구매자'
@@ -1879,6 +1889,74 @@ def match_report_unpaid():
         return jsonify(error=str(e)), 500
     finally:
         db.close()
+
+# ── 관리자: 미입금확정 (13:00~14:00) ────────────────────────
+@app.route('/api/admin/confirm-unpaid', methods=['POST'])
+@jwt_required()
+def admin_confirm_unpaid():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'):
+        return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    match_id = int(data.get('match_id', 0))
+    db = get_db()
+    try:
+        m = db.execute(
+            "SELECT * FROM matches WHERE id=? AND status IN ('pending','paid','unpaid')",
+            (match_id,)
+        ).fetchone()
+        if not m:
+            return jsonify(error='처리 불가'), 400
+
+        bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+        bar_name = bar_names.get(m['bar_type'], m['bar_type'])
+
+        # 1. match status → unpaid (미입금확정)
+        db.execute("UPDATE matches SET status='unpaid' WHERE id=?", (match_id,))
+
+        # 2. 구매예약 → unmatched (2차 대기로 전환)
+        if m['reservation_id']:
+            try:
+                db.execute("""UPDATE reservations SET status='unmatched', match_round=2
+                             WHERE id=?""", (m['reservation_id'],))
+            except Exception:
+                pass
+
+        # 3. loopay 판매 아이템 → matched 상태 복원 (재매칭 가능하게)
+        seller_item = db.execute(
+            """SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='matched'
+               ORDER BY id DESC LIMIT 1""",
+            (m['seller_id'], m['bar_type'])
+        ).fetchone()
+        if seller_item:
+            db.execute("UPDATE items SET status='reservable' WHERE id=?", (seller_item['id'],))
+
+        # 4. 구매자 알림
+        db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+            (m['buyer_id'], 'unpaid', '미입금 확정',
+             f'{bar_name} {m["stage"]}단계 거래에서 미입금이 확정됐습니다. 2차 매칭으로 자동 이동됩니다.'))
+
+        # 5. 2차 구매예약 생성 (기존 예약을 2차로 이전)
+        buyer_res = db.execute(
+            "SELECT * FROM reservations WHERE id=?", (m['reservation_id'],)
+        ).fetchone() if m['reservation_id'] else None
+
+        if buyer_res:
+            try:
+                db.execute("""INSERT INTO reservations(user_id, bar_type, match_round, status, reserve_date)
+                             VALUES(?, ?, 2, 'pending', date('now','localtime'))""",
+                    (m['buyer_id'], m['bar_type']))
+            except Exception:
+                pass
+
+        db.commit()
+        return jsonify(success=True, message='미입금 확정 완료, 2차 매칭 대기로 이전')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 
 # ── 시스템(loopay) 아이템 현황 조회 ──────────────────
 @app.route('/api/admin/loopay-items', methods=['GET'])
