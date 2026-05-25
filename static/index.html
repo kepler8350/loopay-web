@@ -426,7 +426,7 @@ function renderBars(d){
         +'<span class="item-stage">'+it.stage+'단계 '+barLabel+'<\/span>'
         +'<span class="badge '+badgeCls+'">'+it.status_label+'<\/span>'
         +'<\/div>'
-        +'<div class="item-date">구매일: '+it.purchase_date+' ('+it.days+'일전)<\/div>'
+        +'<div class="item-date">취득일: '+it.purchase_date+' ('+(it.days+1)+'일째)<\/div>'
         +'<div class="item-price">구매 '+it.buy_price.toLocaleString()+'원 → 판매 '+it.sell_price.toLocaleString()+'원 (+'+(it.profit||0).toLocaleString()+')<\/div>'
         +'<\/div>';
     }).join('');
@@ -498,7 +498,7 @@ function showTab(id,btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
-  if(id==='notif') loadNotifications();
+  if(id==='notif'){var nb=document.getElementById('nav-notif-btn');if(nb)nb.classList.remove('notif-blink');loadNotifications();}
   if(id==='matching'){var bEl=document.getElementById('match-buy-list');var sEl=document.getElementById('match-sell-list');if(bEl)bEl.innerHTML='';if(sEl)sEl.innerHTML='';loadMatchingTab();}
   btn.classList.add('active');
 
@@ -1538,17 +1538,17 @@ function openPaymentModal(matchId){
   if(!modal){
     modal = document.createElement('div');
     modal.id = 'payment-modal';
-    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center';
-    modal.innerHTML = '<div style="background:#1a1d2e;border-radius:14px;padding:24px;width:90%;max-width:380px;border:1px solid #2a2d3e">'
-      +'<div style="font-size:16px;font-weight:700;margin-bottom:16px">💸 송금완료 확인</div>'
-      +'<div style="font-size:13px;color:#aaa;margin-bottom:12px">판매자 계좌로 송금 후 영수증을 첨부해주세요.</div>'
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+    modal.innerHTML = '<div style="background:#ffffff;border-radius:14px;padding:24px;width:90%;max-width:380px;border:1px solid #ddd;color:#333">'
+      +'<div style="font-size:16px;font-weight:700;margin-bottom:16px;color:#333">💸 송금완료 확인</div>'
+      +'<div style="font-size:13px;color:#555;margin-bottom:12px">판매자 계좌로 송금 후 영수증을 첨부해주세요.</div>'
       +'<div style="margin-bottom:12px">'
-      +'<label style="display:block;font-size:12px;color:#aaa;margin-bottom:6px">📎 영수증 이미지 <span style="color:#ef5350">(필수)</span></label>'
+      +'<label style="display:block;font-size:12px;color:#555;margin-bottom:6px">📎 영수증 이미지 <span style="color:#ef5350">(필수)</span></label>'
       +'<input type="file" id="receipt-file" accept="image/*" style="width:100%;font-size:13px">'
       +'</div>'
       +'<div id="receipt-preview" style="margin-bottom:12px"></div>'
       +'<div style="display:flex;gap:10px">'
-      +'<button onclick="closePaymentModal()" style="flex:1;padding:10px;background:#2a2d3e;color:#e8eaf6;border:none;border-radius:8px;font-size:13px;cursor:pointer">취소</button>'
+      +'<button onclick="closePaymentModal()" style="flex:1;padding:10px;background:#eee;color:#333;border:none;border-radius:8px;font-size:13px;cursor:pointer">취소</button>'
       +'<button id="submit-payment-btn" onclick="submitPayment()" disabled style="flex:1;padding:10px;background:#555;color:#aaa;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed">송금완료</button>'
       +'</div>'
       +'</div>';
@@ -1587,12 +1587,13 @@ async function submitPayment(){
   if(btn){ btn.textContent='처리 중...'; btn.disabled=true; }
   try{
     var payload = {match_id: window._payMatchId};
-    if(window._receiptBase64) payload.image = window._receiptBase64;
+    if(window._receiptBase64) payload.image = 'data:image/jpeg;base64,'+window._receiptBase64;
     var d = await api('/reservation/payment-complete', {method:'POST', body:JSON.stringify(payload)});
     var m = document.getElementById('payment-modal');
     if(m) m.style.display='none';
     window._receiptBase64 = null;
     window._payMatchId = null;
+    if(btn){ btn.textContent='송금완료'; btn.disabled=false; }
     loadMatchingTab();
   }catch(e){
     if(btn){ btn.textContent='송금완료'; btn.disabled=false; }
@@ -1850,12 +1851,15 @@ async function loadNotifications(){
     const d=await api('/user/notifications');
     // 뱃지 업데이트
     const badge=document.getElementById('notif-badge');
+    var notifBtn=document.getElementById('nav-notif-btn');
     if(badge){
       if(d.unread>0){
         badge.textContent=d.unread>99?'99+':d.unread;
         badge.style.display='inline-block';
+        if(notifBtn && !notifBtn.classList.contains('notif-blink')) notifBtn.classList.add('notif-blink');
       } else {
         badge.style.display='none';
+        if(notifBtn) notifBtn.classList.remove('notif-blink');
       }
     }
     // 알림 목록 렌더링

@@ -1864,6 +1864,14 @@ def match_report_unpaid():
         seller_name = seller['nickname'] or seller['username'] if seller else '판매자'
         db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
             (1, 'unpaid', '미입금 신고', f'{seller_name}님이 매치 #{match_id} 미입금 신고했습니다.'))
+        # 구매자에게 미입금 알림
+        buyer_row = db.execute("SELECT nickname, username FROM users WHERE id=?", (m['buyer_id'],)).fetchone()
+        buyer_name_str = buyer_row['nickname'] or buyer_row['username'] if buyer_row else '구매자'
+        bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+        bar_n = bar_names.get(m['bar_type'], m['bar_type'])
+        db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+            (m['buyer_id'], 'unpaid', '미입금 알림',
+             f'{bar_n} {m["stage"]}단계 거래에서 미입금이 확인됐습니다. 확인 바랍니다.'))
         db.commit()
         return jsonify(success=True, message='미입금 신고 완료')
     except Exception as e:
@@ -2403,6 +2411,22 @@ def payment_complete():
         db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
             (m['seller_id'], 'payment', '입금 알림',
              f'{buyer_name}님이 송금완료했습니다. 입금을 확인해주세요. (매치 #{match_id})'))
+        # 매칭유지포인트 차감 (매칭당 40P) 및 잔여 포인트 반환
+        MATCH_COST = 40
+        user_row = db.execute("SELECT charge_points, exchange_points FROM users WHERE id=?", (uid,)).fetchone()
+        if user_row:
+            cp = user_row['charge_points'] or 0
+            ep = user_row['exchange_points'] or 0
+            total = cp + ep
+            # 매칭 비용 40P 차감
+            if total >= MATCH_COST:
+                deduct = MATCH_COST
+                # charge_points 먼저 차감
+                if cp >= deduct:
+                    db.execute("UPDATE users SET charge_points=charge_points-? WHERE id=?", (deduct, uid))
+                else:
+                    remaining_deduct = deduct - cp
+                    db.execute("UPDATE users SET charge_points=0, exchange_points=exchange_points-? WHERE id=?", (remaining_deduct, uid))
         db.commit()
         return jsonify(success=True, message='송금완료 처리됐습니다', image_url=img_path)
     except Exception as e:

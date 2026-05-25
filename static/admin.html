@@ -1004,7 +1004,13 @@ var _systemItems = [];
 async function loadSystemItems(){
   var tbody = document.getElementById('si-tbody');
   var summary = document.getElementById('si-summary');
-  if(tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
+  if(tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
+  // 서버 시간 업데이트
+  try{
+    var tok=localStorage.getItem('admin_token');
+    var ct=await fetch('/api/current-time',{headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
+    _serverHour=ct.hour||0; _serverMin=ct.minute||0;
+  }catch(e){}
   try{
     var d = await apiAdmin('/admin/loopay-items');
     _systemItems = d.items || [];
@@ -1060,8 +1066,16 @@ function renderSystemItems(){
     var matchBadge = ms
       ? '<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(matchStatusColor[ms]||'#888')+'33;color:'+(matchStatusColor[ms]||'#888')+'">'+(matchStatusKr[ms]||ms)+'</span>'
       : '<span style="color:#555;font-size:11px">-</span>';
+        // 미입금 버튼: 30분 전부터 10분 단위 3번 활성화 (12:30,12:40,12:50)
+    var _h = _serverHour||0; var _m = _serverMin||0;
+    var _totalMin = _h*60+_m;
+    // 1차 마감 13:00 = 780분, 활성화: 750,760,770분 (12:30,12:40,12:50)
+    var _unpaidActive = (_totalMin>=750 && _totalMin<780) || (_totalMin>=820 && _totalMin<850);
     var actionBtns = (ms==='paid' && item.match_id)
-      ? '<button onclick="adminConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 송금확인</button>'        +'<button onclick="adminReportUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">⚠ 미입금</button>'
+      ? '<button onclick="adminConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>'
+        +(_unpaidActive
+          ? '<button onclick="adminReportUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">⚠ 미입금</button>'
+          : '<button disabled style="padding:3px 8px;background:#555;color:#888;border:none;border-radius:4px;font-size:11px;cursor:not-allowed">⚠ 미입금</button>')
       : '';
     return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
       +'<td style="padding:6px 8px;text-align:center"><input type=\"checkbox\" class=\"si-item-check\" data-id=\"'+item.id+'\" onchange=\"updateDeleteBtn()\" style=\"cursor:pointer\"></td>'
