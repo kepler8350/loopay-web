@@ -418,23 +418,20 @@ def create_reservation():
             for _ in range(cnt):
                 db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date) VALUES(?,?,?,?,?)", (uid,0,bar_type,1,today))
             db.execute("PRAGMA foreign_keys=ON")
-    # 예약 비용을 바로 차감하지 않고 maintain_points로 이동 (잠금)
+    # 예약 비용: charge_points/exchange_points에서 차감 후 maintain_points로 이동
     ex_use = min(u['exchange_points'], cost)
     ch_use = cost - ex_use
+    # 1단계: 포인트 차감 + cumulative 업데이트
+    db.execute("""UPDATE users
+       SET exchange_points=exchange_points-?,
+           charge_points=charge_points-?,
+           cumulative_count=cumulative_count+?
+       WHERE id=?""", (ex_use, ch_use, total, uid))
+    # 2단계: maintain_points에 비용 추가 (컬럼 없으면 무시)
     try:
-        db.execute("""UPDATE users
-           SET exchange_points=exchange_points-?,
-               charge_points=charge_points-?,
-               maintain_points=COALESCE(maintain_points,0)+?,
-               cumulative_count=cumulative_count+?
-           WHERE id=?""", (ex_use, ch_use, cost, total, uid))
+        db.execute("UPDATE users SET maintain_points=COALESCE(maintain_points,0)+? WHERE id=?", (cost, uid))
     except Exception:
-        # maintain_points 컬럼 없으면 기존 방식으로 차감
-        db.execute("""UPDATE users
-           SET exchange_points=exchange_points-?,
-               charge_points=charge_points-?,
-               cumulative_count=cumulative_count+?
-           WHERE id=?""", (ex_use, ch_use, total, uid))
+        pass
     db.commit()
     db.close()
     return jsonify(success=True,message=f'매칭예약 완료! 총 {total}회, {cost}P 차감',bronze=bz,silver=sv,gold=gd)
