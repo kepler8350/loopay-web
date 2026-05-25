@@ -512,11 +512,14 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
             <th style="padding:8px;text-align:center">매칭상태</th>
             <th style="padding:8px;text-align:left">구매일</th>
             <th style="padding:8px;text-align:left">예약일</th>
+            <th style="padding:8px;text-align:left">구매자ID</th>
+            <th style="padding:8px;text-align:left">예금주</th>
+            <th style="padding:8px;text-align:left">계좌번호</th>
             <th style="padding:8px;text-align:left">액션</th>
           </tr>
         </thead>
         <tbody id="si-tbody">
-          <tr><td colspan="9" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>
+          <tr><td colspan="12" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>
         </tbody>
       </table>
     </div>
@@ -1042,7 +1045,7 @@ function renderSystemItems(){
   });
   if(totalEl) totalEl.textContent = '총 '+filtered.length+'개 (전체 '+_systemItems.length+'개)';
   if(!filtered.length){
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">아이템 없음</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">아이템 없음</td></tr>';
     return;
   }
   var tC={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
@@ -1069,6 +1072,9 @@ function renderSystemItems(){
       +'<td style="padding:6px 8px;text-align:center">'+matchBadge+'</td>'
       +'<td style="padding:6px 8px;color:#888;font-size:11px">'+(item.purchase_date||'-')+'</td>'
       +'<td style="padding:6px 8px;color:#888;font-size:11px">'+(item.reserve_date||'-')+'</td>'
+      +'<td style="padding:6px 8px;color:#64b5f6;font-size:11px">'+(item.buyer_username||'-')+'</td>'
+      +'<td style="padding:6px 8px;color:#64b5f6;font-size:11px">'+(item.buyer_account_name||'-')+'</td>'
+      +'<td style="padding:6px 8px;color:#64b5f6;font-size:11px">'+(item.buyer_account||'-')+'</td>'
       +'<td style="padding:6px 8px">'+actionBtns+'</td>'
       +'</tr>';
   }).join('');

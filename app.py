@@ -1890,7 +1890,10 @@ def admin_loopay_items():
             # 이 아이템의 status가 matched/sold인 경우만 match 찾기
             if d['status'] in ('matched', 'sold'):
                 m = db.execute(
-                    """SELECT m.id, m.status, u.username as buyer_username
+                    """SELECT m.id, m.status,
+                       u.username as buyer_username,
+                       u.account_name as buyer_account_name,
+                       u.account_no as buyer_account
                        FROM matches m
                        LEFT JOIN users u ON m.buyer_id = u.id
                        WHERE m.seller_id = ? AND m.bar_type = ? AND m.stage = ?
@@ -1905,15 +1908,21 @@ def admin_loopay_items():
                     d['match_id'] = m['id']
                     d['match_status'] = m['status']
                     d['buyer_username'] = m['buyer_username']
+                    d['buyer_account_name'] = m['buyer_account_name']
+                    d['buyer_account'] = m['buyer_account']
                     used_match_ids.add(m['id'])
                 else:
                     d['match_id'] = None
                     d['match_status'] = None
                     d['buyer_username'] = None
+                    d['buyer_account_name'] = None
+                    d['buyer_account'] = None
             else:
                 d['match_id'] = None
                 d['match_status'] = None
                 d['buyer_username'] = None
+                d['buyer_account_name'] = None
+                d['buyer_account'] = None
             rows_with_match.append(d)
 
         rows = rows_with_match
@@ -1927,7 +1936,9 @@ def admin_loopay_items():
                 'reserve_date': r['reserve_date'],
                 'match_id': r['match_id'],
                 'match_status': r['match_status'],
-                'buyer_username': r['buyer_username'],
+                'buyer_username': r.get('buyer_username'),
+                'buyer_account_name': r.get('buyer_account_name'),
+                'buyer_account': r.get('buyer_account'),
             } for r in rows],
             total=len(rows)
         )
