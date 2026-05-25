@@ -1855,19 +1855,68 @@ def admin_loopay_items():
         loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
         if not loopay: return jsonify(items=[], total=0)
         lid = loopay['id']
-        rows = db.execute(
+        # 아이템 목록 먼저 가져오기
+        item_rows = db.execute(
             """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date,
-               r.reserve_date,
-               m.id as match_id, m.status as match_status,
-               bu.username as buyer_username
+               r.reserve_date
                FROM items i
                LEFT JOIN reservations r ON r.item_id = i.id
-               LEFT JOIN matches m ON m.reservation_id = r.id
-               LEFT JOIN users bu ON m.buyer_id = bu.id
                WHERE i.user_id = ?
                ORDER BY i.id DESC""",
             (lid,)
         ).fetchall()
+
+        # 각 아이템과 매칭된 match 찾기
+        # loopay가 seller이고, 해당 아이템의 bar_type+stage와 일치하는 가장 최신 active match
+        def get_match_for_item(bar_type, stage):
+            m = db.execute(
+                """SELECT m.id, m.status, u.username as buyer_username
+                   FROM matches m
+                   LEFT JOIN users u ON m.buyer_id = u.id
+                   WHERE m.seller_id = ? AND m.bar_type = ? AND m.stage = ?
+                     AND m.status IN ('pending', 'paid', 'confirmed', 'completed')
+                   ORDER BY m.id DESC LIMIT 1""",
+                (lid, bar_type, stage or 1)
+            ).fetchone()
+            return dict(m) if m else None
+
+        # 이미 매핑된 match_id 추적 (중복 방지)
+        used_match_ids = set()
+        rows_with_match = []
+        for item in item_rows:
+            d = dict(item)
+            bt = d['bar_type']
+            st = d['stage'] or 1
+            # 이 아이템의 status가 matched/sold인 경우만 match 찾기
+            if d['status'] in ('matched', 'sold'):
+                m = db.execute(
+                    """SELECT m.id, m.status, u.username as buyer_username
+                       FROM matches m
+                       LEFT JOIN users u ON m.buyer_id = u.id
+                       WHERE m.seller_id = ? AND m.bar_type = ? AND m.stage = ?
+                         AND m.status IN ('pending', 'paid', 'confirmed', 'completed')
+                         AND m.id NOT IN ({})
+                       ORDER BY m.id DESC LIMIT 1""".format(
+                           ','.join(str(x) for x in used_match_ids) if used_match_ids else '0'
+                       ),
+                    (lid, bt, st)
+                ).fetchone()
+                if m:
+                    d['match_id'] = m['id']
+                    d['match_status'] = m['status']
+                    d['buyer_username'] = m['buyer_username']
+                    used_match_ids.add(m['id'])
+                else:
+                    d['match_id'] = None
+                    d['match_status'] = None
+                    d['buyer_username'] = None
+            else:
+                d['match_id'] = None
+                d['match_status'] = None
+                d['buyer_username'] = None
+            rows_with_match.append(d)
+
+        rows = rows_with_match
         return jsonify(
             items=[{
                 'id': r['id'],
