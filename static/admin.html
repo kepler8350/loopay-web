@@ -89,16 +89,16 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <nav>
 <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard',this)"><span class="nav-icon">&#128200;</span>&#45824;&#49884;&#48372;&#46300;</div>
 <div class="nav-item" data-page="members" onclick="showPage('members',this)"><span class="nav-icon">&#128100;</span>&#54924;&#50896; &#44288;&#47532;</div>
+<div class="nav-item" data-page="approve" onclick="showPage('approve',this)"><span class="nav-icon">👥</span>회원승인관리</div>
 <div class="nav-item" data-page="charges" onclick="showPage('charges',this)"><span class="nav-icon">&#128179;</span>&#52649;&#51204; &#44288;&#47532;</div>
 <div class="nav-item" data-page="reservations" onclick="showPage('reservations',this)"><span class="nav-icon">&#128203;</span>&#50696;&#50557; &#54788;&#54889;</div>
 <div class="nav-item" data-page="matching" onclick="showPage('matching',this)"><span class="nav-icon">&#9889;</span>&#47588;&#52845; &#49892;&#54665;</div>
+<div class="nav-item" data-page="matches" onclick="showPage('matches',this);loadMatchRecords()"><span class="nav-icon">🗂️</span>매칭 기록</div>
+<div class="nav-item" data-page="system-items" onclick="showPage('system-items',this);loadSystemItems()"><span class="nav-icon">📦</span>시스템아이템현황</div>
 <div class="nav-item" data-page="penalties" onclick="showPage('penalties',this)"><span class="nav-icon">&#9888;</span>&#54056;&#45328;&#54000; &#44288;&#47532;</div>
 <div class="nav-item" data-page="notifications" onclick="showPage('notifications',this)"><span class="nav-icon">🔔</span><span class="nav-label">알림관리</span></div>
-<div class="nav-item" data-page="approve" onclick="showPage('approve',this)"><span class="nav-icon">👥</span>회원승인관리</div>
-<div class="nav-item" data-page="testtools" onclick="showPage('testtools',this)"><span class="nav-icon">⚙️</span>테스트도구</div>
-<div class="nav-item" data-page="system-items" onclick="showPage('system-items',this);loadSystemItems()"><span class="nav-icon">📦</span>시스템아이템현황</div>
-<div class="nav-item" data-page="matches" onclick="showPage('matches',this);loadMatchRecords()"><span class="nav-icon">🗂️</span>매칭 기록</div>
 <div class="nav-item" data-page="settings" onclick="showPage('settings',this);loadSettings()"><span class="nav-icon">🔧</span>시스템 설정</div>
+<div class="nav-item" data-page="testtools" onclick="showPage('testtools',this)"><span class="nav-icon">⚙️</span>테스트도구</div>
 </nav>
 <div class="sidebar-footer"><button class="logout-btn" onclick="doAdminLogout()">&#128682; &#47196;&#44536;&#50500;&#50883;</button></div>
 </div>
