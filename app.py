@@ -1771,12 +1771,26 @@ def match_confirm_payment():
 
         # 3. item을 buyer에게 이전 (seller 아이템은 sold, buyer에게 새 아이템 추가)
         from datetime import date as _date
-        seller_item = db.execute(
-            """SELECT i.id, i.bar_type, i.stage FROM items i
-               WHERE i.user_id=? AND i.bar_type=? AND i.status='matched'
-               ORDER BY i.id DESC LIMIT 1""",
-            (m['seller_id'], m['bar_type'])
-        ).fetchone()
+        # seller 아이템 찾기: reservation의 item_id 우선, 없으면 bar_type으로 찾기
+        seller_item = None
+        if m['reservation_id']:
+            # 구매자의 reservation_id로 연관된 loopay reservation 찾기
+            # match에서 seller_id(loopay)의 해당 bar_type+stage 아이템을 찾되 가장 최근 것
+            seller_item = db.execute(
+                """SELECT i.id, i.bar_type, i.stage FROM items i
+                   JOIN reservations r ON r.item_id = i.id
+                   WHERE i.user_id=? AND i.bar_type=? AND i.status='matched'
+                   AND r.status IN ('matched','sold','confirmed')
+                   ORDER BY i.id DESC LIMIT 1""",
+                (m['seller_id'], m['bar_type'])
+            ).fetchone()
+        if not seller_item:
+            seller_item = db.execute(
+                """SELECT i.id, i.bar_type, i.stage FROM items i
+                   WHERE i.user_id=? AND i.bar_type=? AND i.status='matched'
+                   ORDER BY i.id DESC LIMIT 1""",
+                (m['seller_id'], m['bar_type'])
+            ).fetchone()
         if seller_item:
             # seller 아이템 sold 처리
             db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
@@ -1925,7 +1939,16 @@ def admin_loopay_items():
                 d['buyer_account'] = None
             rows_with_match.append(d)
 
-        rows = rows_with_match
+        # confirmed match인 아이템은 sold 처리 후 제외 (confirm-payment 누락분 보완)
+        for d in rows_with_match:
+            if d.get('match_status') == 'confirmed' and d.get('status') == 'matched':
+                try:
+                    db.execute("UPDATE items SET status='sold' WHERE id=? AND user_id=?", (d['id'], lid))
+                    db.commit()
+                except Exception:
+                    pass
+        # sold 처리된 아이템 제외
+        rows = [d for d in rows_with_match if d.get('match_status') != 'confirmed']
         return jsonify(
             items=[{
                 'id': r['id'],
