@@ -1011,7 +1011,7 @@ function renderSystemItems(){
 
 // ── 매치 기록 ────────────────────────────────────────
 var _matchRecords = [];
-async async function loadMatchRecords(){
+async function loadMatchRecords(){
   var tbody = document.getElementById('matches-tbody');
   if(tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
   try{
