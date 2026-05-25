@@ -283,6 +283,14 @@ def get_me():
     db = get_db()
     u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
     if not u: return jsonify(error='Not found'), 404
+    # 오늘 매칭된 건수 × 40P = 매칭유지포인트 (차감 예정)
+    today_str = get_today().isoformat()
+    _matched_count = db.execute(
+        """SELECT COUNT(*) as c FROM matches
+           WHERE buyer_id=? AND status IN ('pending','paid') AND match_date=?""",
+        (uid, today_str)
+    ).fetchone()['c']
+    match_maintain_cost = _matched_count * 40
     lv = u['level']
     cfg = LEVEL_CONFIG.get(lv, {})
     next_cum = cfg.get('cum')
@@ -313,7 +321,7 @@ def get_me():
     # 오늘 예약 사용 포인트 계산
     today_reserve_count = today_res.get('bronze',0)+today_res.get('silver',0)+today_res.get('gold',0)
     today_reserve_cost = today_reserve_count * 40
-    return jsonify(id=u['id'],username=u['username'],nickname=u['nickname'],level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],today_reserve_cost=today_reserve_cost,cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve)
+    return jsonify(id=u['id'],username=u['username'],nickname=u['nickname'],level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],match_maintain_cost=match_maintain_cost,today_reserve_cost=today_reserve_cost,cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve)
 
 @app.route('/api/reservation/preview', methods=['POST'])
 @jwt_required()
@@ -1075,6 +1083,27 @@ with app.app_context():
         _c.close()
     except Exception:
         pass  # 이미 존재하면 무시
+    # loopay 아이템 중 잘못 sold 처리된 것 복원 (match가 pending인 경우)
+    try:
+        _c2 = _sq3.connect(_DB_PATH, timeout=10)
+        _loopay = _c2.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if _loopay:
+            _lid = _loopay[0]
+            # match가 pending인데 아이템이 sold인 경우 matched로 복원
+            _c2.execute("""UPDATE items SET status='matched'
+                WHERE user_id=? AND status='sold'
+                AND id IN (
+                    SELECT COALESCE(m.seller_item_id, (
+                        SELECT i2.id FROM items i2
+                        WHERE i2.user_id=? AND i2.bar_type=m.bar_type
+                        AND i2.status='sold' ORDER BY i2.id DESC LIMIT 1
+                    ))
+                    FROM matches m WHERE m.seller_id=? AND m.status='pending'
+                )""", (_lid, _lid, _lid))
+            _c2.commit()
+        _c2.close()
+    except Exception:
+        pass
     # 가격 테이블 수정값 강제 업데이트 (INSERT OR IGNORE로 초기화된 값 덮어쓰기)
     try:
         import sqlite3 as _sq3
@@ -2142,16 +2171,9 @@ def admin_loopay_items():
                 d['buyer_account'] = None
             rows_with_match.append(d)
 
-        # confirmed match인 아이템은 sold 처리 후 제외 (confirm-payment 누락분 보완)
-        for d in rows_with_match:
-            if d.get('match_status') == 'confirmed' and d.get('status') == 'matched':
-                try:
-                    db.execute("UPDATE items SET status='sold' WHERE id=? AND user_id=?", (d['id'], lid))
-                    db.commit()
-                except Exception:
-                    pass
-        # sold 처리된 아이템 제외
-        rows = [d for d in rows_with_match if d.get('match_status') != 'confirmed']
+        # confirmed match인 아이템은 목록에서 제외 (sold 자동처리는 confirm-payment에서만)
+        rows = [d for d in rows_with_match
+                if not (d.get('match_status') == 'confirmed' and d.get('status') == 'matched')]
         return jsonify(
             items=[{
                 'id': r['id'],

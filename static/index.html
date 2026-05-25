@@ -390,11 +390,10 @@ function renderHeader(d){
   if(row) row.classList.add('cur');
   // highlight cum chip
   document.querySelectorAll('.cum-chip').forEach(c=>c.classList.remove('cur'));
-  // 매칭유지 포인트 초기화 (구매예약 전)
+  // 매칭유지포인트 = 오늘 매칭된 수 × 40P
   var mEl=document.getElementById('h-maintain');
   if(mEl){
-    // 오늘 예약 사용 포인트가 있으면 매칭유지포인트로 표시
-    var maintainPts = (d.today_reserve_cost > 0) ? d.today_reserve_cost : (d.exchange_points||0);
+    var maintainPts = (d.match_maintain_cost != null) ? d.match_maintain_cost : (d.today_reserve_cost||0);
     mEl.textContent = maintainPts.toLocaleString()+' P';
   }
 }
