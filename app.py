@@ -1659,6 +1659,31 @@ def admin_get_matches():
         )
         rows = db.execute(sql).fetchall()
         names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+        # system_settings에서 loopay 정보 로드
+        def get_sys(key):
+            row = db.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
+            return row['value'] if row else None
+        loopay_bank  = get_sys('loopay_bank')
+        loopay_acct  = get_sys('loopay_account')
+        loopay_name  = get_sys('loopay_account_name')
+        loopay_phone = get_sys('loopay_phone')
+
+        def build_seller(r):
+            if r['seller_username'] == 'loopay':
+                return {
+                    'username': 'loopay',
+                    'nickname': r['seller_nickname'] or '루페이',
+                    'phone': loopay_phone or r['seller_phone'],
+                    'bank': loopay_bank or r['seller_bank'],
+                    'account': loopay_acct or r['seller_account'],
+                    'account_name': loopay_name or r['seller_account_name'],
+                }
+            return {
+                'username': r['seller_username'], 'nickname': r['seller_nickname'],
+                'phone': r['seller_phone'], 'bank': r['seller_bank'],
+                'account': r['seller_account'], 'account_name': r['seller_account_name'],
+            }
+
         return jsonify(matches=[{
             'id': r['id'], 'match_date': r['match_date'],
             'bar_type': r['bar_type'], 'bar_name': names.get(r['bar_type'], r['bar_type']),
@@ -1666,9 +1691,7 @@ def admin_get_matches():
             'buy_price': r['buy_price'], 'sell_price': r['sell_price'], 'status': r['status'],
             'buyer': {'username': r['buyer_username'], 'nickname': r['buyer_nickname'], 'phone': r['buyer_phone'],
                      'account': r['buyer_account'], 'account_name': r['buyer_account_name']},
-            'seller': {'username': r['seller_username'], 'nickname': r['seller_nickname'],
-                       'phone': r['seller_phone'], 'bank': r['seller_bank'],
-                       'account': r['seller_account'], 'account_name': r['seller_account_name']},
+            'seller': build_seller(r),
         } for r in rows])
     finally:
         db.close()

@@ -1441,7 +1441,7 @@ async function runMatching(roundNum){
       html2 += '<th style="padding:6px 8px;text-align:center">단계</th>';
       html2 += '<th style="padding:6px 8px;text-align:left;border-left:2px solid #2d2d5e">구매자ID</th>';
       html2 += '<th style="padding:6px 8px;text-align:left">예금주(구)</th>';
-      html2 += '<th style="padding:6px 8px;text-align:left">계좌번호(구)</th>';
+      html2 += '<th style="padding:6px 8px;text-align:left">핸드폰(구)</th>';
       html2 += '<th style="padding:6px 8px;text-align:left;border-left:2px solid #2d2d5e">판매자ID</th>';
       html2 += '<th style="padding:6px 8px;text-align:left">예금주(판)</th>';
       html2 += '<th style="padding:6px 8px;text-align:left">계좌번호(판)</th>';
@@ -1457,7 +1457,7 @@ async function runMatching(roundNum){
         html2 += '<td style="padding:5px 8px;text-align:center">'+(p.stage||'-')+'단계</td>';
         html2 += '<td style="padding:5px 8px;border-left:2px solid #2d2d5e;color:#64b5f6">'+(buyer.username||'-')+'</td>';
         html2 += '<td style="padding:5px 8px;color:#64b5f6">'+(buyer.account_name||'-')+'</td>';
-        html2 += '<td style="padding:5px 8px;color:#64b5f6">'+(buyer.account||'-')+'</td>';
+        html2 += '<td style="padding:5px 8px;color:#64b5f6">'+(buyer.phone||'-')+'</td>';
         html2 += '<td style="padding:5px 8px;border-left:2px solid #2d2d5e;color:#a5d6a7">'+(seller.username||'-')+'</td>';
         html2 += '<td style="padding:5px 8px;color:#a5d6a7">'+(seller.account_name||'-')+'</td>';
         html2 += '<td style="padding:5px 8px;color:#a5d6a7">'+(seller.account||'-')+'</td>';
