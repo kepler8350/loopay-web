@@ -1629,11 +1629,6 @@ function doPaymentComplete(resId){ openPaymentModal(resId); }
 
 
 
-function closePaymentModal(){
-  var ov = document.getElementById('payment-modal-overlay');
-  if(ov) ov.style.display = 'none';
-}
-
 async 
 function disableReserveSection(){
   _reservedToday=true;
