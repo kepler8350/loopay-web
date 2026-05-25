@@ -984,6 +984,14 @@ def admin_matching_status():
 
 with app.app_context():
     init_db()
+    # 가격 테이블 수정값 강제 업데이트 (INSERT OR IGNORE로 초기화된 값 덮어쓰기)
+    try:
+        _db = get_db()
+        _db.execute("UPDATE prices SET sell_price=13000 WHERE bar_type='gold' AND stage=1 AND sell_price=1300")
+        _db.commit()
+        _db.close()
+    except Exception:
+        pass
     # get_now()가 매번 DB에서 읽으므로 별도 복원 불필요
 
 
