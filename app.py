@@ -295,8 +295,11 @@ def get_me():
     match_maintain_cost = _matched_count * 40
     # 5:00~20:00 사이에 포인트 정산 (아직 정산 안 된 경우만)
     if 5 <= _now2.hour < 20:
-        _u2 = db.execute("SELECT maintain_points FROM users WHERE id=?", (uid,)).fetchone()
-        _maintain_now = (_u2['maintain_points'] or 0) if _u2 else 0
+        try:
+            _u2 = db.execute("SELECT maintain_points FROM users WHERE id=?", (uid,)).fetchone()
+            _maintain_now = (_u2['maintain_points'] or 0) if _u2 else 0
+        except Exception:
+            _maintain_now = 0
         if _maintain_now > 0:
             # maintain_points 있으면 정산: matched_count×40P 소진, 나머지 환원
             _consume = _matched_count * 40      # 실제 소진 포인트
@@ -345,7 +348,10 @@ def get_me():
     # 오늘 예약 사용 포인트 계산
     today_reserve_count = today_res.get('bronze',0)+today_res.get('silver',0)+today_res.get('gold',0)
     today_reserve_cost = today_reserve_count * 40
-    _maintain = u['maintain_points'] if u['maintain_points'] else 0
+    try:
+        _maintain = u['maintain_points'] or 0
+    except Exception:
+        _maintain = 0
     return jsonify(id=u['id'],username=u['username'],nickname=u['nickname'],level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],maintain_points=_maintain,match_maintain_cost=_maintain,today_reserve_cost=today_reserve_cost,cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve)
 
 @app.route('/api/reservation/preview', methods=['POST'])
