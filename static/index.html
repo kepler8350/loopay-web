@@ -1538,8 +1538,8 @@ function openPaymentModal(matchId){
   if(!modal){
     modal = document.createElement('div');
     modal.id = 'payment-modal';
-    // 모달: #app 기준으로 크기 설정 (앱이 430px 고정 너비)
-    var _appEl = document.getElementById('app');
+    // 모달: main-app 기준으로 크기 설정
+    var _appEl = document.getElementById('main-app') || document.getElementById('app');
     var _appW = (_appEl ? _appEl.clientWidth : 430) + 'px';
     var _appH = Math.max(window.innerHeight, (_appEl ? _appEl.scrollHeight : 0)) + 'px';
     modal.style.cssText = 'position:absolute;top:0;left:0;width:'+_appW+';height:'+_appH+';background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding-top:20vh;box-sizing:border-box';
@@ -1556,7 +1556,7 @@ function openPaymentModal(matchId){
       +'<button id="submit-payment-btn" onclick="submitPayment()" disabled style="flex:1;padding:10px;background:#555;color:#aaa;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed">송금완료</button>'
       +'</div>'
       +'</div>';
-    (document.getElementById('app')||document.body).appendChild(modal);
+    (document.getElementById('main-app')||document.getElementById('app')||document.body).appendChild(modal);
     document.getElementById('receipt-file').onchange = function(e){
       var file = e.target.files[0];
       var sbtn = document.getElementById('submit-payment-btn');
@@ -1951,7 +1951,7 @@ async function loadNotifications(){
   </div>
 
   <!-- MAIN APP (hidden until login) -->
-  <div id="main-app" style="display:none;flex-direction:column;height:100vh">
+  <div id="main-app" style="display:none;flex-direction:column;height:100vh;position:relative">
     <div class="header" style="position:relative">
       <!-- 헤더 상단: 로고 좌측 / 배지+레벨+로그아웃 우측 -->
       <div class="header-top">
