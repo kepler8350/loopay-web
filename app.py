@@ -717,7 +717,7 @@ def admin_run_matching():
         buy_by_type_stage = {}
         for r in buy_rows:
             bt = r['bar_type']
-            st = r.get('stage') or 1
+            st = (dict(r).get('stage') or 1)
             key = (bt, st)
             if key not in buy_by_type_stage:
                 buy_by_type_stage[key] = []
