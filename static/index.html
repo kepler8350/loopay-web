@@ -1538,11 +1538,7 @@ function openPaymentModal(matchId){
   if(!modal){
     modal = document.createElement('div');
     modal.id = 'payment-modal';
-    // 모달: main-app 기준으로 크기 설정
-    var _appEl = document.getElementById('main-app') || document.getElementById('app');
-    var _appW = (_appEl ? _appEl.clientWidth : 430) + 'px';
-    var _appH = Math.max(window.innerHeight, (_appEl ? _appEl.scrollHeight : 0)) + 'px';
-    modal.style.cssText = 'position:absolute;top:0;left:0;width:'+_appW+';height:'+_appH+';background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding-top:20vh;box-sizing:border-box';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;box-sizing:border-box';
     modal.innerHTML = '<div style="background:#ffffff;border-radius:14px;padding:24px;width:90%;max-width:380px;border:1px solid #ddd;color:#333">'
       +'<div style="font-size:16px;font-weight:700;margin-bottom:16px;color:#333">💸 송금완료 확인</div>'
       +'<div style="font-size:13px;color:#555;margin-bottom:12px">판매자 계좌로 송금 후 영수증을 첨부해주세요.</div>'
@@ -1556,7 +1552,7 @@ function openPaymentModal(matchId){
       +'<button id="submit-payment-btn" onclick="submitPayment()" disabled style="flex:1;padding:10px;background:#555;color:#aaa;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed">송금완료</button>'
       +'</div>'
       +'</div>';
-    (document.getElementById('main-app')||document.getElementById('app')||document.body).appendChild(modal);
+    document.body.appendChild(modal);
     document.getElementById('receipt-file').onchange = function(e){
       var file = e.target.files[0];
       var sbtn = document.getElementById('submit-payment-btn');
