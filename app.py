@@ -787,11 +787,12 @@ def admin_run_matching():
                 db.execute(
                     """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
                        buy_price, sell_price, match_round, match_date, status,
-                       seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone)
-                       VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?)""",
+                       seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id)
+                       VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?)""",
                     (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
                      bt, st, buy_price, sell_price, round_num, today,
-                     s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'])
+                     s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'],
+                     seller.get('item_id'))
                 )
 
                 buyer_msg = f"{names[bt]} {st}단계 매칭완료! 판매자 정보를 매칭탭에서 확인하세요."
@@ -988,6 +989,14 @@ def admin_matching_status():
 
 with app.app_context():
     init_db()
+    # matches 테이블에 seller_item_id 컬럼 추가 (없으면)
+    try:
+        _c = _sq3.connect(_DB_PATH, timeout=10)
+        _c.execute("ALTER TABLE matches ADD COLUMN seller_item_id INTEGER")
+        _c.commit()
+        _c.close()
+    except Exception:
+        pass  # 이미 존재하면 무시
     # 가격 테이블 수정값 강제 업데이트 (INSERT OR IGNORE로 초기화된 값 덮어쓰기)
     try:
         import sqlite3 as _sq3
@@ -1790,21 +1799,28 @@ def match_confirm_payment():
         # loopay 판매예약(reservation)에서 이 match와 연결된 아이템 찾기
         # loopay의 reservation은 buyer의 reservation_id와 다름
         # → loopay의 reservations 중 bar_type+stage가 일치하고 이 match와 연결된 것
-        seller_res = db.execute(
-            """SELECT r.item_id FROM reservations r
-               WHERE r.user_id=? AND r.bar_type=?
-                 AND r.status IN ('matched','sold','confirmed','pending')
-                 AND r.item_id IS NOT NULL
-               ORDER BY r.id DESC LIMIT 1""",
-            (m['seller_id'], m['bar_type'])
-        ).fetchone()
-        if seller_res and seller_res['item_id']:
+        # seller_item_id가 match에 저장되어 있으면 정확히 사용
+        if dict(m).get('seller_item_id'):
             seller_item = db.execute(
                 "SELECT id, bar_type, stage FROM items WHERE id=? AND status='matched'",
-                (seller_res['item_id'],)
+                (m['seller_item_id'],)
             ).fetchone()
         if not seller_item:
-            # fallback: 해당 match_id와 bar_type+stage가 일치하는 가장 오래된 matched 아이템
+            # fallback: reservation → item 경로
+            seller_res = db.execute(
+                """SELECT r.item_id FROM reservations r
+                   WHERE r.user_id=? AND r.bar_type=? AND r.item_id IS NOT NULL
+                     AND r.status IN ('matched','sold','confirmed','pending')
+                   ORDER BY r.id DESC LIMIT 1""",
+                (m['seller_id'], m['bar_type'])
+            ).fetchone()
+            if seller_res and seller_res['item_id']:
+                seller_item = db.execute(
+                    "SELECT id, bar_type, stage FROM items WHERE id=? AND status='matched'",
+                    (seller_res['item_id'],)
+                ).fetchone()
+        if not seller_item:
+            # last fallback: bar_type+stage 일치하는 가장 오래된 matched 아이템
             seller_item = db.execute(
                 """SELECT i.id, i.bar_type, i.stage FROM items i
                    WHERE i.user_id=? AND i.bar_type=? AND i.stage=?
