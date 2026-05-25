@@ -294,30 +294,25 @@ def get_me():
     ).fetchone()['c']
     match_maintain_cost = _matched_count * 40
     # 5:00~20:00 사이에 포인트 정산 (아직 정산 안 된 경우만)
-    if 5 <= _now2.hour < 20:
-        try:
+    try:
+        if 5 <= _now2.hour < 20:
             _u2 = db.execute("SELECT maintain_points FROM users WHERE id=?", (uid,)).fetchone()
             _maintain_now = (_u2['maintain_points'] or 0) if _u2 else 0
-        except Exception:
-            _maintain_now = 0
-        if _maintain_now > 0:
-            # maintain_points 있으면 정산: matched_count×40P 소진, 나머지 환원
-            _consume = _matched_count * 40      # 실제 소진 포인트
-            _refund = _maintain_now - _consume  # 환원할 포인트
-            if _refund < 0:
-                _refund = 0
-                _consume = _maintain_now
-            # maintain_points → 0, 잔여는 exchange_points로 환원
-            db.execute("""UPDATE users
-               SET maintain_points=0,
-                   exchange_points=exchange_points+?
-               WHERE id=?""", (_refund, uid))
-            try:
-                db.execute("UPDATE matches SET points_deducted=1 WHERE buyer_id=? AND status IN ('pending','paid') AND match_date=?", (uid, today_str))
-            except Exception:
-                pass
-            db.commit()
-            match_maintain_cost = 0  # 정산 완료 후 유지포인트=0
+            if _maintain_now > 0:
+                _consume = _matched_count * 40
+                _refund = max(0, _maintain_now - _consume)
+                db.execute("""UPDATE users
+                   SET maintain_points=0,
+                       exchange_points=exchange_points+?
+                   WHERE id=?""", (_refund, uid))
+                try:
+                    db.execute("UPDATE matches SET points_deducted=1 WHERE buyer_id=? AND status IN ('pending','paid') AND match_date=?", (uid, today_str))
+                except Exception:
+                    pass
+                db.commit()
+                match_maintain_cost = 0
+    except Exception:
+        pass  # maintain_points 컬럼 없는 경우 무시
     lv = u['level']
     cfg = LEVEL_CONFIG.get(lv, {})
     next_cum = cfg.get('cum')
@@ -424,15 +419,22 @@ def create_reservation():
                 db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date) VALUES(?,?,?,?,?)", (uid,0,bar_type,1,today))
             db.execute("PRAGMA foreign_keys=ON")
     # 예약 비용을 바로 차감하지 않고 maintain_points로 이동 (잠금)
-    # 총포인트 충분 여부는 이미 위에서 체크
     ex_use = min(u['exchange_points'], cost)
     ch_use = cost - ex_use
-    db.execute("""UPDATE users
-       SET exchange_points=exchange_points-?,
-           charge_points=charge_points-?,
-           maintain_points=COALESCE(maintain_points,0)+?,
-           cumulative_count=cumulative_count+?
-       WHERE id=?""", (ex_use, ch_use, cost, total, uid))
+    try:
+        db.execute("""UPDATE users
+           SET exchange_points=exchange_points-?,
+               charge_points=charge_points-?,
+               maintain_points=COALESCE(maintain_points,0)+?,
+               cumulative_count=cumulative_count+?
+           WHERE id=?""", (ex_use, ch_use, cost, total, uid))
+    except Exception:
+        # maintain_points 컬럼 없으면 기존 방식으로 차감
+        db.execute("""UPDATE users
+           SET exchange_points=exchange_points-?,
+               charge_points=charge_points-?,
+               cumulative_count=cumulative_count+?
+           WHERE id=?""", (ex_use, ch_use, total, uid))
     db.commit()
     db.close()
     return jsonify(success=True,message=f'매칭예약 완료! 총 {total}회, {cost}P 차감',bronze=bz,silver=sv,gold=gd)
