@@ -696,6 +696,8 @@ def admin_run_matching():
         ).fetchall()
 
         # loopay pending 판매예약 없으면 reservable 아이템에서 자동 등록
+        _loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        loopay_id = _loopay['id'] if _loopay else -1
         if not sell_rows and loopay_id > 0:
             reservable_items = db.execute(
                 """SELECT i.id as item_id, i.bar_type, COALESCE(i.stage,1) as stage
