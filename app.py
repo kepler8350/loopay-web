@@ -2372,9 +2372,10 @@ def user_matching():
 
         # ── 구매: 1) 예약 대기 중 ──
         # 오후 2시 이후에는 미매칭(pending) 예약 숨김
-        from datetime import datetime as _dt
-        _now = _dt.now()
+        _now = get_now()
         _hide_pending = (_now.hour >= 14)
+        # 다음날 05:00 이후에만 매칭결과 공개
+        _show_match_result = (_now.hour >= 5)
 
         buy_reservations = db.execute(
             """SELECT r.id, r.bar_type, r.status as res_status,
@@ -2403,6 +2404,9 @@ def user_matching():
                ORDER BY m.id DESC""",
             (uid, today)
         ).fetchall()
+        # 05:00 이전에는 pending/matched (미확인) 매칭결과 숨김
+        if not _show_match_result:
+            buy_matches = [m for m in buy_matches if dict(m).get('status') not in ('pending','matched')]
 
         # ── 판매: 1) 예약 대기 중 ──
         sell_reservations = db.execute(
