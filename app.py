@@ -1862,21 +1862,12 @@ def admin_loopay_items():
                bu.username as buyer_username
                FROM items i
                LEFT JOIN reservations r ON r.item_id = i.id
-               LEFT JOIN matches m ON m.seller_id = ? AND m.bar_type = i.bar_type
-                 AND (m.status = 'pending' OR m.status = 'paid' OR m.status = 'confirmed' OR m.status = 'completed')
+               LEFT JOIN matches m ON m.reservation_id = r.id
                LEFT JOIN users bu ON m.buyer_id = bu.id
                WHERE i.user_id = ?
                ORDER BY i.id DESC""",
-            (lid, lid)
+            (lid,)
         ).fetchall()
-        # 중복 제거 (같은 아이템에 여러 매치가 있을 수 있음)
-        seen = set()
-        deduped = []
-        for r in rows:
-            if r['id'] not in seen:
-                seen.add(r['id'])
-                deduped.append(r)
-        rows = deduped
         return jsonify(
             items=[{
                 'id': r['id'],
