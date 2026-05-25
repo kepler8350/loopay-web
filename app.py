@@ -2134,7 +2134,7 @@ def admin_loopay_items():
             bt = d['bar_type']
             st = d['stage'] or 1
             # 이 아이템의 status가 matched/sold인 경우만 match 찾기
-            if d['status'] in ('matched', 'sold'):
+            if d['status'] in ('matched', 'sold', 'reservable'):
                 m = db.execute(
                     """SELECT m.id, m.status,
                        u.username as buyer_username,
