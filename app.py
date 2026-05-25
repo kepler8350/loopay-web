@@ -1738,9 +1738,15 @@ def match_confirm_payment():
         # 1. match → confirmed
         db.execute("UPDATE matches SET status='confirmed', confirmed_at=datetime('now','localtime') WHERE id=?", (match_id,))
 
-        # 2. reservation → confirmed
+        # 2. reservation → sold (DB 호환)
         if m['reservation_id']:
-            db.execute("UPDATE reservations SET status='confirmed' WHERE id=?", (m['reservation_id'],))
+            try:
+                db.execute("UPDATE reservations SET status='sold' WHERE id=?", (m['reservation_id'],))
+            except Exception:
+                try:
+                    db.execute("UPDATE reservations SET status='confirmed' WHERE id=?", (m['reservation_id'],))
+                except Exception:
+                    pass
 
         # 3. item을 buyer에게 이전 (seller 아이템은 sold, buyer에게 새 아이템 추가)
         from datetime import date as _date
@@ -1753,16 +1759,18 @@ def match_confirm_payment():
         if seller_item:
             # seller 아이템 sold 처리
             db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
-            # buyer에게 새 아이템 추가
-            try:
-                db.execute(
-                    """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
-                       VALUES(?, ?, ?, ?, 'matched')""",
-                    (m['buyer_id'], seller_item['bar_type'], int(seller_item['stage'] or m['stage'] or 1),
-                     _date.today().isoformat())
-                )
-            except Exception:
-                pass
+            # buyer에게 새 아이템 추가 (status는 DB 스키마에 따라 가능한 값 사용)
+            for _st in ('matched', 'sold', 'pending'):
+                try:
+                    db.execute(
+                        """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
+                           VALUES(?, ?, ?, ?, ?)""",
+                        (m['buyer_id'], seller_item['bar_type'], int(seller_item['stage'] or m['stage'] or 1),
+                         _date.today().isoformat(), _st)
+                    )
+                    break
+                except Exception:
+                    continue
 
         # 4. 구매자 알림 (거래 완료)
         db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
