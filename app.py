@@ -702,10 +702,10 @@ def admin_run_matching():
                u.phone as buyer_phone, u.account_name as buyer_account_name
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
-               WHERE r.reserve_date=? AND r.status='pending' AND r.match_round=1
+               WHERE r.status='pending' AND r.match_round=?
                AND u.username != 'loopay'
                ORDER BY RANDOM()""",
-            (today,)
+            (round_num,)
         ).fetchall()
 
         # stage별로 분류
@@ -929,21 +929,22 @@ def admin_matching_status():
     loopay_id = loopay_row['id'] if loopay_row else -1
 
     def get_round_data(round_num):
-        # ── 구매예약: 오늘 날짜, 일반 사용자, status='pending' ──
+        # ── 구매예약: 날짜 무관 (오늘 또는 어제 예약 모두 포함), pending, 일반 사용자 ──
         buy_count = db.execute(
             """SELECT COUNT(*) as c FROM reservations
-               WHERE match_round=? AND reserve_date=? AND status='pending' AND user_id!=?""",
-            (round_num, today, loopay_id)
+               WHERE match_round=? AND status='pending' AND user_id!=?""",
+            (round_num, loopay_id)
         ).fetchone()['c']
 
         buy_by_type = db.execute(
             """SELECT bar_type, COUNT(*) as cnt FROM reservations
-               WHERE match_round=? AND reserve_date=? AND status='pending' AND user_id!=?
+               WHERE match_round=? AND status='pending' AND user_id!=?
                GROUP BY bar_type""",
-            (round_num, today, loopay_id)
+            (round_num, loopay_id)
         ).fetchall()
 
-        # ── 판매예약: loopay 계정의 match_round=2 예약 (판매는 항상 2차 라운드) ──
+        # ── 판매예약: loopay의 match_round=2 confirmed=1 예약 ──
+        # 1차/2차 모두 loopay 아이템에서 판매하므로 동일
         sell_count = db.execute(
             """SELECT COUNT(*) as c FROM reservations
                WHERE match_round=2 AND status='pending' AND confirmed=1 AND user_id=?""",
