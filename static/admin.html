@@ -1109,16 +1109,20 @@ function renderSystemItems(){
 
     var actionBtns = '';
     if (ms === 'paid' && item.match_id) {
-      // 입금확인 버튼 (항상)
+      // 입금확인 버튼 (항상 표시)
       actionBtns += '<button onclick="adminConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>';
-      // 미입금 알림 버튼 (12:30~13:00, 쿨타임 포함)
+      // 12:30~13:00: 미입금 알림 버튼 (쿨타임 포함)
       if (_inWarnWindow) {
         actionBtns += _warnBtnActive
           ? '<button onclick="adminWarnUnpaid('+item.match_id+')" style="padding:3px 8px;background:#e65100;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">⚠ 미입금</button>'
           : '<button disabled title="10분 후 재활성화" style="padding:3px 8px;background:#555;color:#888;border:none;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">⚠ 미입금</button>';
       }
-    } else if ((ms === 'paid' || ms === 'unpaid') && item.match_id && _inConfirmWindow) {
-      // 미입금확인 버튼 (13:00~14:00)
+      // 13:00~14:00: 미입금확정 버튼 추가
+      if (_inConfirmWindow) {
+        actionBtns += '<button onclick="adminConfirmUnpaid('+item.match_id+')" style="padding:3px 8px;background:#6a1b9a;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🚫 미입금확정</button>';
+      }
+    } else if (ms === 'unpaid' && item.match_id && _inConfirmWindow) {
+      // unpaid 상태에서도 13:00~14:00 미입금확정 가능
       actionBtns += '<button onclick="adminConfirmUnpaid('+item.match_id+')" style="padding:3px 8px;background:#6a1b9a;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🚫 미입금확정</button>';
     }
     return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
