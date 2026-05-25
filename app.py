@@ -945,9 +945,10 @@ def admin_matching_status():
 
         # ── 판매예약: loopay의 match_round=2 confirmed=1 예약 ──
         # 1차/2차 모두 loopay 아이템에서 판매하므로 동일
+        # 1차: loopay pending 예약 전체, 2차: 1차 매칭 후 남은 것 (status='pending'만)
         sell_count = db.execute(
             """SELECT COUNT(*) as c FROM reservations
-               WHERE match_round=2 AND status='pending' AND confirmed=1 AND user_id=?""",
+               WHERE match_round=2 AND status='pending' AND user_id=?""",
             (loopay_id,)
         ).fetchone()['c']
 
@@ -956,7 +957,7 @@ def admin_matching_status():
         # by_type: 판매예약(loopay) 아이템별
         by_type_rows = db.execute(
             """SELECT bar_type, COUNT(*) as cnt FROM reservations
-               WHERE match_round=2 AND status='pending' AND confirmed=1 AND user_id=?
+               WHERE match_round=2 AND status='pending' AND user_id=?
                GROUP BY bar_type""",
             (loopay_id,)
         ).fetchall()
@@ -965,7 +966,7 @@ def admin_matching_status():
         by_stage = db.execute(
             """SELECT r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1)) as stage, COUNT(*) as cnt
                FROM reservations r LEFT JOIN items i ON r.item_id=i.id
-               WHERE r.match_round=2 AND r.status='pending' AND confirmed=1 AND r.user_id=?
+               WHERE r.match_round=2 AND r.status='pending' AND r.user_id=?
                GROUP BY r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1))
                ORDER BY r.bar_type, stage""",
             (loopay_id,)
