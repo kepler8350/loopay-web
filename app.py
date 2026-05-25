@@ -784,16 +784,28 @@ def admin_run_matching():
                 if seller['item_id']:
                     db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
 
-                db.execute(
-                    """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
-                       buy_price, sell_price, match_round, match_date, status,
-                       seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id)
-                       VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?)""",
-                    (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
-                     bt, st, buy_price, sell_price, round_num, today,
-                     s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'],
-                     seller.get('item_id'))
-                )
+                # seller_item_id 컬럼 있으면 포함, 없으면 기존 방식
+                _seller_iid = seller.get('item_id')
+                try:
+                    db.execute(
+                        """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
+                           buy_price, sell_price, match_round, match_date, status,
+                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id)
+                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?)""",
+                        (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
+                         bt, st, buy_price, sell_price, round_num, today,
+                         s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'], _seller_iid)
+                    )
+                except Exception:
+                    db.execute(
+                        """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
+                           buy_price, sell_price, match_round, match_date, status,
+                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone)
+                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?)""",
+                        (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
+                         bt, st, buy_price, sell_price, round_num, today,
+                         s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'])
+                    )
 
                 buyer_msg = f"{names[bt]} {st}단계 매칭완료! 판매자 정보를 매칭탭에서 확인하세요."
                 db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
