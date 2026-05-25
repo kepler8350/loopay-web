@@ -867,15 +867,31 @@ function toggleHeader(){
 function doLogout() {
   localStorage.removeItem('lp_token');
   localStorage.removeItem('lp_kakao_id');
-  // 매칭 탭 등 이전 사용자 데이터 초기화
+  // 전역 userData/token 초기화
+  userData = null;
+  token = '';
+  // 모든 동적 탭 콘텐츠 초기화
+  _clearAllTabContents();
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+function _clearAllTabContents() {
+  // 매칭 탭
   var buyEl = document.getElementById('match-buy-list');
   var sellEl = document.getElementById('match-sell-list');
   if(buyEl) buyEl.innerHTML = '';
   if(sellEl) sellEl.innerHTML = '';
-  // 전역 userData 초기화
-  userData = null;
-  document.getElementById('main-app').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
+  // 알림 탭
+  var notifEl = document.getElementById('notif-list');
+  if(notifEl) notifEl.innerHTML = '';
+  // 탭 active 클래스 초기화 (홈 탭만 active)
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  var homeTab = document.getElementById('tab-home');
+  if(homeTab) homeTab.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
+  var homeBtn = document.querySelector(".nav-btn[onclick*=\"'home'\"]");
+  if(homeBtn) homeBtn.classList.add('active');
 }
 
 function onlyDigits(el){
@@ -917,6 +933,8 @@ async function doLogin(){
     if(!r.ok){errEl.textContent=d.error||'로그인 실패';return;}
     localStorage.setItem('lp_token',d.access_token);
     await loadUserData();
+    // 로그인 전 이전 사용자 데이터 완전 초기화
+    _clearAllTabContents();
     document.getElementById('login-screen').style.display='none';
     document.getElementById('main-app').style.display='flex';
     startTimeBar();
