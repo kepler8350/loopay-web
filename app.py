@@ -676,6 +676,7 @@ def admin_run_matching():
         import random
 
         # 판매예약 조회 (confirmed 0/1 모두 - 확정여부 무관, pending 상태인 것)
+        # 판매예약: loopay(시스템)은 match_round=2, 일반사용자도 match_round=round_num
         sell_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
                u.username as seller_username, u.nickname as seller_nickname,
@@ -685,7 +686,8 @@ def admin_run_matching():
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                LEFT JOIN items i ON r.item_id = i.id
-               WHERE r.reserve_date=? AND r.status='pending' AND r.match_round=2""",
+               WHERE r.status='pending' AND r.match_round=2
+               AND (u.username='loopay' OR r.reserve_date=?)""",
             (today,)
         ).fetchall()
 
@@ -913,44 +915,38 @@ def admin_matching_status():
     loopay_id = loopay_row['id'] if loopay_row else -1
 
     def get_round_data(round_num):
-        # ── 구매예약: status='pending'인 것만 (matched 제외) ──
+        # ── 구매예약: 오늘 날짜, status='pending' ──
         buy_count = db.execute(
-            "SELECT COUNT(*) as c FROM reservations WHERE match_round=? AND status='pending'",
-            (round_num,)
+            "SELECT COUNT(*) as c FROM reservations WHERE match_round=? AND reserve_date=? AND status='pending'",
+            (round_num, today)
         ).fetchone()['c']
 
-        # 구매예약 아이템별
         buy_by_type = db.execute(
-            "SELECT bar_type, COUNT(*) as cnt FROM reservations WHERE match_round=? AND status='pending' GROUP BY bar_type",
-            (round_num,)
+            "SELECT bar_type, COUNT(*) as cnt FROM reservations WHERE match_round=? AND reserve_date=? AND status='pending' GROUP BY bar_type",
+            (round_num, today)
         ).fetchall()
 
-        # ── 판매예약: status='pending'인 것만 (matched 제외) ──
-        # 일반사용자: status='pending' 전부
-        # 시스템(loopay): status='pending' AND confirmed=1 (확정된 것만)
+        # ── 판매예약: round_num 기반, status='pending' ──
         sell_user = db.execute(
-            "SELECT COUNT(*) as c FROM reservations WHERE match_round=2 AND status='pending' AND user_id!=?",
-            (loopay_id,)
+            "SELECT COUNT(*) as c FROM reservations WHERE match_round=? AND status='pending' AND user_id!=?",
+            (round_num, loopay_id)
         ).fetchone()['c']
         sell_system = db.execute(
-            "SELECT COUNT(*) as c FROM reservations WHERE match_round=2 AND status='pending' AND confirmed=1 AND user_id=?",
-            (loopay_id,)
+            "SELECT COUNT(*) as c FROM reservations WHERE match_round=? AND status='pending' AND confirmed=1 AND user_id=?",
+            (round_num, loopay_id)
         ).fetchone()['c']
         sell_count = sell_user + sell_system
 
-        if buy_count > 0:
-            rate = round(min(buy_count, sell_count) / buy_count * 100, 1)
-        else:
-            rate = 0.0
+        rate = round(min(buy_count, sell_count) / buy_count * 100, 1) if buy_count > 0 else 0.0
 
-        # by_type: 일반사용자 pending + 시스템 pending+confirmed=1
+        # by_type: 판매예약 아이템별
         by_type_user = db.execute(
-            "SELECT bar_type, COUNT(*) as cnt FROM reservations WHERE match_round=2 AND status='pending' AND user_id!=? GROUP BY bar_type",
-            (loopay_id,)
+            "SELECT bar_type, COUNT(*) as cnt FROM reservations WHERE match_round=? AND status='pending' AND user_id!=? GROUP BY bar_type",
+            (round_num, loopay_id)
         ).fetchall()
         by_type_sys = db.execute(
-            "SELECT bar_type, COUNT(*) as cnt FROM reservations WHERE match_round=2 AND status='pending' AND confirmed=1 AND user_id=? GROUP BY bar_type",
-            (loopay_id,)
+            "SELECT bar_type, COUNT(*) as cnt FROM reservations WHERE match_round=? AND status='pending' AND confirmed=1 AND user_id=? GROUP BY bar_type",
+            (round_num, loopay_id)
         ).fetchall()
         by_type_map = {}
         for r in by_type_user:
@@ -962,9 +958,10 @@ def admin_matching_status():
         by_stage = db.execute(
             """SELECT r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1)) as stage, COUNT(*) as cnt
                FROM reservations r LEFT JOIN items i ON r.item_id=i.id
-               WHERE r.match_round=2 AND r.status='pending'
+               WHERE r.match_round=? AND r.status='pending'
                GROUP BY r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1))
-               ORDER BY r.bar_type, stage"""
+               ORDER BY r.bar_type, stage""",
+            (round_num,)
         ).fetchall()
         return {
             'buy_count': buy_count,
