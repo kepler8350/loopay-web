@@ -710,6 +710,12 @@ function showPage(name,el){var _mn=document.querySelector('.main');if(_mn){docum
       if(ts) ts.style.display='';
       var bb=document.getElementById('r'+n+'-buy-by-type');
       if(bb){ var tc=bb.closest('.two-col'); if(tc) tc.style.display=''; }
+      // 이전 매칭 결과 프리뷰 제거
+      var prev=document.querySelector('.match-result-preview');
+      if(prev) prev.remove();
+      // match-result div 초기화
+      var mr=document.getElementById('match-result-'+n);
+      if(mr) mr.innerHTML='';
     });
     loadMatchingStatus();updateMatchingBtn();
   }else if(name==='notifications'){var pn=document.getElementById('page-notifications');var mn=document.querySelector('.main');if(pn&&mn&&pn.parentElement!==mn)mn.appendChild(pn);}else if(name==='reservations'){loadReservationStatus();loadExtraReservations();}else if(name==='testtools')loadTesttools();else if(name==='penalties')loadPenalties();else if(name==='settings')loadSettings();}

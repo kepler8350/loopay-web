@@ -867,6 +867,13 @@ function toggleHeader(){
 function doLogout() {
   localStorage.removeItem('lp_token');
   localStorage.removeItem('lp_kakao_id');
+  // 매칭 탭 등 이전 사용자 데이터 초기화
+  var buyEl = document.getElementById('match-buy-list');
+  var sellEl = document.getElementById('match-sell-list');
+  if(buyEl) buyEl.innerHTML = '';
+  if(sellEl) sellEl.innerHTML = '';
+  // 전역 userData 초기화
+  userData = null;
   document.getElementById('main-app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
 }
@@ -1395,6 +1402,9 @@ var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
 async function loadMatchingTab(){
   var buyEl = document.getElementById('match-buy-list');
   var sellEl = document.getElementById('match-sell-list');
+  // 이전 내용 초기화 (다른 사용자 데이터 잔류 방지)
+  if(buyEl) buyEl.innerHTML = '';
+  if(sellEl) sellEl.innerHTML = '';
   try{
     var d = await api('/user/matching');
     var buys = [], sells = [];
