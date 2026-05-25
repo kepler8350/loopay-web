@@ -1753,12 +1753,12 @@ def match_confirm_payment():
         if seller_item:
             # seller 아이템 sold 처리
             db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
-            # buyer에게 새 아이템 추가 (reservable 상태로 보유)
+            # buyer에게 새 아이템 추가
             try:
                 db.execute(
                     """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
-                       VALUES(?, ?, ?, ?, 'reservable')""",
-                    (m['buyer_id'], seller_item['bar_type'], seller_item['stage'] or m['stage'] or 1,
+                       VALUES(?, ?, ?, ?, 'matched')""",
+                    (m['buyer_id'], seller_item['bar_type'], int(seller_item['stage'] or m['stage'] or 1),
                      _date.today().isoformat())
                 )
             except Exception:
