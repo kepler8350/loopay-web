@@ -220,6 +220,20 @@ def init_db():
         conn.commit()
     except Exception:
         pass
+    # 추가 컬럼 마이그레이션
+    try:
+        for _sql in [
+            "ALTER TABLE users ADD COLUMN maintain_points INTEGER DEFAULT 0",
+            "ALTER TABLE matches ADD COLUMN seller_item_id INTEGER",
+            "ALTER TABLE matches ADD COLUMN points_deducted INTEGER DEFAULT 0",
+        ]:
+            try:
+                conn.execute(_sql)
+            except Exception:
+                pass
+        conn.commit()
+    except Exception:
+        pass
     conn.close()
 
 def _seed(conn):
