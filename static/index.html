@@ -1582,11 +1582,18 @@ function openPaymentModal(matchId){
 function closePaymentModal(){
   var m = document.getElementById('payment-modal');
   if(m) m.style.display='none';
+  // 버튼/상태 초기화 (처리중이어도 닫으면 복원)
+  var sbtn = document.getElementById('submit-payment-btn');
+  if(sbtn){ sbtn.textContent='송금완료'; sbtn.disabled=true; sbtn.style.background='#555'; sbtn.style.color='#aaa'; sbtn.style.cursor='not-allowed'; }
+  var rf = document.getElementById('receipt-file'); if(rf) rf.value='';
+  var prev = document.getElementById('receipt-preview'); if(prev) prev.innerHTML='';
+  window._receiptBase64 = null;
+  window._payMatchId = null;
 }
 
 async function submitPayment(){
   if(!window._payMatchId){ closePaymentModal(); return; }
-  var btn = document.querySelector('#payment-modal button:last-child');
+  var btn = document.getElementById('submit-payment-btn');
   if(btn && btn.disabled) return;
   if(btn){ btn.textContent='처리 중...'; btn.disabled=true; }
   try{
