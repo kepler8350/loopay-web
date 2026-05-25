@@ -705,7 +705,7 @@ function showPage(name,el){var _mn=document.querySelector('.main');if(_mn){docum
     // 패널 초기화 (매칭 실행 후 숨겨진 것 복원)
     ['1','2'].forEach(function(n){
       var sg=document.getElementById('r'+n+'-stat-grid');
-      if(sg) sg.style.display='';
+      if(sg) sg.style.display='grid'; // display:grid 명시 복원
       var ts=document.getElementById('r'+n+'-type-section');
       if(ts) ts.style.display='';
       var bb=document.getElementById('r'+n+'-buy-by-type');
