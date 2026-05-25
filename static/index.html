@@ -374,7 +374,7 @@ function renderHeader(d){
   var dot=document.getElementById('h-lv-dot');
   if(badge){badge.className='user-id-badge lv-'+lv;}
   if(dot){dot.className='lv-dot lv-'+lv;}
-  document.getElementById('h-total').textContent=(d.charge_points||0).toLocaleString()+' P';
+  document.getElementById('h-total').textContent=((d.total_points)||0).toLocaleString()+' P';
   var uidEl=document.getElementById('h-userid');
   if(uidEl) uidEl.textContent=d.username||d.nickname||'';;
   document.getElementById('h-sub').textContent='충전 '+(d.charge_points||0).toLocaleString()+'P + 전환 '+(d.exchange_points||0).toLocaleString()+'P';

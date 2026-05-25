@@ -283,7 +283,9 @@ def get_me():
     db = get_db()
     u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
     if not u: return jsonify(error='Not found'), 404
-    # 오늘 매칭된 건수 × 40P = 매칭유지포인트 (차감 예정)
+    # 오늘 매칭된 건수 × 40P = 매칭유지포인트
+    from datetime import datetime as _dt2
+    _now2 = get_now()
     today_str = get_today().isoformat()
     _matched_count = db.execute(
         """SELECT COUNT(*) as c FROM matches
@@ -291,6 +293,32 @@ def get_me():
         (uid, today_str)
     ).fetchone()['c']
     match_maintain_cost = _matched_count * 40
+    # 5:00~20:00 사이에 매칭 포인트 자동 차감 (아직 차감 안 된 경우만)
+    if 5 <= _now2.hour < 20 and _matched_count > 0:
+        _deducted = db.execute(
+            """SELECT COUNT(*) as c FROM matches
+               WHERE buyer_id=? AND status IN ('pending','paid')
+               AND match_date=? AND points_deducted=1""",
+            (uid, today_str)
+        ).fetchone()['c']
+        if _deducted == 0:
+            # 아직 차감 안됨 → 차감 처리
+            _total_deduct = _matched_count * 40
+            _u = db.execute("SELECT charge_points, exchange_points FROM users WHERE id=?", (uid,)).fetchone()
+            if _u:
+                _cp = _u['charge_points'] or 0
+                _ep = _u['exchange_points'] or 0
+                if _cp >= _total_deduct:
+                    db.execute("UPDATE users SET charge_points=charge_points-? WHERE id=?", (_total_deduct, uid))
+                else:
+                    _rem = _total_deduct - _cp
+                    db.execute("UPDATE users SET charge_points=0, exchange_points=CASE WHEN exchange_points>=? THEN exchange_points-? ELSE 0 END WHERE id=?", (_rem, _rem, uid))
+                try:
+                    db.execute("UPDATE matches SET points_deducted=1 WHERE buyer_id=? AND status IN ('pending','paid') AND match_date=?", (uid, today_str))
+                except Exception:
+                    pass
+                db.commit()
+                match_maintain_cost = 0  # 차감 완료 후 유지포인트=0
     lv = u['level']
     cfg = LEVEL_CONFIG.get(lv, {})
     next_cum = cfg.get('cum')
@@ -1075,14 +1103,21 @@ def admin_matching_status():
 
 with app.app_context():
     init_db()
-    # matches 테이블에 seller_item_id 컬럼 추가 (없으면)
+    # matches 테이블에 필요한 컬럼 추가 (없으면)
     try:
         _c = _sq3.connect(_DB_PATH, timeout=10)
-        _c.execute("ALTER TABLE matches ADD COLUMN seller_item_id INTEGER")
+        for _col_sql in [
+            "ALTER TABLE matches ADD COLUMN seller_item_id INTEGER",
+            "ALTER TABLE matches ADD COLUMN points_deducted INTEGER DEFAULT 0",
+        ]:
+            try:
+                _c.execute(_col_sql)
+            except Exception:
+                pass
         _c.commit()
         _c.close()
     except Exception:
-        pass  # 이미 존재하면 무시
+        pass
     # loopay 아이템 중 잘못 sold 처리된 것 복원 (match가 pending인 경우)
     try:
         _c2 = _sq3.connect(_DB_PATH, timeout=10)
@@ -2498,7 +2533,8 @@ def user_matching():
         # ── 구매: 1) 예약 대기 중 ──
         # 오후 2시 이후에는 미매칭(pending) 예약 숨김
         _now = get_now()
-        _hide_pending = (_now.hour >= 14)
+        # 05:00~20:00: 미매칭 예약 숨김 (매칭 시간 종료 후)
+        _hide_pending = (5 <= _now.hour < 20)
         # 다음날 05:00 이후에만 매칭결과 공개
         # 05:00~20:00에만 매칭결과 공개 (20:00~05:00는 매칭 실행 시간이므로 숨김)
         _show_match_result = (5 <= _now.hour < 20)
@@ -2619,22 +2655,6 @@ def payment_complete():
         db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
             (m['seller_id'], 'payment', '입금 알림',
              f'{buyer_name}님이 송금완료했습니다. 입금을 확인해주세요. (매치 #{match_id})'))
-        # 매칭유지포인트 차감 (매칭당 40P) 및 잔여 포인트 반환
-        MATCH_COST = 40
-        user_row = db.execute("SELECT charge_points, exchange_points FROM users WHERE id=?", (uid,)).fetchone()
-        if user_row:
-            cp = user_row['charge_points'] or 0
-            ep = user_row['exchange_points'] or 0
-            total = cp + ep
-            # 매칭 비용 40P 차감
-            if total >= MATCH_COST:
-                deduct = MATCH_COST
-                # charge_points 먼저 차감
-                if cp >= deduct:
-                    db.execute("UPDATE users SET charge_points=charge_points-? WHERE id=?", (deduct, uid))
-                else:
-                    remaining_deduct = deduct - cp
-                    db.execute("UPDATE users SET charge_points=0, exchange_points=exchange_points-? WHERE id=?", (remaining_deduct, uid))
         db.commit()
         return jsonify(success=True, message='송금완료 처리됐습니다', image_url=img_path)
     except Exception as e:
