@@ -1785,36 +1785,45 @@ def match_confirm_payment():
 
         # 3. item을 buyer에게 이전 (seller 아이템은 sold, buyer에게 새 아이템 추가)
         from datetime import date as _date
-        # seller 아이템 찾기: reservation의 item_id 우선, 없으면 bar_type으로 찾기
+        # seller 아이템 찾기: match_id와 연결된 loopay reservation → item
         seller_item = None
-        if m['reservation_id']:
-            # 구매자의 reservation_id로 연관된 loopay reservation 찾기
-            # match에서 seller_id(loopay)의 해당 bar_type+stage 아이템을 찾되 가장 최근 것
+        # loopay 판매예약(reservation)에서 이 match와 연결된 아이템 찾기
+        # loopay의 reservation은 buyer의 reservation_id와 다름
+        # → loopay의 reservations 중 bar_type+stage가 일치하고 이 match와 연결된 것
+        seller_res = db.execute(
+            """SELECT r.item_id FROM reservations r
+               WHERE r.user_id=? AND r.bar_type=?
+                 AND r.status IN ('matched','sold','confirmed','pending')
+                 AND r.item_id IS NOT NULL
+               ORDER BY r.id DESC LIMIT 1""",
+            (m['seller_id'], m['bar_type'])
+        ).fetchone()
+        if seller_res and seller_res['item_id']:
             seller_item = db.execute(
-                """SELECT i.id, i.bar_type, i.stage FROM items i
-                   JOIN reservations r ON r.item_id = i.id
-                   WHERE i.user_id=? AND i.bar_type=? AND i.status='matched'
-                   AND r.status IN ('matched','sold','confirmed')
-                   ORDER BY i.id DESC LIMIT 1""",
-                (m['seller_id'], m['bar_type'])
+                "SELECT id, bar_type, stage FROM items WHERE id=? AND status='matched'",
+                (seller_res['item_id'],)
             ).fetchone()
         if not seller_item:
+            # fallback: 해당 match_id와 bar_type+stage가 일치하는 가장 오래된 matched 아이템
             seller_item = db.execute(
                 """SELECT i.id, i.bar_type, i.stage FROM items i
-                   WHERE i.user_id=? AND i.bar_type=? AND i.status='matched'
-                   ORDER BY i.id DESC LIMIT 1""",
-                (m['seller_id'], m['bar_type'])
+                   WHERE i.user_id=? AND i.bar_type=? AND i.stage=?
+                     AND i.status='matched'
+                   ORDER BY i.id ASC LIMIT 1""",
+                (m['seller_id'], m['bar_type'], m['stage'] or 1)
             ).fetchone()
         if seller_item:
             # seller 아이템 sold 처리
             db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
             # buyer에게 새 아이템 추가 (status는 DB 스키마에 따라 가능한 값 사용)
-            for _st in ('matched', 'sold', 'pending'):
+            # buyer 아이템은 'active'(보유중) 상태로 추가
+            _stage = int(seller_item['stage'] or m['stage'] or 1)
+            for _st in ('active', 'matched', 'pending'):
                 try:
                     db.execute(
                         """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
                            VALUES(?, ?, ?, ?, ?)""",
-                        (m['buyer_id'], seller_item['bar_type'], int(seller_item['stage'] or m['stage'] or 1),
+                        (m['buyer_id'], seller_item['bar_type'], _stage,
                          _date.today().isoformat(), _st)
                     )
                     break
