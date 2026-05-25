@@ -2375,7 +2375,8 @@ def user_matching():
         _now = get_now()
         _hide_pending = (_now.hour >= 14)
         # 다음날 05:00 이후에만 매칭결과 공개
-        _show_match_result = (_now.hour >= 5)
+        # 05:00~20:00에만 매칭결과 공개 (20:00~05:00는 매칭 실행 시간이므로 숨김)
+        _show_match_result = (5 <= _now.hour < 20)
 
         buy_reservations = db.execute(
             """SELECT r.id, r.bar_type, r.status as res_status,

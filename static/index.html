@@ -1420,10 +1420,19 @@ var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
 async function loadMatchingTab(){
   var buyEl = document.getElementById('match-buy-list');
   var sellEl = document.getElementById('match-sell-list');
-  // 이전 내용 초기화 (다른 사용자 데이터 잔류 방지)
+  // 이전 내용 초기화
   if(buyEl) buyEl.innerHTML = '';
   if(sellEl) sellEl.innerHTML = '';
   try{
+    // 서버 시간 확인: 20:00~05:00 사이에는 매칭결과 숨김 안내
+    var _ct = await api('/current-time');
+    var _ch = _ct.hour||0;
+    var _isMatchingTime = (_ch >= 20 || _ch < 5);
+    if(_isMatchingTime){
+      if(buyEl) buyEl.innerHTML = '<div style="text-align:center;color:#f9a825;padding:20px;font-size:13px">⏳ 매칭 진행 중 (20:00~05:00)<br><span style="font-size:11px;color:#aaa">매칭 결과는 오전 5시 이후 확인 가능합니다</span></div>';
+      if(sellEl) sellEl.innerHTML = '';
+      return;
+    }
     var d = await api('/user/matching');
     var buys = [], sells = [];
     if(Array.isArray(d)){
