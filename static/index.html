@@ -499,7 +499,7 @@ function showTab(id,btn){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   if(id==='notif') loadNotifications();
-  if(id==='matching') loadMatchingTab();
+  if(id==='matching'){var bEl=document.getElementById('match-buy-list');var sEl=document.getElementById('match-sell-list');if(bEl)bEl.innerHTML='';if(sEl)sEl.innerHTML='';loadMatchingTab();}
   btn.classList.add('active');
 
   if(id === 'combine') { setTimeout(loadCombineItems, 100); }
@@ -1525,22 +1525,24 @@ function openPaymentModal(matchId){
       +'<div style="font-size:16px;font-weight:700;margin-bottom:16px">💸 송금완료 확인</div>'
       +'<div style="font-size:13px;color:#aaa;margin-bottom:12px">판매자 계좌로 송금 후 영수증을 첨부해주세요.</div>'
       +'<div style="margin-bottom:12px">'
-      +'<label style="display:block;font-size:12px;color:#888;margin-bottom:6px">영수증 이미지 (선택)</label>'
+      +'<label style="display:block;font-size:12px;color:#aaa;margin-bottom:6px">📎 영수증 이미지 <span style="color:#ef5350">(필수)</span></label>'
       +'<input type="file" id="receipt-file" accept="image/*" style="width:100%;font-size:13px">'
       +'</div>'
       +'<div id="receipt-preview" style="margin-bottom:12px"></div>'
       +'<div style="display:flex;gap:10px">'
       +'<button onclick="closePaymentModal()" style="flex:1;padding:10px;background:#2a2d3e;color:#e8eaf6;border:none;border-radius:8px;font-size:13px;cursor:pointer">취소</button>'
-      +'<button onclick="submitPayment()" style="flex:1;padding:10px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">송금완료</button>'
+      +'<button id="submit-payment-btn" onclick="submitPayment()" disabled style="flex:1;padding:10px;background:#555;color:#aaa;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed">송금완료</button>'
       +'</div>'
       +'</div>';
     document.body.appendChild(modal);
     document.getElementById('receipt-file').onchange = function(e){
       var file = e.target.files[0];
-      if(!file) return;
+      var sbtn = document.getElementById('submit-payment-btn');
+      if(sbtn){sbtn.disabled=!file;sbtn.style.background=file?'#1976d2':'#555';sbtn.style.color=file?'#fff':'#aaa';sbtn.style.cursor=file?'pointer':'not-allowed';}
+      if(!file){window._receiptBase64=null;document.getElementById('receipt-preview').innerHTML='';return;}
       var reader = new FileReader();
       reader.onload = function(ev){
-        window._receiptBase64 = ev.target.result;
+        window._receiptBase64 = ev.target.result.split(',')[1];
         document.getElementById('receipt-preview').innerHTML = '<img src="'+ev.target.result+'" style="width:100%;border-radius:8px;max-height:200px;object-fit:contain">';
       };
       reader.readAsDataURL(file);
@@ -1550,6 +1552,8 @@ function openPaymentModal(matchId){
     document.getElementById('receipt-preview').innerHTML = '';
     if(document.getElementById('receipt-file')) document.getElementById('receipt-file').value='';
     window._receiptBase64 = null;
+    var sbtn=document.getElementById('submit-payment-btn');
+    if(sbtn){sbtn.disabled=true;sbtn.style.background='#555';sbtn.style.color='#aaa';sbtn.style.cursor='not-allowed';}
   }
 }
 

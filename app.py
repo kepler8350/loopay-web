@@ -811,13 +811,22 @@ def admin_run_matching():
         # 기존 bar_type별 루프 - stage별 매칭으로 대체됨, 아래는 제거
 
 
+        # 매칭 안된 오늘 pending 예약 → unmatched 처리
+        try:
+            db.execute(
+                """UPDATE reservations SET status='unmatched'
+                   WHERE match_round=? AND status='pending' AND reserve_date=?
+                   AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
+                (round_num, today)
+            )
+        except Exception:
+            pass
         db.commit()
 
-        # 알림: 구매예약은 있는데 매칭 못 된 경우 → 별도 처리 없이 pending 유지
         return jsonify(
             success=True,
             matched=total_matched,
-            message=f'1차 매칭 완료: {total_matched}건',
+            message=f'{round_num}차 매칭 완료: {total_matched}건',
             pairs=matched_pairs
         )
     except Exception as e:
@@ -1854,7 +1863,7 @@ def admin_loopay_items():
                FROM items i
                LEFT JOIN reservations r ON r.item_id = i.id
                LEFT JOIN matches m ON m.seller_id = ? AND m.bar_type = i.bar_type
-                 AND (m.status = 'pending' OR m.status = 'paid' OR m.status = 'completed')
+                 AND (m.status = 'pending' OR m.status = 'paid' OR m.status = 'confirmed' OR m.status = 'completed')
                LEFT JOIN users bu ON m.buyer_id = bu.id
                WHERE i.user_id = ?
                ORDER BY i.id DESC""",
