@@ -425,8 +425,12 @@ def get_items():
 @app.route('/api/prices', methods=['GET'])
 def get_prices():
     bar_type = request.args.get('bar_type', 'bronze')
-    tbl = price_table(bar_type)
-    return jsonify(prices=[{'stage':s,'buy':b,'sell':sl,'profit':sl-b} for s,b,sl in tbl])
+    db = get_db()
+    try:
+        rows = db.execute('SELECT stage, buy_price, sell_price FROM prices WHERE bar_type=? ORDER BY stage', (bar_type,)).fetchall()
+        return jsonify(prices=[{'stage':r['stage'],'buy':r['buy_price'],'sell':r['sell_price'],'profit':r['sell_price']-r['buy_price']} for r in rows])
+    finally:
+        db.close()
 
 @app.route('/api/charge/request', methods=['POST'])
 @jwt_required()
