@@ -1861,7 +1861,7 @@ def admin_loopay_items():
                r.reserve_date
                FROM items i
                LEFT JOIN reservations r ON r.item_id = i.id
-               WHERE i.user_id = ?
+               WHERE i.user_id = ? AND i.status != 'sold'
                ORDER BY i.id DESC""",
             (lid,)
         ).fetchall()
