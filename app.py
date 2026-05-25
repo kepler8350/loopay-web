@@ -1752,7 +1752,7 @@ def match_confirm_payment():
         ).fetchone()
         if seller_item:
             db.execute(
-                "UPDATE items SET user_id=?, status='waiting' WHERE id=?",
+                "UPDATE items SET user_id=?, status='matched' WHERE id=?",
                 (m['buyer_id'], seller_item['id'])
             )
 
