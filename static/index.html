@@ -1131,7 +1131,7 @@ function updateTimeBar(){
   // 구매 예약하기 버튼 - 시간 + 포인트 동시 체크
   var reserveBtn = document.getElementById('reserve-btn');
   if(reserveBtn && !reserveBtn.dataset.disabledByUser){
-    var _avail = ((d.charge_points||0) + (d.exchange_points||0));
+    var _avail = ((userData&&userData.charge_points||0) + (userData&&userData.exchange_points||0));
     var _noPoints = (_avail <= 0);
     var _btnOk = isReserveTime && !_noPoints;
     reserveBtn.disabled = !_btnOk;
