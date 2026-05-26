@@ -1541,7 +1541,7 @@ def admin_reservation_status():
                 (bar_type, loopay_id)
             ).fetchall()
             extra_sell_confirmed_rows = conn.execute(
-                "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.match_round=2 AND r.confirmed=1 AND r.user_id=?",
+                "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.match_round=2 AND r.confirmed=1 AND r.status='pending' AND r.user_id=?",
                 (bar_type, loopay_id)
             ).fetchall()
             extra_sell_rows = extra_sell_pending + extra_sell_confirmed_rows
