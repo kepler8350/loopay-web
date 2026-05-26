@@ -496,10 +496,45 @@ def charge_request():
             db.execute("INSERT INTO charge_requests(user_id,amount,points,receipt_phone) VALUES(?,?,?,?)", (uid,amount,points,receipt_info))
         except Exception:
             db.execute("INSERT INTO charge_requests(user_id,amount,points) VALUES(?,?,?)", (uid,amount,points))
+        # 루페이 계좌 정보 가져오기
+        try:
+            db2 = get_db()
+            _bank = db2.execute("SELECT value FROM system_settings WHERE key='loopay_bank'").fetchone()
+            _acct = db2.execute("SELECT value FROM system_settings WHERE key='loopay_account'").fetchone()
+            _name = db2.execute("SELECT value FROM system_settings WHERE key='loopay_account_name'").fetchone()
+            loopay_bank = _bank['value'] if _bank else '은행미설정'
+            loopay_acct = _acct['value'] if _acct else '계좌미설정'
+            loopay_acct_name = _name['value'] if _name else '루페이'
+            db2.close()
+        except Exception:
+            loopay_bank, loopay_acct, loopay_acct_name = '확인필요', '확인필요', '루페이'
+
+        # 사용자에게 충전 알림 발송 (계좌번호 포함)
+        try:
+            notif_msg = (
+                f'충전 신청이 접수되었습니다.\n'
+                f'\n📋 신청 내용\n'
+                f'• 충전 포인트: {points:,}P\n'
+                f'• 입금 금액: {amount:,}원\n'
+                f'\n🏦 루페이 입금 계좌\n'
+                f'• 은행: {loopay_bank}\n'
+                f'• 계좌번호: {loopay_acct}\n'
+                f'• 예금주: {loopay_acct_name}\n'
+                f'\n위 계좌로 입금 후 관리자 확인 시 포인트가 지급됩니다.'
+            )
+            db.execute(
+                "INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+                (uid, 'charge', '충전 신청 접수', notif_msg)
+            )
+            db.commit()
+        except Exception:
+            pass
         db.commit()
     finally:
         db.close()
-    return jsonify(success=True,amount=amount,points=points,message=f'{amount:,}원 → {points}P 충전 요청 완료')
+    return jsonify(success=True,amount=amount,points=points,
+                   message=f'{amount:,}원 → {points}P 충전 요청 완료',
+                   account_info=f'{loopay_bank} {loopay_acct} ({loopay_acct_name})')
 
 @app.route('/api/levels', methods=['GET'])
 def get_levels():

@@ -447,6 +447,7 @@ async function requestCharge(){
     '충전 신청 확인\n\n'
     +'충전 포인트: '+pts.toLocaleString()+'P\n'
     +'입금 금액: '+won.toLocaleString()+'원\n\n'
+    +'📌 입금 계좌번호는 신청 후 알림에서 확인하세요.\n\n'
     +'신청하시겠습니까?'
   );
   if(!ok) return;
@@ -1128,11 +1129,17 @@ function updateTimeBar(){
   // ── 구매·판매 예약 버튼 시간 제어 (05:00~20:00만 활성화) ──
   var isReserveTime = (h >= 5 && h < 20);
 
-  // 구매 예약하기 버튼 - 시간 + 포인트 동시 체크
+  // 구매 예약하기 버튼 - 시간 조건만 체크
+  // 포인트/수량 조건은 updateResUI에서 별도 처리
   var reserveBtn = document.getElementById('reserve-btn');
   if(reserveBtn && !reserveBtn.dataset.disabledByUser){
-    var _avail = ((userData&&userData.charge_points||0) + (userData&&userData.exchange_points||0));
-    var _noPoints = (_avail <= 0);
+    var _avail = ((userData&&userData.charge_points)||0) + ((userData&&userData.exchange_points)||0);
+    // 현재 선택된 예약수에 따른 비용 계산 (bzCnt 기반)
+    // bzCnt/svCnt/gdCnt는 전역 변수
+    var _curTotal = (typeof bzCnt!=='undefined'?bzCnt:0) + (typeof svCnt!=='undefined'?svCnt:0) + (typeof gdCnt!=='undefined'?gdCnt:0);
+    var _curCost = _curTotal * 40;
+    // 예약수가 있으면 비용 비교, 없으면 포인트 0 체크
+    var _noPoints = (_curTotal > 0) ? (_avail < _curCost) : (_avail <= 0);
     var _btnOk = isReserveTime && !_noPoints;
     reserveBtn.disabled = !_btnOk;
     reserveBtn.style.opacity = _btnOk ? '1' : '0.4';
