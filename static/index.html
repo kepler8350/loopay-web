@@ -1139,7 +1139,8 @@ function updateTimeBar(){
     var _curTotal = (typeof bzCnt!=='undefined'?bzCnt:0) + (typeof svCnt!=='undefined'?svCnt:0) + (typeof gdCnt!=='undefined'?gdCnt:0);
     var _curCost = _curTotal * 40;
     // 예약수가 있으면 비용 비교, 없으면 포인트 0 체크
-    var _noPoints = (_curTotal > 0) ? (_avail < _curCost) : (_avail <= 0);
+    // 수량 0이면 무조건 비활성, 수량 있으면 포인트 체크
+    var _noPoints = (_curTotal === 0) ? true : (_avail < _curCost);
     var _btnOk = isReserveTime && !_noPoints;
     reserveBtn.disabled = !_btnOk;
     reserveBtn.style.opacity = _btnOk ? '1' : '0.4';
@@ -1696,7 +1697,9 @@ function enableReserveSection(){
     // 포인트 + 시간 체크 후 활성화
     var _avail2 = ((userData&&userData.charge_points)||0) + ((userData&&userData.exchange_points)||0);
     var _h3 = getEffectiveDate().getHours();
-    var _canEnable = (_avail2 > 0) && (_h3 >= 5 && _h3 < 20);
+    // 수량 및 포인트, 시간 모두 체크 (수량은 bzCnt 기준)
+    var _curTotal2 = (typeof bzCnt!=='undefined'?bzCnt:0)+(typeof svCnt!=='undefined'?svCnt:0)+(typeof gdCnt!=='undefined'?gdCnt:0);
+    var _canEnable = (_avail2 > 0) && (_h3 >= 5 && _h3 < 20) && (_curTotal2 === 0 || _avail2 >= _curTotal2 * 40);
     btn.disabled = !_canEnable;
     btn.style.opacity = _canEnable ? '1' : '0.4';
     btn.style.cursor = _canEnable ? 'pointer' : 'not-allowed';
