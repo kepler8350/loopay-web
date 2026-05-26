@@ -1042,22 +1042,13 @@ def admin_matching_status():
                WHERE match_round=2 AND status='pending' AND user_id=?""",
             (loopay_id,)
         ).fetchone()['c']
-        if _pending_sell > 0:
-            sell_count = _pending_sell
-        elif round_num == 1:
-            # 1차에서만: pending 없으면 loopay 아이템으로 fallback
-            sell_count = db.execute(
-                """SELECT COUNT(*) as c FROM items
-                   WHERE user_id=? AND status IN ('reservable','matched')""",
-                (loopay_id,)
-            ).fetchone()['c']
-        else:
-            # 2차: pending만 (없으면 0)
-            sell_count = 0
+        # pending 예약만 집계 (없으면 0) - fallback 제거
+        sell_count = _pending_sell
 
         rate = round(min(buy_count, sell_count) / buy_count * 100, 1) if buy_count > 0 else 0.0
 
         # by_type: 판매예약(loopay) 아이템별
+        # pending 예약만 집계
         if _pending_sell > 0:
             by_type_rows = db.execute(
                 """SELECT bar_type, COUNT(*) as cnt FROM reservations
@@ -1071,20 +1062,6 @@ def admin_matching_status():
                    WHERE r.match_round=2 AND r.status='pending' AND r.user_id=?
                    GROUP BY r.bar_type, COALESCE(r.stage,COALESCE(i.stage,1))
                    ORDER BY r.bar_type, stage""",
-                (loopay_id,)
-            ).fetchall()
-        elif round_num == 1:
-            # 1차 fallback: loopay 아이템 기준
-            by_type_rows = db.execute(
-                """SELECT bar_type, COUNT(*) as cnt FROM items
-                   WHERE user_id=? AND status IN ('reservable','matched')
-                   GROUP BY bar_type""",
-                (loopay_id,)
-            ).fetchall()
-            by_stage_rows = db.execute(
-                """SELECT bar_type, COALESCE(stage,1) as stage, COUNT(*) as cnt FROM items
-                   WHERE user_id=? AND status IN ('reservable','matched')
-                   GROUP BY bar_type, stage ORDER BY bar_type, stage""",
                 (loopay_id,)
             ).fetchall()
         else:
