@@ -1128,12 +1128,18 @@ function updateTimeBar(){
   // ── 구매·판매 예약 버튼 시간 제어 (05:00~20:00만 활성화) ──
   var isReserveTime = (h >= 5 && h < 20);
 
-  // 구매 예약하기 버튼
+  // 구매 예약하기 버튼 - 시간 + 포인트 동시 체크
   var reserveBtn = document.getElementById('reserve-btn');
   if(reserveBtn && !reserveBtn.dataset.disabledByUser){
-    reserveBtn.disabled = !isReserveTime;
-    reserveBtn.style.opacity = isReserveTime ? '1' : '0.4';
-    reserveBtn.title = isReserveTime ? '' : '구매·판매 예약은 05:00~20:00에만 가능합니다';
+    var _avail = ((d.charge_points||0) + (d.exchange_points||0));
+    var _noPoints = (_avail <= 0);
+    var _btnOk = isReserveTime && !_noPoints;
+    reserveBtn.disabled = !_btnOk;
+    reserveBtn.style.opacity = _btnOk ? '1' : '0.4';
+    reserveBtn.style.cursor = _btnOk ? 'pointer' : 'not-allowed';
+    if(!isReserveTime) reserveBtn.title = '구매·판매 예약은 05:00~20:00에만 가능합니다';
+    else if(_noPoints) reserveBtn.title = '포인트가 부족합니다';
+    else reserveBtn.title = '';
   }
   // 판매 예약하기 버튼
   var sellReserveBtn = document.getElementById('sell-reserve-btn');
@@ -1680,8 +1686,14 @@ function enableReserveSection(){
   _reservedToday=false;
   var btn = document.getElementById('reserve-btn');
   if(btn){
-    btn.disabled = false;
-    btn.style.opacity = '1';
+    // 포인트 + 시간 체크 후 활성화
+    var _avail2 = ((userData&&userData.charge_points)||0) + ((userData&&userData.exchange_points)||0);
+    var _h3 = getEffectiveDate().getHours();
+    var _canEnable = (_avail2 > 0) && (_h3 >= 5 && _h3 < 20);
+    btn.disabled = !_canEnable;
+    btn.style.opacity = _canEnable ? '1' : '0.4';
+    btn.style.cursor = _canEnable ? 'pointer' : 'not-allowed';
+    btn.title = _avail2 <= 0 ? '포인트가 부족합니다' : (!(_h3>=5&&_h3<20) ? '05:00~20:00에만 가능합니다' : '');
     btn.textContent = '구매 예약하기 (40P × 매칭예약수)';
     btn.onclick = function(){ showReserveConfirm(); };
   }
@@ -1774,10 +1786,18 @@ function updateResUI(BZ_MIN,BZ_MAX){
   var _exP = (userData && userData.exchange_points) || 0;
   var notEnough = (_chP + _exP < cost);
   var isEmpty = (total === 0);
+  // 시간 조건도 함께 체크
+  var _now2 = new Date();
+  var _h2 = _now2.getHours();
+  var _isTimeOk = (_h2 >= 5 && _h2 < 20);
   if(btn && !_reservedToday){
-    btn.disabled = (notEnough || isEmpty);
-    btn.style.opacity = (notEnough || isEmpty) ? '0.4' : '1';
-    btn.style.cursor = (notEnough || isEmpty) ? 'not-allowed' : 'pointer';
+    var _btnDisabled = (notEnough || isEmpty || !_isTimeOk);
+    btn.disabled = _btnDisabled;
+    btn.style.opacity = _btnDisabled ? '0.4' : '1';
+    btn.style.cursor = _btnDisabled ? 'not-allowed' : 'pointer';
+    if(notEnough) btn.title = '포인트가 부족합니다';
+    else if(!_isTimeOk) btn.title = '구매·판매 예약은 05:00~20:00에만 가능합니다';
+    else btn.title = '';
   }
 }
 function updateReserveDefaults(lv){
