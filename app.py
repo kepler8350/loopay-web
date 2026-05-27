@@ -1673,7 +1673,7 @@ def admin_add_reservation():
             loopay_user = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
         loopay_id = loopay_user['id']
         today = get_today().isoformat()
-        match_round = 1 if res_type == 'buy' else 2
+        match_round = 2  # loopay 추가 판매예약은 항상 2차 매칭용
         today = get_today().isoformat()
         conn.execute("PRAGMA foreign_keys=OFF")
         for _ in range(count):
