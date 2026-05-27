@@ -1203,19 +1203,19 @@ def admin_matching_status():
         if sell_count > 0 and _confirmed_sell > 0:
             by_type_rows = db.execute(
                 """SELECT bar_type, COUNT(*) as cnt FROM reservations
-                   WHERE match_round=2 AND status='pending'
+                   WHERE match_round=? AND status='pending'
                    AND user_id=? AND COALESCE(confirmed,0)=1
                    GROUP BY bar_type""",
-                (loopay_id,)
+                (round_num, loopay_id)
             ).fetchall()
             by_stage_rows = db.execute(
                 """SELECT r.bar_type, COALESCE(r.stage,COALESCE(i.stage,1)) as stage, COUNT(*) as cnt
                    FROM reservations r LEFT JOIN items i ON r.item_id=i.id
-                   WHERE r.match_round=2 AND r.status='pending'
+                   WHERE r.match_round=? AND r.status='pending'
                    AND r.user_id=? AND COALESCE(r.confirmed,0)=1
                    GROUP BY r.bar_type, COALESCE(r.stage,COALESCE(i.stage,1))
                    ORDER BY r.bar_type, stage""",
-                (loopay_id,)
+                (round_num, loopay_id)
             ).fetchall()
         else:
             by_type_rows = []
