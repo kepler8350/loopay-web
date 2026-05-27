@@ -1737,11 +1737,16 @@ def admin_reservation_status():
             bands = stage_bands.get(bar_type, [(1,10),(11,19),(20,20),(21,99)])
             price_bands = {'band1': 0, 'band2': 0, 'band3': 0, 'band4': 0, 'prev_unsold': 0}
             # 가격대별 집계 - loopay 판매추가예약 포함 (행운구매 대상)
+            # 판매예약 가격대별: 모든 match_round 포함 (1차+2차), 일반 사용자+loopay 확정 sell
             all_sell = conn.execute(
                 """SELECT i.stage FROM reservations r
                    JOIN items i ON r.item_id=i.id
-                   WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending'""",
-                (bar_type,)
+                   WHERE r.bar_type=? AND r.status='pending'
+                   AND (
+                     r.user_id != ?
+                     OR (r.user_id = ? AND COALESCE(r.confirmed,0)=1)
+                   )""",
+                (bar_type, loopay_id, loopay_id)
             ).fetchall()
             for row in all_sell:
                 stage = row['stage'] or 1
