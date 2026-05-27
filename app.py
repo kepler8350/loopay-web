@@ -1798,14 +1798,15 @@ def admin_add_reservation():
         today = get_today().isoformat()
         conn.execute("PRAGMA foreign_keys=OFF")
         for _ in range(count):
-            item_id = 0
+            item_id = None
             if res_type == 'sell':
-                # loopay 아이템 생성 후 예약
+                # 판매예약: loopay 아이템 생성 후 예약
                 cur = conn.execute(
                     "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
                     (loopay_id, bar_type, stage, today)
                 )
                 item_id = cur.lastrowid
+            # 구매예약(buy): item_id=NULL로 INSERT
             conn.execute(
                 "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
                 (loopay_id, item_id, bar_type, match_round, today, stage)
@@ -2540,7 +2541,7 @@ def admin_loopay_extra_reservations():
             SELECT r.id, r.bar_type, r.status, r.reserve_date,
                    r.match_round,
                    COALESCE(r.confirmed,0) as confirmed,
-                   CASE r.match_round WHEN 1 THEN 'buy' ELSE 'sell' END as type,
+                   CASE WHEN r.item_id IS NOT NULL THEN 'sell' ELSE 'buy' END as type,
                    COALESCE(r.stage, COALESCE(i.stage, 0)) as stage
             FROM reservations r
             LEFT JOIN items i ON r.item_id = i.id
