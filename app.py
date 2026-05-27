@@ -1761,13 +1761,20 @@ def run_lucky_matching():
 def get_notifications():
     uid = int(get_jwt_identity())
     db = get_db()
-    rows = db.execute(
-        """SELECT * FROM notifications
-           WHERE user_id=?
-           AND (scheduled_at IS NULL OR scheduled_at <= datetime('now','localtime'))
-           ORDER BY created_at DESC LIMIT 50""",
-        (uid,)
-    ).fetchall()
+    try:
+        rows = db.execute(
+            """SELECT * FROM notifications
+               WHERE user_id=?
+               AND (scheduled_at IS NULL OR scheduled_at <= datetime('now','localtime'))
+               ORDER BY created_at DESC LIMIT 50""",
+            (uid,)
+        ).fetchall()
+    except Exception:
+        # scheduled_at 컬럼 없으면 기본 쿼리
+        rows = db.execute(
+            "SELECT * FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 50",
+            (uid,)
+        ).fetchall()
     unread = db.execute("SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0", (uid,)).fetchone()[0]
     db.close()
     return jsonify(notifications=[dict(r) for r in rows], unread=unread)
@@ -2580,22 +2587,47 @@ def user_matching():
         # 오후 2시 이후에는 미매칭(pending) 예약 숨김
         _now = get_now()
         # 05:00~20:00: 미매칭 예약 숨김 (매칭 시간 종료 후)
-        _hide_pending = (5 <= _now.hour < 20)
+        # 오늘 예약은 항상 표시, 전날(어제 이전) 미매칭만 숨김
+        _today = get_today().isoformat()
+        _hide_pending = False  # 오늘 예약은 숨기지 않음
         # 다음날 05:00 이후에만 매칭결과 공개
         # 05:00~20:00에만 매칭결과 공개 (20:00~05:00는 매칭 실행 시간이므로 숨김)
         _show_match_result = (5 <= _now.hour < 20)
 
-        buy_reservations = db.execute(
-            """SELECT r.id, r.bar_type, r.status as res_status,
-                      COALESCE(r.stage,1) as stage, r.reserve_date,
-                      'reservation' as source
-               FROM reservations r
-               WHERE r.user_id=? AND r.match_round=1
-                 AND r.status='pending' AND r.confirmed=0
-               ORDER BY r.id DESC""",
-            (uid,)
-        ).fetchall()
-        if _hide_pending:
+        # 오늘 예약은 항상 표시, 어제 이전 예약은 5:00 이후 숨김
+        _show_old = not (5 <= _now.hour < 20)  # 5:00~20:00 사이에는 전날 예약 숨김
+        if _show_old:
+            _date_cond = ""
+            _date_params = [uid]
+        else:
+            _date_cond = "AND r.reserve_date >= ?"
+            _date_params = [uid, _today]
+
+        if _show_old:
+            buy_reservations = db.execute(
+                """SELECT r.id, r.bar_type, r.status as res_status,
+                          COALESCE(r.stage,1) as stage, r.reserve_date,
+                          'reservation' as source
+                   FROM reservations r
+                   WHERE r.user_id=? AND r.match_round=1
+                     AND r.status='pending' AND r.confirmed=0
+                   ORDER BY r.id DESC""",
+                (uid,)
+            ).fetchall()
+        else:
+            buy_reservations = db.execute(
+                """SELECT r.id, r.bar_type, r.status as res_status,
+                          COALESCE(r.stage,1) as stage, r.reserve_date,
+                          'reservation' as source
+                   FROM reservations r
+                   WHERE r.user_id=? AND r.match_round=1
+                     AND r.status='pending' AND r.confirmed=0
+                     AND r.reserve_date >= ?
+                   ORDER BY r.id DESC""",
+                (uid, _today)
+            ).fetchall()
+        # _hide_pending 사용 안함 - 위에서 이미 날짜 필터 처리됨
+        if False:
             buy_reservations = []
         # ── 구매: 2) 매칭 완료 기록 ──
         buy_matches = db.execute(
