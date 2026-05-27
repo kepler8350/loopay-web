@@ -1778,6 +1778,27 @@ def read_notifications():
     db.close()
     return jsonify(success=True)
 
+
+@app.route('/api/user/notifications/delete', methods=['POST'])
+@jwt_required()
+def delete_notifications():
+    uid = int(get_jwt_identity())
+    data = request.json or {}
+    ids = data.get('ids', [])
+    if not ids:
+        return jsonify(error='삭제할 알림 ID가 없습니다'), 400
+    db = get_db()
+    try:
+        placeholders = ','.join(['?' for _ in ids])
+        db.execute(
+            f"DELETE FROM notifications WHERE id IN ({placeholders}) AND user_id=?",
+            ids + [uid]
+        )
+        db.commit()
+    finally:
+        db.close()
+    return jsonify(success=True, deleted=len(ids))
+
 @app.route('/api/admin/notify', methods=['POST'])
 @jwt_required()
 def admin_send_notify():

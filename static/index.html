@@ -268,6 +268,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-unpaid{background:#c62828;color:#fff}
 .btn-disabled{background:#37474f;color:#999;cursor:not-allowed}
 
+
+/* 알림 점멸 애니메이션 */
+@keyframes notif-blink-anim {
+  0%,100%{opacity:1;transform:scale(1);}
+  40%{opacity:0.3;transform:scale(1.2);}
+  60%{opacity:0.3;transform:scale(1.2);}
+}
+.notif-blink{animation:notif-blink-anim 1s ease-in-out infinite!important;}
 </style>
 <script>var _sellSelected={}; // 판매예약 선택 상태
 var _reservedToday=false; // 오늘 구매예약 완료 여부
@@ -1875,6 +1883,55 @@ function renderLevelTab(){
 }
 
 
+
+var _notifSelectMode = false;
+
+function _renderNotifList(notifications){
+  var list = document.getElementById('notif-list');
+  if(!list) return;
+  if(!notifications || notifications.length === 0){
+    list.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px 0">알림이 없습니다</div>';
+    return;
+  }
+  list.innerHTML = notifications.map(function(n){
+    var date = (n.created_at||'').slice(0,16);
+    var isRead = n.is_read;
+    var typeIcon = n.type==='charge'?'\uD83D\uDCB0':n.type==='admin'?'\uD83D\uDCE2':'\uD83D\uDD14';
+    var chk = _notifSelectMode
+      ? '<input type="checkbox" class="notif-chk" data-id="'+n.id+'" style="margin-right:8px;width:17px;height:17px;cursor:pointer;flex-shrink:0;margin-top:3px">'
+      : '';
+    return '<div style="padding:12px 16px;border-bottom:1px solid #eee;background:'+(isRead?'#fff':'#f0f7ff')+';display:flex;align-items:flex-start">'      +chk      +'<div style="flex:1;min-width:0">'      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'      +'<span style="font-size:16px">'+typeIcon+'</span>'      +'<span style="font-weight:600;font-size:14px;color:#333;flex:1">'+n.title+'</span>'      +(isRead?'':'<span style="background:#2196f3;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px">NEW</span>')      +'</div>'      +'<div style="font-size:12px;color:#555;white-space:pre-line;word-break:break-word">'+n.message+'</div>'      +'<div style="font-size:11px;color:#aaa;margin-top:4px">'+date+'</div>'      +'</div></div>';
+  }).join('');
+}
+
+function toggleNotifSelectMode(){
+  _notifSelectMode = !_notifSelectMode;
+  var btn = document.getElementById('notif-select-btn');
+  var delBtn = document.getElementById('notif-delete-btn');
+  if(btn){ btn.textContent = _notifSelectMode ? '\ucde8\uc18c' : '\uc120\ud0dd'; btn.style.borderColor = _notifSelectMode ? '#e53935' : '#1976d2'; btn.style.color = _notifSelectMode ? '#e53935' : '#1976d2'; }
+  if(delBtn) delBtn.style.display = _notifSelectMode ? 'inline-block' : 'none';
+  _renderNotifList(window._notifData||[]);
+}
+
+async function deleteSelectedNotifs(){
+  var chks = document.querySelectorAll('.notif-chk:checked');
+  if(!chks.length){ toast('\uc0ad\uc81c\ud560 \uc54c\ub9bc\uc744 \uc120\ud0dd\ud574\uc8fc\uc138\uc694.'); return; }
+  var ids = Array.from(chks).map(function(c){ return parseInt(c.dataset.id); });
+  try{
+    await api('/user/notifications/delete',{method:'POST',body:JSON.stringify({ids:ids})});
+    window._notifData = (window._notifData||[]).filter(function(n){ return ids.indexOf(n.id)<0; });
+    toast(ids.length+'\uac1c \uc54c\ub9bc\uc774 \uc0ad\uc81c\ub418\uc5c8\uc2b5\ub2c8\ub2e4.');
+    _notifSelectMode = false;
+    var btn = document.getElementById('notif-select-btn');
+    var delBtn = document.getElementById('notif-delete-btn');
+    if(btn){ btn.textContent='\uc120\ud0dd'; btn.style.borderColor='#1976d2'; btn.style.color='#1976d2'; }
+    if(delBtn) delBtn.style.display='none';
+    _renderNotifList(window._notifData);
+    var badge = document.getElementById('notif-badge');
+    if(badge && !(window._notifData||[]).some(function(n){return !n.is_read;})) badge.style.display='none';
+  }catch(e){ toast('\uc0ad\uc81c \uc2e4\ud328: '+e.message); }
+}
+
 async function loadNotifBadge(){
   try{
     const d=await api('/user/notifications');
@@ -1909,20 +1966,8 @@ async function loadNotifications(){
       list.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 0">알림이 없습니다</div>';
       return;
     }
-    list.innerHTML=d.notifications.map(n=>{
-      const date=(n.created_at||'').slice(0,16);
-      const isRead=n.is_read;
-      const typeIcon=n.type==='charge'?'💰':n.type==='admin'?'📢':'🔔';
-      return '<div style="padding:14px 16px;border-bottom:1px solid #eee;background:'+(isRead?'#fff':'#f0f7ff')+'">'
-        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
-        +'<span style="font-size:16px">'+typeIcon+'</span>'
-        +'<span style="font-weight:600;font-size:14px;color:#333">'+n.title+'</span>'
-        +(isRead?'':'<span style="background:#2196f3;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:auto">NEW</span>')
-        +'</div>'
-        +'<div style="font-size:13px;color:#555;margin-left:24px">'+n.message+'</div>'
-        +'<div style="font-size:11px;color:#aaa;margin-left:24px;margin-top:4px">'+date+'</div>'
-        +'</div>';
-    }).join('');
+    window._notifData = d.notifications;
+    _renderNotifList(d.notifications);
     // 읽음 처리
     if(d.unread>0){
       await api('/user/notifications/read',{method:'POST'});
@@ -2439,7 +2484,13 @@ async function loadNotifications(){
 
 <!-- NOTIF TAB -->
 <div id="tab-notif" class="tab">
-<div class="sec-title" style="display:flex;align-items:center;justify-content:space-between">알림<button onclick="loadNotifications()" style="background:transparent;border:1px solid #aaa;color:#aaa;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer">새로고침</button></div>
+<div class="sec-title" style="display:flex;align-items:center;justify-content:space-between">알림
+  <div style="display:flex;gap:6px;align-items:center">
+    <button onclick="toggleNotifSelectMode()" id="notif-select-btn" style="background:transparent;border:1px solid #1976d2;color:#1976d2;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer">선택</button>
+    <button onclick="deleteSelectedNotifs()" id="notif-delete-btn" style="display:none;background:#ef5350;border:none;color:#fff;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;font-weight:700">삭제</button>
+    <button onclick="loadNotifications()" style="background:transparent;border:1px solid #aaa;color:#aaa;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer">새로고침</button>
+  </div>
+</div>
 <div id="notif-list" style="margin-top:8px"><div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px">알림이 없습니다</div></div>
 </div>
     </div>
