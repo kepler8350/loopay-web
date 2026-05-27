@@ -942,6 +942,32 @@ def admin_run_matching():
         # 기존 bar_type별 루프 - stage별 매칭으로 대체됨, 아래는 제거
 
 
+        # ── buyer별 포인트 즉시 환원 ──
+        # matched_pairs에서 buyer_id별 매칭 수 집계
+        _buyer_match_cnt = {}
+        for _p in matched_pairs:
+            _pb_id = _p['buyer'].get('buyer_id') if 'buyer_id' in _p.get('buyer',{}) else None
+            if _pb_id is None:
+                # buyer username으로 id 조회
+                _pb_row = db.execute("SELECT id FROM users WHERE username=?", (_p['buyer'].get('username',''),)).fetchone()
+                _pb_id = _pb_row['id'] if _pb_row else None
+            if _pb_id:
+                _buyer_match_cnt[_pb_id] = _buyer_match_cnt.get(_pb_id, 0) + 1
+
+        for _bid, _bcnt in _buyer_match_cnt.items():
+            try:
+                _u_pts = db.execute("SELECT maintain_points FROM users WHERE id=?", (_bid,)).fetchone()
+                if _u_pts and (_u_pts['maintain_points'] or 0) > 0:
+                    _consume = _bcnt * 40
+                    _refund = max(0, (_u_pts['maintain_points'] or 0) - _consume)
+                    db.execute(
+                        "UPDATE users SET maintain_points=0, exchange_points=exchange_points+? WHERE id=?",
+                        (_refund, _bid)
+                    )
+                    db.commit()
+            except Exception:
+                pass
+
         # ── buyer별 매칭완료 통합 알림 1회 발송 ──
         for _bid, _bdata in _buyer_notif_map.items():
             _item_list = _bdata['items']
@@ -953,11 +979,7 @@ def admin_run_matching():
                     f"✅ {_item_list[0].split('(')[0].strip()} 매칭이 완료되었습니다.\n"
                     f"\n📋 매칭 정보\n"
                     f"• 아이템: {_item_list[0]}\n"
-                    f"\n🏦 입금 계좌\n"
-                    f"• 은행: {_bdata['bank']}\n"
-                    f"• 계좌번호: {_bdata['acct']}\n"
-                    f"• 예금주: {_bdata['acct_name']}\n"
-                    f"\n위 계좌로 입금 후 매칭탭에서 송금완료 버튼을 눌러주세요."
+                    f"\n매칭탭에서 송금완료 버튼을 눌러주세요."
                 )
             else:
                 _notif_title = f"매칭 완료 ({len(_item_list)}건)"
@@ -965,11 +987,7 @@ def admin_run_matching():
                 _notif_body = (
                     f"✅ {len(_item_list)}건 매칭이 완료되었습니다.\n"
                     f"\n📋 매칭 아이템\n{_items_str}\n"
-                    f"\n🏦 입금 계좌\n"
-                    f"• 은행: {_bdata['bank']}\n"
-                    f"• 계좌번호: {_bdata['acct']}\n"
-                    f"• 예금주: {_bdata['acct_name']}\n"
-                    f"\n위 계좌로 각 아이템 금액을 입금 후 매칭탭에서 송금완료 버튼을 눌러주세요."
+                    f"\n매칭탭에서 각 아이템 송금완료 버튼을 눌러주세요."
                 )
             try:
                 db.execute(
