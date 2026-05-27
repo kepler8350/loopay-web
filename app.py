@@ -2251,9 +2251,8 @@ def admin_loopay_items():
         # 아이템 목록 먼저 가져오기
         item_rows = db.execute(
             """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date,
-               r.reserve_date
+               (SELECT MAX(r2.reserve_date) FROM reservations r2 WHERE r2.item_id = i.id) as reserve_date
                FROM items i
-               LEFT JOIN reservations r ON r.item_id = i.id
                WHERE i.user_id = ? AND i.status != 'sold'
                ORDER BY i.id DESC""",
             (lid,)
