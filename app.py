@@ -968,12 +968,15 @@ def admin_run_matching():
             if _bid_int:
                 _all_buyer_ids.add(_bid_int)
 
+        import sys
+        print(f"[DEBUG] buyer_match_cnt={_buyer_match_cnt} all_buyer_ids={_all_buyer_ids}", file=sys.stderr)
         for _bid in _all_buyer_ids:
             try:
                 _u_pts = db.execute("SELECT maintain_points FROM users WHERE id=?", (_bid,)).fetchone()
                 _mn = int(_u_pts['maintain_points'] or 0) if _u_pts else 0
+                _bcnt = int(_buyer_match_cnt.get(_bid, _buyer_match_cnt.get(int(_bid), 0)))
+                print(f"[DEBUG] bid={_bid}(type={type(_bid).__name__}) mn={_mn} bcnt={_bcnt}", file=sys.stderr)
                 if _mn > 0:
-                    _bcnt = int(_buyer_match_cnt.get(_bid, 0))
                     _consume = _bcnt * 40
                     _refund = max(0, _mn - _consume)
                     db.execute(
@@ -982,8 +985,7 @@ def admin_run_matching():
                     )
                     db.commit()
             except Exception as _pe:
-                import sys
-                print(f"[POINTS ERROR] bid={_bid} mn={_mn} bcnt={_bcnt} consume={_consume} refund={_refund} err={_pe}", file=sys.stderr)
+                print(f"[POINTS ERROR] bid={_bid} err={_pe}", file=sys.stderr)
 
         # ── buyer별 매칭완료 통합 알림 1회 발송 ──
         for _bid, _bdata in _buyer_notif_map.items():
