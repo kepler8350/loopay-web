@@ -973,24 +973,30 @@ def admin_run_matching():
             if _bid_int:
                 _all_buyer_ids.add(_bid_int)
 
-        # 포인트 정산: 루프 내에서 수집된 _matched_cnt_map 사용
+        # 포인트 정산: _matched_cnt_map(매칭된 buyer) + buy_rows(미매칭 buyer) 모두 처리
         try:
-            # buy_rows의 모든 buyer_id 수집
-            _all_buy_ids = set()
-            for _br in buy_rows:
-                if _br['buyer_id']:
-                    _all_buy_ids.add(int(_br['buyer_id']))
-
-            for _bid in _all_buy_ids:
+            # 매칭된 buyer 처리
+            for _bid, _bcnt in _matched_cnt_map.items():
                 _u = db.execute("SELECT maintain_points FROM users WHERE id=?", (_bid,)).fetchone()
                 _mn = int(_u['maintain_points'] or 0) if _u else 0
                 if _mn > 0:
-                    _bcnt = _matched_cnt_map.get(_bid, 0)
                     _consume = _bcnt * 40
                     _refund = max(0, _mn - _consume)
                     db.execute(
                         "UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?",
                         (_refund, _bid)
+                    )
+            # 미매칭 buyer 처리 (buy_rows에 있지만 매칭 안된 buyer)
+            for _br in buy_rows:
+                if not _br['buyer_id']: continue
+                _bid2 = int(_br['buyer_id'])
+                if _bid2 in _matched_cnt_map: continue  # 이미 처리됨
+                _u2 = db.execute("SELECT maintain_points FROM users WHERE id=?", (_bid2,)).fetchone()
+                _mn2 = int(_u2['maintain_points'] or 0) if _u2 else 0
+                if _mn2 > 0:
+                    db.execute(
+                        "UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?",
+                        (_mn2, _bid2)
                     )
             db.commit()
         except Exception as _pts_err:
