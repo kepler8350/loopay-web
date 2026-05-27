@@ -288,30 +288,28 @@ def get_me():
     from datetime import datetime as _dt2
     _now2 = get_now()
     today_str = get_today().isoformat()
+    # match_date 조건 제거 - 예약일 기준으로 조회 (mock 시간과 실제 날짜 불일치 방지)
     _matched_count = db.execute(
-        """SELECT COUNT(*) as c FROM matches
-           WHERE buyer_id=? AND status IN ('pending','paid') AND match_date=?""",
+        """SELECT COUNT(*) as c FROM matches m
+           JOIN reservations r ON m.reservation_id = r.id
+           WHERE m.buyer_id=? AND m.status IN ('pending','paid','confirmed')
+           AND r.reserve_date=? AND m.points_deducted=0""",
         (uid, today_str)
     ).fetchone()['c']
     match_maintain_cost = _matched_count * 40
-    # 5:00~20:00 사이에 포인트 정산 (아직 정산 안 된 경우만)
+    # 포인트 자동 정산: matched_count 기반 (match_date 관계없이)
     try:
-        if 5 <= _now2.hour < 20:
-            _u2 = db.execute("SELECT maintain_points FROM users WHERE id=?", (uid,)).fetchone()
-            _maintain_now = (_u2['maintain_points'] or 0) if _u2 else 0
-            if _maintain_now > 0:
-                _consume = _matched_count * 40
-                _refund = max(0, _maintain_now - _consume)
-                db.execute("""UPDATE users
-                   SET maintain_points=0,
-                       charge_points=charge_points+?
-                   WHERE id=?""", (_refund, uid))
-                try:
-                    db.execute("UPDATE matches SET points_deducted=1 WHERE buyer_id=? AND status IN ('pending','paid') AND match_date=?", (uid, today_str))
-                except Exception:
-                    pass
-                db.commit()
-                match_maintain_cost = 0
+        _u2 = db.execute("SELECT maintain_points FROM users WHERE id=?", (uid,)).fetchone()
+        _maintain_now = (_u2['maintain_points'] or 0) if _u2 else 0
+        if _maintain_now > 0 and _matched_count >= 0:
+            _consume = _matched_count * 40
+            _refund = max(0, _maintain_now - _consume)
+            db.execute("""UPDATE users
+               SET maintain_points=0,
+                   charge_points=charge_points+?
+               WHERE id=?""", (_refund, uid))
+            db.commit()
+            match_maintain_cost = 0
     except Exception:
         pass  # maintain_points 컬럼 없는 경우 무시
     lv = u['level']
