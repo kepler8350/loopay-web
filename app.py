@@ -83,6 +83,7 @@ def days_since(purchase_date):
 def item_status_label(status, purchase_date):
     status_map = {
         'active': '보유중',
+        'reservable': '보유중',  # 매칭예약 가능한 보유 상태
         'sold': '판매완료',
         'pending': '매칭중',
         'matched': '매칭완료',
@@ -325,9 +326,10 @@ def get_me():
     bronze = [fmt_item(i) for i in items if i['bar_type']=='bronze']
     silver = [fmt_item(i) for i in items if i['bar_type']=='silver']
     gold   = [fmt_item(i) for i in items if i['bar_type']=='gold']
-    reservable_bz = sum(1 for i in bronze if i['status_label']=='매칭예약가능')
-    reservable_sv = sum(1 for i in silver if i['status_label']=='매칭예약가능')
-    reservable_gd = sum(1 for i in gold   if i['status_label']=='매칭예약가능')
+    # items DB에서 직접 status='reservable'인 것 집계
+    reservable_bz = sum(1 for i in items if i['bar_type']=='bronze' and i['status']=='reservable')
+    reservable_sv = sum(1 for i in items if i['bar_type']=='silver' and i['status']=='reservable')
+    reservable_gd = sum(1 for i in items if i['bar_type']=='gold'   and i['status']=='reservable')
     # db stays open for today_res query below
     today = get_today().isoformat()
     try:
@@ -896,11 +898,20 @@ def admin_run_matching():
                     )
 
                 buyer_msg = f"{names[bt]} {st}단계 매칭완료! 판매자 정보를 매칭탭에서 확인하세요."
-                db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                           (buyer['buyer_id'], 'match', '매칭 완료', buyer_msg))
+                _match_notif_time = (get_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d') + ' 05:00:00'
+                try:
+                    db.execute("INSERT INTO notifications(user_id,type,title,message,scheduled_at) VALUES(?,?,?,?,?)",
+                               (buyer['buyer_id'], 'match', '매칭 완료', buyer_msg, _match_notif_time))
+                except Exception:
+                    db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+                               (buyer['buyer_id'], 'match', '매칭 완료', buyer_msg))
                 seller_msg = f"{names[bt]} {st}단계 매칭완료! 구매자: {buyer['buyer_nickname'] or buyer['buyer_username']}, 연락처: {buyer['buyer_phone'] or '-'}"
-                db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                           (seller['seller_id'], 'match', '매칭 완료', seller_msg))
+                try:
+                    db.execute("INSERT INTO notifications(user_id,type,title,message,scheduled_at) VALUES(?,?,?,?,?)",
+                               (seller['seller_id'], 'match', '매칭 완료', seller_msg, _match_notif_time))
+                except Exception:
+                    db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+                               (seller['seller_id'], 'match', '매칭 완료', seller_msg))
 
                 matched_pairs.append({
                     'bar_type': bt, 'bar_name': names[bt],
