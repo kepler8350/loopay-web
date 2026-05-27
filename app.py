@@ -304,7 +304,7 @@ def get_me():
                 _refund = max(0, _maintain_now - _consume)
                 db.execute("""UPDATE users
                    SET maintain_points=0,
-                       exchange_points=exchange_points+?
+                       charge_points=charge_points+?
                    WHERE id=?""", (_refund, uid))
                 try:
                     db.execute("UPDATE matches SET points_deducted=1 WHERE buyer_id=? AND status IN ('pending','paid') AND match_date=?", (uid, today_str))
@@ -422,8 +422,9 @@ def create_reservation():
                 db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date) VALUES(?,?,?,?,?)", (uid,0,bar_type,1,today))
             db.execute("PRAGMA foreign_keys=ON")
     # 예약 비용: charge_points/exchange_points에서 차감 후 maintain_points로 이동
-    ex_use = min(u['exchange_points'], cost)
-    ch_use = cost - ex_use
+    # charge 먼저 차감, 부족하면 exchange로 보충
+    ch_use = min(u['charge_points'], cost)
+    ex_use = cost - ch_use
     # 1단계: 포인트 차감 + cumulative 업데이트
     db.execute("""UPDATE users
        SET exchange_points=exchange_points-?,
@@ -965,8 +966,9 @@ def admin_run_matching():
                     _bcnt = _buyer_match_cnt.get(_bid, 0)
                     _consume = _bcnt * 40
                     _refund = max(0, _mn - _consume)
+                    # 환원 시 charge로 복원 (charge에서 먼저 차감했으므로)
                     db.execute(
-                        "UPDATE users SET maintain_points=0, exchange_points=exchange_points+? WHERE id=?",
+                        "UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?",
                         (_refund, _bid)
                     )
                     db.commit()
