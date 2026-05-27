@@ -1713,7 +1713,7 @@ function enableReserveSection(){
     btn.style.cursor = _canEnable ? 'pointer' : 'not-allowed';
     btn.title = _avail2 <= 0 ? '포인트가 부족합니다' : (!(_h3>=5&&_h3<20) ? '05:00~20:00에만 가능합니다' : '');
     btn.textContent = '구매 예약하기 (40P × 매칭예약수)';
-    btn.onclick = function(){ showReserveConfirm(); };
+    btn.onclick = function(){ if(btn.disabled) return; showReserveConfirm(); };
   }
   // 원본 포인트 복원은 updateResUI에서 cost=0일 때 처리됨 (bzCnt=0이면 자동 복원)
   var _h2=getEffectiveDate().getHours();
