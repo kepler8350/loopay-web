@@ -831,6 +831,7 @@ def admin_run_matching():
         names = {'bronze': '수정', 'silver': '루비', 'gold': '다이아'}
         matched_pairs = []
         total_matched = 0
+        _buyer_notif_map = {}  # buyer_id → {items:[], bank, acct, acct_name}
 
         # stage별 매칭 (정확한 매칭)
         all_keys = sorted(set(list(sell_by_type_stage.keys()) + list(buy_by_type_stage.keys())))
@@ -916,19 +917,16 @@ def admin_run_matching():
                     f"• 예금주: {_s_name}\n"
                     f"\n위 계좌로 입금 후 매칭탭에서 송금완료 버튼을 눌러주세요."
                 )
-                # 매칭완료 알림은 즉시 발송
-                try:
-                    db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                               (buyer['buyer_id'], 'match', f'{_bar_name} 매칭 완료', buyer_msg))
-                except Exception:
-                    pass
+                # 알림 발송용 수집 (루프 후 buyer별 통합 1회 발송)
+                if buyer['buyer_id'] not in _buyer_notif_map:
+                    _buyer_notif_map[buyer['buyer_id']] = {
+                        'items': [], 'bank': _s_bank, 'acct': _s_acct, 'acct_name': _s_name
+                    }
+                _buyer_notif_map[buyer['buyer_id']]['items'].append(
+                    f"{_bar_name} {st}단계 (입금: {_sell_p:,}원)"
+                )
                 seller_msg = f"{names[bt]} {st}단계 매칭완료! 구매자: {buyer['buyer_nickname'] or buyer['buyer_username']}, 연락처: {buyer['buyer_phone'] or '-'}"
-                # 판매자 매칭완료 알림 즉시 발송
-                try:
-                    db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                               (seller['seller_id'], 'match', '매칭 완료', seller_msg))
-                except Exception:
-                    pass
+                # seller(loopay) 알림 생략
 
                 matched_pairs.append({
                     'bar_type': bt, 'bar_name': names[bt],
@@ -943,6 +941,43 @@ def admin_run_matching():
 
         # 기존 bar_type별 루프 - stage별 매칭으로 대체됨, 아래는 제거
 
+
+        # ── buyer별 매칭완료 통합 알림 1회 발송 ──
+        for _bid, _bdata in _buyer_notif_map.items():
+            _item_list = _bdata['items']
+            if not _item_list:
+                continue
+            if len(_item_list) == 1:
+                _notif_title = f"{_item_list[0].split('(')[0].strip()} 매칭 완료"
+                _notif_body = (
+                    f"✅ {_item_list[0].split('(')[0].strip()} 매칭이 완료되었습니다.\n"
+                    f"\n📋 매칭 정보\n"
+                    f"• 아이템: {_item_list[0]}\n"
+                    f"\n🏦 입금 계좌\n"
+                    f"• 은행: {_bdata['bank']}\n"
+                    f"• 계좌번호: {_bdata['acct']}\n"
+                    f"• 예금주: {_bdata['acct_name']}\n"
+                    f"\n위 계좌로 입금 후 매칭탭에서 송금완료 버튼을 눌러주세요."
+                )
+            else:
+                _notif_title = f"매칭 완료 ({len(_item_list)}건)"
+                _items_str = '\n'.join(f'  • {it}' for it in _item_list)
+                _notif_body = (
+                    f"✅ {len(_item_list)}건 매칭이 완료되었습니다.\n"
+                    f"\n📋 매칭 아이템\n{_items_str}\n"
+                    f"\n🏦 입금 계좌\n"
+                    f"• 은행: {_bdata['bank']}\n"
+                    f"• 계좌번호: {_bdata['acct']}\n"
+                    f"• 예금주: {_bdata['acct_name']}\n"
+                    f"\n위 계좌로 각 아이템 금액을 입금 후 매칭탭에서 송금완료 버튼을 눌러주세요."
+                )
+            try:
+                db.execute(
+                    "INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+                    (_bid, 'match', _notif_title, _notif_body)
+                )
+            except Exception:
+                pass
 
         # 매칭 안된 오늘 pending 예약 → unmatched 처리
         try:
@@ -2095,13 +2130,22 @@ def match_confirm_payment():
             # INSERT 실패 시 stage/status 없는 최소 형태로 재시도
             if not _inserted:
                 try:
+                    # status 컬럼 없이 삽입 시도 (DEFAULT 사용)
                     db.execute(
                         "INSERT INTO items(user_id, bar_type, stage, purchase_date) VALUES(?,?,?,?)",
                         (m['buyer_id'], seller_item['bar_type'], _stage, get_today().isoformat())
                     )
                     _inserted = True
-                except Exception:
-                    pass
+                except Exception as _e2:
+                    # 최후 수단: stage 없이
+                    try:
+                        db.execute(
+                            "INSERT INTO items(user_id, bar_type, stage, purchase_date, status) VALUES(?,?,?,?,?)",
+                            (m['buyer_id'], seller_item['bar_type'], 1, get_today().isoformat(), 'waiting')
+                        )
+                        _inserted = True
+                    except Exception:
+                        pass
 
         # 4. 구매자 알림 - 입금확인 완료 (즉시 발송)
         _buyer_msg = (
