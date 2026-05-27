@@ -1668,10 +1668,11 @@ def admin_reservation_status():
 
             # 판매예약 아이템별 가격 분류 (items 조인)
             # 판매예약 가격대별: 일반사용자 + loopay 확정 sell 모두 포함
+            # FIX v2: item_id IS NOT NULL = 판매예약만 (구매예약 제외)
             sell_rows = conn.execute(
                 """SELECT r.item_id, i.stage, i.bar_type
                    FROM reservations r
-                   LEFT JOIN items i ON r.item_id = i.id
+                   INNER JOIN items i ON r.item_id = i.id
                    WHERE r.bar_type=? AND r.status='pending'
                    AND r.item_id IS NOT NULL
                    AND (
