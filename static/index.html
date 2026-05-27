@@ -601,6 +601,31 @@ function closeAdminPanel(){document.getElementById('admin-panel').style.display=
 if(token){showMainApp();loadUserData();}
 loadPrices();
 
+// ── 매칭 완료 자동 새로고침 (30초마다 체크) ──
+var _lastMatchState = null;
+async function checkMatchRefresh(){
+  if(!localStorage.getItem('lp_token')) return;
+  try{
+    var d = await api('/user/me');
+    var curState = JSON.stringify({
+      bronze: d.items?.bronze?.length,
+      silver: d.items?.silver?.length,
+      gold: d.items?.gold?.length,
+      maintain: d.maintain_points,
+      total: d.total_points
+    });
+    if(_lastMatchState && _lastMatchState !== curState){
+      // 상태 변경 감지 → 전체 화면 갱신
+      userData = d;
+      renderHeader(d);
+      renderBars(d);
+      renderLevelTab && renderLevelTab();
+    }
+    _lastMatchState = curState;
+  }catch(e){}
+}
+setInterval(checkMatchRefresh, 30000);
+
 // 결합판매
 function getStatusBadge(s){
   if(s==='active'||s==='reservable'||!s)
