@@ -1789,13 +1789,15 @@ def run_lucky_matching():
 def get_notifications():
     uid = int(get_jwt_identity())
     db = get_db()
+    # mock 시간 기준으로 scheduled_at 필터링
+    _now_str = get_now().strftime('%Y-%m-%d %H:%M:%S')
     try:
         rows = db.execute(
             """SELECT * FROM notifications
                WHERE user_id=?
-               AND (scheduled_at IS NULL OR scheduled_at <= datetime('now','localtime'))
+               AND (scheduled_at IS NULL OR scheduled_at <= ?)
                ORDER BY created_at DESC LIMIT 50""",
-            (uid,)
+            (uid, _now_str)
         ).fetchall()
     except Exception:
         # scheduled_at 컬럼 없으면 기본 쿼리
@@ -1803,7 +1805,18 @@ def get_notifications():
             "SELECT * FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 50",
             (uid,)
         ).fetchall()
-    unread = db.execute("SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0", (uid,)).fetchone()[0]
+    try:
+        unread = db.execute(
+            """SELECT COUNT(*) FROM notifications
+               WHERE user_id=? AND is_read=0
+               AND (scheduled_at IS NULL OR scheduled_at <= ?)""",
+            (uid, _now_str)
+        ).fetchone()[0]
+    except Exception:
+        unread = db.execute(
+            "SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0",
+            (uid,)
+        ).fetchone()[0]
     db.close()
     return jsonify(notifications=[dict(r) for r in rows], unread=unread)
 
@@ -2065,7 +2078,8 @@ def match_confirm_payment():
             _stage = int(seller_item['stage'] or m['stage'] or 1)
             # 아이템 추가: reservable 상태로 (입금확인일 = 1일차)
             _inserted = False
-            for _item_status in ('reservable', 'active', 'waiting'):
+            _insert_err = None
+            for _item_status in ('reservable', 'active', 'waiting', 'matched'):
                 try:
                     db.execute(
                         """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
@@ -2075,8 +2089,19 @@ def match_confirm_payment():
                     )
                     _inserted = True
                     break
-                except Exception:
+                except Exception as _e:
+                    _insert_err = str(_e)
                     continue
+            # INSERT 실패 시 stage/status 없는 최소 형태로 재시도
+            if not _inserted:
+                try:
+                    db.execute(
+                        "INSERT INTO items(user_id, bar_type, stage, purchase_date) VALUES(?,?,?,?)",
+                        (m['buyer_id'], seller_item['bar_type'], _stage, get_today().isoformat())
+                    )
+                    _inserted = True
+                except Exception:
+                    pass
 
         # 4. 구매자 알림 - 입금확인 완료 (즉시 발송)
         _buyer_msg = (
