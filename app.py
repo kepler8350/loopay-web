@@ -968,39 +968,29 @@ def admin_run_matching():
             if _bid_int:
                 _all_buyer_ids.add(_bid_int)
 
-        # 포인트 정산: DB에서 직접 오늘 매칭된 buyer별 건수 계산
+        # 포인트 정산: matched_pairs에서 buyer별 매칭 수 집계 (날짜 무관)
         try:
-            _today_matches = db.execute(
-                """SELECT buyer_id, COUNT(*) as cnt FROM matches
-                   WHERE match_date=? AND match_round=?
-                   AND status IN ('pending','paid','confirmed')
-                   GROUP BY buyer_id""",
-                (today, round_num)
-            ).fetchall()
-            for _tm in _today_matches:
-                _bid2 = _tm['buyer_id']
-                _bcnt2 = _tm['cnt']
-                _u2 = db.execute("SELECT maintain_points FROM users WHERE id=?", (_bid2,)).fetchone()
-                _mn2 = int(_u2['maintain_points'] or 0) if _u2 else 0
-                if _mn2 > 0:
-                    _consume2 = _bcnt2 * 40
-                    _refund2 = max(0, _mn2 - _consume2)
+            _final_buyer_cnt = {}
+            for _p in matched_pairs:
+                _pb = _p['buyer'].get('buyer_id')
+                if _pb:
+                    _pb = int(_pb)
+                    _final_buyer_cnt[_pb] = _final_buyer_cnt.get(_pb, 0) + 1
+
+            # buy_rows의 모든 buyer 처리 (매칭된 buyer + 미매칭 buyer)
+            _all_buy_ids = set(int(_br['buyer_id']) for _br in buy_rows if _br['buyer_id'])
+
+            for _bid in _all_buy_ids:
+                _u = db.execute("SELECT maintain_points FROM users WHERE id=?", (_bid,)).fetchone()
+                _mn = int(_u['maintain_points'] or 0) if _u else 0
+                if _mn > 0:
+                    _bcnt = _final_buyer_cnt.get(_bid, 0)
+                    _consume = _bcnt * 40
+                    _refund = max(0, _mn - _consume)
                     db.execute(
                         "UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?",
-                        (_refund2, _bid2)
+                        (_refund, _bid)
                     )
-            # 미매칭 buyer (buy_rows에 있지만 오늘 matches에 없는 buyer)도 정산
-            _matched_buyer_set = set(r['buyer_id'] for r in _today_matches)
-            for _br in buy_rows:
-                _bid3 = int(_br['buyer_id'])
-                if _bid3 not in _matched_buyer_set:
-                    _u3 = db.execute("SELECT maintain_points FROM users WHERE id=?", (_bid3,)).fetchone()
-                    _mn3 = int(_u3['maintain_points'] or 0) if _u3 else 0
-                    if _mn3 > 0:
-                        db.execute(
-                            "UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?",
-                            (_mn3, _bid3)
-                        )
             db.commit()
         except Exception as _pts_err:
             import sys
