@@ -959,27 +959,31 @@ def admin_run_matching():
             if _pb_id:
                 _buyer_match_cnt[_pb_id] = _buyer_match_cnt.get(_pb_id, 0) + 1
 
-        # buy_rows의 모든 buyer 포인트 정산 (매칭 안된 buyer도 포함)
+        # 포인트 정산: matched_pairs의 buyer + 미매칭 buyer 모두 처리
+        # 1. 매칭된 buyer: cnt만큼 consume
+        # 2. 미매칭 buyer: consume=0, maintain 전액 환원
         _all_buyer_ids = set()
         for _br in buy_rows:
-            _all_buyer_ids.add(_br['buyer_id'])
+            _bid_int = int(_br['buyer_id']) if _br['buyer_id'] else None
+            if _bid_int:
+                _all_buyer_ids.add(_bid_int)
 
         for _bid in _all_buyer_ids:
             try:
                 _u_pts = db.execute("SELECT maintain_points FROM users WHERE id=?", (_bid,)).fetchone()
-                _mn = (_u_pts['maintain_points'] or 0) if _u_pts else 0
+                _mn = int(_u_pts['maintain_points'] or 0) if _u_pts else 0
                 if _mn > 0:
-                    _bcnt = _buyer_match_cnt.get(_bid, 0)
+                    _bcnt = int(_buyer_match_cnt.get(_bid, 0))
                     _consume = _bcnt * 40
                     _refund = max(0, _mn - _consume)
-                    # 환원 시 charge로 복원 (charge에서 먼저 차감했으므로)
                     db.execute(
                         "UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?",
                         (_refund, _bid)
                     )
                     db.commit()
-            except Exception:
-                pass
+            except Exception as _pe:
+                import sys
+                print(f"[POINTS ERROR] bid={_bid} mn={_mn} bcnt={_bcnt} consume={_consume} refund={_refund} err={_pe}", file=sys.stderr)
 
         # ── buyer별 매칭완료 통합 알림 1회 발송 ──
         for _bid, _bdata in _buyer_notif_map.items():
