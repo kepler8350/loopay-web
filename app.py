@@ -471,16 +471,10 @@ def get_prices():
 def charge_request():
     uid = int(get_jwt_identity())
     data = request.json or {}
-    _raw = int(data.get('amount', 0))
-    # amount가 원화(≥120)이면 포인트로 변환, 이미 포인트이면 그대로
-    if _raw >= 120:
-        points = _raw // 120  # 원화 → 포인트 (1P = 120원)
-        amount = _raw
-    else:
-        points = _raw
-        amount = _raw * 120
+    amount = int(data.get('amount', 0))  # 프론트에서 원화(won) 전송
+    points = amount // 120  # 원화 → 포인트 (1P = 120원)
     if points < 1:
-        return jsonify(error='1 포인트 이상 충전 가능'), 400
+        return jsonify(error='최소 120원(1P) 이상 충전 가능'), 400
     receipt_phone = (data.get('receipt_phone') or '').strip()
     receipt_name = (data.get('receipt_name') or '').strip()
     # 이름+전화번호 합산
