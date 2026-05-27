@@ -2145,7 +2145,7 @@ def admin_confirm_unpaid():
     db = get_db()
     try:
         m = db.execute(
-            "SELECT * FROM matches WHERE id=? AND status IN ('pending','paid','unpaid')",
+            "SELECT * FROM matches WHERE id=? AND status IN ('pending','paid','confirmed','failed')",
             (match_id,)
         ).fetchone()
         if not m:
@@ -2155,7 +2155,7 @@ def admin_confirm_unpaid():
         bar_name = bar_names.get(m['bar_type'], m['bar_type'])
 
         # 1. match status → unpaid (미입금확정) + 구매자 미입금 알림
-        db.execute("UPDATE matches SET status='cancelled' WHERE id=?", (match_id,))  # unpaid=cancelled로 처리
+        db.execute("UPDATE matches SET status='failed' WHERE id=?", (match_id,))  # 미입금확정=failed
         try:
             db.execute(
                 "INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
