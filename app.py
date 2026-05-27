@@ -897,14 +897,30 @@ def admin_run_matching():
                          s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'])
                     )
 
-                buyer_msg = f"{names[bt]} {st}단계 매칭완료! 판매자 정보를 매칭탭에서 확인하세요."
+                # 구매자 알림: 매칭 정보 상세 카드 (다음날 05:00 발송)
                 _match_notif_time = (get_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d') + ' 05:00:00'
+                _bar_name = names[bt]
+                _sell_p = sell_price
+                _s_bank = seller['seller_bank'] or '기업은행'
+                _s_acct = seller['seller_account'] or '-'
+                _s_name = s_name or '루페이'
+                buyer_msg = (
+                    f"✅ {_bar_name} {st}단계 매칭이 완료되었습니다.\n"
+                    f"\n📋 매칭 정보\n"
+                    f"• 아이템: {_bar_name} {st}단계\n"
+                    f"• 입금 금액: {_sell_p:,}원\n"
+                    f"\n🏦 입금 계좌\n"
+                    f"• 은행: {_s_bank}\n"
+                    f"• 계좌번호: {_s_acct}\n"
+                    f"• 예금주: {_s_name}\n"
+                    f"\n위 계좌로 입금 후 매칭탭에서 송금완료 버튼을 눌러주세요."
+                )
                 try:
                     db.execute("INSERT INTO notifications(user_id,type,title,message,scheduled_at) VALUES(?,?,?,?,?)",
-                               (buyer['buyer_id'], 'match', '매칭 완료', buyer_msg, _match_notif_time))
+                               (buyer['buyer_id'], 'match', f'{_bar_name} 매칭 완료', buyer_msg, _match_notif_time))
                 except Exception:
                     db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                               (buyer['buyer_id'], 'match', '매칭 완료', buyer_msg))
+                               (buyer['buyer_id'], 'match', f'{_bar_name} 매칭 완료', buyer_msg))
                 seller_msg = f"{names[bt]} {st}단계 매칭완료! 구매자: {buyer['buyer_nickname'] or buyer['buyer_username']}, 연락처: {buyer['buyer_phone'] or '-'}"
                 try:
                     db.execute("INSERT INTO notifications(user_id,type,title,message,scheduled_at) VALUES(?,?,?,?,?)",
