@@ -326,10 +326,11 @@ def get_me():
     bronze = [fmt_item(i) for i in items if i['bar_type']=='bronze']
     silver = [fmt_item(i) for i in items if i['bar_type']=='silver']
     gold   = [fmt_item(i) for i in items if i['bar_type']=='gold']
-    # items DB에서 직접 status='reservable'인 것 집계
-    reservable_bz = sum(1 for i in items if i['bar_type']=='bronze' and i['status']=='reservable')
-    reservable_sv = sum(1 for i in items if i['bar_type']=='silver' and i['status']=='reservable')
-    reservable_gd = sum(1 for i in items if i['bar_type']=='gold'   and i['status']=='reservable')
+    # items DB에서 직접 보유 상태인 것 집계 (reservable, active, waiting 모두 보유수량)
+    _own_statuses = ('reservable', 'active', 'waiting')
+    reservable_bz = sum(1 for i in items if i['bar_type']=='bronze' and i['status'] in _own_statuses)
+    reservable_sv = sum(1 for i in items if i['bar_type']=='silver' and i['status'] in _own_statuses)
+    reservable_gd = sum(1 for i in items if i['bar_type']=='gold'   and i['status'] in _own_statuses)
     # db stays open for today_res query below
     today = get_today().isoformat()
     try:
@@ -2043,14 +2044,19 @@ def match_confirm_payment():
                     (seller_res['item_id'],)
                 ).fetchone()
         if not seller_item:
-            # last fallback: bar_type+stage 일치하는 가장 오래된 matched 아이템
-            seller_item = db.execute(
-                """SELECT i.id, i.bar_type, i.stage FROM items i
-                   WHERE i.user_id=? AND i.bar_type=? AND i.stage=?
-                     AND i.status='matched'
-                   ORDER BY i.id ASC LIMIT 1""",
-                (m['seller_id'], m['bar_type'], m['stage'] or 1)
+            # last fallback: seller_id(loopay)의 bar_type+stage 일치하는 matched 아이템
+            # seller_id가 loopay인지 확인하여 다른 사용자 아이템이 sold되지 않도록 보호
+            _loopay_check = db.execute(
+                "SELECT id FROM users WHERE username='loopay' AND id=?", (m['seller_id'],)
             ).fetchone()
+            if _loopay_check:
+                seller_item = db.execute(
+                    """SELECT i.id, i.bar_type, i.stage FROM items i
+                       WHERE i.user_id=? AND i.bar_type=? AND i.stage=?
+                         AND i.status='matched'
+                       ORDER BY i.id ASC LIMIT 1""",
+                    (m['seller_id'], m['bar_type'], m['stage'] or 1)
+                ).fetchone()
         if seller_item:
             # seller 아이템 sold 처리
             db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
@@ -2058,24 +2064,33 @@ def match_confirm_payment():
             # buyer 아이템은 'active'(보유중) 상태로 추가
             _stage = int(seller_item['stage'] or m['stage'] or 1)
             # 아이템 추가: reservable 상태로 (입금확인일 = 1일차)
-            db.execute(
-                """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
-                   VALUES(?, ?, ?, ?, 'reservable')""",
-                (m['buyer_id'], seller_item['bar_type'], _stage,
-                 get_today().isoformat())
-            )
+            _inserted = False
+            for _item_status in ('reservable', 'active', 'waiting'):
+                try:
+                    db.execute(
+                        """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
+                           VALUES(?, ?, ?, ?, ?)""",
+                        (m['buyer_id'], seller_item['bar_type'], _stage,
+                         get_today().isoformat(), _item_status)
+                    )
+                    _inserted = True
+                    break
+                except Exception:
+                    continue
 
-        # 4. 매칭 알림 - 다음날 5:00에 발송 예약
-        _tomorrow_5am = (get_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d') + ' 05:00:00'
+        # 4. 구매자 알림 - 입금확인 완료 (즉시 발송)
+        _buyer_msg = (
+            f"✅ {bar_name} {m['stage']}단계 입금이 확인되었습니다.\n"
+            f"\n📦 아이템이 지급되었습니다.\n"
+            f"• 아이템: {bar_name} {m['stage']}단계\n"
+            f"• 구매 완료일: {get_today().strftime('%Y-%m-%d')}\n"
+            f"\n아이템 현황에서 보유 아이템을 확인하세요."
+        )
         try:
-            db.execute("INSERT INTO notifications(user_id,type,title,message,scheduled_at) VALUES(?,?,?,?,?)",
-                (m['buyer_id'], 'confirmed', '거래 완료',
-                 f'{bar_name} {m["stage"]}단계 거래가 완료되었습니다. 아이템 현황에서 확인하세요.',
-                 _tomorrow_5am))
-        except Exception:
             db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                (m['buyer_id'], 'confirmed', '거래 완료',
-                 f'{bar_name} {m["stage"]}단계 거래가 완료되었습니다. 아이템 현황에서 확인하세요.'))
+                (m['buyer_id'], 'confirmed', f'{bar_name} 입금확인 완료', _buyer_msg))
+        except Exception:
+            pass
 
         # 5. 판매자 알림 - 다음날 5:00에 발송
         try:

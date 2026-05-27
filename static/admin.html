@@ -1167,7 +1167,7 @@ function renderMatchRecords(){
   var tbody = document.getElementById('matches-tbody');
   if(!tbody) return;
   var colors = {bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
-  var statusKr = {pending:'대기',matched:'매칭',paid:'송금',confirmed:'입금확인',completed:'완료',cancelled:'취소',failed:'미입금'};
+  var statusKr = {pending:'대기',matched:'매칭',paid:'송금',confirmed:'입금',completed:'완료',cancelled:'취소',failed:'미입금'};
   if(!_matchRecords.length){
     tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">매치 기록 없음</td></tr>';
     return;

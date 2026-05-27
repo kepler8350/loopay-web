@@ -1482,7 +1482,7 @@ function renderMatchBuyList(items){
   var h = getEffectiveDate ? getEffectiveDate().getHours() : new Date().getHours();
   var canSend = (h>=5 && h<13);
   el.innerHTML = items.map(function(m){
-    var statusLabel = {waiting:'예약대기',pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
+    var statusLabel = {waiting:'예약대기',pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'입금',unpaid:'미입금',failed:'미입금'}[m.status]||m.status;
     var statusColor = {waiting:'#90caf9',pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
     var hasMatchInfo = !!(m.seller_phone || m.seller_bank || m.seller_account);
     var dateTxt = m.source==='reservation'?m.reserve_date:(m.match_date||'');
