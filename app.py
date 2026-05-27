@@ -2092,7 +2092,20 @@ def match_report_unpaid():
             ).fetchone()
         if not m:
             return jsonify(error='처리 불가'), 400
-        db.execute("UPDATE matches SET status='unpaid' WHERE id=?", (match_id,))
+        # status를 unpaid로 변경하지 않고 알림만 발송 (입금요청 단계)
+        bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+        bar_name = bar_names.get(m['bar_type'], m['bar_type'])
+        # 구매자에게 입금요청 알림
+        try:
+            db.execute(
+                "INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+                (m['buyer_id'], 'payment_request', '입금 요청',
+                 f'{bar_name} {m["stage"]}단계 아이템 입금을 요청합니다.\n'
+                 f'입금 후 송금완료 버튼을 눌러주세요.\n'
+                 f'미입금 시 매칭이 취소될 수 있습니다.')
+            )
+        except Exception:
+            pass
         try:
             db.execute("UPDATE reservations SET status='unpaid' WHERE id=?", (m['reservation_id'],))
         except Exception:
@@ -2141,8 +2154,17 @@ def admin_confirm_unpaid():
         bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
         bar_name = bar_names.get(m['bar_type'], m['bar_type'])
 
-        # 1. match status → unpaid (미입금확정)
+        # 1. match status → unpaid (미입금확정) + 구매자 미입금 알림
         db.execute("UPDATE matches SET status='unpaid' WHERE id=?", (match_id,))
+        try:
+            db.execute(
+                "INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+                (m['buyer_id'], 'unpaid_confirmed', '미입금 확정',
+                 f'{bar_name} {m["stage"]}단계 아이템 미입금이 확정되었습니다.\n'
+                 f'해당 구매예약이 2차 매칭으로 이전됩니다.')
+            )
+        except Exception:
+            pass
 
         # 2. 구매예약 → unmatched (2차 대기로 전환)
         if m['reservation_id']:
