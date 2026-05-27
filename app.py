@@ -944,19 +944,27 @@ def admin_run_matching():
 
         # ── buyer별 포인트 즉시 환원 ──
         # matched_pairs에서 buyer_id별 매칭 수 집계
+        # ── 포인트 정산: 오늘 buy_rows의 모든 buyer 대상 ──
+        # matched_pairs에서 buyer별 매칭 수 집계
         _buyer_match_cnt = {}
         for _p in matched_pairs:
-            # buyer_id는 matched_pairs에 직접 포함됨
             _pb_id = _p['buyer'].get('buyer_id')
             if _pb_id:
                 _buyer_match_cnt[_pb_id] = _buyer_match_cnt.get(_pb_id, 0) + 1
 
-        for _bid, _bcnt in _buyer_match_cnt.items():
+        # buy_rows의 모든 buyer 포인트 정산 (매칭 안된 buyer도 포함)
+        _all_buyer_ids = set()
+        for _br in buy_rows:
+            _all_buyer_ids.add(_br['buyer_id'])
+
+        for _bid in _all_buyer_ids:
             try:
                 _u_pts = db.execute("SELECT maintain_points FROM users WHERE id=?", (_bid,)).fetchone()
-                if _u_pts and (_u_pts['maintain_points'] or 0) > 0:
+                _mn = (_u_pts['maintain_points'] or 0) if _u_pts else 0
+                if _mn > 0:
+                    _bcnt = _buyer_match_cnt.get(_bid, 0)
                     _consume = _bcnt * 40
-                    _refund = max(0, (_u_pts['maintain_points'] or 0) - _consume)
+                    _refund = max(0, _mn - _consume)
                     db.execute(
                         "UPDATE users SET maintain_points=0, exchange_points=exchange_points+? WHERE id=?",
                         (_refund, _bid)
