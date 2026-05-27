@@ -2092,10 +2092,9 @@ def match_report_unpaid():
             ).fetchone()
         if not m:
             return jsonify(error='처리 불가'), 400
-        # status를 unpaid로 변경하지 않고 알림만 발송 (입금요청 단계)
         bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
         bar_name = bar_names.get(m['bar_type'], m['bar_type'])
-        # 구매자에게 입금요청 알림
+        # 입금요청: status 변경 없이 알림만 발송
         try:
             db.execute(
                 "INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
@@ -2106,8 +2105,9 @@ def match_report_unpaid():
             )
         except Exception:
             pass
+        # reservations status는 유지 (입금요청 단계)
         try:
-            db.execute("UPDATE reservations SET status='unpaid' WHERE id=?", (m['reservation_id'],))
+            pass  # db.execute("UPDATE reservations SET status='unpaid'...) 생략
         except Exception:
             pass
         # 관리자 알림
@@ -2155,7 +2155,7 @@ def admin_confirm_unpaid():
         bar_name = bar_names.get(m['bar_type'], m['bar_type'])
 
         # 1. match status → unpaid (미입금확정) + 구매자 미입금 알림
-        db.execute("UPDATE matches SET status='unpaid' WHERE id=?", (match_id,))
+        db.execute("UPDATE matches SET status='cancelled' WHERE id=?", (match_id,))  # unpaid=cancelled로 처리
         try:
             db.execute(
                 "INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
