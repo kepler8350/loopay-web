@@ -839,6 +839,7 @@ def admin_run_matching():
         matched_pairs = []
         total_matched = 0
         _buyer_notif_map = {}  # buyer_id → {items:[], bank, acct, acct_name}
+        _matched_cnt_map = {}  # buyer_id(int) → 매칭건수
 
         # stage별 매칭 (정확한 매칭)
         all_keys = sorted(set(list(sell_by_type_stage.keys()) + list(buy_by_type_stage.keys())))
@@ -925,13 +926,17 @@ def admin_run_matching():
                     f"\n위 계좌로 입금 후 매칭탭에서 송금완료 버튼을 눌러주세요."
                 )
                 # 알림 발송용 수집 (루프 후 buyer별 통합 1회 발송)
-                if buyer['buyer_id'] not in _buyer_notif_map:
-                    _buyer_notif_map[buyer['buyer_id']] = {
+                _b_id_key = buyer['buyer_id']
+                if _b_id_key not in _buyer_notif_map:
+                    _buyer_notif_map[_b_id_key] = {
                         'items': [], 'bank': _s_bank, 'acct': _s_acct, 'acct_name': _s_name
                     }
-                _buyer_notif_map[buyer['buyer_id']]['items'].append(
+                _buyer_notif_map[_b_id_key]['items'].append(
                     f"{_bar_name} {st}단계 (입금: {_sell_p:,}원)"
                 )
+                # 매칭 건수 수집 (포인트 정산용)
+                _b_id_int = int(_b_id_key)
+                _matched_cnt_map[_b_id_int] = _matched_cnt_map.get(_b_id_int, 0) + 1
                 seller_msg = f"{names[bt]} {st}단계 매칭완료! 구매자: {buyer['buyer_nickname'] or buyer['buyer_username']}, 연락처: {buyer['buyer_phone'] or '-'}"
                 # seller(loopay) 알림 생략
 
@@ -968,23 +973,19 @@ def admin_run_matching():
             if _bid_int:
                 _all_buyer_ids.add(_bid_int)
 
-        # 포인트 정산: matched_pairs에서 buyer별 매칭 수 집계 (날짜 무관)
+        # 포인트 정산: 루프 내에서 수집된 _matched_cnt_map 사용
         try:
-            _final_buyer_cnt = {}
-            for _p in matched_pairs:
-                _pb = _p['buyer'].get('buyer_id')
-                if _pb:
-                    _pb = int(_pb)
-                    _final_buyer_cnt[_pb] = _final_buyer_cnt.get(_pb, 0) + 1
-
-            # buy_rows의 모든 buyer 처리 (매칭된 buyer + 미매칭 buyer)
-            _all_buy_ids = set(int(_br['buyer_id']) for _br in buy_rows if _br['buyer_id'])
+            # buy_rows의 모든 buyer_id 수집
+            _all_buy_ids = set()
+            for _br in buy_rows:
+                if _br['buyer_id']:
+                    _all_buy_ids.add(int(_br['buyer_id']))
 
             for _bid in _all_buy_ids:
                 _u = db.execute("SELECT maintain_points FROM users WHERE id=?", (_bid,)).fetchone()
                 _mn = int(_u['maintain_points'] or 0) if _u else 0
                 if _mn > 0:
-                    _bcnt = _final_buyer_cnt.get(_bid, 0)
+                    _bcnt = _matched_cnt_map.get(_bid, 0)
                     _consume = _bcnt * 40
                     _refund = max(0, _mn - _consume)
                     db.execute(
