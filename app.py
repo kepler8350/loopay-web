@@ -1169,7 +1169,7 @@ def admin_matching_status():
         _confirmed_sell = db.execute(
             """SELECT COUNT(*) as c FROM reservations
                WHERE match_round=? AND status='pending'
-               AND user_id=? AND COALESCE(confirmed,0)=1""",
+               AND user_id=? AND item_id IS NOT NULL""",
             (round_num, loopay_id)
         ).fetchone()['c']
 
@@ -1204,7 +1204,7 @@ def admin_matching_status():
             by_type_rows = db.execute(
                 """SELECT bar_type, COUNT(*) as cnt FROM reservations
                    WHERE match_round=? AND status='pending'
-                   AND user_id=? AND COALESCE(confirmed,0)=1
+                   AND user_id=? AND item_id IS NOT NULL
                    GROUP BY bar_type""",
                 (round_num, loopay_id)
             ).fetchall()
@@ -1212,7 +1212,7 @@ def admin_matching_status():
                 """SELECT r.bar_type, COALESCE(r.stage,COALESCE(i.stage,1)) as stage, COUNT(*) as cnt
                    FROM reservations r LEFT JOIN items i ON r.item_id=i.id
                    WHERE r.match_round=? AND r.status='pending'
-                   AND r.user_id=? AND COALESCE(r.confirmed,0)=1
+                   AND r.user_id=? AND r.item_id IS NOT NULL
                    GROUP BY r.bar_type, COALESCE(r.stage,COALESCE(i.stage,1))
                    ORDER BY r.bar_type, stage""",
                 (round_num, loopay_id)
