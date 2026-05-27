@@ -3113,7 +3113,8 @@ function closeChargeConfirm(){
 }
 
 async function submitCharge(){
-  const amt=parseInt(document.getElementById('charge-amount').value)||0;
+  const pts=parseInt(document.getElementById('charge-amount').value)||0;
+  const won=pts*120; // 포인트 → 원화 (1P = 120원)
   const receiptName=(document.getElementById('cc-name')?.value||'').trim();
   const receiptPhone=(document.getElementById('cc-phone')?.value||'').trim();
   // 현금영수증 폼이 열려있으면 유효성 검사
@@ -3124,7 +3125,7 @@ async function submitCharge(){
   }
   closeChargeConfirm();
   try{
-    const body={amount:amt};
+    const body={amount:won};
     if(receiptName) body.receipt_name=receiptName;
     if(receiptPhone) body.receipt_phone=receiptPhone;
     const d=await api('/charge/request',{method:'POST',body:JSON.stringify(body)});
