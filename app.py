@@ -916,19 +916,19 @@ def admin_run_matching():
                     f"• 예금주: {_s_name}\n"
                     f"\n위 계좌로 입금 후 매칭탭에서 송금완료 버튼을 눌러주세요."
                 )
+                # 매칭완료 알림은 즉시 발송
                 try:
-                    db.execute("INSERT INTO notifications(user_id,type,title,message,scheduled_at) VALUES(?,?,?,?,?)",
-                               (buyer['buyer_id'], 'match', f'{_bar_name} 매칭 완료', buyer_msg, _match_notif_time))
-                except Exception:
                     db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
                                (buyer['buyer_id'], 'match', f'{_bar_name} 매칭 완료', buyer_msg))
-                seller_msg = f"{names[bt]} {st}단계 매칭완료! 구매자: {buyer['buyer_nickname'] or buyer['buyer_username']}, 연락처: {buyer['buyer_phone'] or '-'}"
-                try:
-                    db.execute("INSERT INTO notifications(user_id,type,title,message,scheduled_at) VALUES(?,?,?,?,?)",
-                               (seller['seller_id'], 'match', '매칭 완료', seller_msg, _match_notif_time))
                 except Exception:
+                    pass
+                seller_msg = f"{names[bt]} {st}단계 매칭완료! 구매자: {buyer['buyer_nickname'] or buyer['buyer_username']}, 연락처: {buyer['buyer_phone'] or '-'}"
+                # 판매자 매칭완료 알림 즉시 발송
+                try:
                     db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
                                (seller['seller_id'], 'match', '매칭 완료', seller_msg))
+                except Exception:
+                    pass
 
                 matched_pairs.append({
                     'bar_type': bt, 'bar_name': names[bt],

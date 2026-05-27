@@ -1029,6 +1029,8 @@ async function deleteAllItems(){
 }
 
 var _systemItems = [];
+var _serverHour = 0;
+var _serverMin = 0;
 var _unpaidClickedAt = {}; // matchId → 마지막 클릭 시각(ms)
 async function loadSystemItems(){
   var tbody = document.getElementById('si-tbody');
