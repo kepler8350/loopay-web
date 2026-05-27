@@ -771,43 +771,17 @@ def admin_run_matching():
                LEFT JOIN users u ON r.user_id = u.id
                LEFT JOIN items i ON r.item_id = i.id
                WHERE r.status='pending' AND r.match_round=2
-               AND (u.username='loopay' OR r.reserve_date=?)""",
+               AND (
+                 (u.username='loopay' AND COALESCE(r.confirmed,0)=1)
+                 OR (u.username!='loopay' AND r.reserve_date=?)
+               )""",
             (today,)
         ).fetchall()
 
-        # loopay pending 판매예약 없으면 reservable 아이템에서 자동 등록
+        # loopay_id 조회 (이후 로직에서 사용)
         _loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
         loopay_id = _loopay['id'] if _loopay else -1
-        if not sell_rows and loopay_id > 0:
-            reservable_items = db.execute(
-                """SELECT i.id as item_id, i.bar_type, COALESCE(i.stage,1) as stage
-                   FROM items i WHERE i.user_id=? AND i.status='reservable'""",
-                (loopay_id,)
-            ).fetchall()
-            for it in reservable_items:
-                try:
-                    db.execute(
-                        """INSERT INTO reservations(user_id, bar_type, stage, match_round, status, reserve_date, item_id)
-                           VALUES(?, ?, ?, 2, 'pending', ?, ?)""",
-                        (loopay_id, it['bar_type'], it['stage'], today, it['item_id'])
-                    )
-                    db.execute("UPDATE items SET status='matched' WHERE id=?", (it['item_id'],))
-                except Exception:
-                    pass
-            if reservable_items:
-                db.commit()
-                sell_rows = db.execute(
-                    """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
-                       u.username as seller_username, u.nickname as seller_nickname,
-                       u.phone as seller_phone, u.bank as seller_bank,
-                       u.account_no as seller_account, u.account_name as seller_account_name,
-                       i.stage
-                       FROM reservations r
-                       LEFT JOIN users u ON r.user_id = u.id
-                       LEFT JOIN items i ON r.item_id = i.id
-                       WHERE r.status='pending' AND r.match_round=2 AND r.user_id=?""",
-                    (loopay_id,)
-                ).fetchall()
+        # 확정된 예약만 사용 - reservable 아이템 자동등록 fallback 제거
 
         # 구매예약 조회 (loopay 제외, 랜덤)
         buy_rows = db.execute(
