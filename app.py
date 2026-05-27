@@ -1168,9 +1168,9 @@ def admin_matching_status():
         # confirmed=1(확정)인 것만 집계
         _confirmed_sell = db.execute(
             """SELECT COUNT(*) as c FROM reservations
-               WHERE match_round=2 AND status='pending'
+               WHERE match_round=? AND status='pending'
                AND user_id=? AND COALESCE(confirmed,0)=1""",
-            (loopay_id,)
+            (round_num, loopay_id)
         ).fetchone()['c']
 
         if round_num == 1:
