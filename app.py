@@ -931,7 +931,7 @@ def admin_run_matching():
                 matched_pairs.append({
                     'bar_type': bt, 'bar_name': names[bt],
                     'stage': st,
-                    'buyer': {'username': buyer['buyer_username'], 'nickname': buyer['buyer_nickname'],
+                    'buyer': {'buyer_id': buyer['buyer_id'], 'username': buyer['buyer_username'], 'nickname': buyer['buyer_nickname'],
                               'phone': buyer['buyer_phone'], 'account_name': buyer.get('buyer_account_name')},
                     'seller': {'username': seller['seller_username'], 'nickname': seller['seller_nickname'],
                                'phone': s_phone, 'bank': s_bank, 'account': s_acct, 'account_name': s_name},
@@ -946,11 +946,8 @@ def admin_run_matching():
         # matched_pairs에서 buyer_id별 매칭 수 집계
         _buyer_match_cnt = {}
         for _p in matched_pairs:
-            _pb_id = _p['buyer'].get('buyer_id') if 'buyer_id' in _p.get('buyer',{}) else None
-            if _pb_id is None:
-                # buyer username으로 id 조회
-                _pb_row = db.execute("SELECT id FROM users WHERE username=?", (_p['buyer'].get('username',''),)).fetchone()
-                _pb_id = _pb_row['id'] if _pb_row else None
+            # buyer_id는 matched_pairs에 직접 포함됨
+            _pb_id = _p['buyer'].get('buyer_id')
             if _pb_id:
                 _buyer_match_cnt[_pb_id] = _buyer_match_cnt.get(_pb_id, 0) + 1
 
