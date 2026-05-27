@@ -772,12 +772,12 @@ def admin_run_matching():
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                LEFT JOIN items i ON r.item_id = i.id
-               WHERE r.status='pending' AND r.match_round=2
+               WHERE r.status='pending' AND r.match_round=?
                AND (
                  (u.username='loopay' AND COALESCE(r.confirmed,0)=1)
                  OR (u.username!='loopay' AND r.reserve_date=?)
                )""",
-            (today,)
+            (round_num, today)
         ).fetchall()
 
         # loopay_id 조회 (이후 로직에서 사용)
@@ -875,9 +875,22 @@ def admin_run_matching():
                 db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
                 if seller['item_id']:
                     db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
+                else:
+                    # loopay 판매예약에 item_id가 없으면 자동 생성
+                    try:
+                        _new_item_id = db.execute(
+                            """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
+                               VALUES(?, ?, ?, ?, 'matched')""",
+                            (seller['seller_id'], bt, st, today)
+                        ).lastrowid
+                        db.execute("UPDATE reservations SET item_id=? WHERE id=?", (_new_item_id, seller['res_id']))
+                        seller = dict(seller)
+                        seller['item_id'] = _new_item_id
+                    except Exception as _e:
+                        pass
 
                 # seller_item_id 컬럼 있으면 포함, 없으면 기존 방식
-                _seller_iid = seller.get('item_id')
+                _seller_iid = seller.get('item_id') if isinstance(seller, dict) else seller['item_id']
                 try:
                     db.execute(
                         """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
