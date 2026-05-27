@@ -1238,7 +1238,7 @@ async function addReservation(){
     var tok = localStorage.getItem('admin_token');
     var r = await fetch('/api/admin/add-reservation',{method:'POST',
       headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-      body: JSON.stringify({bar_type:barType, type:kind, stage:stage, count:count})});
+      body: JSON.stringify({bar_type:barType, type:kind, stage:stage, count:count, match_round: (window._currentMatchRound||1)})});
     var d = await r.json();
     if(d.success){
       if(resultEl) resultEl.innerHTML = '<span style="color:#66bb6a">✅ '+count+'건 추가예약 완료</span>';
