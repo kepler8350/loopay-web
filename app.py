@@ -2040,16 +2040,26 @@ def match_confirm_payment():
 
         # 4. 매칭 알림 - 다음날 5:00에 발송 예약
         _tomorrow_5am = (get_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d') + ' 05:00:00'
-        db.execute("INSERT INTO notifications(user_id,type,title,message,scheduled_at) VALUES(?,?,?,?,?)",
-            (m['buyer_id'], 'confirmed', '거래 완료',
-             f'{bar_name} {m["stage"]}단계 거래가 완료되었습니다. 아이템 현황에서 확인하세요.',
-             _tomorrow_5am))
+        try:
+            db.execute("INSERT INTO notifications(user_id,type,title,message,scheduled_at) VALUES(?,?,?,?,?)",
+                (m['buyer_id'], 'confirmed', '거래 완료',
+                 f'{bar_name} {m["stage"]}단계 거래가 완료되었습니다. 아이템 현황에서 확인하세요.',
+                 _tomorrow_5am))
+        except Exception:
+            db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+                (m['buyer_id'], 'confirmed', '거래 완료',
+                 f'{bar_name} {m["stage"]}단계 거래가 완료되었습니다. 아이템 현황에서 확인하세요.'))
 
         # 5. 판매자 알림 - 다음날 5:00에 발송
-        db.execute("INSERT INTO notifications(user_id,type,title,message,scheduled_at) VALUES(?,?,?,?,?)",
-            (m['seller_id'], 'confirmed', '송금 확인 완료',
-             f'{bar_name} {m["stage"]}단계 판매 완료. 구매자 입금 확인되었습니다.',
-             _tomorrow_5am))
+        try:
+            db.execute("INSERT INTO notifications(user_id,type,title,message,scheduled_at) VALUES(?,?,?,?,?)",
+                (m['seller_id'], 'confirmed', '송금 확인 완료',
+                 f'{bar_name} {m["stage"]}단계 판매 완료. 구매자 입금 확인되었습니다.',
+                 _tomorrow_5am))
+        except Exception:
+            db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+                (m['seller_id'], 'confirmed', '송금 확인 완료',
+                 f'{bar_name} {m["stage"]}단계 판매 완료. 구매자 입금 확인되었습니다.'))
 
         db.commit()
         return jsonify(success=True, message='거래 완료')

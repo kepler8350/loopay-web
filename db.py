@@ -226,6 +226,7 @@ def init_db():
             "ALTER TABLE users ADD COLUMN maintain_points INTEGER DEFAULT 0",
             "ALTER TABLE matches ADD COLUMN seller_item_id INTEGER",
             "ALTER TABLE matches ADD COLUMN points_deducted INTEGER DEFAULT 0",
+            "ALTER TABLE notifications ADD COLUMN scheduled_at DATETIME",
         ]:
             try:
                 conn.execute(_sql)
