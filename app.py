@@ -1078,8 +1078,8 @@ def admin_matching_status():
 
         rate = round(min(buy_count, sell_count) / buy_count * 100, 1) if buy_count > 0 else 0.0
 
-        # by_type: confirmed=1인 판매예약 아이템별
-        if _confirmed_sell > 0:
+        # by_type: sell_count > 0이고 해당 round의 데이터만 표시
+        if sell_count > 0 and _confirmed_sell > 0:
             by_type_rows = db.execute(
                 """SELECT bar_type, COUNT(*) as cnt FROM reservations
                    WHERE match_round=2 AND status='pending'
@@ -1128,6 +1128,7 @@ with app.app_context():
             "ALTER TABLE matches ADD COLUMN seller_item_id INTEGER",
             "ALTER TABLE matches ADD COLUMN points_deducted INTEGER DEFAULT 0",
             "ALTER TABLE users ADD COLUMN maintain_points INTEGER DEFAULT 0",
+            "ALTER TABLE notifications ADD COLUMN scheduled_at DATETIME",
         ]:
             try:
                 _c.execute(_col_sql)
@@ -1760,7 +1761,13 @@ def run_lucky_matching():
 def get_notifications():
     uid = int(get_jwt_identity())
     db = get_db()
-    rows = db.execute("SELECT * FROM notifications WHERE user_id=? ORDER BY created_at DESC LIMIT 50", (uid,)).fetchall()
+    rows = db.execute(
+        """SELECT * FROM notifications
+           WHERE user_id=?
+           AND (scheduled_at IS NULL OR scheduled_at <= datetime('now','localtime'))
+           ORDER BY created_at DESC LIMIT 50""",
+        (uid,)
+    ).fetchall()
     unread = db.execute("SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0", (uid,)).fetchone()[0]
     db.close()
     return jsonify(notifications=[dict(r) for r in rows], unread=unread)
@@ -2016,27 +2023,26 @@ def match_confirm_payment():
             # buyer에게 새 아이템 추가 (status는 DB 스키마에 따라 가능한 값 사용)
             # buyer 아이템은 'active'(보유중) 상태로 추가
             _stage = int(seller_item['stage'] or m['stage'] or 1)
-            for _st in ('active', 'matched', 'pending'):
-                try:
-                    db.execute(
-                        """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
-                           VALUES(?, ?, ?, ?, ?)""",
-                        (m['buyer_id'], seller_item['bar_type'], _stage,
-                         _date.today().isoformat(), _st)
-                    )
-                    break
-                except Exception:
-                    continue
+            # 아이템 추가: reservable 상태로 (입금확인일 = 1일차)
+            db.execute(
+                """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
+                   VALUES(?, ?, ?, ?, 'reservable')""",
+                (m['buyer_id'], seller_item['bar_type'], _stage,
+                 get_today().isoformat())
+            )
 
-        # 4. 구매자 알림 (거래 완료)
-        db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+        # 4. 매칭 알림 - 다음날 5:00에 발송 예약
+        _tomorrow_5am = (get_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d') + ' 05:00:00'
+        db.execute("INSERT INTO notifications(user_id,type,title,message,scheduled_at) VALUES(?,?,?,?,?)",
             (m['buyer_id'], 'confirmed', '거래 완료',
-             f'{bar_name} {m["stage"]}단계 거래가 완료되었습니다. 아이템 현황에서 확인하세요.'))
+             f'{bar_name} {m["stage"]}단계 거래가 완료되었습니다. 아이템 현황에서 확인하세요.',
+             _tomorrow_5am))
 
-        # 5. 판매자 알림
-        db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
+        # 5. 판매자 알림 - 다음날 5:00에 발송
+        db.execute("INSERT INTO notifications(user_id,type,title,message,scheduled_at) VALUES(?,?,?,?,?)",
             (m['seller_id'], 'confirmed', '송금 확인 완료',
-             f'{bar_name} {m["stage"]}단계 판매 완료. 구매자 입금 확인되었습니다.'))
+             f'{bar_name} {m["stage"]}단계 판매 완료. 구매자 입금 확인되었습니다.',
+             _tomorrow_5am))
 
         db.commit()
         return jsonify(success=True, message='거래 완료')
