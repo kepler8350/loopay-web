@@ -297,21 +297,8 @@ def get_me():
         (uid, today_str)
     ).fetchone()['c']
     match_maintain_cost = _matched_count * 40
-    # 포인트 자동 정산: matched_count 기반 (match_date 관계없이)
-    try:
-        _u2 = db.execute("SELECT maintain_points FROM users WHERE id=?", (uid,)).fetchone()
-        _maintain_now = (_u2['maintain_points'] or 0) if _u2 else 0
-        if _maintain_now > 0 and _matched_count >= 0:
-            _consume = _matched_count * 40
-            _refund = max(0, _maintain_now - _consume)
-            db.execute("""UPDATE users
-               SET maintain_points=0,
-                   charge_points=charge_points+?
-               WHERE id=?""", (_refund, uid))
-            db.commit()
-            match_maintain_cost = 0
-    except Exception:
-        pass  # maintain_points 컬럼 없는 경우 무시
+    # 포인트 정산은 run-matching에서 즉시 처리됨 (user/me 자동 정산 제거)
+    match_maintain_cost = _matched_count * 40
     lv = u['level']
     cfg = LEVEL_CONFIG.get(lv, {})
     next_cum = cfg.get('cum')
