@@ -1056,14 +1056,25 @@ def admin_matching_status():
             # 1차: 확정된 전체 수량
             sell_count = _confirmed_sell
         else:
-            # 2차: 1차 매칭 후 남은 수량
-            # = 확정 수량 - 오늘 1차 매칭으로 매칭된 loopay 판매 건수
-            _matched_r1 = db.execute(
+            # 2차: 1차 매칭이 실행된 경우에만 남은 수량 표시
+            # 오늘 1차 매칭 실행 여부 확인
+            _r1_executed = db.execute(
                 """SELECT COUNT(*) as c FROM matches
-                   WHERE seller_id=? AND match_date=? AND status IN ('pending','paid','confirmed')""",
-                (loopay_id, today)
+                   WHERE match_round=1 AND match_date=?""",
+                (today,)
             ).fetchone()['c']
-            sell_count = max(0, _confirmed_sell - _matched_r1)
+            if _r1_executed == 0:
+                # 1차 매칭이 아직 실행되지 않음 → 2차 판매수량 0
+                sell_count = 0
+            else:
+                # 1차 매칭 완료 → 남은 confirmed 예약 수
+                _matched_r1 = db.execute(
+                    """SELECT COUNT(*) as c FROM matches
+                       WHERE seller_id=? AND match_round=1 AND match_date=?
+                       AND status IN ('pending','paid','confirmed')""",
+                    (loopay_id, today)
+                ).fetchone()['c']
+                sell_count = max(0, _confirmed_sell - _matched_r1)
 
         rate = round(min(buy_count, sell_count) / buy_count * 100, 1) if buy_count > 0 else 0.0
 
