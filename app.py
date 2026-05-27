@@ -1667,12 +1667,17 @@ def admin_reservation_status():
             total_buy = user_buy + extra_buy
 
             # 판매예약 아이템별 가격 분류 (items 조인)
+            # 판매예약 가격대별: 일반사용자 + loopay 확정 sell 모두 포함
             sell_rows = conn.execute(
                 """SELECT r.item_id, i.stage, i.bar_type
                    FROM reservations r
                    LEFT JOIN items i ON r.item_id = i.id
-                   WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending' AND r.user_id!=?""",
-                (bar_type, loopay_id)
+                   WHERE r.bar_type=? AND r.status='pending'
+                   AND (
+                     (r.user_id != ? )
+                     OR (r.user_id = ? AND r.item_id IS NOT NULL AND COALESCE(r.confirmed,0)=1)
+                   )""",
+                (bar_type, loopay_id, loopay_id)
             ).fetchall()
 
             sell_under32 = 0  # 32만원 미만
@@ -1699,11 +1704,25 @@ def admin_reservation_status():
                 (bar_type, loopay_id)
             ).fetchall()
             extra_sell_rows = extra_sell_pending + extra_sell_confirmed_rows
-            extra_sell_under32 = len(extra_sell_rows)  # 미확정 + 확정 모두
+            extra_sell_under32 = 0
             extra_sell_33up = 0
             extra_sell_split = 0
             extra_sell_new = 0
-            extra_sell_total = extra_sell_under32
+            for _er in extra_sell_rows:
+                _item_id = _er['item_id'] if isinstance(_er, dict) else _er[0]
+                if _item_id:
+                    _item = conn.execute("SELECT stage FROM items WHERE id=?", (_item_id,)).fetchone()
+                    _st = (_item['stage'] if _item else None) or 1
+                else:
+                    _st = 1
+                _sp = prices.get((bar_type, _st), 0)
+                if _sp >= 330000:
+                    extra_sell_33up += 1
+                elif _sp >= 100000:
+                    extra_sell_split += 1
+                else:
+                    extra_sell_under32 += 1
+            extra_sell_total = extra_sell_under32 + extra_sell_33up + extra_sell_split
 
             total_sell = sell_total + extra_sell_total
             match_rate = round(total_sell / total_buy * 100, 1) if total_buy > 0 else 0
