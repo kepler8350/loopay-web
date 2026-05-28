@@ -16,9 +16,9 @@ var LEVEL_CFG_JS={
 var combinePairs=[];var pendingItem=null;
 
 const API = '/api';
-let token = '';
-let userData = null;
-let bzCnt = 7;
+var token = '';
+var userData = null;
+var bzCnt = 7;
 
 // --- utils ----------------------------------------------------------------
 // --- price ----------------------------------------------------------------
