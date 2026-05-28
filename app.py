@@ -333,21 +333,6 @@ def get_me():
         (uid, today_str)
     ).fetchone()['c']
     match_maintain_cost = _matched_count * 40
-    # 포인트 정산 안전장치: maintain_points가 남아있으면 재처리
-    match_maintain_cost = _matched_count * 40
-    try:
-        _mn_now = u['maintain_points'] or 0
-        if _mn_now > 0:
-            _consume_now = _matched_count * 40
-            _refund_now = max(0, _mn_now - _consume_now)
-            db.execute(
-                "UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?",
-                (_refund_now, uid)
-            )
-            db.commit()
-            _maintain = 0
-    except Exception:
-        pass
     lv = u['level']
     cfg = LEVEL_CONFIG.get(lv, {})
     next_cum = cfg.get('cum')
