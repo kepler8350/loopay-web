@@ -773,6 +773,7 @@ def admin_run_matching():
                LEFT JOIN users u ON r.user_id = u.id
                LEFT JOIN items i ON r.item_id = i.id
                WHERE r.status='pending' AND r.match_round=?
+               AND r.item_id IS NOT NULL
                AND (
                  (u.username='loopay' AND COALESCE(r.confirmed,0)=1)
                  OR (u.username!='loopay' AND r.reserve_date=?)
