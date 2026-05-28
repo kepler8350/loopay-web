@@ -1545,9 +1545,15 @@ function updateResUI(BZ_MIN,BZ_MAX){
     var hTotal = document.getElementById('h-total');
     var hMaintain = document.getElementById('h-maintain');
     var hSub = document.getElementById('h-sub');
-    // h-total/h-maintain은 renderHeader에서 DB값으로만 설정 (updateResUI 미리보기 금지)
-    // (이전: if(hTotal) hTotal.textContent = remainCharge...)
-    // h-maintain은 renderHeader에서 maintain_points(DB값)으로만 설정
+    // 수량 선택 시 실시간 미리보기 (수량>0인 경우만)
+    if(total > 0){
+      if(hTotal) hTotal.textContent = Math.max(0, remainCharge + remainExchange).toLocaleString() + ' P';
+      if(hMaintain) hMaintain.textContent = cost.toLocaleString() + ' P';
+    } else {
+      // 수량=0: DB 실제값 복원
+      if(hTotal) hTotal.textContent = ((userData.charge_points||0)+(userData.exchange_points||0)).toLocaleString() + ' P';
+      if(hMaintain) hMaintain.textContent = (userData.maintain_points||0).toLocaleString() + ' P';
+    }
     if(hSub) hSub.textContent = '충전 '+remainCharge.toLocaleString()+'P + 전환 '+remainExchange.toLocaleString()+'P';
   }
   // 버튼 활성/비활성
