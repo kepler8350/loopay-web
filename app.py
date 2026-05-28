@@ -106,6 +106,15 @@ def index():
     resp.headers['Expires'] = '0'
     return resp
 
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    from flask import make_response
+    resp = make_response(send_from_directory(STATIC_DIR, filename))
+    # JS 파일은 버전 파라미터로 캐시 관리 - 장기 캐시 허용
+    if filename.endswith('.js'):
+        resp.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    return resp
+
 @app.route('/admin')
 def admin():
     from flask import make_response
