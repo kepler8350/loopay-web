@@ -2689,7 +2689,7 @@ async function loadUserData(){
 function renderHeader(d){
   var uidEl2=document.getElementById('h-userid'); if(uidEl2) uidEl2.textContent=d.username||d.nickname||'';
   // 오늘 예약 사용 포인트가 있으면 매칭유지포인트로 표시
-  var _maintainPts = (d.today_reserve_cost > 0) ? d.today_reserve_cost : (d.exchange_points||0);
+  var _maintainPts = (d.maintain_points != null) ? d.maintain_points : 0;
   document.getElementById('h-maintain').textContent=_maintainPts.toLocaleString()+' P';
   document.getElementById('h-level').textContent=d.level+'레벨';
   // 레벨배지 색상 업데이트
