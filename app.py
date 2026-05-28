@@ -773,12 +773,9 @@ def admin_run_matching():
                LEFT JOIN users u ON r.user_id = u.id
                LEFT JOIN items i ON r.item_id = i.id
                WHERE r.status='pending' AND r.match_round=?
-               AND r.item_id IS NOT NULL
-               AND (
-                 (u.username='loopay' AND COALESCE(r.confirmed,0)=1)
-                 OR (u.username!='loopay' AND r.reserve_date=?)
-               )""",
-            (round_num, today)
+               AND u.username='loopay'
+               AND COALESCE(r.confirmed,0)=1""",
+            (round_num,)
         ).fetchall()
 
         # loopay_id 조회 (이후 로직에서 사용)
@@ -795,7 +792,6 @@ def admin_run_matching():
                LEFT JOIN users u ON r.user_id = u.id
                WHERE r.status='pending' AND r.match_round=?
                AND u.username != 'loopay'
-               AND r.item_id IS NULL
                ORDER BY RANDOM()""",
             (round_num,)
         ).fetchall()
