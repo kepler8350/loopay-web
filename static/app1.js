@@ -1564,9 +1564,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
   var _exP = (userData && userData.exchange_points) || 0;
   var notEnough = (_chP + _exP < cost);
   var isEmpty = (total === 0);
-  // 시간 조건도 함께 체크
-  var _now2 = new Date();
-  var _h2 = _now2.getHours();
+  // 시간 조건: 서버 시간(mock_time 포함) 기준
+  var _h2 = getEffectiveDate().getHours();
   var _isTimeOk = (_h2 >= 5 && _h2 < 20);
   if(btn && !_reservedToday){
     var _btnDisabled = (notEnough || isEmpty || !_isTimeOk);
