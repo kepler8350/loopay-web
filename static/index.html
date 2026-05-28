@@ -615,16 +615,14 @@ async function checkMatchRefresh(){
       total: d.total_points
     });
     if(_lastMatchState && _lastMatchState !== curState){
-      // 상태 변경 감지 → 전체 화면 갱신
-      userData = d;
-      renderHeader(d);
-      renderBars(d);
-      renderLevelTab && renderLevelTab();
+      // 상태 변경 감지 → 전체 화면 갱신 (포인트 정산 포함)
+      await loadUserData();
     }
     _lastMatchState = curState;
   }catch(e){}
 }
 setInterval(checkMatchRefresh, 30000);
+setInterval(loadNotifBadge, 20000);  // 20초마다 알림 체크 → 새 알림 시 포인트 갱신
 
 // 결합판매
 function getStatusBadge(s){
@@ -1957,14 +1955,21 @@ async function deleteSelectedNotifs(){
   }catch(e){ toast('\uc0ad\uc81c \uc2e4\ud328: '+e.message); }
 }
 
+var _lastUnreadCount = 0;
 async function loadNotifBadge(){
   try{
     const d=await api('/user/notifications');
     const badge=document.getElementById('notif-badge');
+    const unread = d.unread||0;
     if(badge){
-      if(d.unread>0){badge.style.display='inline-block';badge.textContent=d.unread>99?'99+':d.unread;}
+      if(unread>0){badge.style.display='inline-block';badge.textContent=unread>99?'99+':unread;}
       else{badge.style.display='none';}
     }
+    // 새 알림(매칭완료 등) 감지 시 포인트 즉시 갱신
+    if(unread > _lastUnreadCount && _lastUnreadCount >= 0){
+      await loadUserData();
+    }
+    _lastUnreadCount = unread;
   }catch(e){}
 }
 
