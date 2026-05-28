@@ -2643,10 +2643,13 @@ def admin_confirm_extra_reservations():
         for row in rows:
             r_id = row['id']
             bar_type = row['bar_type']
-            match_round = row['match_round']
             stage = row['stage'] or 1
-            item_id = row['item_id'] or 0
-            if match_round == 1:
+            item_id = row['item_id']  # None이면 구매예약, 있으면 판매예약
+            if item_id:
+                # 판매예약: 기존 아이템 상태 reservable로 + confirmed=1
+                conn.execute("UPDATE items SET status='reservable' WHERE id=? AND user_id=?", (item_id, lid))
+                conn.execute("UPDATE reservations SET confirmed=1 WHERE id=?", (r_id,))
+            else:
                 # 구매예약: 아이템 새로 생성 후 confirmed=1
                 cur = conn.execute(
                     "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
@@ -2657,11 +2660,6 @@ def admin_confirm_extra_reservations():
                     "UPDATE reservations SET confirmed=1, item_id=? WHERE id=?",
                     (new_item_id, r_id)
                 )
-            else:
-                # 판매예약: 기존 아이템 상태 업데이트 + confirmed=1
-                if item_id:
-                    conn.execute("UPDATE items SET status='reservable' WHERE id=? AND user_id=?", (item_id, lid))
-                conn.execute("UPDATE reservations SET confirmed=1 WHERE id=?", (r_id,))
             confirmed_ids.append(r_id)
         conn.execute("PRAGMA foreign_keys=ON")
         conn.commit()
