@@ -60,6 +60,8 @@ function showMainApp(){
 
 // --- user data ------------------------------------------------------------
 async function loadUserData(){
+  // 서버 시간 동기화 (mock_time 반영) - 구매예약 시간 조건에 필요
+  if(!window._syncInterval) await syncServerTime();
   try{
     const d=await api('/user/me');
     userData=d;
