@@ -214,8 +214,8 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
               <th style="color:#eee;text-align:center">20단계</th>
               <th style="color:#eee;text-align:center">21단계</th>
               <th style="color:#eee;text-align:center">전날미판매분</th>
-              <th style="color:#eee;text-align:center">매칭율</th>
               <th style="color:#eee;text-align:center">총수량</th>
+              <th style="color:#eee;text-align:center">매칭율</th>
             </tr>
           </thead>
           <tbody id="res-price-tbody-bronze">
@@ -1404,8 +1404,8 @@ async function loadReservationStatus(){
       +'<td style="'+C+'">'+(pb.band3||0)+'</td>'
       +'<td style="'+C+'">'+(pb.band4||0)+'</td>'
       +'<td style="'+C+'">'+(pb.prev_unsold||0)+'</td>'
-      +'<td style="'+C+'font-weight:700;color:'+mrc(mr)+'">'+mr+'%</td>'
       +'<td style="'+CB+'">'+(s.sell_count||0)+'</td>'
+      +'<td style="'+C+'font-weight:700;color:'+mrc(mr)+'">'+mr+'%</td>'
       +'</tr>';
   }
   try{
