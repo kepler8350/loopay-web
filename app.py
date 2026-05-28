@@ -2426,7 +2426,7 @@ def admin_loopay_items():
                    FROM matches m
                    LEFT JOIN users u ON m.buyer_id = u.id
                    WHERE m.seller_id = ? AND m.bar_type = ? AND m.stage = ?
-                     AND m.status IN ('pending', 'paid', 'confirmed', 'completed')
+                     AND m.status IN ('pending', 'paid')
                    ORDER BY m.id DESC LIMIT 1""",
                 (lid, bar_type, stage or 1)
             ).fetchone()
@@ -2449,7 +2449,7 @@ def admin_loopay_items():
                        FROM matches m
                        LEFT JOIN users u ON m.buyer_id = u.id
                        WHERE m.seller_id = ? AND m.bar_type = ? AND m.stage = ?
-                         AND m.status IN ('pending', 'paid', 'confirmed', 'completed')
+                         AND m.status IN ('pending', 'paid')
                          AND m.id NOT IN ({})
                        ORDER BY m.id DESC LIMIT 1""".format(
                            ','.join(str(x) for x in used_match_ids) if used_match_ids else '0'
