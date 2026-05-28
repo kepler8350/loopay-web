@@ -617,6 +617,11 @@ async function checkMatchRefresh(){
     if(_lastMatchState && _lastMatchState !== curState){
       // 상태 변경 감지 → 전체 화면 갱신 (포인트 정산 포함)
       await loadUserData();
+      // 비동기 코드가 덮어쓰는 것 방지: 500ms 후 포인트 표시 재확정
+      setTimeout(function(){
+        var fresh = window.userData;
+        if(fresh) renderHeader(fresh);
+      }, 500);
     }
     _lastMatchState = curState;
   }catch(e){}
@@ -1817,7 +1822,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
     var hTotal = document.getElementById('h-total');
     var hMaintain = document.getElementById('h-maintain');
     var hSub = document.getElementById('h-sub');
-    if(hTotal) hTotal.textContent = remainCharge.toLocaleString() + ' P';
+    // h-total/h-maintain은 renderHeader에서 DB값으로만 설정 (updateResUI 미리보기 금지)
+    // (이전: if(hTotal) hTotal.textContent = remainCharge...)
     // h-maintain은 renderHeader에서 maintain_points(DB값)으로만 설정
     if(hSub) hSub.textContent = '충전 '+remainCharge.toLocaleString()+'P + 전환 '+remainExchange.toLocaleString()+'P';
   }
@@ -2785,7 +2791,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
     var hTot = document.getElementById('h-total');
     var hMnt = document.getElementById('h-maintain');
     var hSb = document.getElementById('h-sub');
-    if(hTot) hTot.textContent = _remainCharge.toLocaleString() + ' P';
+    // h-total/h-maintain은 renderHeader에서 DB값으로만 설정 (updateResUI 미리보기 금지)
     // h-maintain은 renderHeader의 maintain_points(DB값)으로만 설정 (updateResUI에서 변경 금지)
     if(hSb) hSb.textContent = '충전 '+_remainCharge.toLocaleString()+'P + 전환 '+_remainExchange.toLocaleString()+'P';
   }
