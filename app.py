@@ -999,14 +999,29 @@ def admin_run_matching():
         try:
             # 매칭된 buyer 처리
             for _bid, _bcnt in _matched_cnt_map.items():
-                _u = db.execute("SELECT maintain_points FROM users WHERE id=?", (_bid,)).fetchone()
+                _u = db.execute("SELECT maintain_points, charge_points FROM users WHERE id=?", (_bid,)).fetchone()
                 _mn = int(_u['maintain_points'] or 0) if _u else 0
-                if _mn > 0:
-                    _consume = _bcnt * 40
-                    _refund = max(0, _mn - _consume)
+                _ch = int(_u['charge_points'] or 0) if _u else 0
+                _consume = _bcnt * 40
+                if _mn >= _consume:
+                    # maintain에서 차감 후 나머지 환원
+                    _refund = _mn - _consume
                     db.execute(
                         "UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?",
                         (_refund, _bid)
+                    )
+                elif _mn > 0:
+                    # maintain 일부 + charge에서 나머지 차감
+                    _remain = _consume - _mn
+                    db.execute(
+                        "UPDATE users SET maintain_points=0, charge_points=charge_points-? WHERE id=?",
+                        (_remain, _bid)
+                    )
+                else:
+                    # maintain=0: charge에서 직접 차감
+                    db.execute(
+                        "UPDATE users SET charge_points=charge_points-? WHERE id=?",
+                        (_consume, _bid)
                     )
             # 미매칭 buyer 처리 (buy_rows에 있지만 매칭 안된 buyer)
             for _br in buy_rows:
@@ -1016,6 +1031,7 @@ def admin_run_matching():
                 _u2 = db.execute("SELECT maintain_points FROM users WHERE id=?", (_bid2,)).fetchone()
                 _mn2 = int(_u2['maintain_points'] or 0) if _u2 else 0
                 if _mn2 > 0:
+                    # 미매칭: maintain 전액 charge로 환원
                     db.execute(
                         "UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?",
                         (_mn2, _bid2)
