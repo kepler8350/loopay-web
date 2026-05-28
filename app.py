@@ -99,11 +99,21 @@ jwt = JWTManager(app)
 
 @app.route('/')
 def index():
-    return send_from_directory(STATIC_DIR, 'index.html')
+    from flask import make_response
+    resp = make_response(send_from_directory(STATIC_DIR, 'index.html'))
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
 
 @app.route('/admin')
 def admin():
-    return send_from_directory(STATIC_DIR, 'admin.html')
+    from flask import make_response
+    resp = make_response(send_from_directory(STATIC_DIR, 'admin.html'))
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
 
 @app.route('/api/auth/register', methods=['POST'])
 def register():
