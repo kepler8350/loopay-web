@@ -1107,29 +1107,29 @@ function renderSystemItems(){
     // 미입금 알림 버튼 쿨타임 체크 (10분=600000ms)
     var _lastClick = _unpaidClickedAt[item.match_id] || 0;
     var _coolOk = (Date.now() - _lastClick) >= 540000; // 9분 쿨타임
-    var _warnBtnActive = _inWarnWindow && _coolOk && (ms === 'paid' || ms === 'pending');
+    // 입금확인 완료 여부
+    var _isConfirmed = (ms === 'confirmed');
 
-    // ── 3개 버튼 항상 표시, 조건에 따라 활성/비활성 ──
-    // paid(송금완료) 상태여야 버튼들이 활성화됨
-    var _isPaid = (ms === 'paid');
+    // ── 3개 버튼: 시간 조건에 따라 활성/비활성 ──
     var actionBtns = '';
     if (item.match_id) {
-      // ① 입금확인 버튼: paid 상태일 때 활성
-      if (_isPaid) {
+      // ① 입금확인: 입금확인 안됨 + 12:30 이후 활성
+      if (!_isConfirmed && _totalMin >= 750) {
         actionBtns += '<button onclick="adminConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>';
       } else {
         actionBtns += '<button disabled style="padding:3px 8px;background:#2a2a3a;color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">✅ 입금확인</button>';
       }
-      // ② 입금요청 버튼: paid + 12:30~13:00 + 쿨타임OK 일 때 활성
-      if (_isPaid && _inWarnWindow && _coolOk) {
+      // ② 입금요청: 입금확인 안됨 + 12:30~13:00(750~780) + 쿨타임OK → 활성
+      //   입금확인 되면 비활성, 13:00이후 비활성, 클릭후 9분 쿨타임
+      if (!_isConfirmed && _inWarnWindow && _coolOk) {
         actionBtns += '<button onclick="adminWarnUnpaid('+item.match_id+')" style="padding:3px 8px;background:#f57c00;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📨 입금요청</button>';
-      } else if (_isPaid && _inWarnWindow && !_coolOk) {
+      } else if (!_isConfirmed && _inWarnWindow && !_coolOk) {
         actionBtns += '<button disabled title="9분 후 재활성화" style="padding:3px 8px;background:#2a2a3a;color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">📨 입금요청</button>';
       } else {
         actionBtns += '<button disabled style="padding:3px 8px;background:#2a2a3a;color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">📨 입금요청</button>';
       }
-      // ③ 미입금확인 버튼: paid + 13:00~14:00 일 때 활성
-      if (_isPaid && _inConfirmWindow) {
+      // ③ 미입금확인: 입금확인 안됨 + 13:00~14:00(780~840) 활성
+      if (!_isConfirmed && _inConfirmWindow) {
         actionBtns += '<button onclick="adminConfirmUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🚫 미입금확인</button>';
       } else {
         actionBtns += '<button disabled style="padding:3px 8px;background:#2a2a3a;color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed">🚫 미입금확인</button>';
