@@ -2491,9 +2491,9 @@ def admin_loopay_items():
                 d['buyer_account'] = None
             rows_with_match.append(d)
 
-        # confirmed match인 아이템은 목록에서 제외 (sold 자동처리는 confirm-payment에서만)
+        # confirmed/failed match는 목록에서 제외 (match_id 기준으로 제외, item 기준 아님)
         rows = [d for d in rows_with_match
-                if not (d.get('match_status') == 'confirmed' and d.get('status') == 'matched')]
+                if d.get('match_status') not in ('confirmed', 'failed')]
         return jsonify(
             items=[{
                 'id': r['id'],
