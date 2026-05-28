@@ -1197,13 +1197,13 @@ def admin_matching_status():
         # ── 구매예약: pending, 일반 사용자 ──
         buy_count = db.execute(
             """SELECT COUNT(*) as c FROM reservations
-               WHERE match_round=? AND status='pending' AND user_id!=?""",
+               WHERE match_round=? AND status IN ('pending','unmatched') AND user_id!=?""",
             (round_num, loopay_id)
         ).fetchone()['c']
 
         buy_by_type = db.execute(
             """SELECT bar_type, COUNT(*) as cnt FROM reservations
-               WHERE match_round=? AND status='pending' AND user_id!=?
+               WHERE match_round=? AND status IN ('pending','unmatched') AND user_id!=?
                GROUP BY bar_type""",
             (round_num, loopay_id)
         ).fetchall()
@@ -2381,23 +2381,15 @@ def admin_confirm_unpaid():
         bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
         bar_name = bar_names.get(m['bar_type'], m['bar_type'])
 
-        # 1. match status → unpaid (미입금확정) + 구매자 미입금 알림
-        db.execute("UPDATE matches SET status='failed' WHERE id=?", (match_id,))  # 미입금확정=failed
-        try:
-            insert_notification(db, m['buyer_id'], 'unpaid_confirmed', '미입금 확정', f'{bar_name} {m["stage"]}단계 아이템 미입금이 확정되었습니다.\n'
-                 f'해당 구매예약이 2차 매칭으로 이전됩니다.')
-        except Exception:
-            pass
+        # 1. match status → failed (미입금확정)
+        db.execute("UPDATE matches SET status='failed' WHERE id=?", (match_id,))
 
-        # 2. 구매예약 → unmatched (2차 대기로 전환)
+        # 2. 구매예약 → 2차 매칭 대기 (match_round=2, status='pending')
         if m['reservation_id']:
-            try:
-                db.execute("""UPDATE reservations SET status='unmatched', match_round=2
-                             WHERE id=?""", (m['reservation_id'],))
-            except Exception:
-                pass
+            db.execute("""UPDATE reservations SET status='pending', match_round=2
+                         WHERE id=?""", (m['reservation_id'],))
 
-        # 3. loopay 판매 아이템 → matched 상태 복원 (재매칭 가능하게)
+        # 3. loopay 판매 아이템 → reservable (재매칭 가능하게)
         seller_item = db.execute(
             """SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='matched'
                ORDER BY id DESC LIMIT 1""",
@@ -2406,21 +2398,9 @@ def admin_confirm_unpaid():
         if seller_item:
             db.execute("UPDATE items SET status='reservable' WHERE id=?", (seller_item['id'],))
 
-        # 4. 구매자 알림
-        insert_notification(db, m['buyer_id'], 'unpaid', '미입금 확정', f'{bar_name} {m["stage"]}단계 거래에서 미입금이 확정됐습니다. 2차 매칭으로 자동 이동됩니다.')
-
-        # 5. 2차 구매예약 생성 (기존 예약을 2차로 이전)
-        buyer_res = db.execute(
-            "SELECT * FROM reservations WHERE id=?", (m['reservation_id'],)
-        ).fetchone() if m['reservation_id'] else None
-
-        if buyer_res:
-            try:
-                db.execute("""INSERT INTO reservations(user_id, bar_type, match_round, status, reserve_date)
-                             VALUES(?, ?, 2, 'pending', date('now','localtime'))""",
-                    (m['buyer_id'], m['bar_type']))
-            except Exception:
-                pass
+        # 4. 구매자 알림 1개만 발송
+        insert_notification(db, m['buyer_id'], 'unpaid_confirmed', '미입금 확정',
+            f'{bar_name} {m["stage"]}단계 거래 미입금이 확정됐습니다. 2차 매칭으로 자동 이동됩니다.')
 
         db.commit()
         return jsonify(success=True, message='미입금 확정 완료, 2차 매칭 대기로 이전')
