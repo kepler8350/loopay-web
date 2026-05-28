@@ -2163,8 +2163,9 @@ def match_confirm_payment():
     try:
         # 관리자는 seller_id 체크 없이, 일반 사용자는 seller_id 체크
         if is_admin:
+            # 관리자는 pending/paid 모두 입금확인 가능 (직접 확인)
             m = db.execute(
-                "SELECT * FROM matches WHERE id=? AND status='paid'",
+                "SELECT * FROM matches WHERE id=? AND status IN ('pending','paid')",
                 (match_id,)
             ).fetchone()
         else:
