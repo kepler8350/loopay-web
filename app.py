@@ -99,8 +99,12 @@ jwt = JWTManager(app)
 
 @app.route('/')
 def index():
-    from flask import make_response
-    resp = make_response(send_from_directory(STATIC_DIR, 'index.html'))
+    from flask import make_response, Response
+    import os
+    path = os.path.join(STATIC_DIR, 'index.html')
+    with open(path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    resp = make_response(Response(content, mimetype='text/html'))
     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     resp.headers['Pragma'] = 'no-cache'
     resp.headers['Expires'] = '0'
@@ -117,8 +121,12 @@ def static_files(filename):
 
 @app.route('/admin')
 def admin():
-    from flask import make_response
-    resp = make_response(send_from_directory(STATIC_DIR, 'admin.html'))
+    from flask import make_response, Response
+    import os
+    path = os.path.join(STATIC_DIR, 'admin.html')
+    with open(path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    resp = make_response(Response(content, mimetype='text/html'))
     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     resp.headers['Pragma'] = 'no-cache'
     resp.headers['Expires'] = '0'
