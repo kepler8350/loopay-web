@@ -946,7 +946,7 @@ async function adminWarnUnpaid(matchId){
       body:JSON.stringify({match_id:matchId})});
     var d = await r.json();
     if(d.success){
-      _unpaidClickedAt[matchId] = Date.now();
+      _unpaidClickedAt[matchId] = _serverHour*60 + _serverMin; // 서버 시간(분) 기록
       toast('입금 요청 알림 발송 완료 (9분 후 재활성화)','success');
       loadSystemItems();
     } else toast(d.error||'오류','error');
@@ -1105,8 +1105,10 @@ function renderSystemItems(){
     // 13:00~14:00(780~840): 미입금확인 버튼 활성화
     var _inConfirmWindow = (_totalMin >= 780 && _totalMin < 840);
     // 미입금 알림 버튼 쿨타임 체크 (10분=600000ms)
-    var _lastClick = _unpaidClickedAt[item.match_id] || 0;
-    var _coolOk = (Date.now() - _lastClick) >= 540000; // 9분 쿨타임
+    // 쿨타임 체크: 서버 시간(분) 기준으로 9분 경과 여부
+    var _lastClickMin = _unpaidClickedAt[item.match_id] || 0;
+    var _curMin = _serverHour*60 + _serverMin;
+    var _coolOk = (_lastClickMin === 0) || ((_curMin - _lastClickMin) >= 9);
     // 입금확인 완료 여부 / 송금완료 여부
     var _isConfirmed = (ms === 'confirmed');
     var _isPaid = (ms === 'paid');
@@ -1991,6 +1993,14 @@ async function sendAdminNotif(){
 }
 // ── 매칭 버튼 시간 활성화 (매분 갱신) ──
 setInterval(updateMatchingBtn, 60000);
+
+// 시스템아이템현황: 매분 버튼 상태 자동 갱신 (쿨타임 재활성화 반영)
+setInterval(function(){
+  var page = document.getElementById('page-system-items');
+  if(page && page.classList.contains('active')){
+    loadSystemItems();
+  }
+}, 60000);
 
 // ── 행운구매 ──────────────────────────────────────────
 var _luckyPairsData = {}; // 미리보기 결과 저장
