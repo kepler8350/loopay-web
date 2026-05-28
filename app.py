@@ -795,6 +795,7 @@ def admin_run_matching():
                LEFT JOIN users u ON r.user_id = u.id
                WHERE r.status='pending' AND r.match_round=?
                AND u.username != 'loopay'
+               AND r.item_id IS NULL
                ORDER BY RANDOM()""",
             (round_num,)
         ).fetchall()
