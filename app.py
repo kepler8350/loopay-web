@@ -358,7 +358,7 @@ def get_me():
         _maintain = u['maintain_points'] or 0
     except Exception:
         _maintain = 0
-    return jsonify(id=u['id'],username=u['username'],nickname=u['nickname'],level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],maintain_points=_maintain,match_maintain_cost=_maintain,today_reserve_cost=today_reserve_cost,cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve)
+    return jsonify(id=u['id'],username=u['username'],nickname=u['nickname'],level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],maintain_points=_maintain,match_maintain_cost=_maintain,today_reserve_cost=0,cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve)
 
 @app.route('/api/reservation/preview', methods=['POST'])
 @jwt_required()
