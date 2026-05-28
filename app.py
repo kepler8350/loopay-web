@@ -52,6 +52,15 @@ def get_now():
     mt = _get_mock_time_from_db()
     return mt if mt else datetime.datetime.now()
 
+
+def insert_notification(db, user_id, ntype, title, message):
+    """알림 삽입 - 시스템 설정 시간(mock_time) 사용"""
+    now_str = get_now().strftime('%Y-%m-%d %H:%M:%S')
+    db.execute(
+        "INSERT INTO notifications(user_id,type,title,message,created_at) VALUES(?,?,?,?,?)",
+        (user_id, ntype, title, message, now_str)
+    )
+
 def get_today():
     """오늘 날짜 반환"""
     return get_now().date()
@@ -551,10 +560,7 @@ def charge_request():
                 f'• 예금주: {loopay_acct_name}\n'
                 f'\n위 계좌로 입금 후 관리자 확인 시 포인트가 지급됩니다.'
             )
-            db.execute(
-                "INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                (uid, 'charge', '충전 신청 접수', notif_msg)
-            )
+            insert_notification(db, uid, 'charge', '충전 신청 접수', notif_msg)
             db.commit()
         except Exception:
             pass
@@ -1071,10 +1077,7 @@ def admin_run_matching():
                     f"\n매칭탭에서 각 아이템 송금완료 버튼을 눌러주세요."
                 )
             try:
-                db.execute(
-                    "INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                    (_bid, 'match', _notif_title, _notif_body)
-                )
+                insert_notification(db, _bid, 'match', _notif_title, _notif_body)
             except Exception:
                 pass
 
@@ -2280,8 +2283,7 @@ def match_confirm_payment():
             f"\n아이템 현황에서 보유 아이템을 확인하세요."
         )
         try:
-            db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                (m['buyer_id'], 'confirmed', f'{bar_name} 입금확인 완료', _buyer_msg))
+            insert_notification(db, m['buyer_id'], 'confirmed', f'{bar_name} 입금확인 완료', _buyer_msg)
         except Exception:
             pass
 
@@ -2292,9 +2294,7 @@ def match_confirm_payment():
                  f'{bar_name} {m["stage"]}단계 판매 완료. 구매자 입금 확인되었습니다.',
                  _tomorrow_5am))
         except Exception:
-            db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                (m['seller_id'], 'confirmed', '송금 확인 완료',
-                 f'{bar_name} {m["stage"]}단계 판매 완료. 구매자 입금 확인되었습니다.'))
+            insert_notification(db, m['seller_id'], 'confirmed', '송금 확인 완료', f'{bar_name} {m["stage"]}단계 판매 완료. 구매자 입금 확인되었습니다.')
 
         db.commit()
         return jsonify(success=True, message='거래 완료')
@@ -2331,13 +2331,9 @@ def match_report_unpaid():
         bar_name = bar_names.get(m['bar_type'], m['bar_type'])
         # 입금요청: status 변경 없이 알림만 발송
         try:
-            db.execute(
-                "INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                (m['buyer_id'], 'payment_request', '입금 요청',
-                 f'{bar_name} {m["stage"]}단계 아이템 입금을 요청합니다.\n'
+            insert_notification(db, m['buyer_id'], 'payment_request', '입금 요청', f'{bar_name} {m["stage"]}단계 아이템 입금을 요청합니다.\n'
                  f'입금 후 송금완료 버튼을 눌러주세요.\n'
                  f'미입금 시 매칭이 취소될 수 있습니다.')
-            )
         except Exception:
             pass
         # reservations status는 유지 (입금요청 단계)
@@ -2349,17 +2345,13 @@ def match_report_unpaid():
         seller = db.execute("SELECT nickname, username FROM users WHERE id=?", (uid,)).fetchone()
         seller_name = seller['nickname'] or seller['username'] if seller else '판매자'
         # 판매자(loopay)에게 미입금 알림
-        db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-            (m['seller_id'], 'unpaid', '미입금 알림',
-             f'매치 #{match_id} 구매자 미입금 알림이 발송됐습니다. 13:00까지 미입금 확정 가능합니다.'))
+        insert_notification(db, m['seller_id'], 'unpaid', '미입금 알림', f'매치 #{match_id} 구매자 미입금 알림이 발송됐습니다. 13:00까지 미입금 확정 가능합니다.')
         # 구매자에게 미입금 알림
         buyer_row = db.execute("SELECT nickname, username FROM users WHERE id=?", (m['buyer_id'],)).fetchone()
         buyer_name_str = buyer_row['nickname'] or buyer_row['username'] if buyer_row else '구매자'
         bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
         bar_n = bar_names.get(m['bar_type'], m['bar_type'])
-        db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-            (m['buyer_id'], 'unpaid', '미입금 알림',
-             f'{bar_n} {m["stage"]}단계 거래에서 미입금이 확인됐습니다. 확인 바랍니다.'))
+        insert_notification(db, m['buyer_id'], 'unpaid', '미입금 알림', f'{bar_n} {m["stage"]}단계 거래에서 미입금이 확인됐습니다. 확인 바랍니다.')
         db.commit()
         return jsonify(success=True, message='미입금 신고 완료')
     except Exception as e:
@@ -2392,12 +2384,8 @@ def admin_confirm_unpaid():
         # 1. match status → unpaid (미입금확정) + 구매자 미입금 알림
         db.execute("UPDATE matches SET status='failed' WHERE id=?", (match_id,))  # 미입금확정=failed
         try:
-            db.execute(
-                "INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                (m['buyer_id'], 'unpaid_confirmed', '미입금 확정',
-                 f'{bar_name} {m["stage"]}단계 아이템 미입금이 확정되었습니다.\n'
+            insert_notification(db, m['buyer_id'], 'unpaid_confirmed', '미입금 확정', f'{bar_name} {m["stage"]}단계 아이템 미입금이 확정되었습니다.\n'
                  f'해당 구매예약이 2차 매칭으로 이전됩니다.')
-            )
         except Exception:
             pass
 
@@ -2419,9 +2407,7 @@ def admin_confirm_unpaid():
             db.execute("UPDATE items SET status='reservable' WHERE id=?", (seller_item['id'],))
 
         # 4. 구매자 알림
-        db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-            (m['buyer_id'], 'unpaid', '미입금 확정',
-             f'{bar_name} {m["stage"]}단계 거래에서 미입금이 확정됐습니다. 2차 매칭으로 자동 이동됩니다.'))
+        insert_notification(db, m['buyer_id'], 'unpaid', '미입금 확정', f'{bar_name} {m["stage"]}단계 거래에서 미입금이 확정됐습니다. 2차 매칭으로 자동 이동됩니다.')
 
         # 5. 2차 구매예약 생성 (기존 예약을 2차로 이전)
         buyer_res = db.execute(
@@ -2994,9 +2980,7 @@ def payment_complete():
         # 판매자 알림
         buyer = db.execute("SELECT nickname, username FROM users WHERE id=?", (uid,)).fetchone()
         buyer_name = buyer['nickname'] or buyer['username'] if buyer else '구매자'
-        db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-            (m['seller_id'], 'payment', '입금 알림',
-             f'{buyer_name}님이 송금완료했습니다. 입금을 확인해주세요. (매치 #{match_id})'))
+        insert_notification(db, m['seller_id'], 'payment', '입금 알림', f'{buyer_name}님이 송금완료했습니다. 입금을 확인해주세요. (매치 #{match_id})')
         db.commit()
         return jsonify(success=True, message='송금완료 처리됐습니다', image_url=img_path)
     except Exception as e:
@@ -3062,11 +3046,10 @@ def unpaid_report():
         ).fetchone() if r['match_id'] else None
         if other_res:
             msg = f"미입금 신고가 접수되었습니다. 예약번호: {reservation_id}"
-            db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(?,?,?,?)",
-                (other_res['user_id'], 'unpaid', '미입금 신고', msg))
+            insert_notification(db, other_res['user_id'], 'unpaid', '미입금 신고', msg)
         # 관리자에게도 알림
-        db.execute("INSERT INTO notifications(user_id,type,title,message) VALUES(1,'admin_unpaid','미입금 신고',?)",
-            (f'사용자 ID:{uid}, 예약:{reservation_id}, 사유:{reason}',))
+        insert_notification(db, 1, 'admin_unpaid', '미입금 신고',
+            f'사용자 ID:{uid}, 예약:{reservation_id}, 사유:{reason}')
         db.commit()
         return jsonify(success=True, message='미입금 신고가 접수되었습니다')
     except Exception as e:
