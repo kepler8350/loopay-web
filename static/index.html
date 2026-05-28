@@ -2660,31 +2660,7 @@ function showMainApp(){
 }
 
 // --- user data ------------------------------------------------------------
-async function loadUserData(){
-  try{
-    const d = await api('/user/me');
-    userData = d;
-    renderHeader(d);
-    renderBars(d);
-    // 예약 여부를 먼저 설정
-    _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
-    enableReserveSection();  // 버튼 초기화 (_reservedToday=false 리셋)
-    _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
-    updateReserveDefaults(d.level);  // updateResUI 호출 (이때 _reservedToday 올바름)
-    if(_reservedToday){
-      disableReserveSection();
-    }
-    // 다음날 05:00 재활성화 타이머 설정
-    scheduleReserveReset();
-    // 예약완료 상태 강제 재적용 (다른 비동기 코드가 덮어쓰는 것 방지)
-    if(_reservedToday){
-      setTimeout(function(){ if(_reservedToday) disableReserveSection(); }, 300);
-    }
-  }catch(e){
-  console.error('loadUserData error:', e.message);
-  }
-  loadPrices();
-}
+// (loadUserData 구버전 제거 - 신버전 사용)
 
 
 
@@ -2805,7 +2781,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
     var hMnt = document.getElementById('h-maintain');
     var hSb = document.getElementById('h-sub');
     if(hTot) hTot.textContent = _remainCharge.toLocaleString() + ' P';
-    if(hMnt) hMnt.textContent = (cost > 0 ? cost : (_exchangePts||0)).toLocaleString() + ' P';
+    // h-maintain은 renderHeader의 maintain_points(DB값)으로만 설정 (updateResUI에서 변경 금지)
     if(hSb) hSb.textContent = '충전 '+_remainCharge.toLocaleString()+'P + 전환 '+_remainExchange.toLocaleString()+'P';
   }
   // 버튼 활성/비활성
