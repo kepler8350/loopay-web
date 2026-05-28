@@ -398,10 +398,10 @@ function renderHeader(d){
   if(row) row.classList.add('cur');
   // highlight cum chip
   document.querySelectorAll('.cum-chip').forEach(c=>c.classList.remove('cur'));
-  // 매칭유지포인트 = 오늘 매칭된 수 × 40P
+  // 매칭유지포인트 = DB의 maintain_points 실제값
   var mEl=document.getElementById('h-maintain');
   if(mEl){
-    var maintainPts = (d.match_maintain_cost != null) ? d.match_maintain_cost : (d.today_reserve_cost||0);
+    var maintainPts = (d.maintain_points != null) ? d.maintain_points : 0;
     mEl.textContent = maintainPts.toLocaleString()+' P';
   }
 }
@@ -1820,7 +1820,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
     var hMaintain = document.getElementById('h-maintain');
     var hSub = document.getElementById('h-sub');
     if(hTotal) hTotal.textContent = remainCharge.toLocaleString() + ' P';
-    if(hMaintain) hMaintain.textContent = (cost > 0 ? cost : (exchangePts||0)).toLocaleString() + ' P';
+    if(hMaintain) hMaintain.textContent = cost.toLocaleString() + ' P';
     if(hSub) hSub.textContent = '충전 '+remainCharge.toLocaleString()+'P + 전환 '+remainExchange.toLocaleString()+'P';
   }
   // 버튼 활성/비활성
