@@ -72,8 +72,6 @@ async function loadUserData(){
     _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
     enableReserveSection();
     _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
-    // 거래 정지 체크
-    checkSuspended(d);
     updateReserveDefaults(d.level);  // UI 업데이트 (내부적으로 updateResUI 호출, _reservedToday 참조)
     if(_reservedToday){
       disableReserveSection();  // 버튼 텍스트/스타일 최종 적용
@@ -96,6 +94,8 @@ async function loadUserData(){
     renderLevelTab();
     updateReserveDefaults(1);
   }
+  // 거래 정지 체크 - 모든 버튼 설정 후 마지막에 실행 (최우선 적용)
+  checkSuspended(userData);
   loadPrices(); loadNotifBadge();
 }
 
@@ -1483,6 +1483,7 @@ function enableReserveSection(){
 }
 
 function updateResUI(BZ_MIN,BZ_MAX){
+  if(window._isSuspended){ checkSuspended(window.userData); return; }
   var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
   var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
   // sv/gd는 전역 변수로 관리 (독립 선택)
@@ -1753,32 +1754,43 @@ function checkSuspended(d){
   var now = getEffectiveDate ? getEffectiveDate() : new Date();
   var suspendedUntil = d && d.suspended_until ? new Date(d.suspended_until.replace(' ','T')) : null;
   var isSuspended = suspendedUntil && now < suspendedUntil;
-  // 구매/판매 예약 버튼 비활성화
-  var reserveBtn = document.getElementById('reserve-btn');
-  var sellBtns = document.querySelectorAll('.sell-reserve-btn, [onclick*="doSellReservation"]');
+
+  // ★ 거래 정지 시 모든 조건보다 우선하여 버튼 비활성화
   if(isSuspended){
-    if(reserveBtn){
-      reserveBtn.disabled = true;
-      reserveBtn.style.opacity='0.4';
-      reserveBtn.style.cursor='not-allowed';
-      reserveBtn.title='거래 정지 중 - 패널티 탭에서 해제하세요';
-    }
-    sellBtns.forEach(function(b){ b.disabled=true; b.style.opacity='0.4'; b.style.cursor='not-allowed'; });
-    // +/- 버튼도 비활성
+    // 구매예약 +/- 버튼
     ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
       var el=document.getElementById(id);
-      if(el){ el.disabled=true; }
+      if(el){ el.disabled=true; el.style.cursor='not-allowed'; }
     });
-    // 정지 안내 배너 표시
+    // 구매예약 확정 버튼
+    var reserveBtn = document.getElementById('reserve-btn');
+    if(reserveBtn){
+      reserveBtn.disabled=true;
+      reserveBtn.style.opacity='0.4';
+      reserveBtn.style.cursor='not-allowed';
+      reserveBtn.title='거래 정지 중';
+    }
+    // 판매예약 버튼 (판매예약하기)
+    document.querySelectorAll('.sell-reserve-btn,[onclick*="doSellReservation"],[onclick*="판매 예약하기"]').forEach(function(b){
+      b.disabled=true; b.style.opacity='0.4'; b.style.cursor='not-allowed';
+    });
+    // 판매예약 버튼 id로도
+    var sellBtn = document.getElementById('sell-reserve-btn') || document.querySelector('[onclick*="doSellReservationBulk"]');
+    if(sellBtn){ sellBtn.disabled=true; sellBtn.style.opacity='0.4'; sellBtn.style.cursor='not-allowed'; }
+    // 배너
     var banner = document.getElementById('suspend-banner');
     if(banner){
+      var untilDate = (d.suspended_until||'').slice(0,10);
+      var resumeTime = untilDate ? untilDate + ' 01:00' : '';
       banner.style.display='block';
-      banner.innerHTML = '🚫 거래 정지 중 (' + (d.suspended_until||'').slice(0,10) + '까지) — 패널티 탭에서 해제하세요';
+      banner.innerHTML = '🚫 거래 정지 중 — 거래 재개: ' + resumeTime + ' | 패널티 탭에서 해제하세요';
     }
   } else {
     var banner = document.getElementById('suspend-banner');
     if(banner) banner.style.display='none';
   }
+  // 정지 상태를 전역에 저장 (updateResUI 등에서 참조)
+  window._isSuspended = isSuspended;
 }
 
 // ── 패널티 탭 로드 ──────────────────────────────────────
@@ -1860,7 +1872,9 @@ async function doReleasePenalty(){
   try {
     var d = await api('/penalty/release', {method:'POST', body:JSON.stringify({})});
     closePenaltyPopup();
-    toast(d.message || '패널티 해제 완료', 'success');
+    var msg = d.message || '패널티 해제 완료';
+    if(d.resume_at) msg += ' 거래 재개: ' + d.resume_at.slice(0,10) + ' 01:00';
+    toast(msg, 'success');
     await loadUserData();
     loadPenaltyTab();
   } catch(e){
