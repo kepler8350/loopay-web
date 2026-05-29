@@ -726,6 +726,33 @@ def get_levels():
 def get_penalty_table():
     return jsonify(penalties=[{'count':c,'days':d,'release_points':p} for c,d,p in PENALTY_TABLE])
 
+@app.route('/api/admin/migrate-db', methods=['POST'])
+@jwt_required()
+def admin_migrate_db():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    import sqlite3 as _sq3
+    from db import DB_PATH as _DB_PATH
+    results = []
+    migrations = [
+        "ALTER TABLE users ADD COLUMN suspended_until DATETIME",
+        "ALTER TABLE users ADD COLUMN unpaid_count INTEGER DEFAULT 0",
+        "ALTER TABLE penalties ADD COLUMN match_id INTEGER",
+        "ALTER TABLE penalties ADD COLUMN release_at DATETIME",
+        "ALTER TABLE penalties ADD COLUMN match_round INTEGER DEFAULT 1",
+    ]
+    _c = _sq3.connect(_DB_PATH, timeout=10)
+    for sql in migrations:
+        try:
+            _c.execute(sql)
+            _c.commit()
+            results.append({'sql': sql, 'status': 'ok'})
+        except Exception as e:
+            results.append({'sql': sql, 'status': 'skipped: '+str(e)[:50]})
+    _c.close()
+    return jsonify(success=True, results=results)
+
+
 @app.route('/api/admin/pending-users', methods=['GET'])
 def admin_pending_users():
     """승인 대기 중인 회원 목록"""
