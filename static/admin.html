@@ -1076,7 +1076,7 @@ function loadRound2AutoSetting(){
     }).catch(()=>{});
 }
 
-function loadSystemItems(){
+async function loadSystemItems(){
   var tbody = document.getElementById('si-tbody');
   var summary = document.getElementById('si-summary');
   if(tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
