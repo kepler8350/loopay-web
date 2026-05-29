@@ -70,8 +70,10 @@ async function loadUserData(){
     renderLevelTab();
     // 예약 여부를 먼저 설정 후 enableReserveSection 호출 (포인트 미리보기 오작동 방지)
     _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
-    enableReserveSection();  // 버튼 텍스트/스타일 초기화 (_reservedToday=false로 리셋되지만 즉시 재설정됨)
+    enableReserveSection();
     _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
+    // 거래 정지 체크
+    checkSuspended(d);
     updateReserveDefaults(d.level);  // UI 업데이트 (내부적으로 updateResUI 호출, _reservedToday 참조)
     if(_reservedToday){
       disableReserveSection();  // 버튼 텍스트/스타일 최종 적용
@@ -1743,5 +1745,126 @@ async function loadNotifications(){
   }catch(e){
     const list=document.getElementById('notif-list');
     if(list) list.innerHTML='<div style="text-align:center;color:#e53935;padding:40px 0">알림을 불러오지 못했습니다</div>';
+  }
+}
+
+// ── 거래 정지 체크 ──────────────────────────────────────
+function checkSuspended(d){
+  var now = getEffectiveDate ? getEffectiveDate() : new Date();
+  var suspendedUntil = d && d.suspended_until ? new Date(d.suspended_until.replace(' ','T')) : null;
+  var isSuspended = suspendedUntil && now < suspendedUntil;
+  // 구매/판매 예약 버튼 비활성화
+  var reserveBtn = document.getElementById('reserve-btn');
+  var sellBtns = document.querySelectorAll('.sell-reserve-btn, [onclick*="doSellReservation"]');
+  if(isSuspended){
+    if(reserveBtn){
+      reserveBtn.disabled = true;
+      reserveBtn.style.opacity='0.4';
+      reserveBtn.style.cursor='not-allowed';
+      reserveBtn.title='거래 정지 중 - 패널티 탭에서 해제하세요';
+    }
+    sellBtns.forEach(function(b){ b.disabled=true; b.style.opacity='0.4'; b.style.cursor='not-allowed'; });
+    // +/- 버튼도 비활성
+    ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el){ el.disabled=true; }
+    });
+    // 정지 안내 배너 표시
+    var banner = document.getElementById('suspend-banner');
+    if(banner){
+      banner.style.display='block';
+      banner.innerHTML = '🚫 거래 정지 중 (' + (d.suspended_until||'').slice(0,10) + '까지) — 패널티 탭에서 해제하세요';
+    }
+  } else {
+    var banner = document.getElementById('suspend-banner');
+    if(banner) banner.style.display='none';
+  }
+}
+
+// ── 패널티 탭 로드 ──────────────────────────────────────
+async function loadPenaltyTab(){
+  try {
+    var d = await api('/user/penalties');
+    var pending = d.pending_penalty;
+    var btn = document.getElementById('penalty-release-btn');
+    var statusText = document.getElementById('penalty-status-text');
+    var infoBox = document.getElementById('my-penalty-info');
+    var detailText = document.getElementById('penalty-detail-text');
+
+    if(pending && !pending.is_released){
+      // 패널티 해제 버튼 활성화
+      if(btn){
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+      }
+      if(statusText){
+        statusText.textContent = '미해제 패널티 있음 — 해제 포인트: ' + (pending.release_points||0).toLocaleString() + 'P';
+        statusText.style.color = '#ef5350';
+      }
+      if(infoBox) infoBox.style.display = 'block';
+      if(detailText && d.suspended_until){
+        detailText.innerHTML =
+          '• 누적 미입금: ' + (d.unpaid_count||0) + '회<br>' +
+          '• 정지 해제일: ' + (d.suspended_until||'').slice(0,10) + '<br>' +
+          '• 해제 포인트: ' + (pending.release_points||0).toLocaleString() + 'P<br>' +
+          '• 해제 포인트 충전 후 해제 버튼을 눌러주세요.';
+      }
+    } else {
+      if(btn){ btn.disabled=true; btn.style.opacity='0.4'; btn.style.cursor='not-allowed'; }
+      if(statusText){ statusText.textContent = '현재 패널티 없음'; statusText.style.color='#888'; }
+      if(infoBox) infoBox.style.display = 'none';
+    }
+  } catch(e) { console.error('loadPenaltyTab:', e); }
+}
+
+async function showPenaltyReleasePopup(){
+  try {
+    var d = await api('/user/penalties');
+    var pending = d.pending_penalty;
+    if(!pending) return;
+    var relPts = pending.release_points || 0;
+    var me = await api('/user/me');
+    var totalPts = (me.charge_points||0) + (me.exchange_points||0);
+    var content = document.getElementById('penalty-popup-content');
+    var confirmBtn = document.getElementById('penalty-confirm-btn');
+    var overlay = document.getElementById('penalty-release-overlay');
+    if(content){
+      if(totalPts >= relPts){
+        content.innerHTML =
+          '<div style="color:#f9a825;margin-bottom:10px">해제 후 포인트가 차감됩니다.</div>' +
+          '• 해제 포인트: <strong>' + relPts.toLocaleString() + 'P</strong><br>' +
+          '• 현재 포인트: ' + totalPts.toLocaleString() + 'P<br>' +
+          '• 차감 후 잔액: ' + (totalPts - relPts).toLocaleString() + 'P';
+        if(confirmBtn){ confirmBtn.style.display='block'; }
+      } else {
+        content.innerHTML =
+          '<div style="color:#ef5350;margin-bottom:10px">포인트가 부족합니다.</div>' +
+          '• 해제 포인트: <strong>' + relPts.toLocaleString() + 'P</strong><br>' +
+          '• 현재 포인트: ' + totalPts.toLocaleString() + 'P<br>' +
+          '• 부족 포인트: ' + (relPts - totalPts).toLocaleString() + 'P<br><br>' +
+          '<span style="color:#888;font-size:11px">포인트를 충전 후 해제하세요.</span>';
+        if(confirmBtn){ confirmBtn.style.display='none'; }
+      }
+    }
+    if(overlay){ overlay.style.display='flex'; }
+  } catch(e){ toast('오류 발생','error'); }
+}
+
+function closePenaltyPopup(){
+  var overlay = document.getElementById('penalty-release-overlay');
+  if(overlay) overlay.style.display = 'none';
+}
+
+async function doReleasePenalty(){
+  try {
+    var d = await api('/penalty/release', {method:'POST', body:JSON.stringify({})});
+    closePenaltyPopup();
+    toast(d.message || '패널티 해제 완료', 'success');
+    await loadUserData();
+    loadPenaltyTab();
+  } catch(e){
+    closePenaltyPopup();
+    toast(e.message || '패널티 해제 실패', 'error');
   }
 }

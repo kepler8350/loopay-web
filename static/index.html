@@ -1,4 +1,4 @@
-<!DOCTYPE html><!-- v20260528143832 -->
+<!DOCTYPE html><!-- v20260529073924 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -280,7 +280,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 }
 .notif-blink{animation:notif-blink-anim 1s ease-in-out infinite!important;}
 </style>
-<script src="/static/app1.js?v=20260528143832"></script>
+<script src="/static/app1.js?v=20260529073924"></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -335,6 +335,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
   <!-- MAIN APP (hidden until login) -->
   <div id="main-app" style="display:none;flex-direction:column;height:100vh;position:relative">
+  <div id="suspend-banner" style="display:none;background:#c62828;color:#fff;padding:8px 16px;font-size:13px;font-weight:600;text-align:center;position:sticky;top:0;z-index:100"></div>
     <div class="header" style="position:relative">
       <!-- 헤더 상단: 로고 좌측 / 배지+레벨+로그아웃 우측 -->
       <div class="header-top">
@@ -406,7 +407,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="nav-btn" onclick="showTab('price',this)">가격표</button>
       <button class="nav-btn" onclick="showTab('level',this)">레벨</button>
       <button class="nav-btn" onclick="showTab('point',this)">포인트</button>
-      <button class="nav-btn" onclick="showTab('penalty',this)">패널티</button>
+      <button class="nav-btn" onclick="showTab('penalty',this);loadPenaltyTab()">패널티</button>
       <button class="nav-btn" onclick="showTab('profile',this);loadProfileForm()">내정보</button>
       <button class="nav-btn" onclick="showTab('history',this)">내역</button>
     </div>
@@ -722,6 +723,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
       <!-- PENALTY -->
       <div id="tab-penalty" class="tab">
+        <!-- 패널티 해제 버튼 영역 -->
+        <div id="penalty-release-section" style="margin-bottom:14px">
+          <button id="penalty-release-btn" onclick="showPenaltyReleasePopup()"
+            disabled
+            style="width:100%;padding:12px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:not-allowed;opacity:0.4;transition:all 0.2s">
+            🔓 패널티 해제하기
+          </button>
+          <div id="penalty-status-text" style="font-size:12px;color:#aaa;text-align:center;margin-top:6px"></div>
+        </div>
+        <!-- 내 패널티 현황 -->
+        <div id="my-penalty-info" style="background:#1a1a2e;border:1px solid #2d2d5e;border-radius:8px;padding:12px;margin-bottom:14px;display:none">
+          <div style="font-size:13px;font-weight:700;color:#ef5350;margin-bottom:8px">⚠️ 현재 거래 정지 중</div>
+          <div id="penalty-detail-text" style="font-size:12px;color:#cdd6f4;line-height:1.8"></div>
+        </div>
         <div class="sec-title">미입금 패널티</div>
         <div class="warn-block">미입금 횟수 누적 시 거래정지 기간 증가. 패널티 해제 포인트 사용 시점부터 정지 시작.</div>
         <table class="pen-table">
@@ -819,6 +834,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <button onclick="closeAdminPanel()" style="padding:7px 14px;background:var(--bg2);border:none;border-radius:8px;color:var(--text1);cursor:pointer">닫기</button>
 
 <div id="toast" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 22px;border-radius:8px;font-size:14px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:9999"></div>
+<!-- 패널티 해제 팝업 -->
+<div id="penalty-release-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#1a1a2e;border:1px solid #2d2d5e;border-radius:12px;padding:24px;width:320px;max-width:90vw">
+    <h3 style="color:#ef5350;margin:0 0 16px;font-size:16px">🔓 패널티 해제</h3>
+    <div id="penalty-popup-content" style="font-size:13px;color:#cdd6f4;line-height:1.8;margin-bottom:16px"></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="closePenaltyPopup()" style="flex:1;padding:10px;background:#2a2a3a;color:#cdd6f4;border:1px solid #444;border-radius:6px;font-size:13px;cursor:pointer">취소</button>
+      <button id="penalty-confirm-btn" onclick="doReleasePenalty()" style="flex:1;padding:10px;background:#c62828;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">해제 확정</button>
+    </div>
+  </div>
+</div>
+
 <!-- 충전 확인 모달 -->
 <div class="reserve-confirm-overlay" id="charge-confirm-overlay">
   <div class="reserve-confirm-box" style="max-width:360px;width:90%">
@@ -896,6 +923,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 </div>
-<script src="/static/app2.js?v=20260528143832"></script>
+<script src="/static/app2.js?v=20260529073924"></script>
 </body>
 </html>

@@ -413,8 +413,36 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
   </div>
 </div>
 </div></div>
-<div id="page-penalties" class="page"><div class="page-title">&#54056;&#45328;&#54000; &#44288;&#47532;</div><div class="page-sub">&#54056;&#45328;&#54000; &#45236;&#50669; &#54869;&#51064;</div>
-<div class="table-card"><div class="table-header"><div class="table-title">&#54056;&#45328;&#54000; &#47785;&#47197;</div></div></div>
+<div id="page-penalties" class="page">
+  <h2 class="page-title">패널티 관리</h2>
+  <p class="page-subtitle">미입금 패널티 내역 확인 및 해제 관리</p>
+  <div class="card" style="padding:14px 16px;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="card-title">패널티 목록</div>
+      <button onclick="loadAdminPenalties()" style="padding:6px 14px;background:#1976d2;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🔄 새로고침</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#1a1a2e;color:#a0a0c0">
+            <th style="padding:8px;text-align:center">ID</th>
+            <th style="padding:8px;text-align:left">사용자</th>
+            <th style="padding:8px;text-align:center">누적횟수</th>
+            <th style="padding:8px;text-align:center">정지일수</th>
+            <th style="padding:8px;text-align:center">해제포인트</th>
+            <th style="padding:8px;text-align:center">차수</th>
+            <th style="padding:8px;text-align:center">발생일시</th>
+            <th style="padding:8px;text-align:center">정지해제일</th>
+            <th style="padding:8px;text-align:center">상태</th>
+            <th style="padding:8px;text-align:center">관리</th>
+          </tr>
+        </thead>
+        <tbody id="admin-penalty-tbody">
+          <tr><td colspan="10" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
 
 <div id="page-members" class="page">
@@ -1095,6 +1123,55 @@ function loadRound2AutoSetting(){
       if(manualEl) manualEl.checked = (val!=='true');
       if(autoEl) autoEl.checked = (val==='true');
     }).catch(()=>{});
+}
+
+async function loadAdminPenalties(){
+  var tbody = document.getElementById('admin-penalty-tbody');
+  if(!tbody) return;
+  try{
+    var d = await apiAdmin('/admin/penalties');
+    var penalties = d.penalties || [];
+    if(!penalties.length){
+      tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:#888">패널티 없음</td></tr>';
+      return;
+    }
+    var now = new Date();
+    tbody.innerHTML = penalties.map(function(p,i){
+      var bg = i%2===0?'#12121f':'#1a1a2e';
+      var roundBadge = p.match_round===2
+        ? '<span style="padding:1px 5px;border-radius:6px;font-size:10px;background:#7b1fa233;color:#ce93d8">2차</span>'
+        : '<span style="padding:1px 5px;border-radius:6px;font-size:10px;background:#1565c033;color:#90caf9">1차</span>';
+      var isActive = !p.is_released && p.suspended_until && new Date(p.suspended_until.replace(' ','T')) > now;
+      var statusBadge = p.is_released
+        ? '<span style="color:#66bb6a;font-size:11px">해제됨</span>'
+        : (isActive ? '<span style="color:#ef5350;font-size:11px">🚫 정지중</span>'
+                    : '<span style="color:#f9a825;font-size:11px">⏳ 미해제</span>');
+      var releaseBtn = (!p.is_released)
+        ? '<button onclick="adminReleasePenalty('+p.id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">해제</button>'
+        : '-';
+      return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
+        +'<td style="padding:6px;text-align:center;color:#888">'+p.id+'</td>'
+        +'<td style="padding:6px;color:#64b5f6">'+p.username+'<br><span style="color:#888;font-size:10px">'+p.nickname+'</span></td>'
+        +'<td style="padding:6px;text-align:center;color:#f9a825">'+p.unpaid_count+'회</td>'
+        +'<td style="padding:6px;text-align:center">'+p.suspend_days+'일</td>'
+        +'<td style="padding:6px;text-align:center;color:#ce93d8">'+p.release_points.toLocaleString()+'P</td>'
+        +'<td style="padding:6px;text-align:center">'+roundBadge+'</td>'
+        +'<td style="padding:6px;text-align:center;font-size:11px;color:#888">'+(p.created_at||'').slice(0,16)+'</td>'
+        +'<td style="padding:6px;text-align:center;font-size:11px">'+(p.suspended_until||'-').slice(0,10)+'</td>'
+        +'<td style="padding:6px;text-align:center">'+statusBadge+'</td>'
+        +'<td style="padding:6px;text-align:center">'+releaseBtn+'</td>'
+        +'</tr>';
+    }).join('');
+  }catch(e){ if(tbody) tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:#ef5350">오류: '+e.message+'</td></tr>'; }
+}
+
+async function adminReleasePenalty(penaltyId){
+  if(!confirm('패널티를 해제하시겠습니까?')) return;
+  try{
+    var d = await apiAdmin('/admin/penalty/release',{method:'POST',body:JSON.stringify({penalty_id:penaltyId})});
+    toast('패널티 해제 완료','success');
+    loadAdminPenalties();
+  }catch(e){ toast(e.message||'오류','error'); }
 }
 
 async function loadSystemItems(){

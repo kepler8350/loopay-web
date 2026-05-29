@@ -529,7 +529,9 @@ def get_me():
         _maintain = u['maintain_points'] or 0
     except Exception:
         _maintain = 0
-    return jsonify(id=u['id'],username=u['username'],nickname=u['nickname'],level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],maintain_points=_maintain,match_maintain_cost=_maintain,today_reserve_cost=0,cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve)
+    return jsonify(id=u['id'],username=u['username'],nickname=u['nickname'],level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],maintain_points=_maintain,match_maintain_cost=_maintain,today_reserve_cost=0,cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve,
+            suspended_until=u['suspended_until'] if 'suspended_until' in u.keys() else None,
+            unpaid_count=int(u['unpaid_count'] or 0) if 'unpaid_count' in u.keys() else 0)
 
 @app.route('/api/reservation/preview', methods=['POST'])
 @jwt_required()
@@ -746,6 +748,116 @@ def admin_pending_users():
         return jsonify(users=users)
     finally:
         db.close()
+
+# ── 패널티 해제 (사용자) ────────────────────────────────────
+@app.route('/api/penalty/release', methods=['POST'])
+@jwt_required()
+def user_release_penalty():
+    uid = int(get_jwt_identity())
+    db = get_db()
+    try:
+        # 미해제 패널티 조회
+        penalty = db.execute(
+            "SELECT * FROM penalties WHERE user_id=? AND is_released=0 ORDER BY id DESC LIMIT 1",
+            (uid,)
+        ).fetchone()
+        if not penalty:
+            return jsonify(error='해제할 패널티가 없습니다'), 400
+        release_pts = int(penalty['release_points'])
+        u = db.execute("SELECT charge_points, exchange_points FROM users WHERE id=?", (uid,)).fetchone()
+        total_pts = int(u['charge_points'] or 0) + int(u['exchange_points'] or 0)
+        if total_pts < release_pts:
+            return jsonify(error=f'포인트가 부족합니다. 해제 포인트: {release_pts:,}P, 보유: {total_pts:,}P',
+                          need_charge=True, release_points=release_pts), 400
+        # 포인트 차감 (charge_points 우선)
+        ch = int(u['charge_points'] or 0)
+        ex = int(u['exchange_points'] or 0)
+        if ch >= release_pts:
+            db.execute("UPDATE users SET charge_points=charge_points-? WHERE id=?", (release_pts, uid))
+        else:
+            from_ch = ch
+            from_ex = release_pts - from_ch
+            db.execute("UPDATE users SET charge_points=0, exchange_points=exchange_points-? WHERE id=?", (from_ex, uid))
+        # 패널티 해제
+        db.execute("UPDATE penalties SET is_released=1 WHERE id=?", (penalty['id'],))
+        db.execute("UPDATE users SET suspended_until=NULL WHERE id=?", (uid,))
+        insert_notification(db, uid, 'penalty_released', '거래 정지 해제', 
+            f'해제 포인트 {release_pts:,}P가 차감되어 거래 정지가 해제되었습니다.')
+        db.commit()
+        return jsonify(success=True, message=f'패널티 해제 완료. {release_pts:,}P 차감', released_points=release_pts)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+# ── 사용자 패널티 내역 조회 ──────────────────────────────────
+@app.route('/api/user/penalties', methods=['GET'])
+@jwt_required()
+def user_penalties():
+    uid = int(get_jwt_identity())
+    db = get_db()
+    try:
+        rows = db.execute(
+            "SELECT * FROM penalties WHERE user_id=? ORDER BY id DESC",
+            (uid,)
+        ).fetchall()
+        u = db.execute("SELECT suspended_until, unpaid_count FROM users WHERE id=?", (uid,)).fetchone()
+        pending = db.execute(
+            "SELECT * FROM penalties WHERE user_id=? AND is_released=0 ORDER BY id DESC LIMIT 1", (uid,)
+        ).fetchone()
+        return jsonify(
+            penalties=[dict(r) for r in rows],
+            suspended_until=u['suspended_until'] if u else None,
+            unpaid_count=int(u['unpaid_count'] or 0) if u else 0,
+            pending_penalty=dict(pending) if pending else None
+        )
+    finally:
+        db.close()
+
+# ── 관리자 패널티 관리 ───────────────────────────────────────
+@app.route('/api/admin/penalties', methods=['GET'])
+@jwt_required()
+def admin_penalties():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    try:
+        rows = db.execute("""
+            SELECT p.*, u.username, u.nickname, u.suspended_until,
+                   m.bar_type, m.match_round
+            FROM penalties p
+            JOIN users u ON p.user_id = u.id
+            LEFT JOIN matches m ON p.match_id = m.id
+            ORDER BY p.id DESC
+        """).fetchall()
+        return jsonify(penalties=[dict(r) for r in rows])
+    finally:
+        db.close()
+
+@app.route('/api/admin/penalty/release', methods=['POST'])
+@jwt_required()
+def admin_release_penalty():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    penalty_id = int(data.get('penalty_id', 0))
+    db = get_db()
+    try:
+        p = db.execute("SELECT * FROM penalties WHERE id=?", (penalty_id,)).fetchone()
+        if not p: return jsonify(error='패널티 없음'), 400
+        db.execute("UPDATE penalties SET is_released=1 WHERE id=?", (penalty_id,))
+        db.execute("UPDATE users SET suspended_until=NULL WHERE id=?", (p['user_id'],))
+        insert_notification(db, p['user_id'], 'penalty_released', '거래 정지 해제 (관리자)',
+            '관리자에 의해 거래 정지가 해제되었습니다.')
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 
 @app.route('/api/admin/approve-user', methods=['POST'])
 def admin_approve_user():
@@ -1250,16 +1362,17 @@ def admin_run_matching():
             _item_list = _bdata['items']
             if not _item_list:
                 continue
+            _round_label = f"{round_num}차 "
             if len(_item_list) == 1:
-                _notif_title = f"{_item_list[0].split('(')[0].strip()} 매칭 완료"
+                _notif_title = f"{_round_label}{_item_list[0].split('(')[0].strip()} 매칭 완료"
                 _notif_body = (
-                    f"✅ {_item_list[0].split('(')[0].strip()} 매칭이 완료되었습니다.\n"
+                    f"✅ {_round_label}{_item_list[0].split('(')[0].strip()} 매칭이 완료되었습니다.\n"
                     f"\n📋 매칭 정보\n"
                     f"• 아이템: {_item_list[0]}\n"
                     f"\n매칭탭에서 송금완료 버튼을 눌러주세요."
                 )
             else:
-                _notif_title = f"매칭 완료 ({len(_item_list)}건)"
+                _notif_title = f"{_round_label}매칭 완료 ({len(_item_list)}건)"
                 _items_str = '\n'.join(f'  • {it}' for it in _item_list)
                 _notif_body = (
                     f"✅ {len(_item_list)}건 매칭이 완료되었습니다.\n"
@@ -1514,6 +1627,11 @@ with app.app_context():
             "ALTER TABLE matches ADD COLUMN seller_item_id INTEGER",
             "ALTER TABLE matches ADD COLUMN points_deducted INTEGER DEFAULT 0",
             "ALTER TABLE users ADD COLUMN maintain_points INTEGER DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN suspended_until DATETIME",
+            "ALTER TABLE users ADD COLUMN unpaid_count INTEGER DEFAULT 0",
+            "ALTER TABLE penalties ADD COLUMN match_id INTEGER",
+            "ALTER TABLE penalties ADD COLUMN release_at DATETIME",
+            "ALTER TABLE penalties ADD COLUMN match_round INTEGER DEFAULT 1",
             "ALTER TABLE notifications ADD COLUMN scheduled_at DATETIME",
         ]:
             try:
@@ -2636,12 +2754,46 @@ def admin_confirm_unpaid():
                     (_seller_uid, m['bar_type'], _stage, _today, seller_item['id'])
                 )
 
-        # 4. 구매자 알림 1개만 발송
-        insert_notification(db, m['buyer_id'], 'unpaid_confirmed', '미입금 확정',
-            f'{bar_name} {m["stage"]}단계 거래 미입금이 확정됐습니다. 2차 매칭으로 자동 이동됩니다.')
+        # 4. 구매자 패널티 처리
+        buyer_id = m['buyer_id']
+        buyer_row = db.execute("SELECT unpaid_count, charge_points, exchange_points FROM users WHERE id=?", (buyer_id,)).fetchone()
+        current_count = int(buyer_row['unpaid_count'] or 0) + 1 if buyer_row else 1
+        # PENALTY_TABLE: [(count, days, release_points), ...]
+        penalty_entry = next((p for p in PENALTY_TABLE if p[0] == current_count), PENALTY_TABLE[-1])
+        suspend_days = penalty_entry[1]
+        release_pts  = penalty_entry[2]
+        # 정지 시작 = 지금, 정지 해제 = +suspend_days일 후
+        _now_str  = get_now().strftime('%Y-%m-%d %H:%M:%S')
+        from datetime import timedelta
+        _release_dt = get_now() + timedelta(days=suspend_days)
+        _release_str = _release_dt.strftime('%Y-%m-%d %H:%M:%S')
+        # users 정지 처리
+        db.execute("UPDATE users SET unpaid_count=?, suspended_until=? WHERE id=?",
+                   (current_count, _release_str, buyer_id))
+        # penalties 기록
+        db.execute(
+            """INSERT INTO penalties(user_id,unpaid_count,suspend_days,release_points,is_released,created_at,match_id,match_round)
+               VALUES(?,?,?,?,0,?,?,?)""",
+            (buyer_id, current_count, suspend_days, release_pts, _now_str, match_id, m['match_round'] or 1)
+        )
+        # 2차 매칭 구매예약 취소 (미입금 구매자 2차 제외)
+        if m['reservation_id']:
+            db.execute("UPDATE reservations SET status='cancelled' WHERE user_id=? AND match_round=2 AND status='pending'",
+                       (buyer_id,))
+        # 구매자 알림 - 패널티 내용 포함
+        _notif_msg = (
+            f'{bar_name} {m["stage"]}단계 거래 미입금이 확정됐습니다.\n\n'
+            f'⚠️ 패널티 안내 (누적 {current_count}회)\n'
+            f'• 거래 정지 기간: {suspend_days}일 ({_now_str[:10]} ~ {_release_str[:10]})\n'
+            f'• 해제 포인트: {release_pts:,}P\n\n'
+            f'해제 포인트 충전 후 [패널티] 탭에서 해제 버튼을 눌러주세요.\n'
+            f'정지 기간 종료 후 4일차부터 거래가 재개됩니다.'
+        )
+        insert_notification(db, buyer_id, 'penalty', '거래 정지 안내', _notif_msg)
 
         db.commit()
-        return jsonify(success=True, message='미입금 확정 완료, 2차 매칭 대기로 이전')
+        return jsonify(success=True, message=f'미입금 확정, 패널티 {suspend_days}일 정지 처리 완료',
+                       penalty={'days':suspend_days,'release_points':release_pts,'count':current_count})
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
