@@ -1402,16 +1402,15 @@ def admin_matching_status():
     loopay_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
     loopay_id = loopay_row['id'] if loopay_row else -1
 
-    # ── failed 매치 → 2차 sell 예약 백필 ──
+    # ── failed 매치 → 2차 sell 예약 백필 (seller_id 컬럼 없을 경우 대비) ──
     _today_str = get_today().isoformat()
     _failed_without_r2 = db.execute(
-        """SELECT m.id, m.bar_type, m.stage, m.seller_id
+        """SELECT m.id, m.bar_type, COALESCE(m.stage,1) as stage
            FROM matches m
            WHERE m.match_round=1 AND m.status='failed' AND m.match_date=?
-           AND m.seller_id=?
            AND NOT EXISTS (
                SELECT 1 FROM reservations r2
-               WHERE r2.user_id=m.seller_id AND r2.bar_type=m.bar_type
+               WHERE r2.user_id=? AND r2.bar_type=m.bar_type
                AND r2.match_round=2 AND r2.status='pending'
                AND r2.reserve_date=? AND r2.item_id IS NOT NULL
            )""",
@@ -2627,26 +2626,29 @@ def admin_confirm_unpaid():
                          WHERE id=?""", (m['reservation_id'],))
 
         # 3. loopay 판매 아이템 → reservable + 2차 sell 예약 생성
+        # seller_id가 null일 수 있으므로 loopay_id 직접 사용
+        _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        _seller_uid = (_loopay_row['id'] if _loopay_row else None) or (m['seller_id'] if 'seller_id' in m.keys() else None)
         seller_item = db.execute(
             """SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='matched'
                ORDER BY id DESC LIMIT 1""",
-            (m['seller_id'], m['bar_type'])
-        ).fetchone()
+            (_seller_uid, m['bar_type'])
+        ).fetchone() if _seller_uid else None
         if seller_item:
             db.execute("UPDATE items SET status='reservable' WHERE id=?", (seller_item['id'],))
-            # 2차 sell 예약 즉시 생성 (matching-status에서 바로 집계되도록)
+            # 2차 sell 예약 즉시 생성
             _today = get_today().isoformat()
             _stage = m['stage'] or 1
             _dup = db.execute(
                 """SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND stage=?
                    AND match_round=2 AND status='pending' AND reserve_date=? AND item_id=?""",
-                (m['seller_id'], m['bar_type'], _stage, _today, seller_item['id'])
+                (_seller_uid, m['bar_type'], _stage, _today, seller_item['id'])
             ).fetchone()
             if not _dup:
                 db.execute(
                     """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed,item_id)
                        VALUES(?,?,?,2,'pending',?,1,?)""",
-                    (m['seller_id'], m['bar_type'], _stage, _today, seller_item['id'])
+                    (_seller_uid, m['bar_type'], _stage, _today, seller_item['id'])
                 )
 
         # 4. 구매자 알림 1개만 발송
