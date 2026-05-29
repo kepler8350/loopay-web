@@ -623,6 +623,29 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
         </div>
       </div>
 
+      <!-- 2차 매칭 자동/수동 설정 -->
+      <div class="card" style="padding:14px 16px;margin-bottom:12px">
+        <div class="card-title" style="margin-bottom:10px">⚡ 2차 매칭 설정</div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:13px;color:#a0a0c0;display:block;margin-bottom:6px">2차 매칭 실행 방식</label>
+          <div style="display:flex;gap:12px;align-items:center">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="radio" name="round2_auto" id="round2-manual" value="false"
+                onchange="saveRound2Auto(this.value)"
+                style="cursor:pointer">
+              <span style="color:#cdd6f4;font-size:13px">🖱️ 수동 (관리자가 직접 실행)</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="radio" name="round2_auto" id="round2-auto" value="true"
+                onchange="saveRound2Auto(this.value)"
+                style="cursor:pointer">
+              <span style="color:#cdd6f4;font-size:13px">🤖 자동 (매일 14:10 자동 실행)</span>
+            </label>
+          </div>
+          <div style="font-size:11px;color:#666;margin-top:6px">자동 선택 시 매일 14:10에 2차 매칭이 자동으로 실행됩니다. 미입금확정 수량이 없으면 스킵됩니다.</div>
+        </div>
+      </div>
+
       <div style="display:flex;justify-content:flex-end;margin-top:4px">
         <button onclick="saveSettings()"
           style="padding:8px 20px;background:#1976d2;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">
@@ -1032,7 +1055,28 @@ var _systemItems = [];
 var _serverHour = 0;
 var _serverMin = 0;
 var _unpaidClickedAt = {}; // matchId → 마지막 클릭 시각(ms)
-async function loadSystemItems(){
+async 
+async function saveRound2Auto(val){
+  try{
+    var tok=localStorage.getItem('admin_token');
+    await fetch('/api/admin/settings',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({round2_auto:val})});
+    toast(val==='true'?'2차 매칭 자동 설정됨 (매일 14:10)':'2차 매칭 수동 설정됨','success');
+  }catch(e){toast('저장 실패','error');}
+}
+
+function loadRound2AutoSetting(){
+  var tok=localStorage.getItem('admin_token');
+  fetch('/api/admin/settings',{headers:{'Authorization':'Bearer '+tok}})
+    .then(r=>r.json()).then(d=>{
+      var val = d.settings?.round2_auto || 'false';
+      var manualEl=document.getElementById('round2-manual');
+      var autoEl=document.getElementById('round2-auto');
+      if(manualEl) manualEl.checked = (val!=='true');
+      if(autoEl) autoEl.checked = (val==='true');
+    }).catch(()=>{});
+}
+
+function loadSystemItems(){
   var tbody = document.getElementById('si-tbody');
   var summary = document.getElementById('si-summary');
   if(tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';

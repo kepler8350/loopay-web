@@ -61,6 +61,166 @@ def insert_notification(db, user_id, ntype, title, message):
         (user_id, ntype, title, message, now_str)
     )
 
+
+# ── 자동 2차매칭 스케줄러 ────────────────────────────────────────
+def _auto_round2_scheduler():
+    """14:10에 자동 2차매칭 실행 (round2_auto=true일 때)"""
+    import time
+    _last_run_date = None
+    while True:
+        try:
+            now = get_now()
+            h, m = now.hour, now.minute
+            today = now.strftime('%Y-%m-%d')
+            # 14:10~14:11 사이에 1회 실행
+            if h == 14 and m == 10 and today != _last_run_date:
+                db = get_db()
+                try:
+                    row = db.execute("SELECT value FROM system_settings WHERE key='round2_auto'").fetchone()
+                    if row and row['value'] == 'true':
+                        _last_run_date = today
+                        # 2차매칭 실행 (내부 함수 호출)
+                        _run_matching_internal(db, 2, today)
+                finally:
+                    db.close()
+        except Exception:
+            pass
+        time.sleep(30)
+
+def _run_matching_internal(db, round_num, today):
+    """내부 매칭 실행 (스케줄러용)"""
+    try:
+        loopay_id = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay_id: return
+        loopay_id = loopay_id['id']
+
+        # 2차 판매예약 자동 생성 (미입금확정)
+        failed_matches = db.execute(
+            """SELECT m.bar_type, m.stage, m.seller_id
+               FROM matches m
+               WHERE m.match_round=1 AND m.status='failed'
+               AND m.match_date=?
+               AND NOT EXISTS (
+                   SELECT 1 FROM reservations r
+                   WHERE r.user_id=m.seller_id AND r.bar_type=m.bar_type
+                   AND r.match_round=2 AND r.reserve_date=? AND r.status='pending'
+                   AND r.item_id IS NOT NULL
+               )""",
+            (today, today)
+        ).fetchall()
+        for fm in failed_matches:
+            if fm['seller_id'] == loopay_id:
+                item = db.execute(
+                    """SELECT id FROM items WHERE user_id=? AND bar_type=? AND stage=?
+                       AND status IN ('matched','reservable') ORDER BY id DESC LIMIT 1""",
+                    (loopay_id, fm['bar_type'], fm['stage'] or 1)
+                ).fetchone()
+                db.execute(
+                    """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed,item_id)
+                       VALUES(?,?,?,2,'pending',?,1,?)""",
+                    (loopay_id, fm['bar_type'], fm['stage'] or 1, today,
+                     item['id'] if item else None)
+                )
+        db.commit()
+
+        sell_count = db.execute(
+            """SELECT COUNT(*) as c FROM reservations
+               WHERE match_round=2 AND status='pending' AND reserve_date=?
+               AND user_id=? AND item_id IS NOT NULL""",
+            (today, loopay_id)
+        ).fetchone()['c']
+        if sell_count == 0: return
+
+        # 실제 매칭 실행 (run-matching 로직과 동일)
+        sell_rows = db.execute(
+            """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
+               COALESCE(r.stage,1) as stage
+               FROM reservations r
+               WHERE r.status='pending' AND r.match_round=2
+               AND r.reserve_date=? AND r.item_id IS NOT NULL""",
+            (today,)
+        ).fetchall()
+        buy_rows = db.execute(
+            """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
+               COALESCE(r.stage,1) as stage
+               FROM reservations r
+               WHERE r.status='pending' AND r.match_round=2
+               AND r.reserve_date=? AND r.item_id IS NULL
+               AND r.user_id != ?""",
+            (today, loopay_id)
+        ).fetchall()
+
+        sell_by = {}
+        for r in sell_rows:
+            key = (r['bar_type'], r['stage'])
+            sell_by.setdefault(key, []).append(dict(r))
+        buy_by = {}
+        for r in buy_rows:
+            key = (r['bar_type'], r['stage'])
+            buy_by.setdefault(key, []).append(dict(r))
+
+        matched_s = set(); matched_b = set()
+        _cnt_map = {}
+        pairs = []
+        for key in set(list(sell_by.keys()) + list(buy_by.keys())):
+            sellers = [s for s in sell_by.get(key, []) if s['res_id'] not in matched_s]
+            buyers = [b for b in buy_by.get(key, []) if b['res_id'] not in matched_b]
+            for seller, buyer in zip(sellers, buyers):
+                bt, st = key
+                matched_s.add(seller['res_id']); matched_b.add(buyer['res_id'])
+                if seller['item_id']:
+                    db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
+                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
+                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
+                pr = db.execute("SELECT * FROM prices WHERE bar_type=? AND stage=?", (bt, st)).fetchone()
+                buy_p = pr['buy_price'] if pr else 0
+                sell_p = pr['sell_price'] if pr else 0
+                db.execute(
+                    """INSERT INTO matches(reservation_id,buyer_id,seller_id,bar_type,stage,
+                       buy_price,sell_price,match_round,match_date,status,points_deducted)
+                       VALUES(?,?,?,?,?,?,?,2,?,'pending',0)""",
+                    (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
+                     bt, st, buy_p, sell_p, today)
+                )
+                _cnt_map[buyer['buyer_id']] = _cnt_map.get(buyer['buyer_id'], 0) + 1
+                pairs.append({'bar_type': bt, 'buyer_id': buyer['buyer_id']})
+
+        # 포인트 정산
+        for bid, bcnt in _cnt_map.items():
+            u = db.execute("SELECT maintain_points, charge_points FROM users WHERE id=?", (bid,)).fetchone()
+            if not u: continue
+            mn = int(u['maintain_points'] or 0)
+            consume = bcnt * 40
+            if mn >= consume:
+                db.execute("UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?", (mn-consume, bid))
+            elif mn > 0:
+                db.execute("UPDATE users SET maintain_points=0, charge_points=charge_points-? WHERE id=?", (consume-mn, bid))
+            else:
+                db.execute("UPDATE users SET charge_points=charge_points-? WHERE id=?", (consume, bid))
+
+        # 미매칭 처리
+        db.execute(
+            """UPDATE reservations SET status='unmatched'
+               WHERE match_round=2 AND status='pending' AND reserve_date=?
+               AND user_id!=?""",
+            (today, loopay_id)
+        )
+        db.commit()
+
+        # 알림
+        for p in pairs:
+            names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+            bar_name = names.get(p['bar_type'], p['bar_type'])
+            insert_notification(db, p['buyer_id'], 'match', '2차 매칭 완료',
+                f'{bar_name} 2차 매칭이 완료되었습니다.')
+        db.commit()
+    except Exception as e:
+        db.rollback()
+
+# 백그라운드 스케줄러 시작
+_scheduler_thread = threading.Thread(target=_auto_round2_scheduler, daemon=True)
+_scheduler_thread.start()
+
 def get_today():
     """오늘 날짜 반환"""
     return get_now().date()
@@ -777,6 +937,51 @@ def admin_run_matching():
     db = get_db()
     try:
         today = get_today().isoformat()
+        loopay_id = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()['id']
+
+        # 2차 매칭: 미입금확정(failed) 매치에서 loopay 판매예약 자동 생성
+        if round_num == 2:
+            failed_matches = db.execute(
+                """SELECT m.bar_type, m.stage, m.seller_id
+                   FROM matches m
+                   WHERE m.match_round=1 AND m.status='failed'
+                   AND m.match_date=?
+                   AND NOT EXISTS (
+                       SELECT 1 FROM reservations r
+                       WHERE r.user_id=m.seller_id AND r.bar_type=m.bar_type
+                       AND r.match_round=2 AND r.reserve_date=? AND r.status='pending'
+                       AND r.item_id IS NOT NULL
+                   )""",
+                (today, today)
+            ).fetchall()
+            for fm in failed_matches:
+                # loopay가 seller인 경우만 2차 sell 예약 생성
+                if fm['seller_id'] == loopay_id:
+                    # 해당 아이템 찾기
+                    item = db.execute(
+                        """SELECT id FROM items WHERE user_id=? AND bar_type=? AND stage=?
+                           AND status IN ('matched','reservable') ORDER BY id DESC LIMIT 1""",
+                        (loopay_id, fm['bar_type'], fm['stage'] or 1)
+                    ).fetchone()
+                    db.execute(
+                        """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed,item_id)
+                           VALUES(?,?,?,2,'pending',?,1,?)""",
+                        (loopay_id, fm['bar_type'], fm['stage'] or 1, today,
+                         item['id'] if item else None)
+                    )
+            db.commit()
+
+            # 2차 판매예약 수 확인 - 없으면 차단
+            sell_count_2 = db.execute(
+                """SELECT COUNT(*) as c FROM reservations
+                   WHERE match_round=2 AND status='pending' AND reserve_date=?
+                   AND user_id=? AND item_id IS NOT NULL""",
+                (today, loopay_id)
+            ).fetchone()['c']
+            if sell_count_2 == 0:
+                db.close()
+                return jsonify(error='2차 매칭 판매수량이 없습니다. 미입금확정 후 진행하세요.', sell_count=0), 400
+
         import random
 
         # 판매예약 조회 (confirmed 0/1 모두 - 확정여부 무관, pending 상태인 것)
@@ -1066,16 +1271,35 @@ def admin_run_matching():
             except Exception:
                 pass
 
-        # 매칭 안된 오늘 pending 예약 → unmatched 처리
-        try:
-            db.execute(
-                """UPDATE reservations SET status='unmatched'
-                   WHERE match_round=? AND status='pending' AND reserve_date=?
-                   AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
-                (round_num, today)
-            )
-        except Exception:
-            pass
+        # 1차 매칭: 미매칭 구매예약 → 2차 대기로 자동 전환
+        if round_num == 1:
+            try:
+                db.execute(
+                    """UPDATE reservations SET status='pending', match_round=2
+                       WHERE match_round=1 AND status='pending' AND reserve_date=?
+                       AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
+                    (today,)
+                )
+                # 1차 loopay 미매칭 sell 예약도 정리
+                db.execute(
+                    """UPDATE reservations SET status='unmatched'
+                       WHERE match_round=1 AND status='pending' AND reserve_date=?
+                       AND user_id=(SELECT id FROM users WHERE username='loopay')""",
+                    (today,)
+                )
+            except Exception:
+                pass
+        else:
+            # 2차+ 미매칭은 unmatched 처리
+            try:
+                db.execute(
+                    """UPDATE reservations SET status='unmatched'
+                       WHERE match_round=? AND status='pending' AND reserve_date=?
+                       AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
+                    (round_num, today)
+                )
+            except Exception:
+                pass
         db.commit()
 
         return jsonify(
