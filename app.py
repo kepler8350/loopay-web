@@ -17,7 +17,7 @@ def check_admin_auth():
     except:
         return False
 from werkzeug.security import check_password_hash, generate_password_hash
-import datetime, sqlite3, os
+import datetime, sqlite3, os, threading
 
 # ── 테스트용 시간 조작 ──────────────────────────────────
 
