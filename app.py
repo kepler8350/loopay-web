@@ -3307,6 +3307,7 @@ def user_matching():
                LEFT JOIN items i ON r.item_id=i.id
                WHERE r.user_id=? AND r.match_round=2
                  AND r.status='pending' AND r.confirmed=0
+                 AND r.item_id IS NOT NULL
                ORDER BY r.id DESC""",
             (uid,)
         ).fetchall()
