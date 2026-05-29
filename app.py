@@ -3308,8 +3308,9 @@ def user_matching():
                WHERE r.user_id=? AND r.match_round=2
                  AND r.status='pending' AND r.confirmed=0
                  AND r.item_id IS NOT NULL
+                 AND r.reserve_date=?
                ORDER BY r.id DESC""",
-            (uid,)
+            (uid, today)
         ).fetchall()
         # ── 판매: 2) 매칭 완료 기록 ──
         sell_matches = db.execute(
