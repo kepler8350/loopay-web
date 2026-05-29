@@ -407,7 +407,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 </div>
 <div class="table-card" style="margin-top:8px">
   <div style="padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <button id="btn-run-matching-2" class="btn btn-success" style="padding:8px 20px;font-size:13px;font-weight:600" onclick="runMatching(2)">⚡ 2차 매칭 실행하기</button>
+    <button id="btn-run-matching-2" class="btn btn-success" disabled style="padding:8px 20px;font-size:13px;font-weight:600;opacity:0.45;cursor:not-allowed" onclick="runMatching(2)">⚡ 2차 매칭 실행하기</button>
     <span id="matching-time-notice-2" style="font-size:12px;color:#888"></span>
     <div id="match-result-2" style="width:100%;margin-top:4px;font-size:13px"></div>
   </div>
@@ -883,19 +883,39 @@ async function updateMatchingBtn(){
     var res = await fetch('/api/current-time', {headers:{'Authorization':'Bearer '+tok}});
     var d = await res.json();
     var h = d.hour;
-    var isActive = (h >= 20 || h < 5);
-    var btn = document.getElementById('btn-run-matching-1');
+    var m = d.minute || 0;
+    var totalMin = h * 60 + m;
+
+    // 1차 매칭: 20:00~05:00 활성
+    var isActive1 = (h >= 20 || h < 5);
+    var btn1 = document.getElementById('btn-run-matching-1');
     var notice = document.getElementById('matching-time-notice');
-    if(btn){
-      btn.disabled = !isActive;
-      btn.style.opacity = isActive ? '1' : '0.45';
-      btn.style.cursor = isActive ? 'pointer' : 'not-allowed';
+    if(btn1){
+      btn1.disabled = !isActive1;
+      btn1.style.opacity = isActive1 ? '1' : '0.45';
+      btn1.style.cursor = isActive1 ? 'pointer' : 'not-allowed';
     }
     if(notice){
-      notice.textContent = isActive
+      notice.textContent = isActive1
         ? '✅ 매칭 가능 시간 (20:00~05:00) — 서버시간 '+d.time.slice(11,16)
         : '⏳ 매칭 실행 가능: 20:00~05:00 (현재 '+d.time.slice(11,16)+')';
-      notice.style.color = isActive ? '#66bb6a' : '#f9a825';
+      notice.style.color = isActive1 ? '#66bb6a' : '#f9a825';
+    }
+
+    // 2차 매칭: 14:00~15:00 활성 (840~900분)
+    var isActive2 = (totalMin >= 840 && totalMin < 900);
+    var btn2 = document.getElementById('btn-run-matching-2');
+    var notice2 = document.getElementById('matching-time-notice-2');
+    if(btn2){
+      btn2.disabled = !isActive2;
+      btn2.style.opacity = isActive2 ? '1' : '0.45';
+      btn2.style.cursor = isActive2 ? 'pointer' : 'not-allowed';
+    }
+    if(notice2){
+      notice2.textContent = isActive2
+        ? '✅ 2차 매칭 가능 시간 (14:00~15:00) — 서버시간 '+d.time.slice(11,16)
+        : '⏳ 2차 매칭 실행 가능: 14:00~15:00 (현재 '+d.time.slice(11,16)+')';
+      notice2.style.color = isActive2 ? '#66bb6a' : '#f9a825';
     }
   }catch(e){
     // fallback: 항상 활성화
