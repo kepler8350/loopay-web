@@ -2803,10 +2803,9 @@ def admin_confirm_unpaid():
                VALUES(?,?,?,?,0,?,?,?)""",
             (buyer_id, current_count, suspend_days, release_pts, _now_str, match_id, m['match_round'] or 1)
         )
-        # 2차 매칭 구매예약 취소 (미입금 구매자 2차 제외)
-        if m['reservation_id']:
-            db.execute("UPDATE reservations SET status='cancelled' WHERE user_id=? AND match_round=2 AND status='pending'",
-                       (buyer_id,))
+        # 2차 매칭 구매예약 제거 (미입금 구매자 2차 제외)
+        db.execute("UPDATE reservations SET status='unmatched' WHERE user_id=? AND match_round=2 AND status='pending'",
+                   (buyer_id,))
         # 구매자 알림 - 패널티 내용 포함
         _notif_msg = (
             f'{bar_name} {m["stage"]}단계 거래 미입금이 확정됐습니다.\n\n'
