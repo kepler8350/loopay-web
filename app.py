@@ -1928,11 +1928,8 @@ def admin_reservation_status():
                    INNER JOIN items i ON r.item_id = i.id
                    WHERE r.bar_type=? AND r.status='pending'
                    AND r.item_id IS NOT NULL
-                   AND (
-                     r.user_id != ?
-                     OR (r.user_id = ? AND COALESCE(r.confirmed,0)=1)
-                   )""",
-                (bar_type, loopay_id, loopay_id)
+                   AND r.user_id != ?""",
+                (bar_type, loopay_id)
             ).fetchall()
 
             sell_under32 = 0  # 32만원 미만
