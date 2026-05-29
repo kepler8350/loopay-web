@@ -1459,25 +1459,8 @@ def admin_matching_status():
             # 1차: 확정된 전체 수량
             sell_count = _confirmed_sell
         else:
-            # 2차: 1차 매칭이 실행된 경우에만 남은 수량 표시
-            # 오늘 1차 매칭 실행 여부 확인
-            _r1_executed = db.execute(
-                """SELECT COUNT(*) as c FROM matches
-                   WHERE match_round=1 AND match_date=?""",
-                (today,)
-            ).fetchone()['c']
-            if _r1_executed == 0:
-                # 1차 매칭이 아직 실행되지 않음 → 2차 판매수량 0
-                sell_count = 0
-            else:
-                # 1차 매칭 완료 → 남은 confirmed 예약 수
-                _matched_r1 = db.execute(
-                    """SELECT COUNT(*) as c FROM matches
-                       WHERE seller_id=? AND match_round=1 AND match_date=?
-                       AND status IN ('pending','paid','confirmed')""",
-                    (loopay_id, today)
-                ).fetchone()['c']
-                sell_count = max(0, _confirmed_sell - _matched_r1)
+            # 2차: match_round=2, status='pending', confirmed=1 예약 직접 카운트
+            sell_count = _confirmed_sell
 
         rate = round(min(buy_count, sell_count) / buy_count * 100, 1) if buy_count > 0 else 0.0
 
@@ -1933,17 +1916,17 @@ def admin_reservation_status():
         for bar_type in ['bronze', 'silver', 'gold']:
             # 사용자 구매예약 (match_round=1, loopay 제외)
             user_buy = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND confirmed=0 AND user_id!=?",
-                (bar_type, loopay_id)
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND confirmed=0 AND user_id!=? AND reserve_date=?",
+                (bar_type, loopay_id, today)
             ).fetchone()['cnt']
             # loopay 추가예약 (match_round=1)
             extra_buy_pending = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND confirmed=0 AND user_id=? AND item_id IS NULL",
-                (bar_type, loopay_id)
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND confirmed=0 AND user_id=? AND item_id IS NULL AND reserve_date=?",
+                (bar_type, loopay_id, today)
             ).fetchone()['cnt']
             extra_buy_confirmed = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND confirmed=1 AND user_id=? AND item_id IS NULL",
-                (bar_type, loopay_id)
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND confirmed=1 AND user_id=? AND item_id IS NULL AND reserve_date=?",
+                (bar_type, loopay_id, today)
             ).fetchone()['cnt']
             extra_buy = extra_buy_pending + extra_buy_confirmed
             total_buy = user_buy + extra_buy
@@ -1956,9 +1939,11 @@ def admin_reservation_status():
                    FROM reservations r
                    INNER JOIN items i ON r.item_id = i.id
                    WHERE r.bar_type=? AND r.status='pending'
+                   AND r.match_round=1
                    AND r.item_id IS NOT NULL
+                   AND r.reserve_date=?
                    AND r.user_id != ?""",
-                (bar_type, loopay_id)
+                (bar_type, today, loopay_id)
             ).fetchall()
 
             sell_under32 = 0  # 32만원 미만
@@ -1977,12 +1962,12 @@ def admin_reservation_status():
 
             # loopay 추가 판매예약 (미확정 + 확정 모두)
             extra_sell_pending = conn.execute(
-                "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.status='pending' AND r.confirmed=0 AND r.user_id=? AND r.item_id IS NOT NULL",
-                (bar_type, loopay_id)
+                "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.status='pending' AND r.confirmed=0 AND r.user_id=? AND r.item_id IS NOT NULL AND r.reserve_date=? AND r.match_round=1",
+                (bar_type, loopay_id, today)
             ).fetchall()
             extra_sell_confirmed_rows = conn.execute(
-                "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.confirmed=1 AND r.status='pending' AND r.user_id=? AND r.item_id IS NOT NULL",
-                (bar_type, loopay_id)
+                "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.confirmed=1 AND r.status='pending' AND r.user_id=? AND r.item_id IS NOT NULL AND r.reserve_date=? AND r.match_round=1",
+                (bar_type, loopay_id, today)
             ).fetchall()
             extra_sell_rows = extra_sell_pending + extra_sell_confirmed_rows
             extra_sell_under32 = 0
@@ -2832,8 +2817,9 @@ def admin_loopay_extra_reservations():
             FROM reservations r
             LEFT JOIN items i ON r.item_id = i.id
             WHERE r.user_id = ? AND r.status = 'pending'
+            AND r.reserve_date = ?
             ORDER BY r.id DESC
-        """, (lid,)).fetchall()
+        """, (lid, get_today().isoformat())).fetchall()
         return jsonify(reservations=[dict(r) for r in rows])
     finally:
         conn.close()
