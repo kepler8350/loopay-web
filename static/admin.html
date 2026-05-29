@@ -556,6 +556,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
           <tr style="background:#1a1a2e;color:#a0a0c0">
             <th style="padding:8px;width:36px"></th>
             <th style="padding:8px;text-align:left">날짜</th>
+            <th style="padding:8px;text-align:center">차수</th>
             <th style="padding:8px;text-align:center">종류</th>
             <th style="padding:8px;text-align:center">단계</th>
             <th style="padding:8px;text-align:left">구매자ID</th>
@@ -1160,6 +1161,8 @@ function renderSystemItems(){
     var ms = item.match_status;
     var matchBadge = ms
       ? '<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(matchStatusColor[ms]||'#888')+'33;color:'+(matchStatusColor[ms]||'#888')+'">'+(matchStatusKr[ms]||ms)+'</span>'
+        + (item.match_round===2 ? '<span style="padding:2px 5px;border-radius:8px;font-size:10px;background:#7b1fa233;color:#ce93d8;font-weight:700;margin-left:4px">2차</span>'
+                                : '<span style="padding:2px 5px;border-radius:8px;font-size:10px;background:#1565c033;color:#90caf9;font-weight:700;margin-left:4px">1차</span>')
       : '<span style="color:#555;font-size:11px">-</span>';
         // 서버 시간 기반 버튼 활성화 제어
     var _h = _serverHour||0; var _m = _serverMin||0;
@@ -1250,6 +1253,11 @@ function renderMatchRecords(){
     return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
       +'<td style="padding:6px;text-align:center"><input type="checkbox" class="match-check" data-id="'+m.id+'" onchange="updateMatchSelectedCount()" style="cursor:pointer;width:15px;height:15px"></td>'
       +'<td style="padding:6px;font-size:11px;color:#888">'+(m.match_date||'-')+'</td>'
+      +'<td style="padding:6px;text-align:center">'
+        +(m.match_round===2
+          ?'<span style="padding:2px 6px;border-radius:8px;font-size:10px;background:#7b1fa233;color:#ce93d8;font-weight:700">2차</span>'
+          :'<span style="padding:2px 6px;border-radius:8px;font-size:10px;background:#1565c033;color:#90caf9;font-weight:700">1차</span>')
+        +'</td>'
       +'<td style="padding:6px;text-align:center;color:'+colors[m.bar_type]+'"><strong>'+(m.bar_name||'-')+'</strong></td>'
       +'<td style="padding:6px;text-align:center">'+(m.stage||'-')+'단계</td>'
       +'<td style="padding:6px;color:#64b5f6">'+(buyer.username||'-')+'</td>'

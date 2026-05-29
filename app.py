@@ -2709,7 +2709,7 @@ def admin_loopay_items():
             # 이 아이템의 status가 matched/sold인 경우만 match 찾기
             if d['status'] in ('matched', 'sold', 'reservable'):
                 m = db.execute(
-                    """SELECT m.id, m.status,
+                    """SELECT m.id, m.status, m.match_round,
                        u.username as buyer_username,
                        u.account_name as buyer_account_name,
                        u.account_no as buyer_account
@@ -2726,6 +2726,7 @@ def admin_loopay_items():
                 if m:
                     d['match_id'] = m['id']
                     d['match_status'] = m['status']
+                    d['match_round'] = m['match_round'] if 'match_round' in m.keys() else None
                     d['buyer_username'] = m['buyer_username']
                     d['buyer_account_name'] = m['buyer_account_name']
                     d['buyer_account'] = m['buyer_account']
@@ -2757,6 +2758,7 @@ def admin_loopay_items():
                 'reserve_date': r['reserve_date'],
                 'match_id': r['match_id'],
                 'match_status': r['match_status'],
+                'match_round': r.get('match_round'),
                 'buyer_username': r.get('buyer_username'),
                 'buyer_account_name': r.get('buyer_account_name'),
                 'buyer_account': r.get('buyer_account'),
