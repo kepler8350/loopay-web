@@ -1867,10 +1867,9 @@ async function loadPenaltyTab(){
           // 오늘 날짜(서버 기준)와 release_at 날짜만 비교하여 남은 일수 계산
           var resumeDate = resumeAt.slice(0,10);
           // 서버 시간 기반 today 사용 (UTC 오프셋 문제 방지)
+          var _effD = typeof getEffectiveDate==='function' ? getEffectiveDate() : new Date();
           var todayStr = window._serverTodayStr ||
-            ((typeof getEffectiveDate==='function')
-              ? (() => { var d=getEffectiveDate(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })()
-              : new Date().toISOString().slice(0,10));
+            (_effD.getFullYear()+'-'+String(_effD.getMonth()+1).padStart(2,'0')+'-'+String(_effD.getDate()).padStart(2,'0'));
           var todayMs = new Date(todayStr + 'T00:00:00').getTime();
           var resumeMs = new Date(resumeDate + 'T00:00:00').getTime();
           var diffDays = Math.round((resumeMs - todayMs) / (1000*60*60*24));
