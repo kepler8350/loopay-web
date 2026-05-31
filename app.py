@@ -1516,6 +1516,12 @@ def admin_run_matching():
             success=True,
             matched=total_matched,
             message=f'{round_num}차 매칭 완료: {total_matched}건',
+            debug_sell_rows=len(sell_rows),
+            debug_buy_rows=len(buy_rows),
+            debug_user_sell=len(user_sell_rows),
+            debug_loopay_sell=len(loopay_sell_rows),
+            debug_sell_keys=list(sell_by_type_stage.keys()),
+            debug_buy_keys=list(buy_by_type_stage.keys()),
             pairs=matched_pairs
         )
     except Exception as e:
