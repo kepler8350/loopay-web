@@ -1486,6 +1486,7 @@ def admin_run_matching():
                 db.execute(
                     """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
                        WHERE match_round=1 AND status='pending'
+                       AND (item_id IS NULL OR item_id=0)
                        AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
                     (today,)
                 )
