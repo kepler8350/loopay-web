@@ -1671,12 +1671,12 @@ def admin_matching_status():
         _confirmed_sell = db.execute(
             """SELECT COUNT(*) as c FROM reservations
                WHERE match_round=? AND status='pending'
-               AND user_id=? AND COALESCE(confirmed,0)=1""",
-            (round_num, loopay_id)
+               AND COALESCE(confirmed,0)=1""",
+            (round_num,)
         ).fetchone()['c']
 
         if round_num == 1:
-            # 1차: 확정된 전체 수량
+            # 1차: 확정된 전체 수량 (loopay + 일반 사용자 판매예약)
             sell_count = _confirmed_sell
         else:
             # 2차: match_round=2, status='pending', confirmed=1 예약 직접 카운트
