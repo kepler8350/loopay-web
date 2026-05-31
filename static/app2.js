@@ -436,9 +436,9 @@ function showTab(id,btn){
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
 
-  if(id === 'combine') { setTimeout(loadCombineItems, 100); 
-  if(id==='matching') loadMatchingTab();
-}
+  if(id === 'combine') setTimeout(loadCombineItems, 100);
+  if(id === 'matching') loadMatchingTab();
+  if(id === 'sell') setTimeout(loadSellTab, 50);
 }
 
 // --- detail toggle ---------------------------------------------------------

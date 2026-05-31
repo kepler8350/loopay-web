@@ -227,17 +227,6 @@ var LEVEL_CONFIG_JS={
   10:{bz_min:0,bz_max:60,sv_min:28,sv_max:34,gd_min:21,gd_max:26,cum:99999},
 };
 
-function showTab(id,btn){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+id).classList.add('active');
-  if(id==='notif'){var nb=document.getElementById('nav-notif-btn');if(nb)nb.classList.remove('notif-blink');loadNotifications();}
-  if(id==='matching'){var bEl=document.getElementById('match-buy-list');var sEl=document.getElementById('match-sell-list');if(bEl)bEl.innerHTML='';if(sEl)sEl.innerHTML='';loadMatchingTab();}
-  btn.classList.add('active');
-
-  if(id === 'combine') { setTimeout(loadCombineItems, 100); }
-  if(id === 'sell') { setTimeout(loadSellTab, 50); }
-}
 
 // --- detail toggle ---------------------------------------------------------
 
