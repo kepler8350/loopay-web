@@ -222,9 +222,9 @@ def _run_matching_internal(db, round_num, today):
         # 미매칭 처리
         db.execute(
             """UPDATE reservations SET status='unmatched'
-               WHERE match_round=2 AND status='pending' AND reserve_date=?
+               WHERE match_round=2 AND status='pending'
                AND user_id!=?""",
-            (today, loopay_id)
+            (loopay_id,)
         )
         db.commit()
 

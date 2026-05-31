@@ -1113,11 +1113,13 @@ async function loadItemDetail(barType){
       var dayNote = canSell?'':'<div style="font-size:11px;color:#aaa;margin-top:2px">현재 '+dayNum+'일차 (3일째부터 판매가능)</div>';
       return '<div class="item-detail-card" id="icard-'+it.id+'" style="background:'+cardBg+';transition:background 0.2s">'
         +'<div><div class="item-detail-stage">'+names[it.bar_type||barType]+' '+it.stage+'단계'+statusBadge+'</div>'
-        +'<div class="item-detail-info">구매일: '+it.purchase_date+' (현재 '+dayNum+'일차)</div>'
+        +'<div class="item-detail-info">구매일: '+it.purchase_date+' ('+dayNum+'일째)</div>'
         +dayNote+'</div>'
-        +'<div class="item-detail-price"><div style="font-size:14px;font-weight:700;color:#f9a825">판매가 '+it.sell_price.toLocaleString()+'원</div>'
-        +'<div>구매가 '+it.buy_price.toLocaleString()+'원</div>'
-        +'<div style="color:#66bb6a">수익 '+it.profit.toLocaleString()+'원</div>'
+        +'<div class="item-detail-price"><div style="font-size:13px;font-weight:700">'
+        +'구매 <span style="color:#aaa">'+it.buy_price.toLocaleString()+'원</span>'
+        +' → 판매 <span style="color:#f9a825">'+it.sell_price.toLocaleString()+'원</span>'
+        +' <span style="color:#66bb6a;font-size:12px">(+'+it.profit.toLocaleString()+'원)</span>'
+        +'</div>'
         +'</div></div>';
     }).join('');
     container.innerHTML=html;
@@ -1861,13 +1863,18 @@ async function loadPenaltyTab(){
         // 남은 정지일수 계산
         var remainText = '';
         if(resumeAt) {
-          var resumeDt = new Date(resumeAt.replace(' ','T'));
-          var nowDt = new Date();
-          var diffMs = resumeDt - nowDt;
-          var diffDays = Math.ceil(diffMs / (1000*60*60*24));
+          // 오늘 날짜(서버 기준)와 release_at 날짜만 비교하여 남은 일수 계산
           var resumeDate = resumeAt.slice(0,10);
+          var todayStr = (typeof getEffectiveDate==='function')
+            ? getEffectiveDate().toISOString().slice(0,10)
+            : new Date().toISOString().slice(0,10);
+          var todayMs = new Date(todayStr + 'T00:00:00').getTime();
+          var resumeMs = new Date(resumeDate + 'T00:00:00').getTime();
+          var diffDays = Math.round((resumeMs - todayMs) / (1000*60*60*24));
           if(diffDays > 0) {
             remainText = resumeDate + ' 01:00 자동 해제 (남은 ' + diffDays + '일)';
+          } else if(diffDays === 0) {
+            remainText = '오늘 01:00 자동 해제됩니다';
           } else {
             remainText = '곧 자동 해제됩니다';
           }
@@ -1897,7 +1904,7 @@ async function loadPenaltyTab(){
           '• 정지 해제일: ' + (d.suspended_until||'').slice(0,10) + '<br>' +
           '• 해제 포인트: ' + (pending.release_points||0).toLocaleString() + 'P<br>' +
           (isWaitingApproval
-            ? '• ⏳ 정지 ' + suspendDays + '일 경과 후 ' + (resumeAt ? resumeAt.slice(0,10)+' 01:00' : '') + ' 자동 해제됩니다.'
+            ? '• ⏳ ' + (resumeAt ? resumeAt.slice(0,10)+' 01:00' : '정지 '+suspendDays+'일 후') + ' 자동 해제됩니다.'
             : '• 해제 포인트 충전 후 해제 버튼을 눌러주세요.');
       }
     } else {
