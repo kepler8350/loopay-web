@@ -1274,6 +1274,9 @@ def admin_run_matching():
             for i in range(match_count):
                 seller = sellers[i]
                 buyer = buyers[i]
+                # 자기 자신과 매칭 방지
+                if seller['seller_id'] == buyer['buyer_id']:
+                    continue
                 matched_seller_ids.add(seller['res_id'])
                 matched_buyer_ids.add(buyer['res_id'])
 
