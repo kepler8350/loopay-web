@@ -1112,7 +1112,7 @@ async function loadItemDetail(barType){
       // 일차 안내 (canSell 아닐 때만 표시)
       var dayNote = canSell?'':'<div style="font-size:11px;color:#aaa;margin-top:2px">현재 '+dayNum+'일차 (3일째부터 판매가능)</div>';
       return '<div class="item-detail-card" id="icard-'+it.id+'" style="background:'+cardBg+';transition:background 0.2s">'
-        +'<div><div class="item-detail-stage">'+names[barType]+' '+it.stage+'단계'+statusBadge+'</div>'
+        +'<div><div class="item-detail-stage">'+names[it.bar_type||barType]+' '+it.stage+'단계'+statusBadge+'</div>'
         +'<div class="item-detail-info">구매일: '+it.purchase_date+' (현재 '+dayNum+'일차)</div>'
         +dayNote+'</div>'
         +'<div class="item-detail-price"><div style="font-size:14px;font-weight:700;color:#f9a825">판매가 '+it.sell_price.toLocaleString()+'원</div>'
@@ -1239,7 +1239,8 @@ function renderMatchBuyList(items){
     var statusLabel = {waiting:'예약대기',pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'입금',unpaid:'미입금',failed:'미입금'}[m.status]||m.status;
     var statusColor = {waiting:'#90caf9',pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
     var hasMatchInfo = !!(m.seller_phone || m.seller_bank || m.seller_account);
-    var dateTxt = m.source==='reservation'?m.reserve_date:(m.match_date||'');
+    var _roundBadge = (m.source==='match') ? ' <span style="font-size:10px;background:' + (_r===2?'#1565c0':'#4a148c') + ';color:#fff;padding:1px 5px;border-radius:4px;">' + _r + '차</span>' : '';
+    var dateTxt = m.source==='reservation'?m.reserve_date:((m.match_date||'')+_roundBadge);
 
     if(m.status==='waiting'){
       return '<div style="padding:10px 12px;margin-bottom:6px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">'        +'<div style="display:flex;justify-content:space-between;align-items:center">'        +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'        +'<span style="font-size:11px;color:'+statusColor+'">'+statusLabel+'</span>'        +'</div>'        +'<div style="font-size:11px;color:var(--text2);margin-top:4px">⏳ 매칭 대기 중'+(dateTxt?' · '+dateTxt:'')+'</div>'        +'</div>';
@@ -1255,6 +1256,7 @@ function renderMatchBuyList(items){
     var btnHtml = '';
     var _r = m.match_round || 1;
     var canSend = (_r===2) ? (h>=15 && h<19) : (h>=5 && h<13);
+    // 1차/2차 배지 (dateTxt 옆에 추가)
     if((m.status==='pending'||m.status==='matched') && hasMatchInfo){
       if(canSend){
         btnHtml = '<button onclick="openPaymentModal('+m.id+')" style="margin-top:8px;padding:8px 16px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600;width:100%">💸 송금 완료</button>';

@@ -1721,6 +1721,10 @@ async function runMatching(roundNum){
       if(resultEl) resultEl.innerHTML = html2;
     }
     loadMatchingStatus();
+    // 매칭기록 탭도 갱신 (현재 페이지가 matches면 자동 갱신)
+    if(typeof loadMatchRecords==='function'){
+      loadMatchRecords();
+    }
   }catch(e){
     toast(e.message||'오류', 'error');
     if(resultEl) resultEl.innerHTML = '<div style="color:#ef5350;padding:8px">❌ '+e.message+'</div>';
