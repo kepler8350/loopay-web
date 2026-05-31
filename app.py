@@ -3415,7 +3415,7 @@ def user_matching():
                FROM reservations r
                LEFT JOIN items i ON r.item_id=i.id
                WHERE r.user_id=? AND r.match_round IN (1,2)
-                 AND r.status='pending' AND r.confirmed=0
+                 AND r.status='pending'
                  AND r.item_id IS NOT NULL
                  AND r.reserve_date=?
                ORDER BY r.id DESC""",
