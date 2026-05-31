@@ -155,7 +155,7 @@ def _run_matching_internal(db, round_num, today):
         # 실제 매칭 실행 (run-matching 로직과 동일)
         # 일반 사용자 판매예약 (item_id 있는 것, match_round=round_num)
         _yesterday_sell = (__import__('datetime').date.fromisoformat(today) - __import__('datetime').timedelta(days=1)).isoformat()
-        sell_rows = db.execute(
+        user_sell_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
                COALESCE(r.stage,1) as stage
                FROM reservations r
@@ -164,6 +164,16 @@ def _run_matching_internal(db, round_num, today):
                AND COALESCE(r.confirmed,0)=1""",
             (round_num, today, _yesterday_sell)
         ).fetchall()
+        # 루페이 시스템 sell 예약 (item_id 없는 것)
+        loopay_sell_rows = db.execute(
+            """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
+               COALESCE(r.stage,1) as stage
+               FROM reservations r
+               WHERE r.status='pending' AND r.match_round=?
+               AND r.user_id=? AND COALESCE(r.confirmed,0)=1""",
+            (round_num, loopay_id)
+        ).fetchall()
+        sell_rows = list(user_sell_rows) + list(loopay_sell_rows)
         buy_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
                COALESCE(r.stage,1) as stage
