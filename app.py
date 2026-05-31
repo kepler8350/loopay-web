@@ -783,7 +783,6 @@ def user_release_penalty():
     uid = int(get_jwt_identity())
     db = get_db()
     try:
-        # 미해제 패널티 조회
         penalty = db.execute(
             "SELECT * FROM penalties WHERE user_id=? AND is_released=0 ORDER BY id DESC LIMIT 1",
             (uid,)
@@ -794,48 +793,36 @@ def user_release_penalty():
         u = db.execute("SELECT charge_points, exchange_points FROM users WHERE id=?", (uid,)).fetchone()
         total_pts = int(u['charge_points'] or 0) + int(u['exchange_points'] or 0)
         if total_pts < release_pts:
-            return jsonify(error=f'포인트가 부족합니다. 해제 포인트: {release_pts:,}P, 보유: {total_pts:,}P',
-                          need_charge=True, release_points=release_pts), 400
+            return jsonify(error='포인트가 부족합니다.',
+                          need_charge=True,
+                          release_points=release_pts,
+                          current_points=total_pts), 400
         # 포인트 차감 (charge_points 우선)
         ch = int(u['charge_points'] or 0)
-        ex = int(u['exchange_points'] or 0)
         if ch >= release_pts:
             db.execute("UPDATE users SET charge_points=charge_points-? WHERE id=?", (release_pts, uid))
         else:
-            from_ch = ch
-            from_ex = release_pts - from_ch
+            from_ex = release_pts - ch
             db.execute("UPDATE users SET charge_points=0, exchange_points=exchange_points-? WHERE id=?", (from_ex, uid))
-        # 패널티 해제 - suspended_until을 정지일자 다음날 01:00으로 설정
-        from datetime import timedelta
-        # suspended_until은 users 테이블에서
-        _u_row2 = db.execute("SELECT suspended_until FROM users WHERE id=?", (uid,)).fetchone()
-        _original_until = _u_row2['suspended_until'] if _u_row2 and _u_row2['suspended_until'] else None
-        if _original_until:
-            # 정지일자 다음날 01:00
-            try:
-                _until_dt = datetime.datetime.strptime(_original_until[:10], '%Y-%m-%d')
-                _new_until = (_until_dt + timedelta(days=1)).replace(hour=1, minute=0, second=0)
-                _new_until_str = _new_until.strftime('%Y-%m-%d %H:%M:%S')
-            except:
-                _new_until_str = None
-        else:
-            _new_until_str = None
-        db.execute("UPDATE penalties SET is_released=1 WHERE id=?", (penalty['id'],))
-        if _new_until_str:
-            db.execute("UPDATE users SET suspended_until=? WHERE id=?", (_new_until_str, uid))
-        else:
-            db.execute("UPDATE users SET suspended_until=NULL WHERE id=?", (uid,))
-        _msg = f'해제 포인트 {release_pts:,}P가 차감됐습니다.'
-        if _new_until_str:
-            _msg += f' 거래는 {_new_until_str[:10]} 01:00부터 재개됩니다.'
-        insert_notification(db, uid, 'penalty_released', '거래 정지 해제 처리', _msg)
+        # 관리자에게 알림 발송 (관리자가 패널티 관리에서 해제 처리)
+        admin_row = db.execute("SELECT id FROM users WHERE username='admin' LIMIT 1").fetchone()
+        if admin_row:
+            u_info = db.execute("SELECT username, nickname FROM users WHERE id=?", (uid,)).fetchone()
+            insert_notification(db, admin_row['id'], 'penalty_release_request', '패널티 해제 포인트 납부',
+                f'{u_info["username"]}({u_info["nickname"]}) 해제 포인트 {release_pts:,}P 납부. 패널티 관리에서 해제해주세요.')
+        # 사용자 알림
+        insert_notification(db, uid, 'penalty_release_paid', '패널티 해제 포인트 납부 완료',
+            f'해제 포인트 {release_pts:,}P가 차감됐습니다.\n관리자 확인 후 거래 정지가 해제됩니다.')
         db.commit()
-        return jsonify(success=True, message=_msg, released_points=release_pts, resume_at=_new_until_str)
+        return jsonify(success=True,
+                      message=f'해제 포인트 {release_pts:,}P가 차감됐습니다. 관리자 확인 후 거래 정지가 해제됩니다.',
+                      released_points=release_pts)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
     finally:
         db.close()
+
 
 # ── 사용자 패널티 내역 조회 ──────────────────────────────────
 @app.route('/api/user/penalties', methods=['GET'])
