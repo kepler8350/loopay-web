@@ -740,6 +740,7 @@ def admin_migrate_db():
         "ALTER TABLE penalties ADD COLUMN match_id INTEGER",
         "ALTER TABLE penalties ADD COLUMN release_at DATETIME",
         "ALTER TABLE penalties ADD COLUMN match_round INTEGER DEFAULT 1",
+        "ALTER TABLE penalties ADD COLUMN release_paid INTEGER DEFAULT 0",
     ]
     _c = _sq3.connect(_DB_PATH, timeout=10)
     for sql in migrations:
