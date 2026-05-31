@@ -240,32 +240,6 @@ function showTab(id,btn){
 }
 
 // --- detail toggle ---------------------------------------------------------
-function toggleDetail(type){
-  var panel=document.getElementById('detail-'+type);
-  var card=document.getElementById('card-'+type);
-  var masterPanel=document.getElementById('bar-detail-panel');
-  var isOpen=panel&&panel.style.display!=='none';
-  // 모든 패널 닫기, 카드 selected 제거
-  ['bronze','silver','gold'].forEach(function(t){
-    var p2=document.getElementById('detail-'+t);
-    var c2=document.getElementById('card-'+t);
-    if(p2) p2.style.display='none';
-    if(c2) c2.classList.remove('selected');
-  });
-  if(!isOpen&&panel){
-    // 해당 패널 열기
-    if(masterPanel) masterPanel.style.display='block';
-    panel.style.display='block';
-    if(card) card.classList.add('selected');
-  } else {
-    // 닫기
-    if(masterPanel) masterPanel.style.display='none';
-  ['bronze','silver','gold'].forEach(function(t){
-    var bb=document.getElementById('bulk-sell-btn-'+t);
-    if(bb) bb.style.display='none';
-  });
-  }
-}
 
 // --- admin ----------------------------------------------------------------
 let adminToken='';
@@ -2046,8 +2020,8 @@ async function loadSellTab(){
         var cardStyle = isSelected
           ? 'background:rgba(124,77,255,0.15);border:1.5px solid #7c4dff;border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer'
           : (sellable ? 'background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer' : 'background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;opacity:0.6');
-        return '<div style="'+cardStyle+'" onclick="'+(sellable?'toggleSellTabItem('+it.id+',\''+it.bar_type+'\','+it.stage+','+it.sell_price+')'':'')+'">'
-          +'<div style="display:flex;justify-content:space-between;align-items:center">'
+        var _onclick = sellable ? ' onclick="toggleSellTabItem('+it.id+',this)" data-bar="'+it.bar_type+'" data-stage="'+it.stage+'" data-price="'+it.sell_price+'"' : '';
+        return '<div style="'+cardStyle+'"'+_onclick+'>'
           +'<span style="font-size:13px;font-weight:700">'+it.stage+'단계 '+it.bar_type_label+'바</span>'
           +'<span style="font-size:11px;background:'+(isSelected?'#7c4dff':'var(--accent)')+';color:#fff;padding:2px 8px;border-radius:10px">'+(isSelected?'✓ 선택됨':it.status_label)+'</span>'
           +'</div>'
@@ -2095,7 +2069,11 @@ async function loadSellTab(){
   }
 }
 
-function toggleSellTabItem(itemId, barType, stage, sellPrice){
+function toggleSellTabItem(itemId, el){
+  // el이 DOM 요소인 경우 data 속성에서 값 가져오기
+  var barType = el ? el.dataset.bar : '';
+  var stage = el ? parseInt(el.dataset.stage||1) : 1;
+  var sellPrice = el ? parseInt(el.dataset.price||0) : 0;
   if(_sellTabSelected[itemId]){
     delete _sellTabSelected[itemId];
   } else {
