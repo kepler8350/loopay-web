@@ -778,14 +778,16 @@ def admin_migrate_db():
         # 데이터 정리: is_released=1인 패널티 보유자의 suspended_until 초기화
         "UPDATE users SET suspended_until=NULL WHERE id IN (SELECT DISTINCT user_id FROM penalties WHERE is_released=1) AND id NOT IN (SELECT user_id FROM penalties WHERE is_released=0)",
     ]
+    data = request.json or {}
+    extra_sqls = data.get('extra_sqls', [])
     _c = _sq3.connect(_DB_PATH, timeout=10)
-    for sql in migrations:
+    for sql in migrations + extra_sqls:
         try:
             _c.execute(sql)
             _c.commit()
-            results.append({'sql': sql, 'status': 'ok'})
+            results.append({'sql': sql[:80], 'status': 'ok'})
         except Exception as e:
-            results.append({'sql': sql, 'status': 'skipped: '+str(e)[:50]})
+            results.append({'sql': sql[:80], 'status': 'skipped: '+str(e)[:50]})
     _c.close()
     return jsonify(success=True, results=results)
 
