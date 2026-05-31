@@ -1193,18 +1193,17 @@ def admin_run_matching():
         import random
 
         # 판매예약 조회 (confirmed 0/1 모두 - 확정여부 무관, pending 상태인 것)
-        # 판매예약: loopay(시스템)은 match_round=2, 일반사용자도 match_round=round_num
+        # 판매예약: loopay(시스템) + 일반사용자 판매예약 모두 포함
         sell_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
                u.username as seller_username, u.nickname as seller_nickname,
                u.phone as seller_phone, u.bank as seller_bank,
                u.account_no as seller_account, u.account_name as seller_account_name,
-               i.stage
+               COALESCE(i.stage, 1) as stage
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                LEFT JOIN items i ON r.item_id = i.id
                WHERE r.status='pending' AND r.match_round=?
-               AND u.username='loopay'
                AND COALESCE(r.confirmed,0)=1""",
             (round_num,)
         ).fetchall()
