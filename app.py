@@ -1627,25 +1627,28 @@ def admin_matching_status():
 
     def get_round_data(round_num):
         # ── 구매예약: pending, 일반 사용자 ──
+        # 오늘 또는 어제 날짜 포함 (1차 매칭이 전날 밤에 실행됐을 경우 대비)
+        import datetime as _dt
+        _yesterday = (_dt.date.fromisoformat(today) - _dt.timedelta(days=1)).isoformat()
         buy_count = db.execute(
             """SELECT COUNT(*) as c FROM reservations r
                WHERE r.match_round=? AND r.status='pending' AND r.user_id!=?
-               AND r.reserve_date=?
+               AND r.reserve_date IN (?, ?)
                AND r.user_id NOT IN (
                    SELECT p.user_id FROM penalties p WHERE p.is_released=0
                )""",
-            (round_num, loopay_id, today)
+            (round_num, loopay_id, today, _yesterday)
         ).fetchone()['c']
 
         buy_by_type = db.execute(
             """SELECT bar_type, COUNT(*) as cnt FROM reservations r
                WHERE r.match_round=? AND r.status='pending' AND r.user_id!=?
-               AND r.reserve_date=?
+               AND r.reserve_date IN (?, ?)
                AND r.user_id NOT IN (
                    SELECT p.user_id FROM penalties p WHERE p.is_released=0
                )
                GROUP BY bar_type""",
-            (round_num, loopay_id, today)
+            (round_num, loopay_id, today, _yesterday)
         ).fetchall()
 
         # ── 판매예약 (시스템 - loopay) ──
