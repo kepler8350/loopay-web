@@ -804,7 +804,12 @@ def user_release_penalty():
         else:
             from_ex = release_pts - ch
             db.execute("UPDATE users SET charge_points=0, exchange_points=exchange_points-? WHERE id=?", (from_ex, uid))
-        # 관리자에게 알림 발송 (관리자가 패널티 관리에서 해제 처리)
+        # release_paid=1 (관리자 승인 대기 상태)
+        try:
+            db.execute("UPDATE penalties SET release_paid=1 WHERE id=?", (penalty['id'],))
+        except Exception:
+            pass
+        # 관리자에게 알림 발송
         admin_row = db.execute("SELECT id FROM users WHERE username='admin' LIMIT 1").fetchone()
         if admin_row:
             u_info = db.execute("SELECT username, nickname FROM users WHERE id=?", (uid,)).fetchone()
@@ -816,7 +821,8 @@ def user_release_penalty():
         db.commit()
         return jsonify(success=True,
                       message=f'해제 포인트 {release_pts:,}P가 차감됐습니다. 관리자 확인 후 거래 정지가 해제됩니다.',
-                      released_points=release_pts)
+                      released_points=release_pts,
+                      release_paid=True)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
@@ -839,11 +845,15 @@ def user_penalties():
         pending = db.execute(
             "SELECT * FROM penalties WHERE user_id=? AND is_released=0 ORDER BY id DESC LIMIT 1", (uid,)
         ).fetchone()
+        pending_dict = dict(pending) if pending else None
+        # release_paid 컬럼 없는 경우 대비
+        if pending_dict and 'release_paid' not in pending_dict:
+            pending_dict['release_paid'] = 0
         return jsonify(
             penalties=[dict(r) for r in rows],
             suspended_until=u['suspended_until'] if u else None,
             unpaid_count=int(u['unpaid_count'] or 0) if u else 0,
-            pending_penalty=dict(pending) if pending else None
+            pending_penalty=pending_dict
         )
     finally:
         db.close()
@@ -1692,6 +1702,7 @@ with app.app_context():
             "ALTER TABLE penalties ADD COLUMN match_id INTEGER",
             "ALTER TABLE penalties ADD COLUMN release_at DATETIME",
             "ALTER TABLE penalties ADD COLUMN match_round INTEGER DEFAULT 1",
+            "ALTER TABLE penalties ADD COLUMN release_paid INTEGER DEFAULT 0",
             "ALTER TABLE notifications ADD COLUMN scheduled_at DATETIME",
         ]:
             try:

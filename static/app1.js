@@ -1808,15 +1808,33 @@ async function loadPenaltyTab(){
     var detailText = document.getElementById('penalty-detail-text');
 
     if(pending && !pending.is_released){
-      // 패널티 해제 버튼 활성화
-      if(btn){
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        btn.style.cursor = 'pointer';
-      }
-      if(statusText){
-        statusText.textContent = '미해제 패널티 있음 — 해제 포인트: ' + (pending.release_points||0).toLocaleString() + 'P';
-        statusText.style.color = '#ef5350';
+      var isWaitingApproval = pending.release_paid === 1 || pending.release_paid === true;
+      if(isWaitingApproval){
+        // 납부 완료 → 관리자 승인 대기중
+        if(btn){
+          btn.disabled = true;
+          btn.style.opacity = '0.5';
+          btn.style.cursor = 'not-allowed';
+          btn.textContent = '⏳ 관리자 승인 대기중';
+          btn.style.background = '#546e7a';
+        }
+        if(statusText){
+          statusText.textContent = '해제 포인트 납부 완료 — 관리자 확인 후 정지가 해제됩니다';
+          statusText.style.color = '#f9a825';
+        }
+      } else {
+        // 미납부 → 해제 버튼 활성화
+        if(btn){
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
+          btn.textContent = '🔓 패널티 해제하기';
+          btn.style.background = '#c62828';
+        }
+        if(statusText){
+          statusText.textContent = '미해제 패널티 있음 — 해제 포인트: ' + (pending.release_points||0).toLocaleString() + 'P';
+          statusText.style.color = '#ef5350';
+        }
       }
       if(infoBox) infoBox.style.display = 'block';
       if(detailText && d.suspended_until){
@@ -1824,7 +1842,9 @@ async function loadPenaltyTab(){
           '• 누적 미입금: ' + (d.unpaid_count||0) + '회<br>' +
           '• 정지 해제일: ' + (d.suspended_until||'').slice(0,10) + '<br>' +
           '• 해제 포인트: ' + (pending.release_points||0).toLocaleString() + 'P<br>' +
-          '• 해제 포인트 충전 후 해제 버튼을 눌러주세요.';
+          (isWaitingApproval
+            ? '• ⏳ 해제 포인트 납부 완료 — 관리자 확인 후 해제됩니다.'
+            : '• 해제 포인트 충전 후 해제 버튼을 눌러주세요.');
       }
     } else {
       if(btn){ btn.disabled=true; btn.style.opacity='0.4'; btn.style.cursor='not-allowed'; }
@@ -1881,8 +1901,22 @@ async function doReleasePenalty(){
     var d = await api('/penalty/release', {method:'POST', body:JSON.stringify({})});
     closePenaltyPopup();
     toast(d.message || '납부 완료. 관리자 확인 후 해제됩니다.', 'success');
+    // 즉시 버튼 상태 변경 (API 재로드 전)
+    var btn = document.getElementById('penalty-release-btn');
+    var statusText = document.getElementById('penalty-status-text');
+    if(btn){
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'not-allowed';
+      btn.textContent = '⏳ 관리자 승인 대기중';
+      btn.style.background = '#546e7a';
+    }
+    if(statusText){
+      statusText.textContent = '해제 포인트 납부 완료 — 관리자 확인 후 정지가 해제됩니다';
+      statusText.style.color = '#f9a825';
+    }
     await loadUserData();
-    loadPenaltyTab();
+    await loadPenaltyTab();
   } catch(e){
     closePenaltyPopup();
     toast(e.message || '패널티 해제 실패', 'error');
