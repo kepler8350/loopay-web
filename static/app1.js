@@ -2004,7 +2004,7 @@ async function loadSellTab(){
     var allList = [];
     for(var bt of ['bronze','silver','gold']){
       for(var it of all_items[bt]){
-        allList.push({...it, bar_type_label: barNames[bt]});
+        allList.push(Object.assign({}, it, {bar_type_label: barNames[bt]}));
       }
     }
 
