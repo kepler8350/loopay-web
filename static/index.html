@@ -1,4 +1,4 @@
-<!DOCTYPE html><!-- v20260531141547 -->
+<!DOCTYPE html><!-- v20260531142625 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -280,7 +280,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 }
 .notif-blink{animation:notif-blink-anim 1s ease-in-out infinite!important;}
 </style>
-<script src="/static/app1.js?v=20260531141547"></script>
+<script src="/static/app1.js?v=20260531142625"></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -708,35 +708,62 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
       <!-- 거래내역 -->
       <div id="tab-sell" class="tab">
-  <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">
-    <strong>내 판매 관리</strong>
-    <button onclick="loadSellTab()" style="font-size:11px;background:var(--card-bg);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:6px;cursor:pointer">새로고침</button>
-  </div>
-
-  <!-- 보유 아이템 판매예약 섹션 -->
-  <div class="match-card" style="margin-bottom:12px">
-    <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text1)">📦 보유 아이템</div>
-    <div id="sell-tab-items">
-      <div style="color:var(--text2);font-size:13px;padding:12px;text-align:center">로딩 중...</div>
+  <!-- 헤더 -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div>
+      <div style="font-size:15px;font-weight:700;color:var(--text1)">내 아이템 현황</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:2px">보유한 아이템 내역</div>
     </div>
-    <div id="sell-tab-selected" style="margin-top:10px;display:none">
-      <div style="font-size:12px;color:#f9a825;margin-bottom:6px">선택된 아이템:</div>
-      <div id="sell-tab-selected-list" style="font-size:12px;color:var(--text1)"></div>
-      <button id="sell-tab-btn" onclick="doSellReserveFromTab()" style="margin-top:8px;width:100%;padding:10px;background:#7c4dff;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">판매 예약하기</button>
+    <button onclick="loadSellTab()" style="font-size:11px;background:var(--card-bg);border:1px solid var(--border);color:var(--text2);padding:5px 12px;border-radius:6px;cursor:pointer">↻ 새로고침</button>
+  </div>
+
+  <!-- 요약 카드 -->
+  <div id="sell-tab-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+    <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+      <div style="font-size:11px;font-weight:700;color:#cd7f32;margin-bottom:6px">수정</div>
+      <div style="font-size:18px;font-weight:700;color:var(--text1)" id="sell-sum-bz-total">-</div>
+      <div style="font-size:10px;color:#66bb6a;margin-top:2px">판매가능: <span id="sell-sum-bz-ok">0</span></div>
+      <div style="font-size:10px;color:#f9a825">매칭완료: <span id="sell-sum-bz-match">0</span></div>
+      <div style="font-size:10px;color:#888">판매완료: <span id="sell-sum-bz-sold">0</span></div>
+    </div>
+    <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+      <div style="font-size:11px;font-weight:700;color:#a8a9ad;margin-bottom:6px">루비</div>
+      <div style="font-size:18px;font-weight:700;color:var(--text1)" id="sell-sum-sv-total">-</div>
+      <div style="font-size:10px;color:#66bb6a;margin-top:2px">판매가능: <span id="sell-sum-sv-ok">0</span></div>
+      <div style="font-size:10px;color:#f9a825">매칭완료: <span id="sell-sum-sv-match">0</span></div>
+      <div style="font-size:10px;color:#888">판매완료: <span id="sell-sum-sv-sold">0</span></div>
+    </div>
+    <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center">
+      <div style="font-size:11px;font-weight:700;color:#ffd700;margin-bottom:6px">다이아</div>
+      <div style="font-size:18px;font-weight:700;color:var(--text1)" id="sell-sum-gd-total">-</div>
+      <div style="font-size:10px;color:#66bb6a;margin-top:2px">판매가능: <span id="sell-sum-gd-ok">0</span></div>
+      <div style="font-size:10px;color:#f9a825">매칭완료: <span id="sell-sum-gd-match">0</span></div>
+      <div style="font-size:10px;color:#888">판매완료: <span id="sell-sum-gd-sold">0</span></div>
     </div>
   </div>
 
-  <!-- 진행 중 판매예약 섹션 -->
-  <div class="match-card" style="margin-bottom:12px">
-    <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text1)">📋 진행 중인 판매예약</div>
-    <div id="sell-tab-pending" style="font-size:13px;color:var(--text2)">로딩 중...</div>
+  <!-- 필터 -->
+  <div style="display:flex;gap:6px;margin-bottom:10px">
+    <select id="sell-filter-type" onchange="renderSellTab()" style="flex:1;padding:6px 8px;font-size:12px;background:var(--card-bg);border:1px solid var(--border);color:var(--text1);border-radius:6px">
+      <option value="">전체 종류</option>
+      <option value="bronze">수정</option>
+      <option value="silver">루비</option>
+      <option value="gold">다이아</option>
+    </select>
+    <select id="sell-filter-status" onchange="renderSellTab()" style="flex:1;padding:6px 8px;font-size:12px;background:var(--card-bg);border:1px solid var(--border);color:var(--text1);border-radius:6px">
+      <option value="">전체 상태</option>
+      <option value="reservable">판매가능</option>
+      <option value="active">보유중</option>
+      <option value="matched">매칭완료</option>
+      <option value="sold">판매완료</option>
+    </select>
   </div>
 
-  <!-- 완료된 판매 섹션 -->
-  <div class="match-card">
-    <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text1)">✅ 완료된 판매</div>
-    <div id="sell-tab-done" style="font-size:13px;color:var(--text2)">로딩 중...</div>
+  <!-- 아이템 목록 -->
+  <div id="sell-tab-list" style="font-size:13px">
+    <div style="text-align:center;color:var(--text2);padding:20px">로딩 중...</div>
   </div>
+  <div id="sell-tab-total" style="font-size:11px;color:var(--text2);text-align:right;margin-top:6px"></div>
 </div>
 
 <div id="tab-history" class="tab">
@@ -944,7 +971,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 </div>
-<script src="/static/app2.js?v=20260531141547"></script>
+<script src="/static/app2.js?v=20260531142625"></script>
 <!-- 패널티 해제 팝업 -->
 <div id="penalty-release-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
   <div style="background:#1a1a2e;border:1px solid #2d2d5e;border-radius:12px;padding:24px;width:320px;max-width:90vw">

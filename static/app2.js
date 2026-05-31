@@ -68,13 +68,23 @@ function renderBars(d){
       const profitStr=it.profit>=0?`+${it.profit.toLocaleString()}`:`${it.profit.toLocaleString()}`;
       const _barName2={bronze:'수정',silver:'루비',gold:'다이아'};
       const _canSell2=(it.days>=2&&it.status_label!=='판매중'&&it.status_label!=='매칭중'&&it.status_label!=='매칭완료'&&it.status_label!=='판매예약');
-      return `<div class="item-row" onclick="toggleItemSellSelect(${it.id},'${t}')" style="cursor:pointer">
+      // 아이템 캐시 등록 (선택 처리용)
+      _itemCache[String(it.id)] = {bar_type: t, stage: it.stage, sell_price: it.sell_price};
+      var _isSelected = !!_sellSelected[String(it.id)];
+      var _rowStyle = _isSelected
+        ? 'cursor:pointer;background:rgba(123,31,162,0.12);border:1.5px solid #7b1fa2;border-radius:8px;margin-bottom:4px'
+        : (_canSell2 ? 'cursor:pointer' : 'cursor:default;opacity:0.65');
+      var _badge = _isSelected
+        ? `<span style="background:#7b1fa2;color:#fff;padding:1px 7px;border-radius:8px;font-size:11px">✓ 선택</span>`
+        : `<span class="badge ${it.status_label==='대기중'?'badge-wait':'badge-match'}">${it.status_label}</span>`;
+      return `<div class="item-row" style="${_rowStyle}" onclick="toggleItemSellSelect(${it.id},'${t}')">
         <div class="item-hd">
           <span class="item-stage">${it.stage}단계 ${_barName2[t]}바</span>
-          <span class="badge ${it.status_label==='대기중'?'badge-wait':'badge-match'}">${it.status_label}</span>
+          ${_badge}
         </div>
         <div class="item-date">구매일: ${it.purchase_date} (${it.days}일째)</div>
         <div class="item-price">구매 <span style="color:#aaa">${it.buy_price.toLocaleString()}원</span> → 판매 <span style="color:#f9a825">${it.sell_price.toLocaleString()}원</span> <span style="color:#66bb6a;font-size:12px">(${profitStr}원)</span></div>
+        ${!_canSell2 ? `<div style="font-size:10px;color:#f9a825;margin-top:2px">⏳ 구매 3일째부터 판매예약 가능 (현재 ${it.days+1}일째)</div>` : ''}
       </div>`;
     }).join('');
   });
@@ -178,6 +188,40 @@ function updateSellBoard(){
 
 // 아이템 캐시 (id → {bar_type, stage, sell_price})
 var _itemCache = {};
+
+// 홈화면 아이템 클릭 → 판매예약 선택 토글
+function toggleItemSellSelect(itemId, barType){
+  var id = String(itemId);
+  if(_sellSelected[id]){
+    delete _sellSelected[id];
+  } else {
+    // 아이템 캐시에서 정보 가져오기
+    var info = _itemCache[id];
+    if(!info){
+      // renderBars 시 캐시 등록 필요 - barType만 저장
+      _itemCache[id] = {bar_type: barType, stage:1, sell_price:0};
+      info = _itemCache[id];
+    }
+    // 판매 가능 여부 확인 (days>=2)
+    var canSell = false;
+    if(userData && userData.items){
+      var items = userData.items[barType]||[];
+      var item = items.find(function(x){ return String(x.id)===id; });
+      if(item){
+        canSell = item.days >= 2;
+        _itemCache[id] = {bar_type: barType, stage: item.stage, sell_price: item.sell_price};
+      }
+    }
+    if(!canSell){
+      toast('구매 3일째부터 판매예약 가능합니다', 'error');
+      return;
+    }
+    _sellSelected[id] = true;
+  }
+  updateSellBoard();
+  // 아이템 상세보기 재렌더링 (선택 표시 갱신)
+  renderBars(userData||{items:{bronze:[],silver:[],gold:[]},reservable:{}});
+}
 
 function showSellConfirm(){
   var names={bronze:'수정',silver:'루비',gold:'다이아'};

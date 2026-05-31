@@ -2934,6 +2934,279 @@ def admin_confirm_unpaid():
 
 
 # ── 시스템(loopay) 아이템 현황 조회 ──────────────────
+@app.route('/api/user/my-items', methods=['GET'])
+@jwt_required()
+def user_my_items():
+    identity = get_jwt_identity()
+    uid = int(identity)
+    db = get_db()
+    try:
+        lid = uid
+        # 아이템 목록 먼저 가져오기
+        item_rows = db.execute(
+            """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date,
+               (SELECT MAX(r2.reserve_date) FROM reservations r2 WHERE r2.item_id = i.id) as reserve_date
+               FROM items i
+               WHERE i.user_id = ? AND 1=1
+               ORDER BY i.id DESC""",
+            (lid,)
+        ).fetchall()
+
+        # 각 아이템과 매칭된 match 찾기
+        # loopay가 seller이고, 해당 아이템의 bar_type+stage와 일치하는 가장 최신 active match
+        def get_match_for_item(bar_type, stage):
+            m = db.execute(
+                """SELECT m.id, m.status, u.username as buyer_username
+                   FROM matches m
+                   LEFT JOIN users u ON m.buyer_id = u.id
+                   WHERE m.seller_id = ? AND m.bar_type = ? AND m.stage = ?
+                     AND m.status IN ('pending', 'paid')
+                   ORDER BY m.id DESC LIMIT 1""",
+                (lid, bar_type, stage or 1)
+            ).fetchone()
+            return dict(m) if m else None
+
+        # 이미 매핑된 match_id 추적 (중복 방지)
+        used_match_ids = set()
+        rows_with_match = []
+        for item in item_rows:
+            d = dict(item)
+            bt = d['bar_type']
+            st = d['stage'] or 1
+            # 이 아이템의 status가 matched/sold인 경우만 match 찾기
+            if d['status'] in ('matched', 'sold', 'reservable'):
+                m = db.execute(
+                    """SELECT m.id, m.status, m.match_round, m.receipt_url,
+                       u.username as buyer_username,
+                       u.account_name as buyer_account_name,
+                       u.account_no as buyer_account
+                       FROM matches m
+                       LEFT JOIN users u ON m.buyer_id = u.id
+                       WHERE m.seller_id = ? AND m.bar_type = ? AND m.stage = ?
+                         AND m.status IN ('pending', 'paid')
+                         AND m.id NOT IN ({})
+                       ORDER BY m.id DESC LIMIT 1""".format(
+                           ','.join(str(x) for x in used_match_ids) if used_match_ids else '0'
+                       ),
+                    (lid, bt, st)
+                ).fetchone()
+                if m:
+                    d['match_id'] = m['id']
+                    d['match_status'] = m['status']
+                    d['match_round'] = m['match_round'] if 'match_round' in m.keys() else None
+                    d['receipt_url'] = m['receipt_url'] if 'receipt_url' in m.keys() else None
+                    d['buyer_username'] = m['buyer_username']
+                    d['buyer_account_name'] = m['buyer_account_name']
+                    d['buyer_account'] = m['buyer_account']
+                    used_match_ids.add(m['id'])
+                else:
+                    d['match_id'] = None
+                    d['match_status'] = None
+                    d['buyer_username'] = None
+                    d['buyer_account_name'] = None
+                    d['buyer_account'] = None
+            else:
+                d['match_id'] = None
+                d['match_status'] = None
+                d['buyer_username'] = None
+                d['buyer_account_name'] = None
+                d['buyer_account'] = None
+            rows_with_match.append(d)
+
+        # confirmed/failed match는 목록에서 제외 (match_id 기준으로 제외, item 기준 아님)
+        rows = [d for d in rows_with_match
+                if d.get('match_status') not in ('confirmed', 'failed')]
+        return jsonify(
+            items=[{
+                'id': r['id'],
+                'bar_type': r['bar_type'],
+                'stage': r['stage'],
+                'status': r['status'],
+                'purchase_date': r['purchase_date'],
+                'reserve_date': r['reserve_date'],
+                'match_id': r['match_id'],
+                'match_status': r['match_status'],
+                'match_round': r.get('match_round'),
+                'receipt_url': r.get('receipt_url'),
+                'buyer_username': r.get('buyer_username'),
+                'buyer_account_name': r.get('buyer_account_name'),
+                'buyer_account': r.get('buyer_account'),
+            } for r in rows],
+            total=len(rows)
+        )
+    finally:
+        db.close()
+
+# ── 시스템(loopay) 아이템 삭제 ──────────────────────
+@app.route('/api/admin/delete-loopay-items', methods=['POST'])
+@jwt_required()
+def admin_delete_loopay_items():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    item_ids = data.get('item_ids', [])
+    db = get_db()
+    try:
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay: return jsonify(error='loopay 계정 없음'), 404
+        lid = loopay['id']
+        if item_ids == 'all':
+            # 연결된 예약 먼저 삭제 (FOREIGN KEY 제약 해제)
+            db.execute("PRAGMA foreign_keys=OFF")
+            db.execute("DELETE FROM reservations WHERE user_id=? AND item_id IN (SELECT id FROM items WHERE user_id=?)", (lid, lid))
+            result = db.execute("DELETE FROM items WHERE user_id=?", (lid,))
+            deleted = result.rowcount
+            db.execute("PRAGMA foreign_keys=ON")
+        else:
+            if not isinstance(item_ids, list) or not item_ids:
+                return jsonify(error='item_ids 필요'), 400
+            placeholders = ','.join('?' * len(item_ids))
+            # 연결된 예약 먼저 삭제
+            db.execute("PRAGMA foreign_keys=OFF")
+            db.execute(
+                f"DELETE FROM reservations WHERE user_id=? AND item_id IN ({placeholders})",
+                [lid] + [int(i) for i in item_ids]
+            )
+            result = db.execute(
+                f"DELETE FROM items WHERE user_id=? AND id IN ({placeholders})",
+                [lid] + [int(i) for i in item_ids]
+            )
+            deleted = result.rowcount
+            db.execute("PRAGMA foreign_keys=ON")
+        db.commit()
+        return jsonify(success=True, deleted=deleted)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+# ── 루페이 추가예약 내역 조회 ─────────────────────────────
+@app.route('/api/admin/loopay-extra-reservations', methods=['GET'])
+@jwt_required()
+def admin_loopay_extra_reservations():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    conn = get_db()
+    try:
+        loopay = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay: return jsonify(reservations=[])
+        lid = loopay['id']
+        rows = conn.execute("""
+            SELECT r.id, r.bar_type, r.status, r.reserve_date,
+                   r.match_round,
+                   COALESCE(r.confirmed,0) as confirmed,
+                   CASE WHEN r.item_id IS NOT NULL THEN 'sell' ELSE 'buy' END as type,
+                   COALESCE(r.stage, COALESCE(i.stage, 0)) as stage
+            FROM reservations r
+            LEFT JOIN items i ON r.item_id = i.id
+            WHERE r.user_id = ? AND r.status = 'pending'
+            AND r.reserve_date = ?
+            ORDER BY r.id DESC
+        """, (lid, get_today().isoformat())).fetchall()
+        return jsonify(reservations=[dict(r) for r in rows])
+    finally:
+        conn.close()
+
+# ── 루페이 추가예약 선택 삭제 ─────────────────────────────
+@app.route('/api/admin/delete-extra-reservations', methods=['POST'])
+@jwt_required()
+def admin_delete_extra_reservations():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    ids = data.get('ids', [])
+    if not ids: return jsonify(error='ids 필요'), 400
+    conn = get_db()
+    try:
+        loopay = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay: return jsonify(error='loopay 계정 없음'), 404
+        lid = loopay['id']
+        ph = ','.join('?'*len(ids))
+        conn.execute("PRAGMA foreign_keys=OFF")
+        # 판매예약의 경우 연결된 아이템도 삭제
+        sell_rows = conn.execute(
+            f"SELECT item_id FROM reservations WHERE id IN ({ph}) AND user_id=? AND match_round=2 AND item_id>0",
+            [int(i) for i in ids] + [lid]
+        ).fetchall()
+        if sell_rows:
+            item_ids = [r['item_id'] for r in sell_rows]
+            conn.execute(f"DELETE FROM items WHERE id IN ({','.join('?'*len(item_ids))}) AND user_id=?",
+                        item_ids + [lid])
+        conn.execute(f"DELETE FROM reservations WHERE id IN ({ph}) AND user_id=? AND confirmed=0",
+                    [int(i) for i in ids] + [lid])
+        conn.execute("PRAGMA foreign_keys=ON")
+        conn.commit()
+        return jsonify(success=True, deleted=len(ids))
+    except Exception as e:
+        conn.rollback()
+        conn.execute("PRAGMA foreign_keys=ON")
+        return jsonify(error=str(e)), 500
+    finally:
+        conn.close()
+
+# ── 루페이 추가예약 확정 ─────────────────────────────────
+@app.route('/api/admin/confirm-extra-reservations', methods=['POST'])
+@jwt_required()
+def admin_confirm_extra_reservations():
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    ids = data.get('ids', [])
+    if not ids: return jsonify(error='ids 필요'), 400
+    conn = get_db()
+    try:
+        loopay = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay: return jsonify(error='loopay 계정 없음'), 404
+        lid = loopay['id']
+        today = get_today().isoformat()
+        ph = ','.join('?'*len(ids))
+        # 확정할 예약들 조회 (confirmed=0인 것만)
+        rows = conn.execute(
+            f"SELECT * FROM reservations WHERE id IN ({ph}) AND user_id=? AND confirmed=0",
+            [int(i) for i in ids] + [lid]
+        ).fetchall()
+        if not rows:
+            return jsonify(error='확정 가능한 항목 없음 (이미 확정됨)'), 400
+        confirmed_ids = []
+        conn.execute("PRAGMA foreign_keys=OFF")
+        for row in rows:
+            r_id = row['id']
+            bar_type = row['bar_type']
+            stage = row['stage'] or 1
+            item_id = row['item_id']  # None이면 구매예약, 있으면 판매예약
+            if item_id:
+                # 판매예약: 기존 아이템 상태 reservable로 + confirmed=1
+                conn.execute("UPDATE items SET status='reservable' WHERE id=? AND user_id=?", (item_id, lid))
+                conn.execute("UPDATE reservations SET confirmed=1 WHERE id=?", (r_id,))
+            else:
+                # 구매예약: 아이템 새로 생성 후 confirmed=1
+                cur = conn.execute(
+                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
+                    (lid, bar_type, stage, today)
+                )
+                new_item_id = cur.lastrowid
+                conn.execute(
+                    "UPDATE reservations SET confirmed=1, item_id=? WHERE id=?",
+                    (new_item_id, r_id)
+                )
+            confirmed_ids.append(r_id)
+        conn.execute("PRAGMA foreign_keys=ON")
+        conn.commit()
+        return jsonify(success=True, confirmed=len(confirmed_ids))
+    except Exception as e:
+        conn.rollback()
+        conn.execute("PRAGMA foreign_keys=ON")
+        return jsonify(error=str(e)), 500
+    finally:
+        conn.close()
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port, debug=False)
+
+# volume-persistent-db
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():

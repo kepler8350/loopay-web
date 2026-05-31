@@ -1972,146 +1972,128 @@ async function doReleasePenalty(){
 
 
 // ── 판매 탭 ──────────────────────────────────────
+var _myItems = [];
 
 async function loadSellTab(){
   try {
-    var now_h = typeof getEffectiveDate==='function' ? getEffectiveDate().getHours() : new Date().getHours();
-    var canReserve = (now_h>=5 && now_h<20);
-
-    // 보유 아이템 전체 로드
-    var all_items = {bronze:[], silver:[], gold:[]};
-    var barNames = {bronze:'수정', silver:'루비', gold:'다이아'};
-    for(var bt of ['bronze','silver','gold']){
-      try {
-        var items = await api('/items?bar_type='+bt);
-        if(Array.isArray(items)) all_items[bt] = items;
-      } catch(e){}
-    }
-
-    // 보유 아이템 섹션 렌더링
-    var itemsEl = document.getElementById('sell-tab-items');
-    var allList = [];
-    for(var bt of ['bronze','silver','gold']){
-      for(var it of all_items[bt]){
-        allList.push(Object.assign({}, it, {bar_type_label: barNames[bt]}));
-      }
-    }
-
-    if(!allList.length){
-      itemsEl.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:12px;text-align:center">보유 아이템 없음</div>';
-    } else {
-      var html = allList.map(function(it){
-        var dayNum = it.days + 1;
-        var canSell = it.days>=2 && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료' && it.status_label!=='판매예약';
-        var isSelected = !!_sellTabSelected[it.id];
-        var profitStr = (it.profit>=0?'+':'')+it.profit.toLocaleString();
-        var sellable = canSell && canReserve;
-        var cardStyle = isSelected
-          ? 'background:rgba(124,77,255,0.15);border:1.5px solid #7c4dff;border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer'
-          : (sellable ? 'background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer' : 'background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;opacity:0.6');
-        var _onclick = sellable ? ' onclick="toggleSellTabItem('+it.id+',this)" data-bar="'+it.bar_type+'" data-stage="'+it.stage+'" data-price="'+it.sell_price+'"' : '';
-        return '<div style="'+cardStyle+'"'+_onclick+'>'
-          +'<span style="font-size:13px;font-weight:700">'+it.stage+'단계 '+it.bar_type_label+'바</span>'
-          +'<span style="font-size:11px;background:'+(isSelected?'#7c4dff':'var(--accent)')+';color:#fff;padding:2px 8px;border-radius:10px">'+(isSelected?'✓ 선택됨':it.status_label)+'</span>'
-          +'</div>'
-          +'<div style="font-size:12px;color:var(--text2);margin-top:4px">구매일: '+it.purchase_date+' ('+dayNum+'일째)'+(canSell?'':' — '+(it.days>=2?'':'구매 3일째부터 판매가능'))+'</div>'
-          +'<div style="font-size:12px;margin-top:2px">구매 <span style="color:#aaa">'+it.buy_price.toLocaleString()+'원</span> → 판매 <span style="color:#f9a825">'+it.sell_price.toLocaleString()+'원</span> <span style="color:#66bb6a">('+profitStr+'원)</span></div>'
-          +(sellable?'':'<div style="font-size:11px;color:#f9a825;margin-top:4px">'+(it.days<2?'⏳ 구매 3일째부터 판매예약 가능 (현재 '+dayNum+'일째)':'🔒 '+it.status_label+' 상태')+'</div>')
-          +'</div>';
-      }).join('');
-      itemsEl.innerHTML = html;
-    }
-    _updateSellTabSelected();
-
-    // 진행 중 판매예약 로드
-    var matching = await api('/user/matching');
-    var pendingSell = (matching.sell||[]).filter(function(s){return s.status==='waiting'||s.status==='pending';});
-    var pendingEl = document.getElementById('sell-tab-pending');
-    if(!pendingSell.length){
-      pendingEl.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text2)">진행 중인 판매예약 없음</div>';
-    } else {
-      pendingEl.innerHTML = pendingSell.map(function(s){
-        var barName = {bronze:'수정',silver:'루비',gold:'다이아'}[s.bar_type]||s.bar_type;
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">'
-          +'<span>'+barName+' '+(s.stage||1)+'단계</span>'
-          +'<span style="color:#f9a825;font-size:11px">'+(s.status==='waiting'?'⏳ 매칭 대기':'🔄 매칭 중')+'</span>'
-          +'</div>';
-      }).join('');
-    }
-
-    // 완료된 판매 로드
-    var doneSell = (matching.sell||[]).filter(function(s){return s.status==='confirmed'||s.status==='paid';});
-    var doneEl = document.getElementById('sell-tab-done');
-    if(!doneSell.length){
-      doneEl.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text2)">완료된 판매 없음</div>';
-    } else {
-      doneEl.innerHTML = doneSell.map(function(s){
-        var barName = {bronze:'수정',silver:'루비',gold:'다이아'}[s.bar_type]||s.bar_type;
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">'
-          +'<span>'+barName+' '+s.stage+'단계</span>'
-          +'<span style="color:#66bb6a;font-size:11px">✅ 판매 완료</span>'
-          +'</div>';
-      }).join('');
-    }
+    var d = await api('/user/my-items');
+    _myItems = d.items || [];
+    _renderSellSummary();
+    renderSellTab();
   } catch(e) {
-    console.error('loadSellTab error:', e);
+    var el = document.getElementById('sell-tab-list');
+    if(el) el.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px">불러오기 실패: '+e.message+'</div>';
   }
 }
 
-function toggleSellTabItem(itemId, el){
-  // el이 DOM 요소인 경우 data 속성에서 값 가져오기
-  var barType = el ? el.dataset.bar : '';
-  var stage = el ? parseInt(el.dataset.stage||1) : 1;
-  var sellPrice = el ? parseInt(el.dataset.price||0) : 0;
-  if(_sellTabSelected[itemId]){
-    delete _sellTabSelected[itemId];
-  } else {
-    _sellTabSelected[itemId] = {bar_type:barType, stage:stage, sell_price:sellPrice};
-  }
-  _updateSellTabSelected();
-  loadSellTab();  // 리렌더링
+function _renderSellSummary(){
+  var types = ['bronze','silver','gold'];
+  var ids   = ['bz','sv','gd'];
+  types.forEach(function(t,i){
+    var all = _myItems.filter(function(x){ return x.bar_type===t; });
+    var ok  = all.filter(function(x){ return x.status==='reservable'||x.status==='active'; }).length;
+    var mat = all.filter(function(x){ return x.status==='matched'; }).length;
+    var sold= all.filter(function(x){ return x.status==='sold'; }).length;
+    var pf  = ids[i];
+    var el  = document.getElementById('sell-sum-'+pf+'-total');
+    if(el) el.textContent = all.length+'개';
+    var elOk = document.getElementById('sell-sum-'+pf+'-ok');
+    if(elOk) elOk.textContent = ok;
+    var elMat = document.getElementById('sell-sum-'+pf+'-match');
+    if(elMat) elMat.textContent = mat;
+    var elSold = document.getElementById('sell-sum-'+pf+'-sold');
+    if(elSold) elSold.textContent = sold;
+  });
 }
 
-function _updateSellTabSelected(){
-  var selectedEl = document.getElementById('sell-tab-selected');
-  var listEl = document.getElementById('sell-tab-selected-list');
-  var ids = Object.keys(_sellTabSelected);
-  if(!ids.length){
-    if(selectedEl) selectedEl.style.display='none';
+function renderSellTab(){
+  var listEl = document.getElementById('sell-tab-list');
+  var totalEl = document.getElementById('sell-tab-total');
+  if(!listEl) return;
+
+  var typeFilter   = (document.getElementById('sell-filter-type')  ||{}).value || '';
+  var statusFilter = (document.getElementById('sell-filter-status')||{}).value || '';
+
+  var filtered = _myItems.filter(function(x){
+    if(typeFilter   && x.bar_type !== typeFilter)   return false;
+    if(statusFilter && x.status   !== statusFilter) return false;
+    return true;
+  });
+
+  if(totalEl) totalEl.textContent = '총 '+filtered.length+'개 (전체 '+_myItems.length+'개)';
+
+  if(!filtered.length){
+    listEl.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px;font-size:13px">아이템 없음</div>';
     return;
   }
-  if(selectedEl) selectedEl.style.display='block';
-  var barNames = {bronze:'수정', silver:'루비', gold:'다이아'};
-  if(listEl) listEl.innerHTML = ids.map(function(id){
-    var it = _sellTabSelected[id];
-    return barNames[it.bar_type]+' '+it.stage+'단계 — 판매가 '+it.sell_price.toLocaleString()+'원';
-  }).join('<br>');
+
+  var tC={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+  var tN={bronze:'수정',silver:'루비',gold:'다이아'};
+  var sL={reservable:'판매가능',waiting:'대기중',active:'보유중',matched:'매칭완료',sold:'판매완료',pending:'예약중'};
+  var sC={reservable:'#66bb6a',waiting:'#f9a825',active:'#64b5f6',matched:'#1976d2',sold:'#888',pending:'#ab47bc'};
+  var msKr={pending:'대기',matched:'매칭완료',paid:'송금',confirmed:'거래완료',cancelled:'취소',failed:'미입금',unpaid:'미입금'};
+  var msColor={pending:'#888',matched:'#f9a825',paid:'#42a5f5',confirmed:'#66bb6a',cancelled:'#ef5350',failed:'#ef5350',unpaid:'#ef5350'};
+
+  listEl.innerHTML = filtered.map(function(item){
+    // 매칭 상태 배지
+    var ms = item.match_status;
+    var matchBadge = ms
+      ? '<span style="padding:2px 7px;border-radius:10px;font-size:11px;background:'+(msColor[ms]||'#888')+'33;color:'+(msColor[ms]||'#888')+'">'+(msKr[ms]||ms)+'</span>'
+        + (item.match_round===2
+          ? '<span style="padding:2px 4px;border-radius:6px;font-size:10px;background:#7b1fa233;color:#ce93d8;font-weight:700;margin-left:3px">2차</span>'
+          : (ms ? '<span style="padding:2px 4px;border-radius:6px;font-size:10px;background:#1565c033;color:#90caf9;font-weight:700;margin-left:3px">1차</span>' : ''))
+      : '<span style="color:var(--text2);font-size:11px">-</span>';
+
+    // 액션 버튼 (매칭된 경우: 입금확인/미입금)
+    var actionBtns = '';
+    if(item.match_id && ms==='paid'){
+      actionBtns = '<button onclick="userConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">✅ 입금확인</button>'
+                 + ' <button onclick="userReportUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-left:4px">🚫 미입금</button>';
+    } else if(item.match_id && ms==='matched'){
+      actionBtns = '<span style="font-size:11px;color:#f9a825">⏳ 송금 대기</span>';
+    } else if(ms==='confirmed'){
+      actionBtns = '<span style="font-size:11px;color:#66bb6a">✅ 완료</span>';
+    }
+
+    return '<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">'
+      // 1행: 종류/단계/상태
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+        +'<span style="font-size:13px;font-weight:700;color:'+(tC[item.bar_type]||'#fff')+'">'+(tN[item.bar_type]||item.bar_type)+' '+(item.stage||1)+'단계</span>'
+        +'<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(sC[item.status]||'#555')+'22;color:'+(sC[item.status]||'#aaa')+';border:1px solid '+(sC[item.status]||'#555')+'44">'+(sL[item.status]||item.status)+'</span>'
+      +'</div>'
+      // 2행: 날짜 정보
+      +'<div style="display:flex;gap:10px;font-size:11px;color:var(--text2);margin-bottom:6px">'
+        +'<span>구매일: '+(item.purchase_date||'-')+'</span>'
+        +(item.reserve_date ? '<span>예약일: '+item.reserve_date+'</span>' : '')
+      +'</div>'
+      // 3행: 매칭상태 + 구매자 정보
+      +(ms || item.buyer_username
+        ? '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px">'
+            +matchBadge
+            +(item.buyer_username ? '<span style="font-size:11px;color:#64b5f6">구매자: '+item.buyer_username+'</span>' : '')
+            +(item.buyer_account_name ? '<span style="font-size:11px;color:var(--text2)">'+item.buyer_account_name+'</span>' : '')
+          +'</div>'
+        : '')
+      // 4행: 액션
+      +(actionBtns ? '<div style="margin-top:4px">'+actionBtns+'</div>' : '')
+      +'</div>';
+  }).join('');
 }
 
-async function doSellReserveFromTab(){
-  var ids = Object.keys(_sellTabSelected);
-  if(!ids.length){ toast('판매할 아이템을 선택해주세요.','error'); return; }
-  var btn = document.getElementById('sell-tab-btn');
-  if(btn){ btn.disabled=true; btn.textContent='예약 중...'; }
-  var ok=0, fail=0;
-  for(var itemId of ids){
-    try {
-      var r = await api('/reservation/sell',{method:'POST',body:JSON.stringify({item_id:parseInt(itemId)})});
-      if(r.success) ok++;
-      else fail++;
-    } catch(e){ fail++; }
-  }
-  _sellTabSelected = {};
-  if(btn){ btn.disabled=false; btn.textContent='판매 예약하기'; }
-  if(ok>0) toast(ok+'개 판매예약 완료!','success');
-  if(fail>0) toast(fail+'개 판매예약 실패','error');
-  loadSellTab();
+// 판매탭: 입금확인
+async function userConfirmPayment(matchId){
+  try {
+    var r = await api('/match/confirm-payment', {method:'POST', body:JSON.stringify({match_id:matchId})});
+    if(r.success) { toast('입금확인 완료!','success'); loadSellTab(); }
+    else toast(r.error||'처리 실패','error');
+  } catch(e){ toast('오류: '+e.message,'error'); }
 }
 
-// 홈화면 아이템 클릭 시 판매 탭 이동
-function toggleItemSellSelect(itemId, barType){
-  showTab('sell', document.querySelector('[onclick*="showTab(\'sell\'"]'));
-  setTimeout(function(){
-    toggleSellTabItem(itemId, barType, 1, 0);
-  }, 300);
+// 판매탭: 미입금 신고
+async function userReportUnpaid(matchId){
+  try {
+    var r = await api('/match/report-unpaid', {method:'POST', body:JSON.stringify({match_id:matchId})});
+    if(r.success) { toast('미입금 신고 완료','success'); loadSellTab(); }
+    else toast(r.error||'처리 실패','error');
+  } catch(e){ toast('오류: '+e.message,'error'); }
 }
