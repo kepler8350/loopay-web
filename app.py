@@ -155,6 +155,7 @@ def _run_matching_internal(db, round_num, today):
         # 실제 매칭 실행 (run-matching 로직과 동일)
         # 일반 사용자 판매예약 (item_id 있는 것, match_round=round_num)
         _yesterday_sell = (datetime.date.fromisoformat(today) - datetime.timedelta(days=1)).isoformat()
+        import logging; logging.warning(f'SELL DEBUG: round={round_num}, today={today}, yesterday={_yesterday_sell}')
         user_sell_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
                COALESCE(r.stage,1) as stage
