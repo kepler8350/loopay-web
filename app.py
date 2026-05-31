@@ -154,7 +154,7 @@ def _run_matching_internal(db, round_num, today):
 
         # 실제 매칭 실행 (run-matching 로직과 동일)
         # 일반 사용자 판매예약 (item_id 있는 것, match_round=round_num)
-        _yesterday_sell = (__import__('datetime').date.fromisoformat(today) - __import__('datetime').timedelta(days=1)).isoformat()
+        _yesterday_sell = (datetime.date.fromisoformat(today) - datetime.timedelta(days=1)).isoformat()
         user_sell_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
                COALESCE(r.stage,1) as stage
@@ -468,7 +468,7 @@ def init_demo_items():
     conn = get_db()
     try:
         today = get_today().isoformat()
-        yesterday = (get_today() - __import__('datetime').timedelta(days=3)).isoformat()
+        yesterday = (get_today() - datetime.timedelta(days=3)).isoformat()
         # 기존 아이템 삭제 후 재추가
         conn.execute("DELETE FROM items WHERE user_id=?", (uid,))
         items_to_add = [
