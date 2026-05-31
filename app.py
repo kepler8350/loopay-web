@@ -1217,6 +1217,7 @@ def admin_run_matching():
         # 구매예약 조회 (loopay 제외, 랜덤)
         buy_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
+               COALESCE(r.stage,1) as stage,
                u.username as buyer_username, u.nickname as buyer_nickname,
                u.phone as buyer_phone, u.account_name as buyer_account_name
                FROM reservations r
