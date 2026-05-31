@@ -2979,28 +2979,35 @@ def user_my_items():
                     buyer_account = m['buyer_account']
             else:
                 # reservation에서 match 찾기
+                # reservation에서 item_id 기준 최신 예약 찾기
                 res = db.execute(
-                    """SELECT r.id, r.status, r.match_round, r.reserve_date,
-                              m.id as match_id, m.status as match_status,
-                              u.username as buyer_username,
-                              u.account_name as buyer_account_name,
-                              u.account_no as buyer_account,
-                              m.match_round as m_round
+                    """SELECT r.reserve_date, r.match_round
                        FROM reservations r
-                       LEFT JOIN matches m ON m.seller_reservation_id=r.id OR (m.bar_type=r.bar_type AND m.stage=COALESCE(r.stage,1) AND m.seller_id=? AND r.status IN ('matched','sold'))
-                       LEFT JOIN users u ON m.buyer_id=u.id
-                       WHERE r.item_id=?
-                       ORDER BY r.id DESC LIMIT 1""",
-                    (uid, row['id'])
+                       WHERE r.item_id=? ORDER BY r.id DESC LIMIT 1""",
+                    (row['id'],)
                 ).fetchone()
-                if res and res['match_id']:
-                    match_status = res['match_status']
-                    match_round = res['m_round']
-                    buyer_username = res['buyer_username']
-                    buyer_account_name = res['buyer_account_name']
-                    buyer_account = res['buyer_account']
+                if res:
                     if not row.get('reserve_date') and res['reserve_date']:
                         row['reserve_date'] = res['reserve_date']
+                # match 찾기: seller_id=uid, bar_type+stage 일치
+                m = db.execute(
+                    """SELECT m.id, m.status, m.match_round,
+                              u.username as buyer_username,
+                              u.account_name as buyer_account_name,
+                              u.account_no as buyer_account
+                       FROM matches m
+                       LEFT JOIN users u ON m.buyer_id=u.id
+                       WHERE m.seller_id=? AND m.bar_type=? AND m.stage=?
+                         AND m.status NOT IN ('cancelled')
+                       ORDER BY m.id DESC LIMIT 1""",
+                    (uid, row['bar_type'], row['stage'] or 1)
+                ).fetchone()
+                if m:
+                    match_status = m['status']
+                    match_round = m['match_round']
+                    buyer_username = m['buyer_username']
+                    buyer_account_name = m['buyer_account_name']
+                    buyer_account = m['buyer_account']
             result.append({
                 'id': row['id'],
                 'bar_type': row['bar_type'],
