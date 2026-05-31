@@ -2033,7 +2033,7 @@ async function loadSellTab(){
       pendingEl.innerHTML = pendingSell.map(function(s){
         var barName = {bronze:'수정',silver:'루비',gold:'다이아'}[s.bar_type]||s.bar_type;
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">'
-          +'<span>'+barName+' '+s.stage+'단계</span>'
+          +'<span>'+barName+' '+(s.stage||1)+'단계</span>'
           +'<span style="color:#f9a825;font-size:11px">'+(s.status==='waiting'?'⏳ 매칭 대기':'🔄 매칭 중')+'</span>'
           +'</div>';
       }).join('');
