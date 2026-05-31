@@ -1,4 +1,5 @@
 var _sellSelected={}; // 판매예약 선택 상태
+var _sellTabSelected={}; // 판매탭 선택 상태
 var _reservedToday=false; // 오늘 구매예약 완료 여부
 var svCnt=0; var gdCnt=0; // 루비/다이아 선택 수량
 var LEVEL_CFG_JS={
@@ -1971,7 +1972,6 @@ async function doReleasePenalty(){
 
 
 // ── 판매 탭 ──────────────────────────────────────
-var _sellTabSelected = {};  // {item_id: {bar_type, stage, sell_price}}
 
 async function loadSellTab(){
   try {
