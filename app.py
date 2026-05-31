@@ -741,6 +741,8 @@ def admin_migrate_db():
         "ALTER TABLE penalties ADD COLUMN release_at DATETIME",
         "ALTER TABLE penalties ADD COLUMN match_round INTEGER DEFAULT 1",
         "ALTER TABLE penalties ADD COLUMN release_paid INTEGER DEFAULT 0",
+        # 데이터 정리: is_released=1인 패널티 보유자의 suspended_until 초기화
+        "UPDATE users SET suspended_until=NULL WHERE id IN (SELECT DISTINCT user_id FROM penalties WHERE is_released=1) AND id NOT IN (SELECT user_id FROM penalties WHERE is_released=0)",
     ]
     _c = _sq3.connect(_DB_PATH, timeout=10)
     for sql in migrations:
