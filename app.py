@@ -1629,21 +1629,23 @@ def admin_matching_status():
         # ── 구매예약: pending, 일반 사용자 ──
         buy_count = db.execute(
             """SELECT COUNT(*) as c FROM reservations r
-               WHERE r.match_round=? AND r.status IN ('pending','unmatched') AND r.user_id!=?
+               WHERE r.match_round=? AND r.status='pending' AND r.user_id!=?
+               AND r.reserve_date=?
                AND r.user_id NOT IN (
                    SELECT p.user_id FROM penalties p WHERE p.is_released=0
                )""",
-            (round_num, loopay_id)
+            (round_num, loopay_id, today)
         ).fetchone()['c']
 
         buy_by_type = db.execute(
             """SELECT bar_type, COUNT(*) as cnt FROM reservations r
-               WHERE r.match_round=? AND r.status IN ('pending','unmatched') AND r.user_id!=?
+               WHERE r.match_round=? AND r.status='pending' AND r.user_id!=?
+               AND r.reserve_date=?
                AND r.user_id NOT IN (
                    SELECT p.user_id FROM penalties p WHERE p.is_released=0
                )
                GROUP BY bar_type""",
-            (round_num, loopay_id)
+            (round_num, loopay_id, today)
         ).fetchall()
 
         # ── 판매예약 (시스템 - loopay) ──
