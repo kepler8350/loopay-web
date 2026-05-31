@@ -64,7 +64,7 @@ def insert_notification(db, user_id, ntype, title, message):
 
 # ── 자동 2차매칭 스케줄러 ────────────────────────────────────────
 def _auto_round2_scheduler():
-    """14:10에 자동 2차매칭 실행 (round2_auto=true일 때)"""
+    """14:10 자동 2차매칭 + 매 정시 패널티 자동 해제"""
     import time
     _last_run_date = None
     while True:
@@ -72,14 +72,35 @@ def _auto_round2_scheduler():
             now = get_now()
             h, m = now.hour, now.minute
             today = now.strftime('%Y-%m-%d')
-            # 14:10~14:11 사이에 1회 실행
+            now_str = now.strftime('%Y-%m-%d %H:%M:%S')
+
+            # ── 패널티 자동 해제: 매 30초마다 release_at 지난 건 해제 ──
+            try:
+                db = get_db()
+                expired = db.execute(
+                    """SELECT p.id, p.user_id FROM penalties p
+                       WHERE p.is_released=0 AND p.release_paid=1
+                       AND p.release_at IS NOT NULL AND p.release_at <= ?""",
+                    (now_str,)
+                ).fetchall()
+                for ep in expired:
+                    db.execute("UPDATE penalties SET is_released=1 WHERE id=?", (ep['id'],))
+                    db.execute("UPDATE users SET suspended_until=NULL WHERE id=?", (ep['user_id'],))
+                    insert_notification(db, ep['user_id'], 'penalty_released', '거래 정지 해제',
+                        '정지 기간이 완료되어 거래 정지가 자동으로 해제되었습니다. 지금 바로 거래를 재개할 수 있습니다.')
+                if expired:
+                    db.commit()
+                db.close()
+            except Exception:
+                pass
+
+            # ── 14:10 자동 2차매칭 ──
             if h == 14 and m == 10 and today != _last_run_date:
                 db = get_db()
                 try:
                     row = db.execute("SELECT value FROM system_settings WHERE key='round2_auto'").fetchone()
                     if row and row['value'] == 'true':
                         _last_run_date = today
-                        # 2차매칭 실행 (내부 함수 호출)
                         _run_matching_internal(db, 2, today)
                 finally:
                     db.close()
@@ -792,14 +813,13 @@ def user_release_penalty():
         ).fetchone()
         if not penalty:
             return jsonify(error='해제할 패널티가 없습니다'), 400
-        release_pts = int(penalty['release_points'])
+        release_pts  = int(penalty['release_points'])
+        suspend_days = int(penalty['suspend_days'])
         u = db.execute("SELECT charge_points, exchange_points FROM users WHERE id=?", (uid,)).fetchone()
         total_pts = int(u['charge_points'] or 0) + int(u['exchange_points'] or 0)
         if total_pts < release_pts:
             return jsonify(error='포인트가 부족합니다.',
-                          need_charge=True,
-                          release_points=release_pts,
-                          current_points=total_pts), 400
+                          need_charge=True, release_points=release_pts, current_points=total_pts), 400
         # 포인트 차감 (charge_points 우선)
         ch = int(u['charge_points'] or 0)
         if ch >= release_pts:
@@ -807,25 +827,28 @@ def user_release_penalty():
         else:
             from_ex = release_pts - ch
             db.execute("UPDATE users SET charge_points=0, exchange_points=exchange_points-? WHERE id=?", (from_ex, uid))
-        # release_paid=1 (관리자 승인 대기 상태)
+        # 자동 해제 시각 계산: 납부일 + suspend_days 다음날 01:00
+        from datetime import timedelta
+        _paid_now = get_now()
+        _release_dt = (_paid_now + timedelta(days=suspend_days + 1)).replace(
+            hour=1, minute=0, second=0, microsecond=0)
+        _release_str = _release_dt.strftime('%Y-%m-%d %H:%M:%S')
+        # release_paid=1, release_at 설정
         try:
-            db.execute("UPDATE penalties SET release_paid=1 WHERE id=?", (penalty['id'],))
+            db.execute("UPDATE penalties SET release_paid=1, release_at=? WHERE id=?",
+                       (_release_str, penalty['id']))
         except Exception:
-            pass
-        # 관리자에게 알림 발송
-        admin_row = db.execute("SELECT id FROM users WHERE username='admin' LIMIT 1").fetchone()
-        if admin_row:
-            u_info = db.execute("SELECT username, nickname FROM users WHERE id=?", (uid,)).fetchone()
-            insert_notification(db, admin_row['id'], 'penalty_release_request', '패널티 해제 포인트 납부',
-                f'{u_info["username"]}({u_info["nickname"]}) 해제 포인트 {release_pts:,}P 납부. 패널티 관리에서 해제해주세요.')
+            try:
+                db.execute("UPDATE penalties SET release_paid=1 WHERE id=?", (penalty['id'],))
+            except Exception:
+                pass
         # 사용자 알림
-        insert_notification(db, uid, 'penalty_release_paid', '패널티 해제 포인트 납부 완료',
-            f'해제 포인트 {release_pts:,}P가 차감됐습니다.\n관리자 확인 후 거래 정지가 해제됩니다.')
+        _msg = (f'해제 포인트 {release_pts:,}P가 차감됐습니다.\n'
+                f'정지 {suspend_days}일 경과 후 {_release_str[:10]} 01:00에 자동으로 거래 정지가 해제됩니다.')
+        insert_notification(db, uid, 'penalty_release_paid', '패널티 해제 포인트 납부 완료', _msg)
         db.commit()
-        return jsonify(success=True,
-                      message=f'해제 포인트 {release_pts:,}P가 차감됐습니다. 관리자 확인 후 거래 정지가 해제됩니다.',
-                      released_points=release_pts,
-                      release_paid=True)
+        return jsonify(success=True, message=_msg, released_points=release_pts,
+                       release_paid=True, resume_at=_release_str, suspend_days=suspend_days)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500

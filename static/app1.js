@@ -1809,17 +1809,33 @@ async function loadPenaltyTab(){
 
     if(pending && !pending.is_released){
       var isWaitingApproval = pending.release_paid === 1 || pending.release_paid === true;
+      var resumeAt = pending.release_at || null;
+      var suspendDays = pending.suspend_days || 0;
       if(isWaitingApproval){
-        // 납부 완료 → 관리자 승인 대기중
+        // 납부 완료 → 자동 해제 대기중
         if(btn){
           btn.disabled = true;
           btn.style.opacity = '0.5';
           btn.style.cursor = 'not-allowed';
-          btn.textContent = '⏳ 관리자 승인 대기중';
+          btn.textContent = '⏳ 정지 ' + suspendDays + '일 후 자동 해제 예정';
           btn.style.background = '#546e7a';
         }
+        // 남은 정지일수 계산
+        var remainText = '';
+        if(resumeAt) {
+          var resumeDt = new Date(resumeAt.replace(' ','T'));
+          var nowDt = new Date();
+          var diffMs = resumeDt - nowDt;
+          var diffDays = Math.ceil(diffMs / (1000*60*60*24));
+          var resumeDate = resumeAt.slice(0,10);
+          if(diffDays > 0) {
+            remainText = resumeDate + ' 01:00 자동 해제 (남은 ' + diffDays + '일)';
+          } else {
+            remainText = '곧 자동 해제됩니다';
+          }
+        }
         if(statusText){
-          statusText.textContent = '해제 포인트 납부 완료 — 관리자 확인 후 정지가 해제됩니다';
+          statusText.textContent = remainText || ('정지 ' + suspendDays + '일 경과 후 자동 해제');
           statusText.style.color = '#f9a825';
         }
       } else {
@@ -1843,7 +1859,7 @@ async function loadPenaltyTab(){
           '• 정지 해제일: ' + (d.suspended_until||'').slice(0,10) + '<br>' +
           '• 해제 포인트: ' + (pending.release_points||0).toLocaleString() + 'P<br>' +
           (isWaitingApproval
-            ? '• ⏳ 해제 포인트 납부 완료 — 관리자 확인 후 해제됩니다.'
+            ? '• ⏳ 정지 ' + suspendDays + '일 경과 후 ' + (resumeAt ? resumeAt.slice(0,10)+' 01:00' : '') + ' 자동 해제됩니다.'
             : '• 해제 포인트 충전 후 해제 버튼을 눌러주세요.');
       }
     } else {
@@ -1885,7 +1901,7 @@ async function showPenaltyReleasePopup(){
     if(content){
       if(totalPts >= relPts){
         content.innerHTML =
-          '<div style="color:#f9a825;margin-bottom:10px">포인트 납부 후 관리자 확인 시 정지가 해제됩니다.</div>' +
+          '<div style="color:#f9a825;margin-bottom:10px">패널티 포인트 납부 후 정지일수 다음날 01:00에 자동으로 해제됩니다.</div>' +
           '• 해제 포인트: <strong>' + relPts.toLocaleString() + 'P</strong><br>' +
           '• 현재 포인트: ' + totalPts.toLocaleString() + 'P<br>' +
           '• 차감 후 잔액: ' + (totalPts - relPts).toLocaleString() + 'P';
@@ -1921,15 +1937,17 @@ async function doReleasePenalty(){
     // 즉시 버튼 상태 변경 (API 재로드 전)
     var btn = document.getElementById('penalty-release-btn');
     var statusText = document.getElementById('penalty-status-text');
+    var suspDays = d.suspend_days || 0;
+    var resumeAt = d.resume_at ? d.resume_at.slice(0,10) : '';
     if(btn){
       btn.disabled = true;
       btn.style.opacity = '0.5';
       btn.style.cursor = 'not-allowed';
-      btn.textContent = '⏳ 관리자 승인 대기중';
+      btn.textContent = '⏳ 정지 ' + suspDays + '일 후 자동 해제 예정';
       btn.style.background = '#546e7a';
     }
     if(statusText){
-      statusText.textContent = '해제 포인트 납부 완료 — 관리자 확인 후 정지가 해제됩니다';
+      statusText.textContent = resumeAt ? resumeAt + ' 01:00 자동 해제' : '정지 기간 후 자동 해제';
       statusText.style.color = '#f9a825';
     }
     await loadUserData();
