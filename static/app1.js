@@ -1110,7 +1110,7 @@ async function loadItemDetail(barType){
         +'padding:3px 10px;font-size:11px;font-weight:700;margin-left:6px;'+cursor+'">'
         +badgeText+'</span>';
       // 일차 안내 (canSell 아닐 때만 표시)
-      var dayNote = canSell?'':'<div style="font-size:11px;color:#aaa;margin-top:2px">현재 '+dayNum+'일차 (3일째부터 판매가능)</div>';
+      var dayNote = '';  // 판매 가능 안내 제거 (형식1)
       return '<div class="item-detail-card" id="icard-'+it.id+'" style="background:'+cardBg+';transition:background 0.2s">'
         +'<div><div class="item-detail-stage">'+names[it.bar_type||barType]+' '+it.stage+'단계'+statusBadge+'</div>'
         +'<div class="item-detail-info">구매일: '+it.purchase_date+' ('+dayNum+'일째)</div>'
