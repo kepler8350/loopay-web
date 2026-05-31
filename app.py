@@ -1515,12 +1515,7 @@ def admin_run_matching():
             success=True,
             matched=total_matched,
             message=f'{round_num}차 매칭 완료: {total_matched}건',
-            debug_sell_rows=len(sell_rows),
-            debug_buy_rows=len(buy_rows),
-            debug_user_sell=len(user_sell_rows),
-            debug_loopay_sell=len(loopay_sell_rows),
-            debug_sell_keys=list(sell_by_type_stage.keys()),
-            debug_buy_keys=list(buy_by_type_stage.keys()),
+
             pairs=matched_pairs
         )
     except Exception as e:
@@ -3312,8 +3307,7 @@ def create_sell_reservation():
         )
         db.commit()
         buy_p, sell_p = get_price(item['bar_type'], item['stage'])
-        return jsonify(success=True, message='판매예약 완료!', sell_price=sell_p,
-                      debug_today=today, debug_item_id=item_id, debug_match_round=1)
+        return jsonify(success=True, message='판매예약 완료!', sell_price=sell_p)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
