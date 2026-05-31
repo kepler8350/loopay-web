@@ -1847,9 +1847,26 @@ async function loadPenaltyTab(){
             : '• 해제 포인트 충전 후 해제 버튼을 눌러주세요.');
       }
     } else {
-      if(btn){ btn.disabled=true; btn.style.opacity='0.4'; btn.style.cursor='not-allowed'; }
-      if(statusText){ statusText.textContent = '현재 패널티 없음'; statusText.style.color='#888'; }
+      // 패널티 없거나 모두 해제됨 - 버튼 숨김, 누적횟수 표시
+      if(btn){
+        btn.style.display = 'none';
+      }
+      if(statusText){ statusText.textContent = ''; }
       if(infoBox) infoBox.style.display = 'none';
+      // 누적 패널티 횟수 표시
+      var totalReleased = d.penalties ? d.penalties.filter(function(p){ return p.is_released; }).length : 0;
+      var totalAll = d.penalties ? d.penalties.length : 0;
+      if(totalAll > 0) {
+        var historyEl = document.getElementById('penalty-history-text');
+        if(!historyEl) {
+          historyEl = document.createElement('div');
+          historyEl.id = 'penalty-history-text';
+          historyEl.style.cssText = 'font-size:12px;color:#888;text-align:center;padding:8px;margin-bottom:8px';
+          var section = document.getElementById('penalty-release-section');
+          if(section) section.appendChild(historyEl);
+        }
+        historyEl.textContent = '누적 미입금: 총 ' + totalAll + '회 (해제 완료)';
+      }
     }
   } catch(e) { console.error('loadPenaltyTab:', e); }
 }

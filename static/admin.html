@@ -1157,7 +1157,7 @@ async function loadAdminPenalties(){
       return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
         +'<td style="padding:6px;text-align:center;color:#888">'+p.id+'</td>'
         +'<td style="padding:6px;color:#64b5f6">'+p.username+'<br><span style="color:#888;font-size:10px">'+p.nickname+'</span></td>'
-        +'<td style="padding:6px;text-align:center;color:#f9a825">'+p.unpaid_count+'회</td>'
+        +'<td style="padding:6px;text-align:center;color:#f9a825">'+(p.total_count||p.unpaid_count)+'회'+(p.total_count && p.total_count > p.unpaid_count ? '<span style="font-size:10px;color:#888"> (누적 '+p.total_count+')</span>' : '')+'</td>'
         +'<td style="padding:6px;text-align:center">'+p.suspend_days+'일</td>'
         +'<td style="padding:6px;text-align:center;color:#ce93d8">'+p.release_points.toLocaleString()+'P</td>'
         +'<td style="padding:6px;text-align:center">'+roundBadge+'</td>'

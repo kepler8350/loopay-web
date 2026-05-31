@@ -869,7 +869,8 @@ def admin_penalties():
     try:
         rows = db.execute("""
             SELECT p.*, u.username, u.nickname, u.suspended_until,
-                   m.bar_type, m.match_round
+                   m.bar_type, m.match_round,
+                   (SELECT COUNT(*) FROM penalties p3 WHERE p3.user_id = p.user_id) as total_count
             FROM penalties p
             JOIN users u ON p.user_id = u.id
             LEFT JOIN matches m ON p.match_id = m.id
@@ -878,7 +879,14 @@ def admin_penalties():
             )
             ORDER BY p.id DESC
         """).fetchall()
-        return jsonify(penalties=[dict(r) for r in rows])
+        result = []
+        for r in rows:
+            d = dict(r)
+            # total_count: 전체 누적 패널티 수 (해제 포함)
+            if 'total_count' not in d:
+                d['total_count'] = d.get('unpaid_count', 0)
+            result.append(d)
+        return jsonify(penalties=result)
     finally:
         db.close()
 
@@ -893,30 +901,13 @@ def admin_release_penalty():
     try:
         p = db.execute("SELECT * FROM penalties WHERE id=?", (penalty_id,)).fetchone()
         if not p: return jsonify(error='패널티 없음'), 400
-        from datetime import timedelta
-        # suspended_until은 users 테이블에서 가져옴
-        _u_row = db.execute("SELECT suspended_until FROM users WHERE id=?", (p['user_id'],)).fetchone()
-        _p_until = _u_row['suspended_until'] if _u_row and _u_row['suspended_until'] else None
-        if _p_until:
-            try:
-                _until_dt = datetime.datetime.strptime(_p_until[:10], '%Y-%m-%d')
-                _new_until = (_until_dt + timedelta(days=1)).replace(hour=1, minute=0, second=0)
-                _new_until_str = _new_until.strftime('%Y-%m-%d %H:%M:%S')
-            except:
-                _new_until_str = None
-        else:
-            _new_until_str = None
+        # 즉시 거래 정지 해제
         db.execute("UPDATE penalties SET is_released=1 WHERE id=?", (penalty_id,))
-        if _new_until_str:
-            db.execute("UPDATE users SET suspended_until=? WHERE id=?", (_new_until_str, p['user_id']))
-        else:
-            db.execute("UPDATE users SET suspended_until=NULL WHERE id=?", (p['user_id'],))
-        _notif_msg = '관리자에 의해 거래 정지가 해제되었습니다.'
-        if _new_until_str:
-            _notif_msg += f' 거래는 {_new_until_str[:10]} 01:00부터 재개됩니다.'
-        insert_notification(db, p['user_id'], 'penalty_released', '거래 정지 해제 (관리자)', _notif_msg)
+        db.execute("UPDATE users SET suspended_until=NULL WHERE id=?", (p['user_id'],))
+        insert_notification(db, p['user_id'], 'penalty_released', '거래 정지 해제',
+            '관리자에 의해 거래 정지가 해제되었습니다. 지금 바로 거래를 재개할 수 있습니다.')
         db.commit()
-        return jsonify(success=True, resume_at=_new_until_str)
+        return jsonify(success=True)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
