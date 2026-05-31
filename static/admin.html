@@ -1247,10 +1247,14 @@ function renderSystemItems(){
         // 서버 시간 기반 버튼 활성화 제어
     var _h = _serverHour||0; var _m = _serverMin||0;
     var _totalMin = _h*60+_m;
-    // 12:30~13:00(750~780): 미입금 알림 버튼 활성화 (누르면 9분 쿨타임)
-    var _inWarnWindow = (_totalMin >= 750 && _totalMin < 780);
-    // 13:00~14:00(780~840): 미입금확인 버튼 활성화
-    var _inConfirmWindow = (_totalMin >= 780 && _totalMin < 840);
+    // 1차: 12:30~13:00(750~780), 2차: 18:30~19:00(1110~1140)
+    var _inWarnWindow = (_matchRound === 2)
+      ? (_totalMin >= 1110 && _totalMin < 1140)
+      : (_totalMin >= 750 && _totalMin < 780);
+    // 1차: 13:00~14:00(780~840), 2차: 19:00~20:00(1140~1200)
+    var _inConfirmWindow = (_matchRound === 2)
+      ? (_totalMin >= 1140 && _totalMin < 1200)
+      : (_totalMin >= 780 && _totalMin < 840);
     // 미입금 알림 버튼 쿨타임 체크 (10분=600000ms)
     // 쿨타임 체크: 서버 시간(분) 기준으로 9분 경과 여부
     var _lastClickMin = _unpaidClickedAt[item.match_id] || 0;
