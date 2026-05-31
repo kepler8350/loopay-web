@@ -1472,6 +1472,7 @@ function scheduleReserveReset(){
       var d = await r.json();
       var h = d.hour;
       var dateStr = d.time ? d.time.slice(0,10) : '';
+      window._serverTodayStr = dateStr;  // 패널티 남은일수 계산용
       // 예약 가능 시간(05:00~20:00)이고, userData의 예약 날짜와 다르면 재로드
       var isReserveTime = (h >= 5 && h < 20);
       if(isReserveTime && _reservedToday){
@@ -1865,9 +1866,11 @@ async function loadPenaltyTab(){
         if(resumeAt) {
           // 오늘 날짜(서버 기준)와 release_at 날짜만 비교하여 남은 일수 계산
           var resumeDate = resumeAt.slice(0,10);
-          var todayStr = (typeof getEffectiveDate==='function')
-            ? getEffectiveDate().toISOString().slice(0,10)
-            : new Date().toISOString().slice(0,10);
+          // 서버 시간 기반 today 사용 (UTC 오프셋 문제 방지)
+          var todayStr = window._serverTodayStr ||
+            ((typeof getEffectiveDate==='function')
+              ? (() => { var d=getEffectiveDate(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })()
+              : new Date().toISOString().slice(0,10));
           var todayMs = new Date(todayStr + 'T00:00:00').getTime();
           var resumeMs = new Date(resumeDate + 'T00:00:00').getTime();
           var diffDays = Math.round((resumeMs - todayMs) / (1000*60*60*24));
