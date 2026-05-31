@@ -66,13 +66,15 @@ function renderBars(d){
     el.innerHTML=list.map(it=>{
       const day4note=(it.days>=4&&it.status_label==='매칭예약가능')?' — 미매칭 재예약':'';
       const profitStr=it.profit>=0?`+${it.profit.toLocaleString()}`:`${it.profit.toLocaleString()}`;
-      return `<div class="item-row">
+      const _barName2={bronze:'수정',silver:'루비',gold:'다이아'};
+      const _canSell2=(it.days>=2&&it.status_label!=='판매중'&&it.status_label!=='매칭중'&&it.status_label!=='매칭완료'&&it.status_label!=='판매예약');
+      return `<div class="item-row" onclick="toggleItemSellSelect(${it.id},'${t}')" style="cursor:pointer">
         <div class="item-hd">
-          <span class="item-stage">${it.stage}단계 ${t==='bronze'?'수정':t==='silver'?'루비':'다이아'}바</span>
+          <span class="item-stage">${it.stage}단계 ${_barName2[t]}바</span>
           <span class="badge ${it.status_label==='대기중'?'badge-wait':'badge-match'}">${it.status_label}</span>
         </div>
-        <div class="item-date">구매일: ${it.purchase_date} (${it.days}일째)${day4note}</div>
-        <div class="item-price">구매 ${it.buy_price.toLocaleString()}원 → 판매 ${it.sell_price.toLocaleString()}원 (${profitStr}원)</div>
+        <div class="item-date">구매일: ${it.purchase_date} (${it.days}일째)</div>
+        <div class="item-price">구매 <span style="color:#aaa">${it.buy_price.toLocaleString()}원</span> → 판매 <span style="color:#f9a825">${it.sell_price.toLocaleString()}원</span> <span style="color:#66bb6a;font-size:12px">(${profitStr}원)</span></div>
       </div>`;
     }).join('');
   });

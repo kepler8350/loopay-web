@@ -236,6 +236,7 @@ function showTab(id,btn){
   btn.classList.add('active');
 
   if(id === 'combine') { setTimeout(loadCombineItems, 100); }
+  if(id === 'sell') { setTimeout(loadSellTab, 50); }
 }
 
 // --- detail toggle ---------------------------------------------------------
@@ -2003,4 +2004,147 @@ async function doReleasePenalty(){
     closePenaltyPopup();
     toast(e.message || '패널티 해제 실패', 'error');
   }
+}
+
+
+// ── 판매 탭 ──────────────────────────────────────
+var _sellTabSelected = {};  // {item_id: {bar_type, stage, sell_price}}
+
+async function loadSellTab(){
+  try {
+    var now_h = typeof getEffectiveDate==='function' ? getEffectiveDate().getHours() : new Date().getHours();
+    var canReserve = (now_h>=5 && now_h<20);
+
+    // 보유 아이템 전체 로드
+    var all_items = {bronze:[], silver:[], gold:[]};
+    var barNames = {bronze:'수정', silver:'루비', gold:'다이아'};
+    for(var bt of ['bronze','silver','gold']){
+      try {
+        var items = await api('/items?bar_type='+bt);
+        if(Array.isArray(items)) all_items[bt] = items;
+      } catch(e){}
+    }
+
+    // 보유 아이템 섹션 렌더링
+    var itemsEl = document.getElementById('sell-tab-items');
+    var allList = [];
+    for(var bt of ['bronze','silver','gold']){
+      for(var it of all_items[bt]){
+        allList.push({...it, bar_type_label: barNames[bt]});
+      }
+    }
+
+    if(!allList.length){
+      itemsEl.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:12px;text-align:center">보유 아이템 없음</div>';
+    } else {
+      var html = allList.map(function(it){
+        var dayNum = it.days + 1;
+        var canSell = it.days>=2 && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료' && it.status_label!=='판매예약';
+        var isSelected = !!_sellTabSelected[it.id];
+        var profitStr = (it.profit>=0?'+':'')+it.profit.toLocaleString();
+        var sellable = canSell && canReserve;
+        var cardStyle = isSelected
+          ? 'background:rgba(124,77,255,0.15);border:1.5px solid #7c4dff;border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer'
+          : (sellable ? 'background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;cursor:pointer' : 'background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;opacity:0.6');
+        return '<div style="'+cardStyle+'" onclick="'+(sellable?'toggleSellTabItem('+it.id+',\''+it.bar_type+'\','+it.stage+','+it.sell_price+')'':'')+'">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center">'
+          +'<span style="font-size:13px;font-weight:700">'+it.stage+'단계 '+it.bar_type_label+'바</span>'
+          +'<span style="font-size:11px;background:'+(isSelected?'#7c4dff':'var(--accent)')+';color:#fff;padding:2px 8px;border-radius:10px">'+(isSelected?'✓ 선택됨':it.status_label)+'</span>'
+          +'</div>'
+          +'<div style="font-size:12px;color:var(--text2);margin-top:4px">구매일: '+it.purchase_date+' ('+dayNum+'일째)'+(canSell?'':' — '+(it.days>=2?'':'구매 3일째부터 판매가능'))+'</div>'
+          +'<div style="font-size:12px;margin-top:2px">구매 <span style="color:#aaa">'+it.buy_price.toLocaleString()+'원</span> → 판매 <span style="color:#f9a825">'+it.sell_price.toLocaleString()+'원</span> <span style="color:#66bb6a">('+profitStr+'원)</span></div>'
+          +(sellable?'':'<div style="font-size:11px;color:#f9a825;margin-top:4px">'+(it.days<2?'⏳ 구매 3일째부터 판매예약 가능 (현재 '+dayNum+'일째)':'🔒 '+it.status_label+' 상태')+'</div>')
+          +'</div>';
+      }).join('');
+      itemsEl.innerHTML = html;
+    }
+    _updateSellTabSelected();
+
+    // 진행 중 판매예약 로드
+    var matching = await api('/user/matching');
+    var pendingSell = (matching.sell||[]).filter(function(s){return s.status==='waiting'||s.status==='pending';});
+    var pendingEl = document.getElementById('sell-tab-pending');
+    if(!pendingSell.length){
+      pendingEl.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text2)">진행 중인 판매예약 없음</div>';
+    } else {
+      pendingEl.innerHTML = pendingSell.map(function(s){
+        var barName = {bronze:'수정',silver:'루비',gold:'다이아'}[s.bar_type]||s.bar_type;
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">'
+          +'<span>'+barName+' '+s.stage+'단계</span>'
+          +'<span style="color:#f9a825;font-size:11px">'+(s.status==='waiting'?'⏳ 매칭 대기':'🔄 매칭 중')+'</span>'
+          +'</div>';
+      }).join('');
+    }
+
+    // 완료된 판매 로드
+    var doneSell = (matching.sell||[]).filter(function(s){return s.status==='confirmed'||s.status==='paid';});
+    var doneEl = document.getElementById('sell-tab-done');
+    if(!doneSell.length){
+      doneEl.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text2)">완료된 판매 없음</div>';
+    } else {
+      doneEl.innerHTML = doneSell.map(function(s){
+        var barName = {bronze:'수정',silver:'루비',gold:'다이아'}[s.bar_type]||s.bar_type;
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">'
+          +'<span>'+barName+' '+s.stage+'단계</span>'
+          +'<span style="color:#66bb6a;font-size:11px">✅ 판매 완료</span>'
+          +'</div>';
+      }).join('');
+    }
+  } catch(e) {
+    console.error('loadSellTab error:', e);
+  }
+}
+
+function toggleSellTabItem(itemId, barType, stage, sellPrice){
+  if(_sellTabSelected[itemId]){
+    delete _sellTabSelected[itemId];
+  } else {
+    _sellTabSelected[itemId] = {bar_type:barType, stage:stage, sell_price:sellPrice};
+  }
+  _updateSellTabSelected();
+  loadSellTab();  // 리렌더링
+}
+
+function _updateSellTabSelected(){
+  var selectedEl = document.getElementById('sell-tab-selected');
+  var listEl = document.getElementById('sell-tab-selected-list');
+  var ids = Object.keys(_sellTabSelected);
+  if(!ids.length){
+    if(selectedEl) selectedEl.style.display='none';
+    return;
+  }
+  if(selectedEl) selectedEl.style.display='block';
+  var barNames = {bronze:'수정', silver:'루비', gold:'다이아'};
+  if(listEl) listEl.innerHTML = ids.map(function(id){
+    var it = _sellTabSelected[id];
+    return barNames[it.bar_type]+' '+it.stage+'단계 — 판매가 '+it.sell_price.toLocaleString()+'원';
+  }).join('<br>');
+}
+
+async function doSellReserveFromTab(){
+  var ids = Object.keys(_sellTabSelected);
+  if(!ids.length){ toast('판매할 아이템을 선택해주세요.','error'); return; }
+  var btn = document.getElementById('sell-tab-btn');
+  if(btn){ btn.disabled=true; btn.textContent='예약 중...'; }
+  var ok=0, fail=0;
+  for(var itemId of ids){
+    try {
+      var r = await api('/reservation/sell',{method:'POST',body:JSON.stringify({item_id:parseInt(itemId)})});
+      if(r.success) ok++;
+      else fail++;
+    } catch(e){ fail++; }
+  }
+  _sellTabSelected = {};
+  if(btn){ btn.disabled=false; btn.textContent='판매 예약하기'; }
+  if(ok>0) toast(ok+'개 판매예약 완료!','success');
+  if(fail>0) toast(fail+'개 판매예약 실패','error');
+  loadSellTab();
+}
+
+// 홈화면 아이템 클릭 시 판매 탭 이동
+function toggleItemSellSelect(itemId, barType){
+  showTab('sell', document.querySelector('[onclick*="showTab(\'sell\'"]'));
+  setTimeout(function(){
+    toggleSellTabItem(itemId, barType, 1, 0);
+  }, 300);
 }
