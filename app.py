@@ -2931,6 +2931,7 @@ def admin_loopay_items():
                     d['match_id'] = m['id']
                     d['match_status'] = m['status']
                     d['match_round'] = m['match_round'] if 'match_round' in m.keys() else None
+                    d['receipt_url'] = m['receipt_url'] if 'receipt_url' in m.keys() else None
                     d['buyer_username'] = m['buyer_username']
                     d['buyer_account_name'] = m['buyer_account_name']
                     d['buyer_account'] = m['buyer_account']
