@@ -2945,7 +2945,6 @@ def user_my_items():
         # 아이템 목록
         items = db.execute(
             """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date,
-               i.match_id,
                (SELECT MAX(r2.reserve_date) FROM reservations r2 WHERE r2.item_id=i.id) as reserve_date
                FROM items i
                WHERE i.user_id=?
@@ -2961,7 +2960,7 @@ def user_my_items():
             buyer_username = None
             buyer_account_name = None
             buyer_account = None
-            if row.get('match_id'):
+            if False:  # items에 match_id 컬럼 없음
                 m = db.execute(
                     """SELECT m.status, m.match_round,
                               u.username as buyer_username,
