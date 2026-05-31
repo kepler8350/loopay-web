@@ -3304,7 +3304,8 @@ def create_sell_reservation():
         )
         db.commit()
         buy_p, sell_p = get_price(item['bar_type'], item['stage'])
-        return jsonify(success=True, message='판매예약 완료!', sell_price=sell_p)
+        return jsonify(success=True, message='판매예약 완료!', sell_price=sell_p,
+                      debug_today=today, debug_item_id=item_id, debug_match_round=1)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
