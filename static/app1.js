@@ -1785,11 +1785,15 @@ function checkSuspended(d){
       banner.style.display='block';
       banner.innerHTML = '🚫 거래 정지 중 — 거래 재개: ' + resumeTime + ' | 패널티 탭에서 해제하세요';
     }
+    // 로고 옆 거래정지 배지
+    var badge = document.getElementById('suspend-badge');
+    if(badge) badge.style.display='inline';
   } else {
     var banner = document.getElementById('suspend-banner');
     if(banner) banner.style.display='none';
+    var badge = document.getElementById('suspend-badge');
+    if(badge) badge.style.display='none';
   }
-  // 정지 상태를 전역에 저장 (updateResUI 등에서 참조)
   window._isSuspended = isSuspended;
 }
 
@@ -1844,7 +1848,7 @@ async function showPenaltyReleasePopup(){
     if(content){
       if(totalPts >= relPts){
         content.innerHTML =
-          '<div style="color:#f9a825;margin-bottom:10px">해제 후 포인트가 차감됩니다.</div>' +
+          '<div style="color:#f9a825;margin-bottom:10px">포인트 납부 후 관리자 확인 시 정지가 해제됩니다.</div>' +
           '• 해제 포인트: <strong>' + relPts.toLocaleString() + 'P</strong><br>' +
           '• 현재 포인트: ' + totalPts.toLocaleString() + 'P<br>' +
           '• 차감 후 잔액: ' + (totalPts - relPts).toLocaleString() + 'P';
@@ -1872,9 +1876,7 @@ async function doReleasePenalty(){
   try {
     var d = await api('/penalty/release', {method:'POST', body:JSON.stringify({})});
     closePenaltyPopup();
-    var msg = d.message || '패널티 해제 완료';
-    if(d.resume_at) msg += ' 거래 재개: ' + d.resume_at.slice(0,10) + ' 01:00';
-    toast(msg, 'success');
+    toast(d.message || '납부 완료. 관리자 확인 후 해제됩니다.', 'success');
     await loadUserData();
     loadPenaltyTab();
   } catch(e){

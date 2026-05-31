@@ -1614,14 +1614,20 @@ def admin_matching_status():
     def get_round_data(round_num):
         # ── 구매예약: pending, 일반 사용자 ──
         buy_count = db.execute(
-            """SELECT COUNT(*) as c FROM reservations
-               WHERE match_round=? AND status IN ('pending','unmatched') AND user_id!=?""",
+            """SELECT COUNT(*) as c FROM reservations r
+               WHERE r.match_round=? AND r.status IN ('pending','unmatched') AND r.user_id!=?
+               AND r.user_id NOT IN (
+                   SELECT p.user_id FROM penalties p WHERE p.is_released=0
+               )""",
             (round_num, loopay_id)
         ).fetchone()['c']
 
         buy_by_type = db.execute(
-            """SELECT bar_type, COUNT(*) as cnt FROM reservations
-               WHERE match_round=? AND status IN ('pending','unmatched') AND user_id!=?
+            """SELECT bar_type, COUNT(*) as cnt FROM reservations r
+               WHERE r.match_round=? AND r.status IN ('pending','unmatched') AND r.user_id!=?
+               AND r.user_id NOT IN (
+                   SELECT p.user_id FROM penalties p WHERE p.is_released=0
+               )
                GROUP BY bar_type""",
             (round_num, loopay_id)
         ).fetchall()
@@ -2585,7 +2591,15 @@ def match_confirm_payment():
         bar_name = bar_names.get(m['bar_type'], m['bar_type'])
 
         # 1. match → confirmed
-        db.execute("UPDATE matches SET status='confirmed', confirmed_at=datetime('now','localtime') WHERE id=?", (match_id,))
+        # 이미지 파일 삭제 (확인 후 보안 목적으로 삭제)
+        if m['receipt_url']:
+            try:
+                _img_file = os.path.join(os.path.dirname(__file__), m['receipt_url'].lstrip('/'))
+                if os.path.exists(_img_file):
+                    os.remove(_img_file)
+            except Exception:
+                pass
+        db.execute("UPDATE matches SET status='confirmed', confirmed_at=datetime('now','localtime'), receipt_url=NULL WHERE id=?", (match_id,))
 
         # 2. reservation → sold (DB 호환)
         if m['reservation_id']:
@@ -2912,7 +2926,7 @@ def admin_loopay_items():
             # 이 아이템의 status가 matched/sold인 경우만 match 찾기
             if d['status'] in ('matched', 'sold', 'reservable'):
                 m = db.execute(
-                    """SELECT m.id, m.status, m.match_round,
+                    """SELECT m.id, m.status, m.match_round, m.receipt_url,
                        u.username as buyer_username,
                        u.account_name as buyer_account_name,
                        u.account_no as buyer_account
@@ -2962,6 +2976,7 @@ def admin_loopay_items():
                 'match_id': r['match_id'],
                 'match_status': r['match_status'],
                 'match_round': r.get('match_round'),
+                'receipt_url': r.get('receipt_url'),
                 'buyer_username': r.get('buyer_username'),
                 'buyer_account_name': r.get('buyer_account_name'),
                 'buyer_account': r.get('buyer_account'),
