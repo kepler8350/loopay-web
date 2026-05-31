@@ -2938,6 +2938,7 @@ def admin_confirm_unpaid():
 @jwt_required()
 def user_my_items():
     identity = get_jwt_identity()
+    if str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
     uid = int(identity)
     db = get_db()
     try:
