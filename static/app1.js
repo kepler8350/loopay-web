@@ -1863,7 +1863,11 @@ async function showPenaltyReleasePopup(){
         if(confirmBtn){ confirmBtn.style.display='none'; }
       }
     }
-    if(overlay){ overlay.style.display='flex'; }
+    if(overlay){
+      // position:fixed가 제대로 동작하도록 body 직접 자식으로 이동
+      if(overlay.parentElement !== document.body) document.body.appendChild(overlay);
+      overlay.style.display='flex';
+    }
   } catch(e){ toast('오류 발생','error'); }
 }
 
