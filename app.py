@@ -160,9 +160,9 @@ def _run_matching_internal(db, round_num, today):
                COALESCE(r.stage,1) as stage
                FROM reservations r
                WHERE r.status='pending' AND r.match_round=?
-               AND r.reserve_date IN (?,?) AND r.item_id IS NOT NULL
+               AND r.item_id IS NOT NULL
                AND COALESCE(r.confirmed,0)=1""",
-            (round_num, today, _yesterday_sell)
+            (round_num,)
         ).fetchall()
         # 루페이 시스템 sell 예약 (item_id 없는 것)
         loopay_sell_rows = db.execute(
