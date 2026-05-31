@@ -153,13 +153,16 @@ def _run_matching_internal(db, round_num, today):
         if sell_count == 0: return
 
         # 실제 매칭 실행 (run-matching 로직과 동일)
+        # 일반 사용자 판매예약 (item_id 있는 것, match_round=round_num)
+        _yesterday_sell = (__import__('datetime').date.fromisoformat(today) - __import__('datetime').timedelta(days=1)).isoformat()
         sell_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
                COALESCE(r.stage,1) as stage
                FROM reservations r
-               WHERE r.status='pending' AND r.match_round=2
-               AND r.reserve_date=? AND r.item_id IS NOT NULL""",
-            (today,)
+               WHERE r.status='pending' AND r.match_round=?
+               AND r.reserve_date IN (?,?) AND r.item_id IS NOT NULL
+               AND COALESCE(r.confirmed,0)=1""",
+            (round_num, today, _yesterday_sell)
         ).fetchall()
         buy_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
@@ -3286,7 +3289,7 @@ def create_sell_reservation():
         if existing:
             return jsonify(error='이미 예약된 아이템입니다'), 400
         db.execute(
-            "INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status) VALUES(?,?,?,2,?,'pending')",
+            "INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,confirmed) VALUES(?,?,?,1,?,'pending',1)",
             (uid, item_id, item['bar_type'], today)
         )
         db.commit()
