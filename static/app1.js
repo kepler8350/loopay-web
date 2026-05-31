@@ -1259,7 +1259,13 @@ function renderMatchBuyList(items){
       if(canSend){
         btnHtml = '<button onclick="openPaymentModal('+m.id+')" style="margin-top:8px;padding:8px 16px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600;width:100%">💸 송금 완료</button>';
       } else {
-        btnHtml = '<div style="font-size:11px;color:#888;margin-top:6px">송금: ' + (_r===2 ? '15:00~19:00' : '05:00~13:00') + ' 사이에 가능</div>';
+        var _now_h = (typeof getEffectiveDate==='function') ? getEffectiveDate().getHours() : new Date().getHours();
+        var _expired = (_r===1 && _now_h>=14) || (_r===2 && _now_h>=19);
+        if(_expired) {
+          btnHtml = '<div style="font-size:11px;color:#ef5350;margin-top:6px">' + (_r===1?'1차':'2차') + ' 송금 시간 종료 (' + (_r===1?'05:00~13:00':'15:00~19:00') + ')</div>';
+        } else {
+          btnHtml = '<div style="font-size:11px;color:#888;margin-top:6px">송금: ' + (_r===2 ? '15:00~19:00' : '05:00~13:00') + ' 사이에 가능</div>';
+        }
       }
     } else if(m.status==='paid'){
       btnHtml = '<div style="font-size:12px;color:#1976d2;margin-top:6px;font-weight:600">✅ 송금완료 — 판매자 확인 대기</div>';

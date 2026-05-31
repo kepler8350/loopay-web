@@ -3372,6 +3372,22 @@ def user_matching():
         # 05:00 이전에는 pending/matched (미확인) 매칭결과 숨김
         if not _show_match_result:
             buy_matches = [m for m in buy_matches if dict(m).get('status') not in ('pending','matched')]
+        else:
+            # 1차 매칭(round=1): 13:00~14:00 이후에는 pending 숨김 (송금 시간 05~13시 종료)
+            # → 14:00 이후에는 1차 pending 숨기고 2차 매칭 화면에 집중
+            # 2차 매칭(round=2): 19:00 이후에는 pending 숨김
+            _h = _now.hour
+            def _should_show(m):
+                d = dict(m)
+                r = d.get('match_round', 1) or 1
+                s = d.get('status', '')
+                if s not in ('pending', 'matched'):
+                    return True  # confirmed/paid 등은 항상 표시
+                if r == 1:
+                    return _h < 14  # 1차는 14:00 이전까지만 pending 표시
+                else:
+                    return True  # 2차는 항상 표시
+            buy_matches = [m for m in buy_matches if _should_show(m)]
 
         # ── 판매: 1) 예약 대기 중 ──
         sell_reservations = db.execute(
