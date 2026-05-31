@@ -1,4 +1,4 @@
-<!DOCTYPE html><!-- v20260531022919 -->
+<!DOCTYPE html><!-- v20260531030352 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -280,7 +280,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 }
 .notif-blink{animation:notif-blink-anim 1s ease-in-out infinite!important;}
 </style>
-<script src="/static/app1.js?v=20260531022919"></script>
+<script src="/static/app1.js?v=20260531030352"></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -834,18 +834,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <button onclick="closeAdminPanel()" style="padding:7px 14px;background:var(--bg2);border:none;border-radius:8px;color:var(--text1);cursor:pointer">닫기</button>
 
 <div id="toast" style="position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 22px;border-radius:8px;font-size:14px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:9999"></div>
-<!-- 패널티 해제 팝업 -->
-<div id="penalty-release-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
-  <div style="background:#1a1a2e;border:1px solid #2d2d5e;border-radius:12px;padding:24px;width:320px;max-width:90vw">
-    <h3 style="color:#ef5350;margin:0 0 16px;font-size:16px">🔓 패널티 해제</h3>
-    <div id="penalty-popup-content" style="font-size:13px;color:#cdd6f4;line-height:1.8;margin-bottom:16px"></div>
-    <div style="display:flex;gap:10px">
-      <button onclick="closePenaltyPopup()" style="flex:1;padding:10px;background:#2a2a3a;color:#cdd6f4;border:1px solid #444;border-radius:6px;font-size:13px;cursor:pointer">취소</button>
-      <button id="penalty-confirm-btn" onclick="doReleasePenalty()" style="flex:1;padding:10px;background:#c62828;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">납부 확정</button>
-    </div>
-  </div>
-</div>
-
 <!-- 충전 확인 모달 -->
 <div class="reserve-confirm-overlay" id="charge-confirm-overlay">
   <div class="reserve-confirm-box" style="max-width:360px;width:90%">
@@ -923,6 +911,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 </div>
-<script src="/static/app2.js?v=20260531022919"></script>
+<script src="/static/app2.js?v=20260531030352"></script>
+<!-- 패널티 해제 팝업 -->
+<div id="penalty-release-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#1a1a2e;border:1px solid #2d2d5e;border-radius:12px;padding:24px;width:320px;max-width:90vw">
+    <h3 style="color:#ef5350;margin:0 0 16px;font-size:16px">🔓 패널티 해제</h3>
+    <div id="penalty-popup-content" style="font-size:13px;color:#cdd6f4;line-height:1.8;margin-bottom:16px"></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="closePenaltyPopup()" style="flex:1;padding:10px;background:#2a2a3a;color:#cdd6f4;border:1px solid #444;border-radius:6px;font-size:13px;cursor:pointer">취소</button>
+      <button id="penalty-confirm-btn" onclick="doReleasePenalty()" style="flex:1;padding:10px;background:#c62828;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">납부 확정</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
