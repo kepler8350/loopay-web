@@ -1235,7 +1235,6 @@ function renderMatchBuyList(items){
     return;
   }
   var h = getEffectiveDate ? getEffectiveDate().getHours() : new Date().getHours();
-  var canSend = (h>=5 && h<13);
   el.innerHTML = items.map(function(m){
     var statusLabel = {waiting:'예약대기',pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'입금',unpaid:'미입금',failed:'미입금'}[m.status]||m.status;
     var statusColor = {waiting:'#90caf9',pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
@@ -1254,11 +1253,13 @@ function renderMatchBuyList(items){
     }
 
     var btnHtml = '';
+    var _r = m.match_round || 1;
+    var canSend = (_r===2) ? (h>=15 && h<19) : (h>=5 && h<13);
     if((m.status==='pending'||m.status==='matched') && hasMatchInfo){
       if(canSend){
         btnHtml = '<button onclick="openPaymentModal('+m.id+')" style="margin-top:8px;padding:8px 16px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600;width:100%">💸 송금 완료</button>';
       } else {
-        btnHtml = '<div style="font-size:11px;color:#888;margin-top:6px">송금: 05:00~13:00 사이에 가능</div>';
+        btnHtml = '<div style="font-size:11px;color:#888;margin-top:6px">송금: ' + (_r===2 ? '15:00~19:00' : '05:00~13:00') + ' 사이에 가능</div>';
       }
     } else if(m.status==='paid'){
       btnHtml = '<div style="font-size:12px;color:#1976d2;margin-top:6px;font-weight:600">✅ 송금완료 — 판매자 확인 대기</div>';
@@ -1289,12 +1290,28 @@ function renderMatchSellList(items){
       +'<div>📞 연락처: '+(m.buyer_phone||'-')+'</div>'
       +'<div>💰 수령액: '+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</div>'
       +'</div>';
+    var _sr = m.match_round || 1;
+    var _totalMinSell = h * 60 + (getEffectiveDate ? getEffectiveDate().getMinutes() : new Date().getMinutes());
+    // 입금확인 가능: 1차 05~13, 2차 15~19
+    var canConfirm = (_sr===2) ? (h>=15 && h<19) : (h>=5 && h<13);
+    // 미입금 버튼: 1차 13~14, 2차 19~20
+    var canUnpaid = (_sr===2) ? (h>=19 && h<20) : (h>=13 && h<14);
+    // 입금요청: 2차 18:30~19:00, 1차 미사용
+    var canRequest = (_sr===2) ? (_totalMinSell >= 1110 && _totalMinSell < 1140) : false;
     var btnHtml = '';
     if(m.status==='paid'){
-      btnHtml = '<div style="display:flex;gap:8px;margin-top:8px">'
-        +'<button onclick="doConfirmPayment('+m.id+')" style="padding:7px 14px;background:#388e3c;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">✅ 입금확인</button>'
-        +'<button onclick="doReportUnpaid('+m.id+')" style="padding:7px 14px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">❌ 미입금</button>'
-        +'</div>';
+      btnHtml = '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">';
+      if(canConfirm){
+        btnHtml += '<button onclick="doConfirmPayment('+m.id+')" style="padding:7px 14px;background:#388e3c;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">✅ 입금확인</button>';
+      }
+      if(canUnpaid){
+        btnHtml += '<button onclick="doReportUnpaid('+m.id+')" style="padding:7px 14px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">❌ 미입금</button>';
+      }
+      if(!canConfirm && !canUnpaid){
+        var _waitTxt = (_sr===2) ? '입금확인: 15:00~19:00 / 미입금: 19:00~20:00' : '입금확인: 05:00~13:00 / 미입금: 13:00~14:00';
+        btnHtml += '<div style="font-size:11px;color:#f9a825;padding:4px 0">' + _waitTxt + '</div>';
+      }
+      btnHtml += '</div>';
       if(m.receipt_url){
         btnHtml += '<a href="'+m.receipt_url+'" target="_blank" style="font-size:11px;color:#90caf9;display:block;margin-top:4px">영수증 보기</a>';
       }
@@ -1703,6 +1720,17 @@ async function loadNotifBadge(){
     if(badge){
       if(unread>0){badge.style.display='inline-block';badge.textContent=unread>99?'99+':unread;}
       else{badge.style.display='none';}
+    }
+    // 정지 상태 주기적 확인 (30초 간격)
+    if(window._lastSuspendCheck === undefined || Date.now() - window._lastSuspendCheck > 30000){
+      window._lastSuspendCheck = Date.now();
+      try{
+        var _me = await api('/user/me');
+        if(_me && typeof _me.suspended_until !== 'undefined'){
+          if(window.userData) window.userData.suspended_until = _me.suspended_until;
+          checkSuspended(_me);
+        }
+      }catch(_e){}
     }
     // 새 알림(매칭완료 등) 감지 시 포인트 즉시 갱신
     if(unread > _lastUnreadCount && _lastUnreadCount >= 0){

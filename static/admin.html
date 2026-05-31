@@ -1260,7 +1260,11 @@ function renderSystemItems(){
     var _isConfirmed = (ms === 'confirmed');
     var _isPaid = (ms === 'paid');
     // 05:00~13:00 (300~780분)
-    var _inPayWindow = (_totalMin >= 300 && _totalMin < 780);
+    // 1차: 05:00~13:00 (300~780분), 2차: 15:00~19:00 (900~1140분)
+    var _matchRound = item.match_round || 1;
+    var _inPayWindow = (_matchRound === 2)
+      ? (_totalMin >= 900 && _totalMin < 1140)
+      : (_totalMin >= 300 && _totalMin < 780);
 
     // ── 3개 버튼: 시간 조건에 따라 활성/비활성 ──
     var actionBtns = '';
