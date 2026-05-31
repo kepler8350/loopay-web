@@ -3410,10 +3410,11 @@ def user_matching():
             """SELECT r.id, r.bar_type, r.status as res_status,
                       COALESCE(r.stage, COALESCE(i.stage,1)) as stage,
                       r.reserve_date,
+                      r.match_round,
                       'reservation' as source
                FROM reservations r
                LEFT JOIN items i ON r.item_id=i.id
-               WHERE r.user_id=? AND r.match_round=2
+               WHERE r.user_id=? AND r.match_round IN (1,2)
                  AND r.status='pending' AND r.confirmed=0
                  AND r.item_id IS NOT NULL
                  AND r.reserve_date=?
