@@ -3273,7 +3273,7 @@ def create_sell_reservation():
     item_id = int(data.get('item_id', 0))
     db = get_db()
     try:
-        item = db.execute("SELECT * FROM items WHERE id=? AND user_id=? AND status='reservable'", (item_id, uid)).fetchone()
+        item = db.execute("SELECT * FROM items WHERE id=? AND user_id=? AND status IN ('reservable','active')", (item_id, uid)).fetchone()
         if not item:
             return jsonify(error='판매예약 불가능한 아이템입니다'), 400
         days = days_since(item['purchase_date'])
