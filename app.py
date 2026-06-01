@@ -3037,26 +3037,29 @@ def user_my_items():
                 if not row.get('reserve_date') and res['reserve_date']:
                     row['reserve_date'] = res['reserve_date']
             # match 찾기: seller_id=uid, bar_type+stage 일치
-            m = db.execute(
-                """SELECT m.id, m.status, m.match_round,
-                          u.username as buyer_username,
-                          u.account_name as buyer_account_name,
-                          u.account_no as buyer_account
-                   FROM matches m
-                   LEFT JOIN users u ON m.buyer_id=u.id
-                   WHERE m.seller_id=? AND m.bar_type=?
-                     AND COALESCE(m.stage,1)=COALESCE(?,1)
-                     AND m.status NOT IN ('cancelled')
-                   ORDER BY m.id DESC LIMIT 1""",
-                (uid, row['bar_type'], row['stage'] or 1)
-            ).fetchone()
+            # match 조회: seller_id 기준 (stage 무관)
+            m = None
+            try:
+                m = db.execute(
+                    """SELECT m.id, m.status, m.match_round,
+                              u.username as buyer_username,
+                              u.account_name as buyer_account_name,
+                              u.account_no as buyer_account
+                       FROM matches m
+                       LEFT JOIN users u ON m.buyer_id=u.id
+                       WHERE m.seller_id=?
+                         AND m.status NOT IN ('cancelled')
+                       ORDER BY m.id DESC LIMIT 1""",
+                    (uid,)
+                ).fetchone()
+            except Exception:
+                m = None
             if m:
                 match_status = m['status']
                 match_round = m['match_round']
                 buyer_username = m['buyer_username']
                 buyer_account_name = m['buyer_account_name']
                 buyer_account = m['buyer_account']
-                # receipt_url 별도 조회 (컬럼이 없을 경우 대비)
                 try:
                     r_row = db.execute('SELECT receipt_url FROM matches WHERE id=?', (m['id'],)).fetchone()
                     row['receipt_url'] = r_row['receipt_url'] if r_row else None
