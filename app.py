@@ -1249,8 +1249,11 @@ def admin_run_matching():
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                WHERE r.status='pending' AND r.match_round=?
-               AND r.reserve_date=?
+               AND r.reserve_date=? AND COALESCE(r.confirmed,0)=0
                AND u.username != 'loopay'
+               AND r.user_id NOT IN (
+                   SELECT p.user_id FROM penalties p WHERE p.is_released=0
+               )
                ORDER BY RANDOM()""",
             (round_num, today)
         ).fetchall()
@@ -1685,7 +1688,7 @@ def admin_matching_status():
         buy_count = db.execute(
             """SELECT COUNT(*) as c FROM reservations r
                WHERE r.match_round=? AND r.status='pending' AND r.user_id!=?
-               AND r.reserve_date=?
+               AND r.reserve_date=? AND COALESCE(r.confirmed,0)=0
                AND r.user_id NOT IN (
                    SELECT p.user_id FROM penalties p WHERE p.is_released=0
                )""",
@@ -1695,7 +1698,7 @@ def admin_matching_status():
         buy_by_type = db.execute(
             """SELECT bar_type, COUNT(*) as cnt FROM reservations r
                WHERE r.match_round=? AND r.status='pending' AND r.user_id!=?
-               AND r.reserve_date=?
+               AND r.reserve_date=? AND COALESCE(r.confirmed,0)=0
                AND r.user_id NOT IN (
                    SELECT p.user_id FROM penalties p WHERE p.is_released=0
                )
