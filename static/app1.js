@@ -2036,14 +2036,8 @@ function renderSellTab(){
   var totalEl = document.getElementById('sell-tab-total');
   if(!listEl) return;
 
-  var typeFilter   = (document.getElementById('sell-filter-type')  ||{}).value || '';
-  var statusFilter = (document.getElementById('sell-filter-status')||{}).value || '';
-
-  var filtered = _myItems.filter(function(x){
-    if(typeFilter   && x.bar_type !== typeFilter)   return false;
-    if(statusFilter && x.status   !== statusFilter) return false;
-    return true;
-  });
+  // 필터 UI 삭제됨 - 전체 표시
+  var filtered = _myItems.slice();
 
   if(totalEl) totalEl.textContent = '총 '+filtered.length+'개 (전체 '+_myItems.length+'개)';
 
