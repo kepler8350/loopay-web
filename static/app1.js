@@ -2021,7 +2021,7 @@ function _renderSellSummary(){
     var sold= all.filter(function(x){ return x.status==='sold'; }).length;
     var pf  = ids[i];
     var el  = document.getElementById('sell-sum-'+pf+'-total');
-    if(el) el.textContent = all.length+'개';
+    if(el) el.textContent = all.length;
     var elOk = document.getElementById('sell-sum-'+pf+'-ok');
     if(elOk) elOk.textContent = ok + (pend>0?' (예약중 '+pend+')':'');
     var elMat = document.getElementById('sell-sum-'+pf+'-match');
