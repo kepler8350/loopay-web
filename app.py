@@ -3081,6 +3081,7 @@ def user_my_items():
                 'stage': row['stage'] or 1,
                 'status': item_status,
                 'status_label': '판매예약중' if item_status == 'pending' else item_status_label(row['status'], row['purchase_date']),
+                'days': days_since(row['purchase_date']),
                 'purchase_date': row['purchase_date'],
                 'reserve_date': row.get('reserve_date'),
                 'match_id': m['id'] if (m and match_status not in [None]) else None,
