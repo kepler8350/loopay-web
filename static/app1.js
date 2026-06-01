@@ -1076,8 +1076,18 @@ async function loadItemDetail(barType){
         +badgeText+'</span>';
       // 일차 안내 (canSell 아닐 때만 표시)
       var dayNote = '';  // 판매 가능 안내 제거 (형식1)
-      return '<div class="item-detail-card" id="icard-'+it.id+'" style="background:'+cardBg+';transition:background 0.2s">'
-        +'<div><div class="item-detail-stage">'+names[it.bar_type||barType]+' '+it.stage+'단계'+statusBadge+'</div>'
+      // 이슈11: 판매가능 상태면 onclick 추가
+      var _cardCanSell = it.status_label === '판매가능';
+      var _cardSelected = !!_sellSelected[String(it.id)];
+      var _cardStyle = 'background:'+(_cardSelected?'rgba(123,31,162,0.15)':cardBg)+';border:'+(_cardSelected?'1.5px solid #7b1fa2':'1px solid transparent')+';transition:background 0.2s';
+      var _cardOnclick = _cardCanSell ? ' onclick="toggleItemSellSelect('+it.id+',\''+( it.bar_type||barType)+'\')"' : '';
+      var _sellBadge = _cardSelected
+        ? '<span style="background:#7b1fa2;color:#fff;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">✓ 판매선택</span>'
+        : (_cardCanSell
+          ? '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg2);border:1.5px solid #7b1fa2;color:#7b1fa2;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600">☐ 판매선택</span>'
+          : statusBadge);
+      return '<div class="item-detail-card" id="icard-'+it.id+'"'+_cardOnclick+' style="'+_cardStyle+';cursor:'+(_cardCanSell?'pointer':'default')+'">'
+        +'<div><div class="item-detail-stage">'+names[it.bar_type||barType]+' '+it.stage+'단계'+_sellBadge+'</div>'
         +'<div class="item-detail-info">구매일: '+it.purchase_date+' ('+dayNum+'일째)</div>'
         +dayNote+'</div>'
         +'<div class="item-detail-price"><div style="font-size:13px;font-weight:700">'
@@ -1097,7 +1107,7 @@ function updateBulkSellBtn(barType, items){
   var btn = document.getElementById('bulk-sell-btn-'+barType);
   if(!btn) return;
   var sellableIds = (items||[]).filter(function(it){
-    return it.days>=2 && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료' && it.status_label!=='판매예약';
+    return it.status_label === '판매가능';
   }).map(function(it){return it.id;});
   var allSelected = sellableIds.length>0 && sellableIds.every(function(id){return _sellSelected[id];});
   btn.textContent = allSelected?'전체취소':'전체판매예약';
