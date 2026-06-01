@@ -1783,6 +1783,7 @@ with app.app_context():
             "ALTER TABLE penalties ADD COLUMN release_at DATETIME",
             "ALTER TABLE penalties ADD COLUMN match_round INTEGER DEFAULT 1",
             "ALTER TABLE penalties ADD COLUMN release_paid INTEGER DEFAULT 0",
+            "ALTER TABLE matches ADD COLUMN receipt_url TEXT",
             "ALTER TABLE notifications ADD COLUMN scheduled_at DATETIME",
         ]:
             try:
