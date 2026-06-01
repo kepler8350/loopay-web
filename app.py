@@ -676,16 +676,32 @@ def get_items():
             rows = db.execute("SELECT * FROM items WHERE user_id=? AND bar_type=? AND status!='sold' ORDER BY bar_type, stage", (uid, bar_type)).fetchall()
         else:
             rows = db.execute("SELECT * FROM items WHERE user_id=? AND status!='sold' ORDER BY bar_type, stage", (uid,)).fetchall()
+        # pending reservation 한번에 조회 (아이템별 예약중 여부)
+        item_ids = [it['id'] for it in rows]
+        pending_set = set()
+        if item_ids:
+            placeholders = ','.join('?' * len(item_ids))
+            pending_rows = db.execute(
+                f"SELECT item_id FROM reservations WHERE item_id IN ({placeholders}) AND status='pending'",
+                item_ids
+            ).fetchall()
+            pending_set = {r['item_id'] for r in pending_rows}
+
         result = []
         for it in rows:
             buy, sell = get_price(it['bar_type'], it['stage'])
+            # 판매예약중인 아이템은 status_label을 '판매예약중'으로 오버라이드
+            if it['id'] in pending_set:
+                s_label = '판매예약중'
+            else:
+                s_label = item_status_label(it['status'], it['purchase_date'])
             result.append({
                 'id': it['id'],
                 'bar_type': it['bar_type'],
                 'stage': it['stage'],
                 'purchase_date': it['purchase_date'],
                 'days': days_since(it['purchase_date']),
-                'status_label': item_status_label(it['status'], it['purchase_date']),
+                'status_label': s_label,
                 'buy_price': buy,
                 'sell_price': sell,
                 'profit': sell - buy

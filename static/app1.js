@@ -1083,9 +1083,11 @@ async function loadItemDetail(barType){
       var _cardOnclick = _cardCanSell ? ' onclick="toggleItemSellSelect('+it.id+',\''+( it.bar_type||barType)+'\')"' : '';
       var _sellBadge = _cardSelected
         ? '<span class="badge" style="background:#7b1fa2;color:#fff">✓ 판매선택</span>'
-        : (_cardCanSell
-          ? '<span class="badge" style="background:var(--bg2);border:1.5px solid #7b1fa2;color:#7b1fa2">☐ 판매선택</span>'
-          : statusBadge);
+        : (it.status_label==='판매예약중'
+          ? '<span class="badge badge-pending">판매예약중</span>'
+          : (_cardCanSell
+            ? '<span class="badge" style="background:var(--bg2);border:1.5px solid #7b1fa2;color:#7b1fa2">☐ 판매선택</span>'
+            : statusBadge));
       return '<div class="item-detail-card" id="icard-'+it.id+'"'+_cardOnclick+' style="'+_cardStyle+';cursor:'+(_cardCanSell?'pointer':'default')+'">' 
         +'<div style="display:flex;justify-content:space-between;align-items:center">'
         +'<span class="item-detail-stage">'+names[it.bar_type||barType]+' '+it.stage+'단계</span>'

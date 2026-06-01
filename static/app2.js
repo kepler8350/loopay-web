@@ -85,6 +85,8 @@ function renderBars(d){
       } else if(_canSell2){
         // 3일째 이상: 빈 체크박스 형태 배지
         _badge = '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--bg2);border:1.5px solid #7b1fa2;color:#7b1fa2;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600"><span style=\"font-size:13px\">☐</span> 판매선택</span>';
+      } else if(it.status_label==='판매예약중'){
+        _badge = '<span class="badge badge-pending">판매예약중</span>';
       } else {
         _badge = '<span class="badge badge-match">' + it.status_label + '</span>';
       }
