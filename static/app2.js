@@ -233,6 +233,8 @@ function toggleItemSellSelect(itemId, barType){
   updateSellBoard();
   // 아이템 상세보기 재렌더링 (선택 표시 갱신)
   renderBars(userData||{items:{bronze:[],silver:[],gold:[]},reservable:{}});
+  // item-detail-card도 재렌더링 (✓ 판매선택 표시)
+  if(typeof loadItemDetail === 'function') loadItemDetail(barType);
 }
 
 function showSellConfirm(){
