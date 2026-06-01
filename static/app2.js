@@ -167,7 +167,34 @@ function closeReserveConfirm(){
 }
 
 // ── 판매예약 보드 ──
-function updateSellBoard(){} // sell-board 제거됨
+function updateSellBoard(){
+  var counts = {bronze:0, silver:0, gold:0};
+  Object.keys(_sellSelected).forEach(function(id){
+    if(!_sellSelected[id]) return;
+    var item = _itemCache && _itemCache[id];
+    var bt = item ? (item.bar_type||'bronze') : 'bronze';
+    counts[bt] = (counts[bt]||0) + 1;
+  });
+  var total = counts.bronze + counts.silver + counts.gold;
+  var info = document.getElementById('sell-board-info');
+  if(info){
+    if(total > 0){
+      var parts = [];
+      if(counts.bronze) parts.push('수정 '+counts.bronze+'개');
+      if(counts.silver) parts.push('루비 '+counts.silver+'개');
+      if(counts.gold)   parts.push('다이아 '+counts.gold+'개');
+      info.textContent = parts.join(' / ') + ' 선택됨';
+    } else {
+      info.textContent = '선택된 아이템 없음';
+    }
+  }
+  var btn = document.getElementById('sell-reserve-btn');
+  if(btn){
+    btn.disabled = total===0;
+    btn.style.opacity = total===0 ? '0.4' : '1';
+    btn.style.cursor = total===0 ? 'not-allowed' : 'pointer';
+  }
+}
 
 // 아이템 캐시 (id → {bar_type, stage, sell_price})
 var _itemCache = {};

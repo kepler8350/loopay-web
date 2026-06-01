@@ -2108,7 +2108,7 @@ function renderSellTab(){
         +'<span style="font-size:13px;font-weight:700;color:'+(tC[item.bar_type]||'#fff')+'">'+( tN[item.bar_type]||item.bar_type)+' '+(item.stage||1)+'단계'+_roleBadge+'</span>'
         +'<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+_stColor+'22;color:'+_stColor+';border:1px solid '+_stColor+'44">'+_stLabel+'</span>'
       +'</div>'
-      +(item.purchase_date ? '<div style="font-size:11px;color:var(--text2);margin-bottom:2px">구매일: '+item.purchase_date+(item.reserve_date&&item.reserve_date!==item.purchase_date?' | 예약: '+item.reserve_date:'')+'</div>' : '')
+      +(item.purchase_date ? '<div style="font-size:11px;color:var(--text2);margin-bottom:2px">구매일: '+item.purchase_date+(item.days!=null?' ('+item.days+'일째)':'')+(item.reserve_date&&item.reserve_date!==item.purchase_date?' | 예약: '+item.reserve_date:'')+'</div>' : '')
       +(_counterpart ? '<div style="font-size:11px;color:#64b5f6;margin-bottom:4px">'+_counterpart+'</div>' : '')
       +(actionBtns ? '<div style="margin-top:6px">'+actionBtns+'</div>' : '')
       +'</div>';
