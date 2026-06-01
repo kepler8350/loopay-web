@@ -3039,7 +3039,6 @@ def user_my_items():
             # match 찾기: seller_id=uid, bar_type+stage 일치
             m = db.execute(
                 """SELECT m.id, m.status, m.match_round,
-                          m.receipt_url,
                           u.username as buyer_username,
                           u.account_name as buyer_account_name,
                           u.account_no as buyer_account
@@ -3057,6 +3056,12 @@ def user_my_items():
                 buyer_username = m['buyer_username']
                 buyer_account_name = m['buyer_account_name']
                 buyer_account = m['buyer_account']
+                # receipt_url 별도 조회 (컬럼이 없을 경우 대비)
+                try:
+                    r_row = db.execute('SELECT receipt_url FROM matches WHERE id=?', (m['id'],)).fetchone()
+                    row['receipt_url'] = r_row['receipt_url'] if r_row else None
+                except Exception:
+                    row['receipt_url'] = None
             # reservation 상태 반영 (아이템 status가 reservable이어도 예약중이면 표시)
             item_status = row['status']
             if item_status == 'reservable':
@@ -3077,7 +3082,7 @@ def user_my_items():
                 'match_id': m['id'] if (m and match_status not in [None]) else None,
                 'match_status': match_status,
                 'match_round': match_round,
-                'receipt_url': m['receipt_url'] if m else None,
+                'receipt_url': row.get('receipt_url'),
                 'buyer_username': buyer_username,
                 'buyer_account_name': buyer_account_name,
                 'buyer_account': buyer_account,
