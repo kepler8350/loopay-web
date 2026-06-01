@@ -3874,3 +3874,4 @@ def admin_resolve_unpaid(res_id):
         return jsonify(success=True)
     finally:
         db.close()
+
