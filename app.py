@@ -3008,14 +3008,24 @@ def user_my_items():
                     buyer_username = m['buyer_username']
                     buyer_account_name = m['buyer_account_name']
                     buyer_account = m['buyer_account']
+            # reservation 상태 반영 (아이템 status가 reservable이어도 예약중이면 표시)
+            item_status = row['status']
+            if item_status == 'reservable':
+                pending_res = db.execute(
+                    "SELECT id FROM reservations WHERE item_id=? AND status='pending' LIMIT 1",
+                    (row['id'],)
+                ).fetchone()
+                if pending_res:
+                    item_status = 'pending'  # 판매예약 중
+
             result.append({
                 'id': row['id'],
                 'bar_type': row['bar_type'],
                 'stage': row['stage'] or 1,
-                'status': row['status'],
+                'status': item_status,
                 'purchase_date': row['purchase_date'],
                 'reserve_date': row.get('reserve_date'),
-                'match_id': row.get('match_id'),
+                'match_id': None,
                 'match_status': match_status,
                 'match_round': match_round,
                 'buyer_username': buyer_username,

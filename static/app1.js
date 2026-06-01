@@ -1992,13 +1992,14 @@ function _renderSellSummary(){
   types.forEach(function(t,i){
     var all = _myItems.filter(function(x){ return x.bar_type===t; });
     var ok  = all.filter(function(x){ return x.status==='reservable'||x.status==='active'; }).length;
+    var pend= all.filter(function(x){ return x.status==='pending'; }).length;
     var mat = all.filter(function(x){ return x.status==='matched'; }).length;
     var sold= all.filter(function(x){ return x.status==='sold'; }).length;
     var pf  = ids[i];
     var el  = document.getElementById('sell-sum-'+pf+'-total');
     if(el) el.textContent = all.length+'개';
     var elOk = document.getElementById('sell-sum-'+pf+'-ok');
-    if(elOk) elOk.textContent = ok;
+    if(elOk) elOk.textContent = ok + (pend>0?' (예약중 '+pend+')':'');
     var elMat = document.getElementById('sell-sum-'+pf+'-match');
     if(elMat) elMat.textContent = mat;
     var elSold = document.getElementById('sell-sum-'+pf+'-sold');
@@ -2029,7 +2030,7 @@ function renderSellTab(){
 
   var tC={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var tN={bronze:'수정',silver:'루비',gold:'다이아'};
-  var sL={reservable:'판매가능',waiting:'대기중',active:'보유중',matched:'매칭완료',sold:'판매완료',pending:'예약중'};
+  var sL={reservable:'판매가능',waiting:'대기중',active:'보유중',matched:'매칭완료',sold:'판매완료',pending:'판매예약중'};
   var sC={reservable:'#66bb6a',waiting:'#f9a825',active:'#64b5f6',matched:'#1976d2',sold:'#888',pending:'#ab47bc'};
   var msKr={pending:'대기',matched:'매칭완료',paid:'송금',confirmed:'거래완료',cancelled:'취소',failed:'미입금',unpaid:'미입금'};
   var msColor={pending:'#888',matched:'#f9a825',paid:'#42a5f5',confirmed:'#66bb6a',cancelled:'#ef5350',failed:'#ef5350',unpaid:'#ef5350'};
