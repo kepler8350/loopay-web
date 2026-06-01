@@ -1267,6 +1267,7 @@ function renderMatchSellList(items){
   var TYPE_NAME={bronze:'수정',silver:'루비',gold:'다이아'};
   var TYPE_COLOR={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var el=document.getElementById('match-sell-list');
+  if(!el) return; // 구매탭에서 판매예약 섹션 제거됨
   if(!items.length){
     el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">판매예약 없음</div>';
     return;
