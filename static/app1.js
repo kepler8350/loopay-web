@@ -2126,7 +2126,13 @@ function renderSellTab(){
       // 1행: 종류/단계/상태
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
         +'<span style="font-size:13px;font-weight:700;color:'+(tC[item.bar_type]||'#fff')+'">'+(tN[item.bar_type]||item.bar_type)+' '+(item.stage||1)+'단계'+_roleBadge+'</span>'
-        +(function(){var _st=ms?msKr[ms]:null;var _stLabel=_st||(sL[item.status]||item.status);var _stColor=ms?(msColor[ms]||'#888'):(sC[item.status]||'#aaa');return '<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+_stColor+'22;color:'+_stColor+';border:1px solid '+_stColor+'44">'+_stLabel+'</span>';}())
+        +(function(){var _st=ms?msKr[ms]:null;var _stLabel=_st||(item.status_label)||(sL[item.status]||item.status);var _stColor=ms?(msColor[ms]||'#888'):(
+          item.status_label==='판매가능'?'#66bb6a':
+          item.status_label==='보유중'?'#64b5f6':
+          item.status_label==='판매예약중'?'#ab47bc':
+          item.status_label==='매칭완료'?'#1976d2':
+          item.status_label==='판매완료'?'#888':
+          (sC[item.status]||'#aaa'));return '<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+_stColor+'22;color:'+_stColor+';border:1px solid '+_stColor+'44">'+_stLabel+'</span>';}())
       +'</div>'
       // 2행: 날짜 정보
       +'<div style="display:flex;gap:10px;font-size:11px;color:var(--text2);margin-bottom:6px">'
