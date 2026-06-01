@@ -3100,7 +3100,7 @@ def user_my_items():
                       u.bank as seller_bank
                FROM matches m
                LEFT JOIN users u ON m.seller_id=u.id
-               WHERE m.buyer_id=? AND m.status NOT IN ('cancelled')
+               WHERE m.buyer_id=? AND m.status NOT IN ('cancelled','confirmed')
                ORDER BY m.id DESC""",
             (uid,)
         ).fetchall()
