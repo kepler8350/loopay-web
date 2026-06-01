@@ -1983,9 +1983,18 @@ async function doReleasePenalty(){
 
 // ── 판매 탭 ──────────────────────────────────────
 var _myItems = [];
+var _sellServerHour = 0;
+var _sellServerMin  = 0;
+var _sellUnpaidClickedAt = {}; // matchId → 마지막 클릭 시각(분)
 
 async function loadSellTab(){
   try {
+    // 서버 시간 가져오기 (버튼 활성화 조건용)
+    try {
+      var ct = await fetch('/api/current-time').then(function(r){return r.json();});
+      _sellServerHour = ct.hour||0;
+      _sellServerMin  = ct.minute||0;
+    } catch(e2){}
     var d = await api('/user/my-items');
     _myItems = d.items || [];
     _renderSellSummary();
@@ -2055,15 +2064,55 @@ function renderSellTab(){
           : (ms ? '<span style="padding:2px 4px;border-radius:6px;font-size:10px;background:#1565c033;color:#90caf9;font-weight:700;margin-left:3px">1차</span>' : ''))
       : '<span style="color:var(--text2);font-size:11px">-</span>';
 
-    // 액션 버튼 (매칭된 경우: 입금확인/미입금)
+    // 액션 버튼 - 관리자 시스템아이템현황과 동일한 시간 조건+기능
     var actionBtns = '';
-    if(item.match_id && ms==='paid'){
-      actionBtns = '<button onclick="userConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">✅ 입금확인</button>'
-                 + ' <button onclick="userReportUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-left:4px">🚫 미입금</button>';
-    } else if(item.match_id && ms==='matched'){
-      actionBtns = '<span style="font-size:11px;color:#f9a825">⏳ 송금 대기</span>';
-    } else if(ms==='confirmed'){
-      actionBtns = '<span style="font-size:11px;color:#66bb6a">✅ 완료</span>';
+    if(item.match_id && ms && ms !== 'cancelled'){
+      var _mRound = item.match_round || 1;
+      var _sh = _sellServerHour||0, _sm = _sellServerMin||0;
+      var _totalMin = _sh*60+_sm;
+      // 1차: 05:00~13:00(300~780), 2차: 15:00~19:00(900~1140)
+      var _inPayWin  = (_mRound===2)?(_totalMin>=900&&_totalMin<1140):(_totalMin>=300&&_totalMin<780);
+      // 입금요청: 1차 12:30~13:00(750~780), 2차 18:30~19:00(1110~1140)
+      var _inWarnWin = (_mRound===2)?(_totalMin>=1110&&_totalMin<1140):(_totalMin>=750&&_totalMin<780);
+      // 미입금확인: 1차 13:00~14:00(780~840), 2차 19:00~20:00(1140~1200)
+      var _inConfWin = (_mRound===2)?(_totalMin>=1140&&_totalMin<1200):(_totalMin>=780&&_totalMin<840);
+      var _isPaid    = (ms==='paid');
+      var _isConf    = (ms==='confirmed');
+      // 입금요청 쿨타임 (9분)
+      var _lastMin   = (_sellUnpaidClickedAt[item.match_id]||0);
+      var _curMin    = _totalMin;
+      var _coolOk    = (_lastMin===0)||((_curMin-_lastMin)>=9);
+
+      // 이미지 버튼
+      if(item.receipt_url){
+        actionBtns += '<a href="'+item.receipt_url+'" target="_blank" style="padding:3px 8px;background:#37474f;color:#80cbc4;border:1px solid #546e7a;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px;text-decoration:none">🖼️ 이미지</a>';
+      }
+      // ① 입금확인: paid + 시간창 내
+      if(_isPaid && _inPayWin){
+        actionBtns += '<button onclick="userConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>';
+      } else {
+        actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">✅ 입금확인</button>';
+      }
+      // ② 입금요청: 미확인 + 시간창 + 쿨타임
+      if(!_isConf && _inWarnWin && _coolOk){
+        actionBtns += '<button onclick="userWarnUnpaid('+item.match_id+')" style="padding:3px 8px;background:#f57c00;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📨 입금요청</button>';
+      } else if(!_isConf && _inWarnWin && !_coolOk){
+        actionBtns += '<button disabled title="9분 후 재활성화" style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">📨 입금요청</button>';
+      } else {
+        actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">📨 입금요청</button>';
+      }
+      // ③ 미입금확인: 미확인 + 시간창
+      if(!_isConf && _inConfWin){
+        actionBtns += '<button onclick="userConfirmUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🚫 미입금확인</button>';
+      } else {
+        actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed">🚫 미입금확인</button>';
+      }
+      // 완료 메시지
+      if(_isConf){
+        actionBtns += '<span style="font-size:11px;color:#66bb6a;margin-left:4px">✅ 완료</span>';
+      } else if(ms==='matched'){
+        actionBtns += '<span style="font-size:11px;color:#f9a825;margin-left:4px">⏳ 송금 대기</span>';
+      }
     }
 
     return '<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">'
@@ -2100,11 +2149,24 @@ async function userConfirmPayment(matchId){
   } catch(e){ toast('오류: '+e.message,'error'); }
 }
 
-// 판매탭: 미입금 신고
-async function userReportUnpaid(matchId){
+// 판매탭: 입금요청 (9분 쿨타임)
+async function userWarnUnpaid(matchId){
   try {
     var r = await api('/match/report-unpaid', {method:'POST', body:JSON.stringify({match_id:matchId})});
-    if(r.success) { toast('미입금 신고 완료','success'); loadSellTab(); }
+    if(r.success){
+      _sellUnpaidClickedAt[matchId] = _sellServerHour*60 + _sellServerMin;
+      toast('입금 요청 발송 완료 (9분 후 재활성화)', 'success');
+      loadSellTab();
+    } else toast(r.error||'처리 실패','error');
+  } catch(e){ toast('오류: '+e.message,'error'); }
+}
+
+// 판매탭: 미입금확인 처리
+async function userConfirmUnpaid(matchId){
+  if(!confirm('미입금 처리하시겠습니까?')) return;
+  try {
+    var r = await api('/user/confirm-unpaid', {method:'POST', body:JSON.stringify({match_id:matchId})});
+    if(r.success){ toast('미입금 처리 완료', 'success'); loadSellTab(); }
     else toast(r.error||'처리 실패','error');
   } catch(e){ toast('오류: '+e.message,'error'); }
 }

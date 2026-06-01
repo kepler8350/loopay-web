@@ -2871,6 +2871,32 @@ def match_report_unpaid():
         db.close()
 
 # ── 관리자: 미입금확정 (13:00~14:00) ────────────────────────
+@app.route('/api/user/confirm-unpaid', methods=['POST'])
+@jwt_required()
+def user_confirm_unpaid():
+    identity = get_jwt_identity()
+    if str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    uid = int(identity)
+    data = request.json or {}
+    match_id = int(data.get('match_id', 0))
+    db = get_db()
+    try:
+        m = db.execute(
+            "SELECT * FROM matches WHERE id=? AND seller_id=? AND status IN ('pending','paid')",
+            (match_id, uid)
+        ).fetchone()
+        if not m:
+            return jsonify(error='처리 불가 (권한 없음 또는 상태 오류)'), 400
+        db.execute("UPDATE matches SET status='failed' WHERE id=?", (match_id,))
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/confirm-unpaid', methods=['POST'])
 @jwt_required()
 def admin_confirm_unpaid():
@@ -3030,6 +3056,7 @@ def user_my_items():
                 # match 찾기: seller_id=uid, bar_type+stage 일치
                 m = db.execute(
                     """SELECT m.id, m.status, m.match_round,
+                              m.receipt_url,
                               u.username as buyer_username,
                               u.account_name as buyer_account_name,
                               u.account_no as buyer_account
@@ -3063,9 +3090,10 @@ def user_my_items():
                 'status': item_status,
                 'purchase_date': row['purchase_date'],
                 'reserve_date': row.get('reserve_date'),
-                'match_id': None,
+                'match_id': m['id'] if (m and match_status not in [None]) else None,
                 'match_status': match_status,
                 'match_round': match_round,
+                'receipt_url': m['receipt_url'] if m else None,
                 'buyer_username': buyer_username,
                 'buyer_account_name': buyer_account_name,
                 'buyer_account': buyer_account,
