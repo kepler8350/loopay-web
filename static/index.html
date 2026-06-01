@@ -1,4 +1,4 @@
-<!DOCTYPE html><!-- v20260601101614 -->
+<!DOCTYPE html><!-- v20260601102250 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -280,7 +280,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 }
 .notif-blink{animation:notif-blink-anim 1s ease-in-out infinite!important;}
 </style>
-<script src="/static/app1.js?v=20260601101614"></script>
+<script src="/static/app1.js?v=20260601102250"></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -980,7 +980,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 </div>
-<script src="/static/app2.js?v=20260601101614"></script>
+<script src="/static/app2.js?v=20260601102250"></script>
 <!-- 패널티 해제 팝업 -->
 <div id="penalty-release-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
   <div style="background:#1a1a2e;border:1px solid #2d2d5e;border-radius:12px;padding:24px;width:320px;max-width:90vw">
@@ -993,5 +993,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<script>
+// 판매탭 쿨타임 전역 변수 (app1.js 로딩 보장)
+if(typeof _sellUnpaidClickedAt === 'undefined') window._sellUnpaidClickedAt = {};
+if(typeof _sellServerHour === 'undefined') window._sellServerHour = 0;
+if(typeof _sellServerMin === 'undefined') window._sellServerMin = 0;
+</script>
 </body>
 </html>

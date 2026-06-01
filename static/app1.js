@@ -1,3 +1,8 @@
+// 판매탭 전역 변수 - 최상단 선언
+var _sellUnpaidClickedAt = typeof _sellUnpaidClickedAt !== 'undefined' ? _sellUnpaidClickedAt : {};
+var _sellServerHour = typeof _sellServerHour !== 'undefined' ? _sellServerHour : 0;
+var _sellServerMin = typeof _sellServerMin !== 'undefined' ? _sellServerMin : 0;
+
 var _sellSelected={}; // 판매예약 선택 상태
 var _sellTabSelected={}; // 판매탭 선택 상태
 var _reservedToday=false; // 오늘 구매예약 완료 여부
