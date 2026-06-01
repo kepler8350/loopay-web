@@ -284,9 +284,19 @@ def days_since(purchase_date):
         return 0
 
 def item_status_label(status, purchase_date):
+    from datetime import date
+    import datetime as _dt
+    today_date = get_today()
+    days = 0
+    if purchase_date:
+        try:
+            p = _dt.date.fromisoformat(str(purchase_date))
+            days = (today_date - p).days
+        except Exception:
+            days = 0
     status_map = {
         'active': '보유중',
-        'reservable': '보유중',  # 매칭예약 가능한 보유 상태
+        'reservable': '판매가능' if days >= 2 else '보유중',
         'sold': '판매완료',
         'pending': '매칭중',
         'matched': '매칭완료',

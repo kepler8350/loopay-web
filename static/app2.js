@@ -64,28 +64,39 @@ function renderBars(d){
     const list=items[t];
     if(!list||!list.length){el.innerHTML='<div style="color:var(--text2);font-size:13px;padding:8px 0">보유 아이템 없음</div>';return;}
     el.innerHTML=list.map(it=>{
-      const day4note=(it.days>=4&&it.status_label==='매칭예약가능')?' — 미매칭 재예약':'';
       const profitStr=it.profit>=0?`+${it.profit.toLocaleString()}`:`${it.profit.toLocaleString()}`;
+      // 이슈10: '바' 제거 - 수정바→수정, 루비바→루비, 다이아바→다이아
       const _barName2={bronze:'수정',silver:'루비',gold:'다이아'};
-      const _canSell2=(it.days>=2&&it.status_label!=='판매중'&&it.status_label!=='매칭중'&&it.status_label!=='매칭완료'&&it.status_label!=='판매예약');
-      // 아이템 캐시 등록 (선택 처리용)
+      // 이슈11: 3일째(days>=2)면 판매 선택 가능
+      // 이슈11: 판매가능 상태일 때만 선택 가능 (서버에서 days>=2면 '판매가능' 반환)
+      const _canSell2=(it.status_label==='판매가능');
+      // 아이템 캐시 등록
       _itemCache[String(it.id)] = {bar_type: t, stage: it.stage, sell_price: it.sell_price};
       var _isSelected = !!_sellSelected[String(it.id)];
+      // 이슈11: 3일째이면서 미선택 상태면 체크박스 UI
+      // 이슈9: 형식1 - 한줄 레이아웃
       var _rowStyle = _isSelected
-        ? 'cursor:pointer;background:rgba(123,31,162,0.12);border:1.5px solid #7b1fa2;border-radius:8px;margin-bottom:4px'
-        : (_canSell2 ? 'cursor:pointer' : 'cursor:default;opacity:0.65');
-      var _badge = _isSelected
-        ? `<span style="background:#7b1fa2;color:#fff;padding:1px 7px;border-radius:8px;font-size:11px">✓ 선택</span>`
-        : `<span class="badge ${it.status_label==='대기중'?'badge-wait':'badge-match'}">${it.status_label}</span>`;
-      return `<div class="item-row" style="${_rowStyle}" onclick="toggleItemSellSelect(${it.id},'${t}')">
-        <div class="item-hd">
-          <span class="item-stage">${it.stage}단계 ${_barName2[t]}바</span>
-          ${_badge}
-        </div>
-        <div class="item-date">구매일: ${it.purchase_date} (${it.days}일째)</div>
-        <div class="item-price">구매 <span style="color:#aaa">${it.buy_price.toLocaleString()}원</span> → 판매 <span style="color:#f9a825">${it.sell_price.toLocaleString()}원</span> <span style="color:#66bb6a;font-size:12px">(${profitStr}원)</span></div>
-        ${!_canSell2 ? `<div style="font-size:10px;color:#f9a825;margin-top:2px">⏳ 구매 3일째부터 판매예약 가능 (현재 ${it.days+1}일째)</div>` : ''}
-      </div>`;
+        ? 'cursor:pointer;background:rgba(123,31,162,0.12);border:1.5px solid #7b1fa2;border-radius:8px;padding:10px 12px;margin-bottom:4px'
+        : 'cursor:' + (_canSell2 ? 'pointer' : 'default') + ';padding:10px 12px;margin-bottom:4px';
+      // 이슈11: 배지 - 3일째면 판매선택 체크박스 형태
+      var _badge;
+      if(_isSelected){
+        _badge = '<span style="background:#7b1fa2;color:#fff;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">✓ 판매선택</span>';
+      } else if(_canSell2){
+        // 3일째 이상: 빈 체크박스 형태 배지
+        _badge = '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--bg2);border:1.5px solid #7b1fa2;color:#7b1fa2;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600"><span style=\"font-size:13px\">☐</span> 판매선택</span>';
+      } else {
+        _badge = '<span class="badge badge-match">' + it.status_label + '</span>';
+      }
+      return '<div class="item-row" style="' + _rowStyle + '" onclick="toggleItemSellSelect(' + it.id + ',\'' + t + '\')">'
+        + '<div class="item-hd">'
+          + '<span class="item-stage">' + it.stage + '단계 ' + _barName2[t] + '</span>'
+          + _badge
+        + '</div>'
+        + '<div class="item-date">구매일: ' + it.purchase_date + ' (' + it.days + '일째)</div>'
+        + '<div class="item-price">구매 <span style="color:#aaa">' + it.buy_price.toLocaleString() + '원</span> → 판매 <span style="color:#f9a825">' + it.sell_price.toLocaleString() + '원</span> <span style="color:#66bb6a;font-size:12px">(' + profitStr + '원)</span></div>'
+        + (!_canSell2 ? '<div style="font-size:10px;color:#f9a825;margin-top:2px">⏳ 구매 3일째부터 판매예약 가능 (현재 ' + (it.days+1) + '일째)</div>' : '')
+        + '</div>';
     }).join('');
   });
 }
@@ -208,12 +219,13 @@ function toggleItemSellSelect(itemId, barType){
       var items = userData.items[barType]||[];
       var item = items.find(function(x){ return String(x.id)===id; });
       if(item){
-        canSell = item.days >= 2;
+        // 이슈11: status_label='판매가능'이면 선택 가능
+        canSell = item.status_label === '판매가능';
         _itemCache[id] = {bar_type: barType, stage: item.stage, sell_price: item.sell_price};
       }
     }
     if(!canSell){
-      toast('구매 3일째부터 판매예약 가능합니다', 'error');
+      toast('구매 3일째(판매가능 상태)부터 판매예약 가능합니다', 'error');
       return;
     }
     _sellSelected[id] = true;

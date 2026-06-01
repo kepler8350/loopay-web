@@ -931,8 +931,10 @@ async function updateMatchingBtn(){
       notice.style.color = isActive1 ? '#66bb6a' : '#f9a825';
     }
 
-    // 2차 매칭: 14:00~15:00 활성 (840~900분)
-    var isActive2 = (totalMin >= 840 && totalMin < 900);
+    // 2차 매칭: 14:00~15:00 활성 (840~900분) + 판매예약 수량 > 0
+    var _r2SellEl = document.getElementById('r2-sell');
+    var _r2SellCount = _r2SellEl ? parseInt(_r2SellEl.textContent)||0 : 0;
+    var isActive2 = (totalMin >= 840 && totalMin < 900) && _r2SellCount > 0;
     var btn2 = document.getElementById('btn-run-matching-2');
     var notice2 = document.getElementById('matching-time-notice-2');
     if(btn2){
