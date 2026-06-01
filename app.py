@@ -3090,6 +3090,48 @@ def user_my_items():
                 'buyer_account_name': buyer_account_name,
                 'buyer_account': buyer_account,
             })
+        # ── 구매자로 매칭된 내역 추가 ──
+        buy_matches = db.execute(
+            """SELECT m.id, m.bar_type, m.stage, m.status, m.match_round,
+                      m.match_date,
+                      u.username as seller_username,
+                      u.account_name as seller_account_name,
+                      u.account_no as seller_account,
+                      u.bank as seller_bank
+               FROM matches m
+               LEFT JOIN users u ON m.seller_id=u.id
+               WHERE m.buyer_id=? AND m.status NOT IN ('cancelled')
+               ORDER BY m.id DESC""",
+            (uid,)
+        ).fetchall()
+
+        for bm in buy_matches:
+            try:
+                r_row = db.execute('SELECT receipt_url FROM matches WHERE id=?', (bm['id'],)).fetchone()
+                receipt = r_row['receipt_url'] if r_row else None
+            except Exception:
+                receipt = None
+            result.append({
+                'id': -bm['id'],
+                'bar_type': bm['bar_type'],
+                'stage': bm['stage'] or 1,
+                'status': 'matched',
+                'purchase_date': bm['match_date'],
+                'reserve_date': bm['match_date'],
+                'match_id': bm['id'],
+                'match_status': bm['status'],
+                'match_round': bm['match_round'],
+                'receipt_url': receipt,
+                'buyer_username': None,
+                'buyer_account_name': None,
+                'buyer_account': None,
+                'seller_username': bm['seller_username'],
+                'seller_account_name': bm['seller_account_name'],
+                'seller_account': bm['seller_account'],
+                'seller_bank': bm['seller_bank'],
+                '_role': 'buyer',
+            })
+
         return jsonify(items=result, total=len(result))
     except Exception as e:
         return jsonify(error=str(e)), 500

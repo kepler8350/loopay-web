@@ -2071,7 +2071,8 @@ function renderSellTab(){
 
     // 액션 버튼 - 관리자 시스템아이템현황과 동일한 시간 조건+기능
     var actionBtns = '';
-    if(item.match_id && ms && ms !== 'cancelled'){
+    var _isBuyerRole = (item._role === 'buyer');
+    if(item.match_id && ms && ms !== 'cancelled' && !_isBuyerRole){
       var _mRound = item.match_round || 1;
       var _sh = _sellServerHour||0, _sm = _sellServerMin||0;
       var _totalMin = _sh*60+_sm;
@@ -2120,10 +2121,17 @@ function renderSellTab(){
       }
     }
 
+    // 역할 표시 (구매자인 경우)
+    var _isBuyerRole = (item._role === 'buyer');
+    var _roleBadge = _isBuyerRole ? '<span style="font-size:10px;background:#1565c033;color:#90caf9;padding:1px 6px;border-radius:6px;margin-left:4px">구매</span>' : '';
+    var _counterpart = _isBuyerRole
+      ? (item.seller_username ? '판매자: '+item.seller_username+(item.seller_account_name?' ('+item.seller_account_name+')':'') : '')
+      : (item.buyer_username  ? '구매자: '+item.buyer_username+(item.buyer_account_name?' ('+item.buyer_account_name+')':'') : '');
+
     return '<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">'
       // 1행: 종류/단계/상태
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
-        +'<span style="font-size:13px;font-weight:700;color:'+(tC[item.bar_type]||'#fff')+'">'+(tN[item.bar_type]||item.bar_type)+' '+(item.stage||1)+'단계</span>'
+        +'<span style="font-size:13px;font-weight:700;color:'+(tC[item.bar_type]||'#fff')+'">'+(tN[item.bar_type]||item.bar_type)+' '+(item.stage||1)+'단계'+_roleBadge+'</span>'
         +'<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(sC[item.status]||'#555')+'22;color:'+(sC[item.status]||'#aaa')+';border:1px solid '+(sC[item.status]||'#555')+'44">'+(sL[item.status]||item.status)+'</span>'
       +'</div>'
       // 2행: 날짜 정보
@@ -2131,12 +2139,11 @@ function renderSellTab(){
         +'<span>구매일: '+(item.purchase_date||'-')+'</span>'
         +(item.reserve_date ? '<span>예약일: '+item.reserve_date+'</span>' : '')
       +'</div>'
-      // 3행: 매칭상태 + 구매자 정보
-      +(ms || item.buyer_username
+      // 3행: 매칭상태 + 상대방 정보
+      +(ms || _counterpart
         ? '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px">'
             +matchBadge
-            +(item.buyer_username ? '<span style="font-size:11px;color:#64b5f6">구매자: '+item.buyer_username+'</span>' : '')
-            +(item.buyer_account_name ? '<span style="font-size:11px;color:var(--text2)">'+item.buyer_account_name+'</span>' : '')
+            +(_counterpart ? '<span style="font-size:11px;color:#64b5f6">'+_counterpart+'</span>' : '')
           +'</div>'
         : '')
       // 4행: 액션
