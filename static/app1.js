@@ -1082,20 +1082,18 @@ async function loadItemDetail(barType){
       var _cardStyle = 'background:'+(_cardSelected?'rgba(123,31,162,0.15)':cardBg)+';border:'+(_cardSelected?'1.5px solid #7b1fa2':'1px solid transparent')+';transition:background 0.2s';
       var _cardOnclick = _cardCanSell ? ' onclick="toggleItemSellSelect('+it.id+',\''+( it.bar_type||barType)+'\')"' : '';
       var _sellBadge = _cardSelected
-        ? '<span style="background:#7b1fa2;color:#fff;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">✓ 판매선택</span>'
+        ? '<span class="badge" style="background:#7b1fa2;color:#fff">✓ 판매선택</span>'
         : (_cardCanSell
-          ? '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg2);border:1.5px solid #7b1fa2;color:#7b1fa2;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:600">☐ 판매선택</span>'
+          ? '<span class="badge" style="background:var(--bg2);border:1.5px solid #7b1fa2;color:#7b1fa2">☐ 판매선택</span>'
           : statusBadge);
-      return '<div class="item-detail-card" id="icard-'+it.id+'"'+_cardOnclick+' style="'+_cardStyle+';cursor:'+(_cardCanSell?'pointer':'default')+'">'
-        +'<div><div class="item-detail-stage">'+names[it.bar_type||barType]+' '+it.stage+'단계'+_sellBadge+'</div>'
-        +'<div class="item-detail-info">구매일: '+it.purchase_date+' ('+dayNum+'일째)</div>'
-        +dayNote+'</div>'
-        +'<div class="item-detail-price"><div style="font-size:13px;font-weight:700">'
-        +'구매 <span style="color:#aaa">'+it.buy_price.toLocaleString()+'원</span>'
-        +' → 판매 <span style="color:#f9a825">'+it.sell_price.toLocaleString()+'원</span>'
-        +' <span style="color:#66bb6a;font-size:12px">(+'+it.profit.toLocaleString()+'원)</span>'
+      return '<div class="item-detail-card" id="icard-'+it.id+'"'+_cardOnclick+' style="'+_cardStyle+';cursor:'+(_cardCanSell?'pointer':'default')+'">' 
+        +'<div style="display:flex;justify-content:space-between;align-items:center">'
+        +'<span class="item-detail-stage">'+names[it.bar_type||barType]+' '+it.stage+'단계</span>'
+        +_sellBadge
         +'</div>'
-        +'</div></div>';
+        +'<div class="item-detail-info" style="font-size:12px;color:var(--text2);margin-top:3px">구매일: '+it.purchase_date+' ('+dayNum+'일째)</div>'
+        +'<div style="font-size:12px;color:var(--text2);margin-top:2px">구매 '+it.buy_price.toLocaleString()+'원 → 판매 '+it.sell_price.toLocaleString()+'원 (+'+it.profit.toLocaleString()+'원)</div>'
+        +'</div>';
     }).join('');
     container.innerHTML=html;
   }catch(e){
