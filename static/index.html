@@ -1,4 +1,4 @@
-<!DOCTYPE html><!-- v20260601043955 -->
+<!DOCTYPE html><!-- v20260601044816 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -280,7 +280,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 }
 .notif-blink{animation:notif-blink-anim 1s ease-in-out infinite!important;}
 </style>
-<script src="/static/app1.js?v=20260601043955"></script>
+<script src="/static/app1.js?v=20260601044816"></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -420,24 +420,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div style="display:flex;gap:8px">
           <div style="flex:1;min-width:0">
             <div class="bar-card bar-bronze" id="card-bronze" onclick="toggleDetail('bronze')" style="cursor:pointer">
-              <div class="bar-name">수정</div>
-              <div class="bar-stat">보유 <span id="bz-hold">0개</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px">
+                <span class="bar-name" style="display:inline;margin-bottom:0">수정</span>
+                <span style="color:var(--text2)">보유 <span id="bz-hold">0개</span></span>
+              </div>
                             <div class="bar-range" id="bz-range">구매예약: ?</div>
               
             </div>
           </div>
           <div style="flex:1;min-width:0">
             <div class="bar-card bar-silver" id="card-silver" onclick="toggleDetail('silver')" style="cursor:pointer">
-              <div class="bar-name">루비</div>
-              <div class="bar-stat">보유 <span id="sv-hold">0개</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px">
+                <span class="bar-name" style="display:inline;margin-bottom:0">루비</span>
+                <span style="color:var(--text2)">보유 <span id="sv-hold">0개</span></span>
+              </div>
                             <div class="bar-range" id="sv-range">구매예약: ?</div>
               
             </div>
           </div>
           <div style="flex:1;min-width:0">
             <div class="bar-card bar-gold" id="card-gold" onclick="toggleDetail('gold')" style="cursor:pointer">
-              <div class="bar-name">다이아</div>
-              <div class="bar-stat">보유 <span id="gd-hold">0개</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px">
+                <span class="bar-name" style="display:inline;margin-bottom:0">다이아</span>
+                <span style="color:var(--text2)">보유 <span id="gd-hold">0개</span></span>
+              </div>
                             <div class="bar-range" id="gd-range">구매예약: ?</div>
               
             </div>
@@ -449,18 +455,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <span>오늘 판매예약</span>
             <span style="font-size:11px;color:var(--text2);font-weight:400">상세보기에서 배지 클릭으로 선택</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;margin:5px 0;padding:5px 6px;background:var(--bg2);border-radius:8px">
-            <span style="font-size:11px;color:#cd7f32;font-weight:600">수정</span>
-            <span style="font-size:13px;font-weight:700;color:var(--text1)" id="sell-board-bronze">0</span>
-            <span style="font-size:11px;color:var(--text2)">개</span>
-            <span style="color:var(--border);margin:0 2px">│</span>
-            <span style="font-size:11px;color:#a8a9ad;font-weight:600">루비</span>
-            <span style="font-size:13px;font-weight:700;color:var(--text1)" id="sell-board-silver">0</span>
-            <span style="font-size:11px;color:var(--text2)">개</span>
-            <span style="color:var(--border);margin:0 2px">│</span>
-            <span style="font-size:11px;color:#f9a825;font-weight:600">다이아</span>
-            <span style="font-size:13px;font-weight:700;color:var(--text1)" id="sell-board-gold">0</span>
-            <span style="font-size:11px;color:var(--text2)">개</span>
+          <div style="display:flex;align-items:center;margin:5px 0;padding:5px 6px;background:var(--bg2);border-radius:8px">
+            <div style="flex:1;text-align:center;font-size:11px">
+              <span style="color:#cd7f32;font-weight:600">수정</span>
+              <span style="font-size:13px;font-weight:700;color:var(--text1);margin:0 2px" id="sell-board-bronze">0</span>
+              <span style="color:var(--text2)">개</span>
+            </div>
+            <div style="width:1px;background:var(--border);height:14px;flex-shrink:0"></div>
+            <div style="flex:1;text-align:center;font-size:11px">
+              <span style="color:#a8a9ad;font-weight:600">루비</span>
+              <span style="font-size:13px;font-weight:700;color:var(--text1);margin:0 2px" id="sell-board-silver">0</span>
+              <span style="color:var(--text2)">개</span>
+            </div>
+            <div style="width:1px;background:var(--border);height:14px;flex-shrink:0"></div>
+            <div style="flex:1;text-align:center;font-size:11px">
+              <span style="color:#f9a825;font-weight:600">다이아</span>
+              <span style="font-size:13px;font-weight:700;color:var(--text1);margin:0 2px" id="sell-board-gold">0</span>
+              <span style="color:var(--text2)">개</span>
+            </div>
           </div>
           <div id="sell-board-info" style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:8px">선택된 아이템 없음</div>
           <button id="sell-reserve-btn" onclick="showSellConfirm()" disabled
@@ -968,7 +980,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 </div>
-<script src="/static/app2.js?v=20260601043955"></script>
+<script src="/static/app2.js?v=20260601044816"></script>
 <!-- 패널티 해제 팝업 -->
 <div id="penalty-release-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
   <div style="background:#1a1a2e;border:1px solid #2d2d5e;border-radius:12px;padding:24px;width:320px;max-width:90vw">
