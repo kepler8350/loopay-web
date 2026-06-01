@@ -2036,10 +2036,9 @@ function renderSellTab(){
   var totalEl = document.getElementById('sell-tab-total');
   if(!listEl) return;
 
-  // 필터 UI 삭제됨 - 전체 표시
   var filtered = _myItems.slice();
 
-  if(totalEl) totalEl.textContent = '총 '+filtered.length+'개 (전체 '+_myItems.length+'개)';
+  if(totalEl) totalEl.textContent = '총 '+filtered.length+'개';
 
   if(!filtered.length){
     listEl.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px;font-size:13px">아이템 없음</div>';
@@ -2048,107 +2047,86 @@ function renderSellTab(){
 
   var tC={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var tN={bronze:'수정',silver:'루비',gold:'다이아'};
-  var sL={reservable:'판매가능',waiting:'대기중',active:'보유중',matched:'매칭완료',sold:'판매완료',pending:'판매예약중'};
-  var sC={reservable:'#66bb6a',waiting:'#f9a825',active:'#64b5f6',matched:'#1976d2',sold:'#888',pending:'#ab47bc'};
   var msKr={pending:'대기',matched:'매칭완료',paid:'송금',confirmed:'거래완료',cancelled:'취소',failed:'미입금',unpaid:'미입금'};
   var msColor={pending:'#888',matched:'#f9a825',paid:'#42a5f5',confirmed:'#66bb6a',cancelled:'#ef5350',failed:'#ef5350',unpaid:'#ef5350'};
 
-  listEl.innerHTML = filtered.map(function(item){
-    // 매칭 상태 배지
+  // 단계별 그룹 정의 (순서: 보유중 → 판매가능 → 판매예약중 → 진행중)
+  var stages = [
+    {key:'보유중',   label:'보유중',     color:'#64b5f6', filter:function(x){ return x.status_label==='보유중'; }},
+    {key:'판매가능', label:'판매가능',   color:'#66bb6a', filter:function(x){ return x.status_label==='판매가능'; }},
+    {key:'판매예약중',label:'판매예약중', color:'#ab47bc', filter:function(x){ return x.status_label==='판매예약중'; }},
+    {key:'진행중',   label:'매칭/거래중', color:'#f9a825', filter:function(x){
+      var sl = x.status_label;
+      return sl==='매칭완료'||sl==='매칭중'||x.match_status==='paid'||x.match_status==='matched'||(x._role==='buyer'&&x.match_status&&x.match_status!=='confirmed');
+    }},
+    {key:'완료',     label:'판매완료',   color:'#888',    filter:function(x){ return x.status_label==='판매완료'||x.status==='sold'; }}
+  ];
+
+  function renderCard(item){
     var ms = item.match_status;
-    var matchBadge = ms
-      ? '<span style="padding:2px 7px;border-radius:10px;font-size:11px;background:'+(msColor[ms]||'#888')+'33;color:'+(msColor[ms]||'#888')+'">'+(msKr[ms]||ms)+'</span>'
-        + (item.match_round===2
-          ? '<span style="padding:2px 4px;border-radius:6px;font-size:10px;background:#7b1fa233;color:#ce93d8;font-weight:700;margin-left:3px">2차</span>'
-          : (ms ? '<span style="padding:2px 4px;border-radius:6px;font-size:10px;background:#1565c033;color:#90caf9;font-weight:700;margin-left:3px">1차</span>' : ''))
-      : '<span style="color:var(--text2);font-size:11px">-</span>';
-
-    // 액션 버튼 - 관리자 시스템아이템현황과 동일한 시간 조건+기능
-    var actionBtns = '';
     var _isBuyerRole = (item._role === 'buyer');
-    if(item.match_id && ms && ms !== 'cancelled' && !_isBuyerRole){
-      var _mRound = item.match_round || 1;
-      var _sh = _sellServerHour||0, _sm = _sellServerMin||0;
-      var _totalMin = _sh*60+_sm;
-      // 1차: 05:00~13:00(300~780), 2차: 15:00~19:00(900~1140)
-      var _inPayWin  = (_mRound===2)?(_totalMin>=900&&_totalMin<1140):(_totalMin>=300&&_totalMin<780);
-      // 입금요청: 1차 12:30~13:00(750~780), 2차 18:30~19:00(1110~1140)
-      var _inWarnWin = (_mRound===2)?(_totalMin>=1110&&_totalMin<1140):(_totalMin>=750&&_totalMin<780);
-      // 미입금확인: 1차 13:00~14:00(780~840), 2차 19:00~20:00(1140~1200)
-      var _inConfWin = (_mRound===2)?(_totalMin>=1140&&_totalMin<1200):(_totalMin>=780&&_totalMin<840);
-      var _isPaid    = (ms==='paid');
-      var _isConf    = (ms==='confirmed');
-      // 입금요청 쿨타임 (9분)
-      var _lastMin   = (_sellUnpaidClickedAt[item.match_id]||0);
-      var _curMin    = _totalMin;
-      var _coolOk    = (_lastMin===0)||((_curMin-_lastMin)>=9);
-
-      // 이미지 버튼
-      if(item.receipt_url){
-        actionBtns += '<a href="'+item.receipt_url+'" target="_blank" style="padding:3px 8px;background:#37474f;color:#80cbc4;border:1px solid #546e7a;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px;text-decoration:none">🖼️ 이미지</a>';
-      }
-      // ① 입금확인: paid + 시간창 내
-      if(_isPaid && _inPayWin){
-        actionBtns += '<button onclick="userConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>';
-      } else {
-        actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">✅ 입금확인</button>';
-      }
-      // ② 입금요청: 미확인 + 시간창 + 쿨타임
-      if(!_isConf && _inWarnWin && _coolOk){
-        actionBtns += '<button onclick="userWarnUnpaid('+item.match_id+')" style="padding:3px 8px;background:#f57c00;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📨 입금요청</button>';
-      } else if(!_isConf && _inWarnWin && !_coolOk){
-        actionBtns += '<button disabled title="9분 후 재활성화" style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">📨 입금요청</button>';
-      } else {
-        actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">📨 입금요청</button>';
-      }
-      // ③ 미입금확인: 미확인 + 시간창
-      if(!_isConf && _inConfWin){
-        actionBtns += '<button onclick="userConfirmUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🚫 미입금확인</button>';
-      } else {
-        actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed">🚫 미입금확인</button>';
-      }
-      // 완료 메시지
-      if(_isConf){
-        actionBtns += '<span style="font-size:11px;color:#66bb6a;margin-left:4px">✅ 완료</span>';
-      } else if(ms==='matched'){
-        actionBtns += '<span style="font-size:11px;color:#f9a825;margin-left:4px">⏳ 송금 대기</span>';
-      }
-    }
-
-    // 역할 표시 (구매자인 경우)
-    var _isBuyerRole = (item._role === 'buyer');
-    var _roleBadge = _isBuyerRole ? '<span style="font-size:10px;background:#1565c033;color:#90caf9;padding:1px 6px;border-radius:6px;margin-left:4px">구매</span>' : '';
+    var _roleBadge = _isBuyerRole
+      ? '<span style="font-size:10px;background:#1565c033;color:#90caf9;padding:1px 6px;border-radius:6px;margin-left:4px">구매</span>'
+      : '';
+    var _stLabel = ms ? (msKr[ms]||ms) : (item.status_label||(item.status||''));
+    var _stColor = ms ? (msColor[ms]||'#888') : (
+      _stLabel==='판매가능'?'#66bb6a':_stLabel==='보유중'?'#64b5f6':
+      _stLabel==='판매예약중'?'#ab47bc':_stLabel==='매칭완료'?'#f9a825':
+      _stLabel==='판매완료'?'#888':'#aaa');
+    // 상대방 정보
     var _counterpart = _isBuyerRole
       ? (item.seller_username ? '판매자: '+item.seller_username+(item.seller_account_name?' ('+item.seller_account_name+')':'') : '')
       : (item.buyer_username  ? '구매자: '+item.buyer_username+(item.buyer_account_name?' ('+item.buyer_account_name+')':'') : '');
-
-    return '<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">'
-      // 1행: 종류/단계/상태
-      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
-        +'<span style="font-size:13px;font-weight:700;color:'+(tC[item.bar_type]||'#fff')+'">'+(tN[item.bar_type]||item.bar_type)+' '+(item.stage||1)+'단계'+_roleBadge+'</span>'
-        +(function(){var _st=ms?msKr[ms]:null;var _stLabel=_st||(item.status_label)||(sL[item.status]||item.status);var _stColor=ms?(msColor[ms]||'#888'):(
-          item.status_label==='판매가능'?'#66bb6a':
-          item.status_label==='보유중'?'#64b5f6':
-          item.status_label==='판매예약중'?'#ab47bc':
-          item.status_label==='매칭완료'?'#1976d2':
-          item.status_label==='판매완료'?'#888':
-          (sC[item.status]||'#aaa'));return '<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+_stColor+'22;color:'+_stColor+';border:1px solid '+_stColor+'44">'+_stLabel+'</span>';}())
+    // 액션 버튼
+    var actionBtns = '';
+    var _isBuyerRoleAct = _isBuyerRole;
+    if(item.match_id && ms && ms !== 'cancelled' && !_isBuyerRoleAct){
+      var _mRound = item.match_round || 1;
+      var _sh = _sellServerHour||0, _sm = _sellServerMin||0;
+      var _totalMin = _sh*60+_sm;
+      var _inPayWin  = (_mRound===2)?(_totalMin>=900&&_totalMin<1140):(_totalMin>=300&&_totalMin<780);
+      var _inWarnWin = (_mRound===2)?(_totalMin>=1110&&_totalMin<1140):(_totalMin>=750&&_totalMin<780);
+      var _inConfWin = (_mRound===2)?(_totalMin>=1140&&_totalMin<1200):(_totalMin>=780&&_totalMin<840);
+      var _isPaid = (ms==='paid');
+      var _isConf = (ms==='confirmed');
+      var _lastMin = (_sellUnpaidClickedAt[item.match_id]||0);
+      var _coolOk = (_lastMin===0)||((_totalMin-_lastMin)>=9);
+      if(item.receipt_url){
+        actionBtns += '<a href="'+item.receipt_url+'" target="_blank" style="padding:3px 8px;background:#37474f;color:#80cbc4;border:1px solid #546e7a;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px;text-decoration:none">🖼️ 이미지</a>';
+      }
+      if(_isPaid && _inPayWin){ actionBtns += '<button onclick="userConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>'; }
+      else { actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">✅ 입금확인</button>'; }
+      if(!_isConf && _inWarnWin && _coolOk){ actionBtns += '<button onclick="userWarnUnpaid('+item.match_id+')" style="padding:3px 8px;background:#f57c00;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📨 입금요청</button>'; }
+      else { actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">📨 입금요청</button>'; }
+      if(!_isConf && _inConfWin){ actionBtns += '<button onclick="userConfirmUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🚫 미입금확인</button>'; }
+      else { actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed">🚫 미입금확인</button>'; }
+      if(ms==='matched'){ actionBtns += '<span style="font-size:11px;color:#f9a825;margin-left:4px">⏳ 송금 대기</span>'; }
+    }
+    return '<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+        +'<span style="font-size:13px;font-weight:700;color:'+(tC[item.bar_type]||'#fff')+'">'+( tN[item.bar_type]||item.bar_type)+' '+(item.stage||1)+'단계'+_roleBadge+'</span>'
+        +'<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+_stColor+'22;color:'+_stColor+';border:1px solid '+_stColor+'44">'+_stLabel+'</span>'
       +'</div>'
-      // 2행: 날짜 정보
-      +'<div style="display:flex;gap:10px;font-size:11px;color:var(--text2);margin-bottom:6px">'
-        +'<span>구매일: '+(item.purchase_date||'-')+'</span>'
-        +(item.reserve_date ? '<span>예약일: '+item.reserve_date+'</span>' : '')
-      +'</div>'
-      // 3행: 매칭상태 + 상대방 정보
-      +(_counterpart
-        ? '<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px">'
-            +(_counterpart ? '<span style="font-size:11px;color:#64b5f6">'+_counterpart+'</span>' : '')
-          +'</div>'
-        : '')
-      // 4행: 액션
-      +(actionBtns ? '<div style="margin-top:4px">'+actionBtns+'</div>' : '')
+      +(item.purchase_date ? '<div style="font-size:11px;color:var(--text2);margin-bottom:2px">구매일: '+item.purchase_date+(item.reserve_date&&item.reserve_date!==item.purchase_date?' | 예약: '+item.reserve_date:'')+'</div>' : '')
+      +(_counterpart ? '<div style="font-size:11px;color:#64b5f6;margin-bottom:4px">'+_counterpart+'</div>' : '')
+      +(actionBtns ? '<div style="margin-top:6px">'+actionBtns+'</div>' : '')
       +'</div>';
-  }).join('');
+  }
+
+  var html = '';
+  stages.forEach(function(stage){
+    var group = filtered.filter(stage.filter);
+    if(!group.length) return;
+    html += '<div style="margin-bottom:14px">'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding:4px 0;border-bottom:1px solid var(--border)">'
+        +'<span style="width:8px;height:8px;border-radius:50%;background:'+stage.color+';flex-shrink:0;display:inline-block"></span>'
+        +'<span style="font-size:12px;font-weight:700;color:'+stage.color+'">'+stage.label+'</span>'
+        +'<span style="font-size:11px;color:var(--text2)">'+group.length+'개</span>'
+      +'</div>'
+      +group.map(renderCard).join('')
+      +'</div>';
+  });
+  listEl.innerHTML = html || '<div style="text-align:center;color:var(--text2);padding:20px;font-size:13px">아이템 없음</div>';
 }
 
 // 판매탭: 입금확인
