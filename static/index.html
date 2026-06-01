@@ -1,4 +1,4 @@
-<!DOCTYPE html><!-- v20260601141753 -->
+<!DOCTYPE html><!-- v20260601142611 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -280,7 +280,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 }
 .notif-blink{animation:notif-blink-anim 1s ease-in-out infinite!important;}
 </style>
-<script src="/static/app1.js?v=20260601141753"></script>
+<script src="/static/app1.js?v=20260601142611"></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -449,6 +449,69 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             </div>
           </div>
         </div>
+        
+        <div id="bar-detail-panel" style="display:none;margin-top:8px">
+          <div id="detail-bronze" style="display:none"><div class="detail-panel"><div class="detail-panel-title" style="display:flex;justify-content:space-between;align-items:center"><strong>수정 보유 내역</strong><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:#aaa">구매 3일째부터 판매가능</span><button id="bulk-sell-btn-bronze" onclick="toggleBulkSell('bronze')" style="background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">전체판매예약</button></div></div><div id="detail-bronze-items"><div class="loading">불러오는 중...</div></div></div></div>
+          <div id="detail-silver" style="display:none"><div class="detail-panel"><div class="detail-panel-title" style="display:flex;justify-content:space-between;align-items:center"><strong>루비 보유 내역</strong><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:#aaa">구매 3일째부터 판매가능</span><button id="bulk-sell-btn-silver" onclick="toggleBulkSell('silver')" style="background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">전체판매예약</button></div></div><div id="detail-silver-items"><div class="loading">불러오는 중...</div></div></div></div>
+          <div id="detail-gold" style="display:none"><div class="detail-panel"><div class="detail-panel-title" style="display:flex;justify-content:space-between;align-items:center"><strong>다이아 보유 내역</strong><div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:#aaa">구매 3일째부터 판매가능</span><button id="bulk-sell-btn-gold" onclick="toggleBulkSell('gold')" style="background:#7b1fa2;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">전체판매예약</button></div></div><div id="detail-gold-items"><div class="loading">불러오는 중...</div></div></div></div>
+        </div>
+
+        <div class="reserve-box">
+          <div class="reserve-title">오늘 구매 예약하기</div>
+          <div class="r-wrap" id="r-bz-wrap">
+            <div class="r-row">
+              <span class="r-lbl">수정</span>
+              <span class="r-range" id="r-bz-range">최소 7 / 최대 10</span>
+              <div class="r-ctrl">
+                <button class="cnt-btn" id="r-bz-m" onclick="changeRes('bz',-1)">−</button>
+                <span class="cnt-val" id="r-bz-v">7</span>
+                <button class="cnt-btn" id="r-bz-p" onclick="changeRes('bz',1)">+</button>
+              </div>
+            </div>
+            <div class="auto-note" id="r-bz-note">수정 최대 개수 예약 시 루비/다이아 활성화</div>
+          </div>
+          <div class="divider"></div>
+          <div class="r-wrap locked" id="r-sv-wrap">
+            <div class="r-row">
+              <span class="r-lbl">루비</span>
+              <span class="r-range" id="r-sv-range">4개 (자동)</span>
+              <div class="r-ctrl">
+                <button class="cnt-btn" id="r-sv-m" onclick="changeRes('sv',-1)">−</button>
+                <span class="cnt-val" id="r-sv-v">4</span>
+                <button class="cnt-btn" id="r-sv-p" onclick="changeRes('sv',1)">+</button>
+              </div>
+            </div>
+            <div class="auto-note" id="r-sv-note">수정 예약 수에 따라 자동 결정</div>
+          </div>
+          <div class="divider"></div>
+          <div class="r-wrap locked" id="r-gd-wrap">
+            <div class="r-row">
+              <span class="r-lbl">다이아</span>
+              <span class="r-range" id="r-gd-range">2개 (자동)</span>
+              <div class="r-ctrl">
+                <button class="cnt-btn" id="r-gd-m" onclick="changeRes('gd',-1)">−</button>
+                <span class="cnt-val" id="r-gd-v">2</span>
+                <button class="cnt-btn" id="r-gd-p" onclick="changeRes('gd',1)">+</button>
+              </div>
+            </div>
+            <div class="auto-note" id="r-gd-note">루비 예약 수에 따라 자동 결정</div>
+          </div>
+          <div class="r-info" id="r-info">수정 수량 조절 시 루비·다이아가 자동 변경됩니다.</div>
+          <div class="r-notice" style="font-size:11px;color:#888;margin-bottom:6px;text-align:center">차감 포인트는 매칭 여부에 따라 정산됩니다</div>
+          <button class="reserve-btn" id="reserve-btn" onclick="(function(){var btn=document.getElementById('reserve-btn');if(btn&&btn.disabled){return;}showReserveConfirm();})()">구매 예약하기 (40P × 매칭예약수)</button>
+        </div>
+
+        <!-- Charge section -->
+        <div style="height:14px"></div>
+        <div class="reserve-box">
+          <div class="reserve-title">포인트 충전 신청</div>
+          <input class="charge-input" id="charge-amount" type="number" placeholder="충전 포인트 입력 (P)" min="1" oninput="calcCharge()">
+          <div class="charge-result" id="charge-result" style="font-size:13px;font-weight:600;color:#1976d2;min-height:18px;margin:4px 0 8px;text-align:center"></div>
+          <button class="charge-btn" onclick="requestCharge()">충전 신청하기</button>
+<div id="charge-refresh-wrap" style="margin-top:10px;text-align:center"><button onclick="document.getElementById('charge-refresh-wrap').style.display='none';loadUserData();" style="background:transparent;color:#2196f3;border:1.5px solid #2196f3;padding:8px 22px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;width:100%">포인트 새로고침 ↻</button><div style="font-size:11px;color:#888;margin-top:4px">승인 후 클릭하면 포인트가 반영됩니다</div></div>
+          <div class="info-block" style="margin-bottom:0;font-size:11px">충전 신청 후 관리자 확인 시 포인트가 지급됩니다. (1P = 120원)</div>
+        </div>
+      </div>
 
       <!-- PRICE -->
       <div id="tab-price" class="tab">
@@ -867,7 +930,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 </div>
-<script src="/static/app2.js?v=20260601141753"></script>
+<script src="/static/app2.js?v=20260601142611"></script>
 <!-- 패널티 해제 팝업 -->
 <div id="penalty-release-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
   <div style="background:#1a1a2e;border:1px solid #2d2d5e;border-radius:12px;padding:24px;width:320px;max-width:90vw">
