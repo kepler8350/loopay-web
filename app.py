@@ -3044,7 +3044,8 @@ def user_my_items():
                           u.account_no as buyer_account
                    FROM matches m
                    LEFT JOIN users u ON m.buyer_id=u.id
-                   WHERE m.seller_id=? AND m.bar_type=? AND m.stage=?
+                   WHERE m.seller_id=? AND m.bar_type=?
+                     AND COALESCE(m.stage,1)=COALESCE(?,1)
                      AND m.status NOT IN ('cancelled')
                    ORDER BY m.id DESC LIMIT 1""",
                 (uid, row['bar_type'], row['stage'] or 1)
