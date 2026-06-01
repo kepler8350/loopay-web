@@ -167,37 +167,7 @@ function closeReserveConfirm(){
 }
 
 // ── 판매예약 보드 ──
-function updateSellBoard(){
-  var counts = {bronze:0, silver:0, gold:0};
-  var names = {bronze:'수정', silver:'루비', gold:'다이아'};
-  // _sellSelected 기반으로 각 바타입별 아이템 ID → 개수 계산
-  // _itemCache에 아이템 정보가 있으면 사용, 없으면 id만으로 표시
-  Object.keys(_sellSelected).forEach(function(id){
-    if(!_sellSelected[id]) return;
-    var info = _itemCache[id];
-    if(info) counts[info.bar_type]++;
-    else counts.bronze++; // fallback
-  });
-  var total = counts.bronze + counts.silver + counts.gold;
-  document.getElementById('sell-board-bronze').textContent = counts.bronze;
-  document.getElementById('sell-board-silver').textContent = counts.silver;
-  document.getElementById('sell-board-gold').textContent = counts.gold;
-  var btn = document.getElementById('sell-reserve-btn');
-  var info = document.getElementById('sell-board-info');
-  if(total > 0){
-    var parts = [];
-    if(counts.bronze) parts.push('수정 '+counts.bronze+'개');
-    if(counts.silver) parts.push('루비 '+counts.silver+'개');
-    if(counts.gold) parts.push('다이아 '+counts.gold+'개');
-    info.textContent = parts.join(' / ') + ' 선택됨';
-    info.style.color = '#7b1fa2';
-    if(btn){ btn.disabled=false; btn.style.opacity='1'; }
-  } else {
-    info.textContent = '선택된 아이템 없음';
-    info.style.color = 'var(--text2)';
-    if(btn){ btn.disabled=true; btn.style.opacity='0.4'; }
-  }
-}
+function updateSellBoard(){} // sell-board 제거됨
 
 // 아이템 캐시 (id → {bar_type, stage, sell_price})
 var _itemCache = {};
