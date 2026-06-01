@@ -54,9 +54,9 @@ function renderBars(d){
     var el2=document.getElementById(ids[i]+'-res'); if(el2) el2.textContent=rv+'개';
   });
   if(cfg){
-    document.getElementById('bz-range').textContent=`구매예약: 최소 ${cfg.bz_min} ~ 최대 ${cfg.bz_max}`;
-    document.getElementById('sv-range').textContent=`구매예약: 최소 ${cfg.sv_min} ~ 최대 ${cfg.sv_max}`;
-    document.getElementById('gd-range').textContent=`구매예약: 최소 ${cfg.gd_min} ~ 최대 ${cfg.gd_max}`;
+    document.getElementById('bz-range').textContent=`구매예약: ${cfg.bz_min}~${cfg.bz_max}`;
+    document.getElementById('sv-range').textContent=`구매예약: ${cfg.sv_min}~${cfg.sv_max}`;
+    document.getElementById('gd-range').textContent=`구매예약: ${cfg.gd_min}~${cfg.gd_max}`;
   }
   // Render item details
   types.forEach(t=>{
