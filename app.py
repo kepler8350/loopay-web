@@ -3040,7 +3040,7 @@ def user_my_items():
             # match 조회: seller_id + bar_type + stage 기준으로 정확히 연결
             # status='matched'/'sold' 아이템만 match 조회 (reservable은 연결 안 함)
             m = None
-            if item_status in ('matched', 'sold', 'pending') or row['status'] in ('matched', 'sold'):
+            if row['status'] in ('matched', 'sold', 'pending'):
                 try:
                     m = db.execute(
                         """SELECT m.id, m.status, m.match_round,
