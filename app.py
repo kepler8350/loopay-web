@@ -3037,23 +3037,27 @@ def user_my_items():
                 if not row.get('reserve_date') and res['reserve_date']:
                     row['reserve_date'] = res['reserve_date']
             # match 찾기: seller_id=uid, bar_type+stage 일치
-            # match 조회: seller_id 기준 (stage 무관)
+            # match 조회: seller_id + bar_type + stage 기준으로 정확히 연결
+            # status='matched'/'sold' 아이템만 match 조회 (reservable은 연결 안 함)
             m = None
-            try:
-                m = db.execute(
-                    """SELECT m.id, m.status, m.match_round,
-                              u.username as buyer_username,
-                              u.account_name as buyer_account_name,
-                              u.account_no as buyer_account
-                       FROM matches m
-                       LEFT JOIN users u ON m.buyer_id=u.id
-                       WHERE m.seller_id=?
-                         AND m.status NOT IN ('cancelled')
-                       ORDER BY m.id DESC LIMIT 1""",
-                    (uid,)
-                ).fetchone()
-            except Exception:
-                m = None
+            if item_status in ('matched', 'sold', 'pending') or row['status'] in ('matched', 'sold'):
+                try:
+                    m = db.execute(
+                        """SELECT m.id, m.status, m.match_round,
+                                  u.username as buyer_username,
+                                  u.account_name as buyer_account_name,
+                                  u.account_no as buyer_account
+                           FROM matches m
+                           LEFT JOIN users u ON m.buyer_id=u.id
+                           WHERE m.seller_id=?
+                             AND m.bar_type=?
+                             AND COALESCE(m.stage,1)=COALESCE(?,1)
+                             AND m.status NOT IN ('cancelled')
+                           ORDER BY m.id DESC LIMIT 1""",
+                        (uid, row['bar_type'], row['stage'] or 1)
+                    ).fetchone()
+                except Exception:
+                    m = None
             if m:
                 match_status = m['status']
                 match_round = m['match_round']
