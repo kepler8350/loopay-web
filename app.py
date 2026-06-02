@@ -279,7 +279,7 @@ def days_since(purchase_date):
     try:
         s = str(purchase_date)[:10]  # YYYY-MM-DD 부분만
         dt = datetime.datetime.strptime(s, '%Y-%m-%d')
-        return (datetime.datetime.combine(get_today(), datetime.time()) - dt).days + 1  # 구매 당일 = 1일째
+        return (datetime.datetime.combine(get_today(), datetime.time()) - dt).days  # 6/3구매→6/4현재=1일째
     except Exception:
         return 0
 

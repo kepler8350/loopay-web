@@ -1059,7 +1059,7 @@ async function loadItemDetail(barType){
     // 아이템 캐시 업데이트 (판매보드에서 사용)
     items.forEach(function(it){ _itemCache[it.id]={bar_type:barType,stage:it.stage,sell_price:it.sell_price,purchase_date:it.purchase_date,days:it.days}; });
     var html=items.map(function(it){
-      var dayNum = it.days + 1;
+      var dayNum = it.days;
       var canSell = it.days>=2 && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료' && it.status_label!=='판매예약';
       var isSelected = !!_sellSelected[it.id];
       var rawLabel = it.status_label||'보유중';
