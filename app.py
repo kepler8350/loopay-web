@@ -2736,7 +2736,7 @@ def match_confirm_payment():
             db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
             # buyer에게 새 아이템 추가 (status는 DB 스키마에 따라 가능한 값 사용)
             # buyer 아이템은 'active'(보유중) 상태로 추가
-            _stage = int(seller_item['stage'] or m['stage'] or 1)
+            _stage = int(seller_item['stage'] or m['stage'] or 1) + 1  # 1단계 구매 → 2단계 아이템 획득
             # 아이템 추가: reservable 상태로 (입금확인일 = 1일차)
             _inserted = False
             _insert_err = None
@@ -3154,6 +3154,8 @@ def user_my_items():
                 '_role': 'buyer',
             })
 
+        # 판매완료 아이템은 판매탭 리스트에서 제외
+        result = [i for i in result if not (i.get('status') == 'sold' or (i.get('status_label') == '판매완료' and not i.get('_role')))]
         return jsonify(items=result, total=len(result))
     except Exception as e:
         return jsonify(error=str(e)), 500

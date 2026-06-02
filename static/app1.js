@@ -2059,8 +2059,7 @@ function renderSellTab(){
     {key:'진행중',   label:'매칭/거래중', color:'#f9a825', filter:function(x){
       var sl = x.status_label;
       return sl==='매칭완료'||sl==='매칭중'||x.match_status==='paid'||x.match_status==='matched'||(x._role==='buyer'&&x.match_status&&x.match_status!=='confirmed');
-    }},
-    {key:'완료',     label:'판매완료',   color:'#888',    filter:function(x){ return x.status_label==='판매완료'||x.status==='sold'; }}
+    }}
   ];
 
   function renderCard(item){
