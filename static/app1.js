@@ -2081,7 +2081,7 @@ function renderSellTab(){
     // 액션 버튼
     var actionBtns = '';
     var _isBuyerRoleAct = _isBuyerRole;
-    if(item.match_id && ms && ms !== 'cancelled' && !_isBuyerRoleAct){
+    if(item.match_id && ms && ms !== 'cancelled' && ms !== 'confirmed' && !_isBuyerRoleAct){
       var _mRound = item.match_round || 1;
       var _sh = _sellServerHour||0, _sm = _sellServerMin||0;
       var _totalMin = _sh*60+_sm;
