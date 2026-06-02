@@ -2097,7 +2097,7 @@ function renderSellTab(){
       }
       if(_isPaid && _inPayWin){ actionBtns += '<button onclick="userConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>'; }
       else { actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">✅ 입금확인</button>'; }
-      if(!_isConf && _inWarnWin && _coolOk){ actionBtns += '<button onclick="userWarnUnpaid('+item.match_id+')" style="padding:3px 8px;background:#f57c00;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📨 입금요청</button>'; }
+      if(!_isPaid && !_isConf && _inWarnWin && _coolOk){ actionBtns += '<button onclick="userWarnUnpaid('+item.match_id+')" style="padding:3px 8px;background:#f57c00;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📨 입금요청</button>'; }
       else { actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">📨 입금요청</button>'; }
       if(!_isConf && _inConfWin){ actionBtns += '<button onclick="userConfirmUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🚫 미입금확인</button>'; }
       else { actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed">🚫 미입금확인</button>'; }

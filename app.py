@@ -3037,11 +3037,12 @@ def user_my_items():
                 if not row.get('reserve_date') and res['reserve_date']:
                     row['reserve_date'] = res['reserve_date']
             # match 찾기: seller_id=uid, bar_type+stage 일치
-            # match 조회: seller_id + bar_type + stage 기준으로 정확히 연결
-            # status='matched'/'sold' 아이템만 match 조회 (reservable은 연결 안 함)
+            # match 조회: seller_item_id 우선, 없으면 seller_id+bar_type+stage
+            # status='matched'/'sold' 아이템만 (reservable은 연결 안 함)
             m = None
             if row['status'] in ('matched', 'sold', 'pending'):
                 try:
+                    # 1순위: seller_item_id=item.id (정확한 1:1 연결)
                     m = db.execute(
                         """SELECT m.id, m.status, m.match_round,
                                   u.username as buyer_username,
@@ -3049,13 +3050,28 @@ def user_my_items():
                                   u.account_no as buyer_account
                            FROM matches m
                            LEFT JOIN users u ON m.buyer_id=u.id
-                           WHERE m.seller_id=?
-                             AND m.bar_type=?
-                             AND COALESCE(m.stage,1)=COALESCE(?,1)
+                           WHERE m.seller_item_id=?
                              AND m.status NOT IN ('cancelled')
                            ORDER BY m.id DESC LIMIT 1""",
-                        (uid, row['bar_type'], row['stage'] or 1)
+                        (row['id'],)
                     ).fetchone()
+                    # 2순위: seller_id+bar_type+stage (seller_item_id 없는 구 데이터)
+                    if not m:
+                        m = db.execute(
+                            """SELECT m.id, m.status, m.match_round,
+                                      u.username as buyer_username,
+                                      u.account_name as buyer_account_name,
+                                      u.account_no as buyer_account
+                               FROM matches m
+                               LEFT JOIN users u ON m.buyer_id=u.id
+                               WHERE m.seller_id=?
+                                 AND m.bar_type=?
+                                 AND COALESCE(m.stage,1)=COALESCE(?,1)
+                                 AND m.status NOT IN ('cancelled')
+                                 AND (m.seller_item_id IS NULL OR m.seller_item_id=?)
+                               ORDER BY m.id DESC LIMIT 1""",
+                            (uid, row['bar_type'], row['stage'] or 1, row['id'])
+                        ).fetchone()
                 except Exception:
                     m = None
             if m:
