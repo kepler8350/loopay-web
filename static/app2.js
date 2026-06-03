@@ -71,7 +71,7 @@ function renderBars(d){
       // 이슈11: 판매가능 상태일 때만 선택 가능 (서버에서 days>=2면 '판매가능' 반환)
       const _canSell2=(it.status_label==='판매가능');
       // 아이템 캐시 등록
-      _itemCache[String(it.id)] = {bar_type: t, stage: it.stage, sell_price: it.sell_price};
+      _itemCache[String(it.id)] = {bar_type: t, stage: it.stage, sell_price: it.sell_price, profit: it.profit, buy_price: it.buy_price};
       var _isSelected = !!_sellSelected[String(it.id)];
       // 이슈11: 3일째이면서 미선택 상태면 체크박스 UI
       // 이슈9: 형식1 - 한줄 레이아웃
