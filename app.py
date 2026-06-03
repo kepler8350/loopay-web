@@ -1951,6 +1951,11 @@ def combine_execute():
         i1, i2 = dict(items[0]), dict(items[1])
         if i1['bar_type'] != i2['bar_type']:
             return jsonify({'error': 'same type only'}), 400
+        # 판매가능(reservable) 상태 아이템만 결합 가능
+        for it in [i1, i2]:
+            lbl = item_status_label(it['status'], it['purchase_date'])
+            if lbl != '판매가능':
+                return jsonify({'error': f'판매가능 상태 아이템만 결합할 수 있습니다 (현재: {lbl})'}), 400
         user = dict(conn.execute('SELECT * FROM users WHERE id=?', (user_id,)).fetchone())
         if user['charge_points'] < 250:
             return jsonify({'error': 'insufficient points (need 250P)'}), 400
@@ -1961,6 +1966,9 @@ def combine_execute():
         buy1 = price_map.get(stage1, {}).get('buy_price', 0)
         buy2 = price_map.get(stage2, {}).get('buy_price', 0)
         normal_profit = (price_map.get(stage1,{}).get('sell_price',0)-buy1)+(price_map.get(stage2,{}).get('sell_price',0)-buy2)
+        MAX_PROFIT = 23000
+        if normal_profit > MAX_PROFIT:
+            return jsonify({'error': f'결합 불가: 현재 수익합계({normal_profit:,}원)가 23,000원 초과'}), 400
         combined_stage = None
         for stage in sorted(price_map.keys()):
             p = price_map[stage]

@@ -504,7 +504,13 @@ function renderCombinePairs(){
   if(execBtn){
     if(combinePairs.length>0){
       execBtn.style.display='block';
-      execBtn.innerHTML='결합판매 실행 ('+combinePairs.length+'쌍 × 250P)';
+      // 결합 불가 쌍이 있으면 버튼 비활성화
+      var hasBlocked = combinePairs.some(function(pair){ return pair._preview && !pair._preview.can_combine; });
+      execBtn.disabled = hasBlocked;
+      execBtn.style.opacity = hasBlocked ? '0.4' : '1';
+      execBtn.style.cursor = hasBlocked ? 'not-allowed' : 'pointer';
+      execBtn.title = hasBlocked ? '결합 불가 쌍이 있습니다 (수익 23,000원 초과)' : '';
+      execBtn.innerHTML='결합판매 실행 ('+combinePairs.length+'쌍 × 250P)'+(hasBlocked?' ⛔':'');
     } else {
       execBtn.style.display='none';
     }
@@ -554,6 +560,12 @@ function renderPairResult(pairIdx, resp){
 
 function executeCombine(){
   if(combinePairs.length===0){alert('선택된 쌍이 없습니다.');return;}
+  // 결합 불가 쌍 사전 체크 (수익 23,000원 초과 등)
+  var blocked = combinePairs.filter(function(pair){ return pair._preview && !pair._preview.can_combine; });
+  if(blocked.length > 0){
+    alert('결합 불가 쌍이 있습니다.\n수익합계가 23,000원을 초과하면 결합할 수 없습니다.');
+    return;
+  }
   var tok=localStorage.getItem('lp_token')||'';
   var btn=document.getElementById('combine-exec-btn');
   if(btn) btn.disabled=true;
