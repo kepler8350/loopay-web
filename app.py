@@ -558,7 +558,7 @@ def get_me():
     today = get_today().isoformat()
     try:
         res_rows = db.execute(
-            "SELECT bar_type, COUNT(*) as cnt FROM reservations WHERE user_id=? AND reserve_date=?",
+            "SELECT bar_type, COUNT(*) as cnt FROM reservations WHERE user_id=? AND reserve_date=? AND COALESCE(confirmed,0)=0",
             (uid, today)
         ).fetchall()
         today_res = {r['bar_type']: r['cnt'] for r in res_rows}
