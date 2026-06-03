@@ -697,6 +697,8 @@ def get_items():
                 s_label = '판매예약중'
             else:
                 s_label = item_status_label(it['status'], it['purchase_date'])
+            # 결합아이템(waiting)은 combine_buy_price를 buy_price로 표시
+            _buy_price = it['combine_buy_price'] if (it['status'] == 'waiting' and it['combine_buy_price']) else buy
             result.append({
                 'id': it['id'],
                 'bar_type': it['bar_type'],
@@ -705,9 +707,9 @@ def get_items():
                 'purchase_date': it['purchase_date'],
                 'days': days_since(it['purchase_date']),
                 'status_label': s_label,
-                'buy_price': buy,
+                'buy_price': _buy_price,
                 'sell_price': sell,
-                'profit': sell - buy
+                'profit': sell - _buy_price
             })
         return jsonify(result)
     except Exception as e:
@@ -1980,12 +1982,14 @@ def combine_execute():
         if not combined_stage:
             return jsonify({'error': 'no combinable stage'}), 400
         conn.execute('UPDATE items SET status="sold" WHERE id IN (?,?)', (item1_id, item2_id))
-        # 결합된 단계의 구매가 조회
-        _combined_buy = price_map.get(combined_stage, {}).get('buy_price', 0)
+        # 원본 두 아이템 buy_price 합산 = 결합 구매가
+        _orig_buy1 = price_map.get(stage1, {}).get('buy_price', 0)
+        _orig_buy2 = price_map.get(stage2, {}).get('buy_price', 0)
+        _combine_buy = _orig_buy1 + _orig_buy2
         _today_str = get_today().isoformat()
         conn.execute(
-            "INSERT INTO items (user_id, bar_type, stage, status, purchase_date) VALUES (?,?,?,'waiting',?)",
-            (user_id, bar_type, combined_stage, _today_str)
+            "INSERT INTO items (user_id, bar_type, stage, status, purchase_date, combine_buy_price) VALUES (?,?,?,'waiting',?,?)",
+            (user_id, bar_type, combined_stage, _today_str, _combine_buy)
         )
         conn.execute('UPDATE users SET charge_points=charge_points-250 WHERE id=?', (user_id,))
         conn.commit()

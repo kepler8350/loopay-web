@@ -1119,6 +1119,14 @@ async function loadItemDetail(barType){
         +'</div>';
     }).join('');
     container.innerHTML=html;
+    // 결합아이템 포함 여부에 따라 헤더 안내 텍스트 업데이트
+    var _hasWaiting = items.some(function(it){return it.status==='waiting';});
+    var _allWaiting = items.length>0 && items.every(function(it){return it.status==='waiting';});
+    var _headerNoteEl = container.closest('.detail-panel')?.querySelector('.detail-panel-title span[style*="color:#aaa"]')
+                      || container.parentElement?.querySelector('.detail-panel-title span[style*="color:#aaa"]');
+    if(_headerNoteEl){
+      _headerNoteEl.textContent = _allWaiting ? '결합 2일째부터 판매가능' : (_hasWaiting ? '결합:2일째/구매:3일째부터 판매가능' : '구매 3일째부터 판매가능');
+    }
   }catch(e){
     container.innerHTML='<div style="color:#ef5350;padding:12px">오류: '+e.message+'</div>';
   }
