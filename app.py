@@ -1528,6 +1528,14 @@ def admin_run_matching():
                        AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
                     (today,)
                 )
+                # 1차 미매칭 판매예약도 2차로 전환 (구매예약이 이미 2차로 넘어갔으므로)
+                db.execute(
+                    """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
+                       WHERE match_round=1 AND status='pending'
+                       AND item_id IS NOT NULL AND item_id != 0
+                       AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
+                    (today,)
+                )
                 # 1차 loopay 미매칭 sell 예약도 정리
                 db.execute(
                     """UPDATE reservations SET status='unmatched'
