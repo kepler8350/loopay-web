@@ -232,10 +232,11 @@ def _run_matching_internal(db, round_num, today):
             else:
                 db.execute("UPDATE users SET charge_points=charge_points-? WHERE id=?", (consume, bid))
 
-        # 미매칭 처리
+        # 미매칭 처리 - 구매예약(confirmed=0)만 unmatched 처리 (판매예약은 유지)
         db.execute(
             """UPDATE reservations SET status='unmatched'
                WHERE match_round=2 AND status='pending'
+               AND COALESCE(confirmed,0)=0
                AND user_id!=?""",
             (loopay_id,)
         )
