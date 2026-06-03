@@ -1057,7 +1057,7 @@ async function loadItemDetail(barType){
     var names={bronze:'수정',silver:'루비',gold:'다이아'};
     updateBulkSellBtn(barType, items);
     // 아이템 캐시 업데이트 (판매보드에서 사용)
-    items.forEach(function(it){ _itemCache[it.id]={bar_type:barType,stage:it.stage,sell_price:it.sell_price,purchase_date:it.purchase_date,days:it.days}; });
+    items.forEach(function(it){ _itemCache[it.id]={bar_type:barType,stage:it.stage,sell_price:it.sell_price,profit:it.profit,buy_price:it.buy_price,purchase_date:it.purchase_date,days:it.days}; });
     var html=items.map(function(it){
       var dayNum = it.days + 1;
       var canSell = it.days>=2 && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료' && it.status_label!=='판매예약';
