@@ -1294,16 +1294,6 @@ def admin_run_matching():
         _buyer_notif_map = {}  # buyer_id → {items:[], bank, acct, acct_name}
         _matched_cnt_map = {}  # buyer_id(int) → 매칭건수
 
-        # DEBUG: sell_rows, buy_rows 확인
-        if request.args.get('debug'):
-            return jsonify(
-                debug=True,
-                sell_rows=[dict(r) for r in sell_rows],
-                buy_rows=[dict(r) for r in buy_rows],
-                sell_keys=list(sell_by_type_stage.keys()),
-                buy_keys=list(buy_by_type_stage.keys())
-            )
-
         # stage별 매칭 (정확한 매칭)
         all_keys = sorted(set(list(sell_by_type_stage.keys()) + list(buy_by_type_stage.keys())))
         matched_seller_ids = set()
