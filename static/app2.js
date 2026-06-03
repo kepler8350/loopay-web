@@ -255,33 +255,36 @@ function showSellConfirm(){
     allItems.forEach(function(it){
       var key = String(it.id);
       if(!_itemCache[key] || !(_itemCache[key].sell_price)){
-        _itemCache[key] = {bar_type: it.bar_type||it.type, stage: it.stage, sell_price: it.sell_price, purchase_date: it.purchase_date};
+        _itemCache[key] = {bar_type: it.bar_type||it.type, stage: it.stage, sell_price: it.sell_price, profit: it.profit, buy_price: it.buy_price, purchase_date: it.purchase_date};
       }
     });
   }
   var rows = '';
   var totalPrice = 0;
+  var totalProfit = 0;
   var groupByType = {bronze:[], silver:[], gold:[]};
   selected.forEach(function(id){
     var info = _itemCache[id] || _itemCache[String(id)];
     if(info){
       groupByType[info.bar_type||'bronze'].push(info);
       totalPrice += info.sell_price||0;
+      totalProfit += info.profit || (info.sell_price - (info.buy_price||0)) || 0;
     }
   });
   Object.keys(groupByType).forEach(function(bt){
     var list = groupByType[bt];
     if(!list.length) return;
     list.forEach(function(it){
+      var _profit = it.profit || (it.sell_price - (it.buy_price||0));
       rows += '<div class="reserve-confirm-row">'
         +'<span>'+names[bt]+' '+it.stage+'단계</span>'
-        +'<span style="color:#f9a825">'+it.sell_price.toLocaleString()+'원</span>'
+        +'<span style="color:#f9a825">'+it.sell_price.toLocaleString()+'원 <span style="color:#66bb6a;font-size:11px">(+'+(_profit>0?_profit.toLocaleString():'?')+'원)</span></span>'
         +'</div>';
     });
   });
   rows += '<div class="reserve-confirm-row total-row">'
     +'<span>총 '+selected.length+'개 / 예상 수익</span>'
-    +'<span>'+totalPrice.toLocaleString()+'원</span>'
+    +'<span style="color:#66bb6a">+'+totalProfit.toLocaleString()+'원</span>'
     +'</div>';
   document.getElementById('sell-confirm-rows').innerHTML = rows;
   // 모달 body에 이동 후 표시
