@@ -299,41 +299,52 @@ function closeSellConfirm(){
 
 
 // ── 회원정보 변경 ──
-function loadProfileForm(){
-  if(!userData) return;
+async function loadProfileForm(){
   // 보기 모드로 초기화
   var vm = document.getElementById('profile-view-mode');
   var em = document.getElementById('profile-edit-mode');
   if(vm) vm.style.display='';
   if(em) em.style.display='none';
-  // 정보 표시
+  // /api/user/profile 에서 최신 정보 직접 조회
   var rows = document.getElementById('profile-info-rows');
-  if(rows){
-    var bankNames = {국민은행:'국민은행',신한은행:'신한은행',하나은행:'하나은행',우리은행:'우리은행',농협은행:'농협은행',기업은행:'기업은행',카카오뱅크:'카카오뱅크',토스뱅크:'토스뱅크',케이뱅크:'케이뱅크'};
-    var fields = [
-      {label:'아이디', value: userData.username||'-'},
-      {label:'닉네임', value: userData.nickname||'-'},
-      {label:'휴대폰', value: userData.phone||'-'},
-      {label:'은행', value: userData.bank||'-'},
-      {label:'계좌번호', value: userData.account_no||'-'},
-      {label:'예금주', value: userData.account_name||'-'},
-    ];
-    rows.innerHTML = fields.map(function(f){
-      return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">'        +'<span style="color:var(--text2);font-size:13px">'+f.label+'</span>'        +'<span style="font-weight:600;font-size:13px">'+f.value+'</span>'        +'</div>';
-    }).join('');
+  if(rows) rows.innerHTML='<div style="color:var(--text2);font-size:13px;text-align:center;padding:16px">불러오는 중...</div>';
+  try{
+    var d = await api('/user/profile');
+    window._profileData = d;
+    if(rows){
+      var fields = [
+        {label:'아이디', value: d.username||'-'},
+        {label:'성명', value: d.real_name||'-'},
+        {label:'닉네임', value: d.nickname||'-'},
+        {label:'레벨', value: (d.level||1)+'레벨'},
+        {label:'휴대폰', value: d.phone||'-'},
+        {label:'은행', value: d.bank||'-'},
+        {label:'계좌번호', value: d.account_no||'-'},
+        {label:'예금주', value: d.account_name||'-'},
+      ];
+      rows.innerHTML = fields.map(function(f){
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">'
+          +'<span style="color:var(--text2);font-size:13px;min-width:70px">'+f.label+'</span>'
+          +'<span style="font-weight:600;font-size:13px;text-align:right">'+f.value+'</span>'
+          +'</div>';
+      }).join('');
+    }
+  }catch(e){
+    if(rows) rows.innerHTML='<div style="color:#ef5350;font-size:13px">정보를 불러오지 못했습니다: '+e.message+'</div>';
   }
 }
 function startEditProfile(){
-  if(!userData) return;
   // 편집 모드 전환
   document.getElementById('profile-view-mode').style.display='none';
   document.getElementById('profile-edit-mode').style.display='';
-  // 현재 값 채우기
-  document.getElementById('prof-nickname').value = userData.nickname||'';
-  document.getElementById('prof-phone').value = userData.phone||'';
-  document.getElementById('prof-bank').value = userData.bank||'';
-  document.getElementById('prof-account-no').value = userData.account_no||'';
-  document.getElementById('prof-account-name').value = userData.account_name||'';
+  // 최신 정보로 폼 채우기
+  var d = window._profileData || userData || {};
+  document.getElementById('prof-real-name') && (document.getElementById('prof-real-name').value = d.real_name||'');
+  document.getElementById('prof-nickname').value = d.nickname||'';
+  document.getElementById('prof-phone').value = d.phone||'';
+  document.getElementById('prof-bank').value = d.bank||'';
+  document.getElementById('prof-account-no').value = d.account_no||'';
+  document.getElementById('prof-account-name').value = d.account_name||'';
   document.getElementById('prof-new-pw').value = '';
 }
 function cancelEditProfile(){
@@ -342,6 +353,7 @@ function cancelEditProfile(){
 }
 async function doUpdateProfile(){
   var data={
+    real_name: (document.getElementById('prof-real-name')||{value:''}).value.trim(),
     nickname: document.getElementById('prof-nickname').value.trim(),
     phone: document.getElementById('prof-phone').value.trim(),
     bank: document.getElementById('prof-bank').value,
@@ -355,10 +367,11 @@ async function doUpdateProfile(){
       toast('회원정보가 변경되었습니다 ✅');
       await loadUserData();
       cancelEditProfile();
-      loadProfileForm(); // 저장 후 보기 모드로
+      await loadProfileForm();
     } else toast(d.error||'변경 실패');
   }catch(e){toast('오류: '+e.message);}
 }
+
 
 // ── 거래내역 ──
 async function loadTradeHistory(){
