@@ -215,7 +215,9 @@ function toggleItemSellSelect(itemId, barType){
     var info = _itemCache[id];
     if(!info){
       // renderBars 시 캐시 등록 필요 - barType만 저장
-      _itemCache[id] = {bar_type: barType, stage:1, sell_price:0};
+      // userData.items에서 sell_price 찾기
+      var _found = userData&&userData.items?(userData.items.bronze||[]).concat(userData.items.silver||[]).concat(userData.items.gold||[]).filter(function(x){return String(x.id)===String(id);})[0]:null;
+      _itemCache[id] = {bar_type: _found?(_found.bar_type||barType):barType, stage:_found?(_found.stage||1):1, sell_price:_found?(_found.sell_price||0):0};
       info = _itemCache[id];
     }
     // 판매 가능 여부 확인 (days>=2)
@@ -252,7 +254,7 @@ function showSellConfirm(){
     var allItems = (userData.items.bronze||[]).concat(userData.items.silver||[]).concat(userData.items.gold||[]);
     allItems.forEach(function(it){
       var key = String(it.id);
-      if(!_itemCache[key]){
+      if(!_itemCache[key] || !(_itemCache[key].sell_price)){
         _itemCache[key] = {bar_type: it.bar_type||it.type, stage: it.stage, sell_price: it.sell_price, purchase_date: it.purchase_date};
       }
     });
