@@ -1100,24 +1100,40 @@ async function loadItemDetail(barType){
       // 일차 안내 (canSell 아닐 때만 표시)
       var dayNote = '';  // 판매 가능 안내 제거 (형식1)
       // 이슈11: 판매가능 상태면 onclick 추가
-      var _cardCanSell = it.status_label === '판매가능';
+      // 이슈11: 판매가능 상태면 onclick 추가
+      var _isMaxStage = !!(it.is_max_stage);
+      var _cardCanSell = (it.status_label === '판매가능') && !_isMaxStage;
       var _cardSelected = !!_sellSelected[String(it.id)];
       var _cardStyle = 'background:'+(_cardSelected?'rgba(123,31,162,0.15)':cardBg)+';border:'+(_cardSelected?'1.5px solid #7b1fa2':'1px solid transparent')+';transition:background 0.2s';
-      var _cardOnclick = _cardCanSell ? ' onclick="toggleItemSellSelect('+it.id+',\''+( it.bar_type||barType)+'\')"' : '';
-      var _sellBadge = _cardSelected
-        ? '<span class="badge" style="background:#7b1fa2;color:#fff">✓ 판매선택</span>'
-        : (it.status_label==='판매예약중'
-          ? '<span class="badge badge-pending">판매예약중</span>'
-          : (_cardCanSell
-            ? '<span class="badge" style="background:var(--bg2);border:1.5px solid #7b1fa2;color:#7b1fa2">☐ 판매선택</span>'
-            : statusBadge));
-      return '<div class="item-detail-card" id="icard-'+it.id+'"'+_cardOnclick+' style="'+_cardStyle+';cursor:'+(_cardCanSell?'pointer':'default')+'">' 
+      var _cardOnclick = _cardCanSell ? ' onclick="toggleItemSellSelect('+it.id+',\''+(it.bar_type||barType)+'\')"' : '';
+      var _sellBadge;
+      if(_isMaxStage && it.status_label === '판매가능'){
+        // 최고단계: 분할 / 포인트전환 버튼
+        _cardOnclick = '';
+        _sellBadge = '<span class="badge" style="background:#e65100;color:#fff;font-size:10px">최고단계</span>';
+      } else {
+        _sellBadge = _cardSelected
+          ? '<span class="badge" style="background:#7b1fa2;color:#fff">✓ 판매선택</span>'
+          : (it.status_label==='판매예약중'
+            ? '<span class="badge badge-pending">판매예약중</span>'
+            : (_cardCanSell
+              ? '<span class="badge" style="background:var(--bg2);border:1.5px solid #7b1fa2;color:#7b1fa2">☐ 판매선택</span>'
+              : statusBadge));
+      }
+      var _maxStageBtns = (_isMaxStage && it.status_label === '판매가능')
+        ? '<div style="display:flex;gap:6px;margin-top:8px">'
+          +'<button onclick="doItemSplit('+it.id+',\''+it.bar_type+'\')" style="flex:1;padding:7px 0;background:#1565c0;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">✂️ 분할</button>'
+          +'<button onclick="doItemConvert('+it.id+','+it.sell_price+',\''+it.bar_type+'\','+it.stage+')" style="flex:1;padding:7px 0;background:#2e7d32;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">💎 포인트전환</button>'
+          +'</div>'
+        : '';
+      return '<div class="item-detail-card" id="icard-'+it.id+'"'+_cardOnclick+' style="'+_cardStyle+';cursor:'+(_cardCanSell?'pointer':'default')+'">'
         +'<div style="display:flex;justify-content:space-between;align-items:center">'
         +'<span class="item-detail-stage">'+names[it.bar_type||barType]+' '+it.stage+'단계</span>'
         +_sellBadge
         +'</div>'
         +'<div class="item-detail-info" style="font-size:12px;color:var(--text2);margin-top:3px">'+(it.status==='waiting'?'결합일: ':'구매일: ')+it.purchase_date+' ('+(it.status==='waiting'?'결합 ':'')+dayNum+'일째)</div>'
         +'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+(it.status==='waiting'?'결합가 ':'구매 ')+it.buy_price.toLocaleString()+'원 → 판매 '+it.sell_price.toLocaleString()+'원 (+'+it.profit.toLocaleString()+'원)</div>'
+        +_maxStageBtns
         +'</div>';
     }).join('');
     container.innerHTML=html;

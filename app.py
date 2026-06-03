@@ -259,7 +259,7 @@ _scheduler_thread.start()
 def get_today():
     """오늘 날짜 반환"""
     return get_now().date()
-from db import get_db, init_db, LEVEL_CONFIG, LEVEL_COST, BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES, PENALTY_TABLE, get_sv_count, get_gd_count
+from db import get_db, init_db, LEVEL_CONFIG, LEVEL_COST, SPLIT_CONFIG, BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES, PENALTY_TABLE, get_sv_count, get_gd_count
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path='')
@@ -804,17 +804,20 @@ def get_items():
                 s_label = item_status_label(it['status'], it['purchase_date'])
             # 결합아이템(waiting)은 combine_buy_price를 buy_price로 표시
             _buy_price = it['combine_buy_price'] if (it['status'] == 'waiting' and it['combine_buy_price']) else buy
+            _cfg = SPLIT_CONFIG.get(it['bar_type'], {})
+            _is_max = (_cfg.get('max_stage') == it['stage'])
             result.append({
                 'id': it['id'],
                 'bar_type': it['bar_type'],
                 'stage': it['stage'],
-                'status': it['status'],  # 원시 DB 상태값 (waiting, reservable 등)
+                'status': it['status'],
                 'purchase_date': it['purchase_date'],
                 'days': days_since(it['purchase_date']),
                 'status_label': s_label,
                 'buy_price': _buy_price,
                 'sell_price': sell,
-                'profit': sell - _buy_price
+                'profit': sell - _buy_price,
+                'is_max_stage': _is_max,
             })
         return jsonify(result)
     except Exception as e:
@@ -3927,6 +3930,114 @@ def payment_complete():
         return jsonify(error=str(e)), 500
     finally:
         db.close()
+
+@app.route('/api/item/split', methods=['POST'])
+@jwt_required()
+def item_split():
+    """최고단계 아이템 분할: 21단계→10×1+11×3 / 17단계→8×1+9×3 / 15단계→8×4"""
+    uid = int(get_jwt_identity())
+    data = request.json or {}
+    item_id = int(data.get('item_id', 0))
+    db = get_db()
+    try:
+        item = db.execute(
+            "SELECT * FROM items WHERE id=? AND user_id=? AND status IN ('reservable','active')",
+            (item_id, uid)
+        ).fetchone()
+        if not item:
+            return jsonify(error='아이템을 찾을 수 없습니다.'), 404
+        bar_type = item['bar_type']
+        stage = item['stage']
+        cfg = SPLIT_CONFIG.get(bar_type)
+        if not cfg or stage != cfg['max_stage']:
+            return jsonify(error=f'분할 불가 아이템입니다 (분할 가능: {bar_type} {cfg["max_stage"] if cfg else "?"}단계)'), 400
+        # 아이템 상태 확인
+        lbl = item_status_label(item['status'], item['purchase_date'])
+        if lbl != '판매가능':
+            return jsonify(error='판매가능 상태 아이템만 분할할 수 있습니다.'), 400
+        # 원본 아이템 sold 처리
+        db.execute("UPDATE items SET status='sold' WHERE id=?", (item_id,))
+        # 분할 아이템 생성
+        today = get_today().isoformat()
+        pieces_created = []
+        for piece in cfg['pieces']:
+            for _ in range(piece['count']):
+                db.execute(
+                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
+                    (uid, bar_type, piece['stage'], today)
+                )
+                pieces_created.append({'stage': piece['stage']})
+        # 분할 알림
+        bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+        bar_name = bar_names.get(bar_type, bar_type)
+        pieces_desc = ' + '.join([f"{p['count']}개({p['stage']}단계)" for p in cfg['pieces']])
+        try:
+            insert_notification(db, uid, 'split',
+                f'{bar_name} {stage}단계 분할 완료',
+                f"✅ {bar_name} {stage}단계 아이템이 분할되었습니다.\n\n분할 결과: {pieces_desc}")
+        except Exception:
+            pass
+        db.commit()
+        return jsonify(success=True, bar_type=bar_type, original_stage=stage, pieces=pieces_created)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/item/convert-points', methods=['POST'])
+@jwt_required()
+def item_convert_points():
+    """최고단계 아이템 포인트 전환: sell_price / 120 → exchange_points"""
+    uid = int(get_jwt_identity())
+    data = request.json or {}
+    item_id = int(data.get('item_id', 0))
+    db = get_db()
+    try:
+        item = db.execute(
+            "SELECT * FROM items WHERE id=? AND user_id=? AND status IN ('reservable','active')",
+            (item_id, uid)
+        ).fetchone()
+        if not item:
+            return jsonify(error='아이템을 찾을 수 없습니다.'), 404
+        bar_type = item['bar_type']
+        stage = item['stage']
+        cfg = SPLIT_CONFIG.get(bar_type)
+        if not cfg or stage != cfg['max_stage']:
+            return jsonify(error=f'포인트 전환 불가 아이템입니다 (전환 가능: {bar_type} {cfg["max_stage"] if cfg else "?"}단계)'), 400
+        lbl = item_status_label(item['status'], item['purchase_date'])
+        if lbl != '판매가능':
+            return jsonify(error='판매가능 상태 아이템만 전환할 수 있습니다.'), 400
+        # 판매가격 조회
+        _, sell_price = get_price(bar_type, stage)
+        if sell_price <= 0:
+            return jsonify(error='판매가격을 확인할 수 없습니다.'), 400
+        convert_points = sell_price // 120
+        if convert_points <= 0:
+            return jsonify(error='전환 포인트가 0입니다.'), 400
+        # 아이템 sold 처리 + 포인트 지급
+        db.execute("UPDATE items SET status='sold' WHERE id=?", (item_id,))
+        db.execute("UPDATE users SET exchange_points=exchange_points+? WHERE id=?", (convert_points, uid))
+        # 전환 알림
+        bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+        bar_name = bar_names.get(bar_type, bar_type)
+        try:
+            insert_notification(db, uid, 'convert',
+                f'{bar_name} {stage}단계 포인트 전환 완료',
+                f"✅ {bar_name} {stage}단계 아이템이 포인트로 전환되었습니다.\n\n"
+                f"• 판매가격: {sell_price:,}원\n"
+                f"• 전환 포인트: {convert_points:,}P (전환포인트)")
+        except Exception:
+            pass
+        db.commit()
+        return jsonify(success=True, bar_type=bar_type, stage=stage, sell_price=sell_price, convert_points=convert_points)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 
 @app.route('/api/user/pay-level', methods=['POST'])
 @jwt_required()

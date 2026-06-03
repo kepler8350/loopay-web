@@ -368,6 +368,44 @@ function startEditProfile(){
   document.getElementById('prof-account-name').value = d.account_name||'';
   document.getElementById('prof-new-pw').value = '';
 }
+// ── 최고단계 아이템 분할 / 포인트전환 ──
+var SPLIT_INFO = {
+  bronze: {max_stage:21, pieces:'10단계 1개 + 11단계 3개'},
+  silver:  {max_stage:17, pieces:'8단계 1개 + 9단계 3개'},
+  gold:    {max_stage:15, pieces:'8단계 4개'},
+};
+var BAR_NAMES = {bronze:'수정', silver:'루비', gold:'다이아'};
+
+async function doItemSplit(itemId, barType){
+  var info = SPLIT_INFO[barType] || {};
+  var barName = BAR_NAMES[barType] || barType;
+  if(!confirm(barName+' '+info.max_stage+'단계 아이템을 분할합니다.\n\n분할 결과: '+info.pieces+'\n\n원본 아이템은 사라지고 분할된 아이템이 보유 아이템으로 추가됩니다.\n계속하시겠습니까?')) return;
+  try{
+    var d = await api('/item/split',{method:'POST',body:JSON.stringify({item_id:itemId})});
+    if(d.success){
+      toast('✅ 분할 완료! '+info.pieces+' 생성됨','success');
+      await loadUserData();
+      var tabEl = document.getElementById('detail-'+barType);
+      if(tabEl && tabEl.style.display!=='none') loadItemDetail(barType);
+    } else toast(d.error||'분할 실패','error');
+  }catch(e){toast('오류: '+e.message,'error');}
+}
+
+async function doItemConvert(itemId, sellPrice, barType, stage){
+  var convertPts = Math.floor(sellPrice/120);
+  var barName = BAR_NAMES[barType] || barType;
+  if(!confirm(barName+' '+stage+'단계 아이템을 포인트로 전환합니다.\n\n판매가격: '+sellPrice.toLocaleString()+'원\n전환 포인트: '+convertPts.toLocaleString()+'P (전환포인트)\n\n아이템은 삭제됩니다. 계속하시겠습니까?')) return;
+  try{
+    var d = await api('/item/convert-points',{method:'POST',body:JSON.stringify({item_id:itemId})});
+    if(d.success){
+      toast('✅ '+d.convert_points.toLocaleString()+'P 전환포인트 지급 완료','success');
+      await loadUserData();
+      var tabEl = document.getElementById('detail-'+barType);
+      if(tabEl && tabEl.style.display!=='none') loadItemDetail(barType);
+    } else toast(d.error||'전환 실패','error');
+  }catch(e){toast('오류: '+e.message,'error');}
+}
+
 function cancelEditProfile(){
   document.getElementById('profile-view-mode').style.display='';
   document.getElementById('profile-edit-mode').style.display='none';
