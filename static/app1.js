@@ -1532,12 +1532,14 @@ function enableReserveSection(){
     var _h3 = getEffectiveDate().getHours();
     // 수량 및 포인트, 시간 모두 체크 (수량은 bzCnt 기준)
     var _curTotal2 = (typeof bzCnt!=='undefined'?bzCnt:0)+(typeof svCnt!=='undefined'?svCnt:0)+(typeof gdCnt!=='undefined'?gdCnt:0);
-    var _canEnable = (_avail2 > 0) && (_h3 >= 5 && _h3 < 20) && (_curTotal2 === 0 || _avail2 >= _curTotal2 * 40);
+    // 레벨 3+ 미결제 시 거래 불가
+    var _lvActive = (userData && userData.level_trade_active !== false) || !(userData && userData.level_cost > 0);
+    var _canEnable = _lvActive && (_avail2 > 0) && (_h3 >= 5 && _h3 < 20) && (_curTotal2 === 0 || _avail2 >= _curTotal2 * 40);
     btn.disabled = !_canEnable;
     btn.style.opacity = _canEnable ? '1' : '0.4';
     btn.style.cursor = _canEnable ? 'pointer' : 'not-allowed';
-    btn.title = _avail2 <= 0 ? '포인트가 부족합니다' : (!(_h3>=5&&_h3<20) ? '05:00~20:00에만 가능합니다' : '');
-    btn.textContent = '구매 예약하기 (40P × 매칭예약수)';
+    btn.title = !_lvActive ? (userData.level||'')+'레벨 거래유지 포인트 미결제 — 내정보 탭에서 결제하세요' : (_avail2 <= 0 ? '포인트가 부족합니다' : (!(_h3>=5&&_h3<20) ? '05:00~20:00에만 가능합니다' : ''));
+    btn.textContent = !_lvActive ? '포인트 결제 필요 (내정보 탭에서 결제)' : '구매 예약하기 (40P × 매칭예약수)';
     btn.onclick = function(){ if(btn.disabled) return; showReserveConfirm(); };
   }
   // 원본 포인트 복원은 updateResUI에서 cost=0일 때 처리됨 (bzCnt=0이면 자동 복원)
