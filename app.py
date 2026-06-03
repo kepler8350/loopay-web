@@ -301,22 +301,37 @@ def check_and_level_up(db, user_id):
     return False
 
 
-def is_level_trade_active(db, user_id):
-    """레벨 거래 활성화 여부: 3레벨 미만은 항상 True, 3레벨 이상은 level_paid_at 기준 30일 이내"""
-    u = db.execute("SELECT level, level_paid_at FROM users WHERE id=?", (user_id,)).fetchone()
-    if not u: return False
-    lv = u['level'] or 1
-    if lv < 3: return True
-    cost = LEVEL_COST.get(lv, 0)
-    if cost == 0: return True  # 무료 레벨(1,2,10)
-    paid_at = u['level_paid_at']
-    if not paid_at: return False
+def is_level_trade_active(db_or_uid, user_id=None):
+    """레벨 거래 활성화 여부. db와 user_id 또는 user_id만 전달 가능."""
+    import datetime as _dt_mod
+    # 호출 패턴: is_level_trade_active(db, uid) 또는 is_level_trade_active(uid)
+    if user_id is None:
+        uid = db_or_uid
+        _db = get_db()
+        _close = True
+    else:
+        uid = user_id
+        _db = db_or_uid
+        _close = False
     try:
-        paid_date = get_today().__class__.fromisoformat(str(paid_at)[:10])
-        days_passed = (get_today() - paid_date).days
-        return days_passed < 30
-    except Exception:
-        return False
+        u = _db.execute("SELECT level, level_paid_at FROM users WHERE id=?", (uid,)).fetchone()
+        if not u: return False
+        lv = u['level'] or 1
+        if lv < 3: return True
+        cost = LEVEL_COST.get(lv, 0)
+        if cost == 0: return True
+        paid_at = u['level_paid_at']
+        if not paid_at: return False
+        try:
+            paid_date = _dt_mod.date.fromisoformat(str(paid_at)[:10])
+            days_passed = (get_today() - paid_date).days
+            return days_passed < 30
+        except Exception:
+            return False
+    finally:
+        if _close:
+            try: _db.close()
+            except: pass
 
 
 def get_price(bar_type, stage):
