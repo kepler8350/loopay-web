@@ -1209,8 +1209,8 @@ def admin_run_matching():
             sell_count_2 = db.execute(
                 """SELECT COUNT(*) as c FROM reservations
                    WHERE match_round=2 AND status='pending' AND reserve_date=?
-                   AND user_id=? AND item_id IS NOT NULL""",
-                (today, loopay_id)
+                   AND COALESCE(confirmed,0)=1 AND item_id IS NOT NULL""",
+                (today,)
             ).fetchone()['c']
             if sell_count_2 == 0:
                 db.close()
