@@ -171,8 +171,14 @@ function updateSellBoard(){
   var counts = {bronze:0, silver:0, gold:0};
   Object.keys(_sellSelected).forEach(function(id){
     if(!_sellSelected[id]) return;
-    var item = _itemCache && _itemCache[id];
-    var bt = item ? (item.bar_type||'bronze') : 'bronze';
+    var item = (_itemCache && (_itemCache[id] || _itemCache[String(id)]));
+    // userData.items fallback
+    if(!item && userData && userData.items){
+      var allIt = (userData.items.bronze||[]).concat(userData.items.silver||[]).concat(userData.items.gold||[]);
+      var found = allIt.filter(function(x){return String(x.id)===String(id);})[0];
+      if(found){ item = found; _itemCache[String(id)] = found; }
+    }
+    var bt = item ? (item.bar_type||item.type||'bronze') : 'bronze';
     counts[bt] = (counts[bt]||0) + 1;
   });
   var total = counts.bronze + counts.silver + counts.gold;
@@ -241,13 +247,23 @@ function showSellConfirm(){
   // 선택된 아이템 목록 구성
   var selected = Object.keys(_sellSelected).filter(function(id){return _sellSelected[id];});
   if(!selected.length){ toast('판매예약할 아이템을 선택해주세요.'); return; }
+  // userData.items로 fallback 캐시 보완
+  if(userData && userData.items){
+    var allItems = (userData.items.bronze||[]).concat(userData.items.silver||[]).concat(userData.items.gold||[]);
+    allItems.forEach(function(it){
+      var key = String(it.id);
+      if(!_itemCache[key]){
+        _itemCache[key] = {bar_type: it.bar_type||it.type, stage: it.stage, sell_price: it.sell_price, purchase_date: it.purchase_date};
+      }
+    });
+  }
   var rows = '';
   var totalPrice = 0;
   var groupByType = {bronze:[], silver:[], gold:[]};
   selected.forEach(function(id){
-    var info = _itemCache[id];
+    var info = _itemCache[id] || _itemCache[String(id)];
     if(info){
-      groupByType[info.bar_type].push(info);
+      groupByType[info.bar_type||'bronze'].push(info);
       totalPrice += info.sell_price||0;
     }
   });
