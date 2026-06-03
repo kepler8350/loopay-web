@@ -3824,12 +3824,13 @@ def get_user_profile():
     try:
         u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
         if not u: return jsonify(error='Not found'), 404
-        keys = u.keys() if hasattr(u, 'keys') else []
+        # dict로 변환 후 안전하게 접근
+        udict = dict(u)
         def safe(k, default=''):
-            try: return u[k] or default
-            except: return default
+            v = udict.get(k)
+            return v if v is not None else default
         return jsonify(
-            id=u['id'],
+            id=udict.get('id'),
             username=safe('username'),
             real_name=safe('real_name'),
             nickname=safe('nickname'),
@@ -3837,7 +3838,7 @@ def get_user_profile():
             bank=safe('bank'),
             account_no=safe('account_no'),
             account_name=safe('account_name'),
-            level=safe('level') or 1,
+            level=udict.get('level') or 1,
         )
     finally:
         db.close()
