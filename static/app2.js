@@ -315,7 +315,6 @@ async function loadProfileForm(){
       var fields = [
         {label:'아이디', value: d.username||'-'},
         {label:'성명', value: d.real_name||'-'},
-        {label:'닉네임', value: d.nickname||'-'},
         {label:'레벨', value: (d.level||1)+'레벨'},
         {label:'휴대폰', value: d.phone||'-'},
         {label:'은행', value: d.bank||'-'},

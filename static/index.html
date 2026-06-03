@@ -1,4 +1,4 @@
-<!DOCTYPE html><!-- v20260603074418 -->
+<!DOCTYPE html><!-- v20260603080059 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -280,7 +280,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 }
 .notif-blink{animation:notif-blink-anim 1s ease-in-out infinite!important;}
 </style>
-<script src="/static/app1.js?v=20260603074418"></script>
+<script src="/static/app1.js?v=20260603080059"></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -665,11 +665,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="sec-title">내 정보</div>
         <!-- 정보 표시 모드 -->
         <div id="profile-view-mode" class="reserve-box">
-          <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
             <span style="font-size:15px;font-weight:700">회원 정보</span>
+            <button onclick="startEditProfile()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">수정</button>
           </div>
-          <div id="profile-info-rows" style="font-size:13px;line-height:2"></div>
-          <button onclick="startEditProfile()" style="width:100%;margin-top:16px;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">수정</button>
+          <div id="profile-info-rows" style="font-size:13px"></div>
         </div>
         <!-- 수정 모드 -->
         <div id="profile-edit-mode" class="reserve-box" style="display:none">
@@ -936,7 +936,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
   </div>
 </div>
-<script src="/static/app2.js?v=20260603074418"></script>
+<script src="/static/app2.js?v=20260603080059"></script>
 <!-- 패널티 해제 팝업 -->
 <div id="penalty-release-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
   <div style="background:#1a1a2e;border:1px solid #2d2d5e;border-radius:12px;padding:24px;width:320px;max-width:90vw">
