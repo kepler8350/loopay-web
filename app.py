@@ -3832,7 +3832,7 @@ def get_user_profile():
         return jsonify(
             id=udict.get('id'),
             username=safe('username'),
-            real_name=safe('real_name'),
+            real_name=safe('real_name') or safe('nickname'),  # real_name 없으면 nickname 표시
             nickname=safe('nickname'),
             phone=safe('phone'),
             bank=safe('bank'),
