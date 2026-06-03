@@ -232,7 +232,7 @@ function toggleItemSellSelect(itemId, barType){
       }
     }
     if(!canSell){
-      toast('구매 3일째(판매가능 상태)부터 판매예약 가능합니다', 'error');
+      toast((typeof it!=='undefined'&&it&&it.status==='waiting'?'결합 2일째(판매가능 상태)':'구매 3일째(판매가능 상태)')+'부터 판매예약 가능합니다', 'error');
       return;
     }
     _sellSelected[id] = true;

@@ -298,6 +298,7 @@ def item_status_label(status, purchase_date):
     status_map = {
         'active': '보유중',
         'reservable': '판매가능' if days >= 2 else '보유중',
+        'waiting': '판매가능' if days >= 1 else '보유중',  # 결합아이템: 1일째부터 판매가능
         'sold': '판매완료',
         'pending': '매칭중',
         'matched': '매칭완료',
@@ -700,6 +701,7 @@ def get_items():
                 'id': it['id'],
                 'bar_type': it['bar_type'],
                 'stage': it['stage'],
+                'status': it['status'],  # 원시 DB 상태값 (waiting, reservable 등)
                 'purchase_date': it['purchase_date'],
                 'days': days_since(it['purchase_date']),
                 'status_label': s_label,
@@ -1978,9 +1980,12 @@ def combine_execute():
         if not combined_stage:
             return jsonify({'error': 'no combinable stage'}), 400
         conn.execute('UPDATE items SET status="sold" WHERE id IN (?,?)', (item1_id, item2_id))
+        # 결합된 단계의 구매가 조회
+        _combined_buy = price_map.get(combined_stage, {}).get('buy_price', 0)
+        _today_str = get_today().isoformat()
         conn.execute(
-            "INSERT INTO items (user_id, bar_type, stage, status, purchase_date) VALUES (?,?,?,'waiting',date('now'))",
-            (user_id, bar_type, combined_stage)
+            "INSERT INTO items (user_id, bar_type, stage, status, purchase_date) VALUES (?,?,?,'waiting',?)",
+            (user_id, bar_type, combined_stage, _today_str)
         )
         conn.execute('UPDATE users SET charge_points=charge_points-250 WHERE id=?', (user_id,))
         conn.commit()

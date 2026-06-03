@@ -1074,7 +1074,9 @@ async function loadItemDetail(barType){
     items.forEach(function(it){ _itemCache[it.id]={bar_type:barType,stage:it.stage,sell_price:it.sell_price,profit:it.profit,buy_price:it.buy_price,purchase_date:it.purchase_date,days:it.days}; });
     var html=items.map(function(it){
       var dayNum = it.days + 1;
-      var canSell = it.days>=2 && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료' && it.status_label!=='판매예약';
+      // 결합아이템(waiting)은 1일째부터, 일반아이템은 2일째부터 판매가능
+      var _minDays = (it.status==='waiting') ? 1 : 2;
+      var canSell = it.days>=_minDays && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료' && it.status_label!=='판매예약';
       var isSelected = !!_sellSelected[it.id];
       var rawLabel = it.status_label||'보유중';
       var displayLabel = rawLabel==='reservable'||rawLabel==='매칭예약가능' ? '판매예약가능' : rawLabel;
@@ -1112,8 +1114,8 @@ async function loadItemDetail(barType){
         +'<span class="item-detail-stage">'+names[it.bar_type||barType]+' '+it.stage+'단계</span>'
         +_sellBadge
         +'</div>'
-        +'<div class="item-detail-info" style="font-size:12px;color:var(--text2);margin-top:3px">구매일: '+it.purchase_date+' ('+dayNum+'일째)</div>'
-        +'<div style="font-size:12px;color:var(--text2);margin-top:2px">구매 '+it.buy_price.toLocaleString()+'원 → 판매 '+it.sell_price.toLocaleString()+'원 (+'+it.profit.toLocaleString()+'원)</div>'
+        +'<div class="item-detail-info" style="font-size:12px;color:var(--text2);margin-top:3px">'+(it.status==='waiting'?'결합일: ':'구매일: ')+it.purchase_date+' ('+(it.status==='waiting'?'결합 ':'')+dayNum+'일째)</div>'
+        +'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+(it.status==='waiting'?'결합가 ':'구매 ')+it.buy_price.toLocaleString()+'원 → 판매 '+it.sell_price.toLocaleString()+'원 (+'+it.profit.toLocaleString()+'원)</div>'
         +'</div>';
     }).join('');
     container.innerHTML=html;
