@@ -2004,6 +2004,10 @@ def combine_preview():
         i1, i2 = dict(items[0]), dict(items[1])
         if i1['bar_type'] != i2['bar_type']:
             return jsonify({'error': 'same type only'}), 400
+        # 결합된 아이템(waiting) 재결합 불가
+        for _it in [i1, i2]:
+            if _it['status'] == 'waiting':
+                return jsonify({'error': '이미 결합된 아이템은 다시 결합할 수 없습니다.', 'can_combine': False}), 400
         bar_type = i1['bar_type']
         stage1, stage2 = i1['stage'], i2['stage']
         prices = conn.execute('SELECT * FROM prices WHERE bar_type=? ORDER BY stage', (bar_type,)).fetchall()
@@ -2061,8 +2065,10 @@ def combine_execute():
         i1, i2 = dict(items[0]), dict(items[1])
         if i1['bar_type'] != i2['bar_type']:
             return jsonify({'error': 'same type only'}), 400
-        # 판매가능(reservable) 상태 아이템만 결합 가능
+        # 판매가능(reservable) 상태 아이템만 결합 가능 + waiting(결합아이템) 재결합 불가
         for it in [i1, i2]:
+            if it['status'] == 'waiting':
+                return jsonify({'error': '이미 결합된 아이템은 다시 결합할 수 없습니다.'}), 400
             lbl = item_status_label(it['status'], it['purchase_date'])
             if lbl != '판매가능':
                 return jsonify({'error': f'판매가능 상태 아이템만 결합할 수 있습니다 (현재: {lbl})'}), 400

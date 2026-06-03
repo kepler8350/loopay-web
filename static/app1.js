@@ -350,7 +350,8 @@ async function loadCombineItems(){
     var d=await _r.json();
     var _allItems=(Array.isArray(d)?d:(d.items_flat||[]));
     // 판매가능 아이템만 결합 대상으로 필터
-    window._combineAllItems=_allItems.filter(function(it){return it.status_label==='판매가능';});
+    // 판매가능 + waiting(결합아이템) 제외: 한번 결합된 아이템은 재결합 불가
+    window._combineAllItems=_allItems.filter(function(it){ return it.status_label==='판매가능' && it.status!=='waiting'; });
     combineSelected=[];
     renderCombineList();
     renderCombinePairs();
