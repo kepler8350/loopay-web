@@ -228,7 +228,7 @@ function toggleItemSellSelect(itemId, barType){
       if(item){
         // 이슈11: status_label='판매가능'이면 선택 가능
         canSell = item.status_label === '판매가능';
-        _itemCache[id] = {bar_type: barType, stage: item.stage, sell_price: item.sell_price};
+        _itemCache[id] = {bar_type: barType, stage: item.stage, sell_price: item.sell_price, profit: item.profit, buy_price: item.buy_price};
       }
     }
     if(!canSell){
