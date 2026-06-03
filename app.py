@@ -1226,7 +1226,7 @@ def admin_run_matching():
                u.username as seller_username, u.nickname as seller_nickname,
                u.phone as seller_phone, u.bank as seller_bank,
                u.account_no as seller_account, u.account_name as seller_account_name,
-               COALESCE(i.stage, 1) as stage
+               CASE WHEN COALESCE(i.stage,0) <= 0 THEN 1 ELSE i.stage END as stage
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                LEFT JOIN items i ON r.item_id = i.id
@@ -1244,7 +1244,7 @@ def admin_run_matching():
         # 구매예약 조회 (loopay 제외, 랜덤)
         buy_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
-               COALESCE(r.stage,1) as stage,
+               CASE WHEN COALESCE(r.stage,0) <= 0 THEN 1 ELSE r.stage END as stage,
                u.username as buyer_username, u.nickname as buyer_nickname,
                u.phone as buyer_phone, u.account_name as buyer_account_name
                FROM reservations r
