@@ -364,11 +364,24 @@ def register():
         return jsonify(error='아이디는 영문 소문자/숫자, 6~16자여야 합니다'), 400
     if len(password) < 4:
         return jsonify(error='비밀번호는 4자 이상이어야 합니다.'), 400
+    # 본인이름 = 예금주 검증
+    if real_name and account_name and real_name != account_name:
+        return jsonify(error='본인 이름과 예금주명이 일치해야 합니다.'), 400
     db = get_db()
     try:
         existing = db.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone()
         if existing:
             return jsonify(error='이미 사용 중인 아이디입니다.'), 409
+        # 전화번호 중복 검증
+        if phone:
+            dup_phone = db.execute("SELECT id FROM users WHERE phone=?", (phone,)).fetchone()
+            if dup_phone:
+                return jsonify(error='이미 등록된 휴대폰 번호입니다.'), 409
+        # 계좌번호 중복 검증
+        if account_no:
+            dup_acct = db.execute("SELECT id FROM users WHERE account_no=?", (account_no,)).fetchone()
+            if dup_acct:
+                return jsonify(error='이미 등록된 계좌번호입니다.'), 409
         pw_hash = generate_password_hash(password)
         db.execute(
             "INSERT INTO users (username, password_hash, nickname, phone, bank, account_no, account_name, approved) VALUES (?,?,?,?,?,?,?,0)",
