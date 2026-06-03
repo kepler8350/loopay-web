@@ -3824,16 +3824,20 @@ def get_user_profile():
     try:
         u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
         if not u: return jsonify(error='Not found'), 404
+        keys = u.keys() if hasattr(u, 'keys') else []
+        def safe(k, default=''):
+            try: return u[k] or default
+            except: return default
         return jsonify(
             id=u['id'],
-            username=u['username'],
-            real_name=u['real_name'] or '',
-            nickname=u['nickname'] or '',
-            phone=u['phone'] or '',
-            bank=u['bank'] or '',
-            account_no=u['account_no'] or '',
-            account_name=u['account_name'] or '',
-            level=u['level'] or 1,
+            username=safe('username'),
+            real_name=safe('real_name'),
+            nickname=safe('nickname'),
+            phone=safe('phone'),
+            bank=safe('bank'),
+            account_no=safe('account_no'),
+            account_name=safe('account_name'),
+            level=safe('level') or 1,
         )
     finally:
         db.close()
