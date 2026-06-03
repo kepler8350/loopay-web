@@ -1250,7 +1250,7 @@ def admin_run_matching():
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                WHERE r.status='pending' AND r.match_round=?
-               AND r.reserve_date<=? AND COALESCE(r.confirmed,0)=0
+               AND COALESCE(r.confirmed,0)=0
                AND u.username != 'loopay'
                AND r.user_id NOT IN (
                    SELECT p.user_id FROM penalties p WHERE p.is_released=0
@@ -1261,7 +1261,7 @@ def admin_run_matching():
                    AND m.match_date=?
                )
                ORDER BY RANDOM()""",
-            (round_num, today, today)
+            (round_num, today)
         ).fetchall()
 
         # stage별로 분류
@@ -1700,8 +1700,9 @@ def admin_matching_status():
         # 오늘 또는 어제 날짜 포함 (1차 매칭이 전날 밤에 실행됐을 경우 대비)
         import datetime as _dt
         _yesterday = (_dt.date.fromisoformat(today) - _dt.timedelta(days=1)).isoformat()
-        # 2차는 reserve_date 무관 (1차에서 이월된 예약이 원래 날짜 유지)
-        _date_cond = "AND r.reserve_date=?" if round_num == 1 else "AND r.reserve_date<=?"
+        # 2차는 reserve_date 조건 제거 (match_round=2로 전환된 예약만 조회)
+        _date_cond = "AND r.reserve_date=?" if round_num == 1 else ""
+        _date_args = [today] if round_num == 1 else []
         buy_count = db.execute(
             f"""SELECT COUNT(*) as c FROM reservations r
                WHERE r.match_round=? AND r.status='pending' AND r.user_id!=?
@@ -1714,7 +1715,7 @@ def admin_matching_status():
                    WHERE m.match_round=1 AND m.status='failed'
                    AND m.match_date=?
                )""",
-            (round_num, loopay_id, today, today)
+            [round_num, loopay_id] + _date_args + [today]
         ).fetchone()['c']
 
         buy_by_type = db.execute(
@@ -1730,7 +1731,7 @@ def admin_matching_status():
                    AND m.match_date=?
                )
                GROUP BY bar_type""",
-            (round_num, loopay_id, today, today)
+            [round_num, loopay_id] + _date_args + [today]
         ).fetchall()
 
         # ── 판매예약: loopay + 일반 사용자 모두 집계 ──
