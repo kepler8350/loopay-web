@@ -372,7 +372,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div class="page-sub" id="matching-date-sub">&#50724;&#45720;&#51032; &#47588;&#52845; &#54788;&#54889; &#48143; &#49892;&#54665;</div>
 <div style="display:flex;gap:10px;margin-bottom:20px">
 <button class="btn btn-primary" id="round-tab-1" onclick="switchRound(1,this)">1&#52264; &#47588;&#52845;</button>
-<button class="btn btn-secondary" id="round-tab-2" onclick="switchRound(2,this)">2&#52264; &#47588;&#52845;</button>
+<button class="btn btn-secondary" id="round-tab-2" onclick="switchRound(2,this)" disabled style="opacity:0.4;cursor:not-allowed" title="2차 매칭 가능 시간: 14:00~15:00">2&#52264; &#47588;&#52845;</button>
 <button class="refresh-btn" onclick="loadMatchingStatus()" style="margin-left:auto">&#128260; &#49352;&#47196;&#44256;&#52840;</button>
 </div>
 <div id="round-panel-1">
@@ -933,6 +933,21 @@ async function updateMatchingBtn(){
     var btn2 = document.getElementById('btn-run-matching-2');
     var notice2 = document.getElementById('matching-time-notice-2');
     if(btn2){ btn2.disabled=!isActive2; btn2.style.opacity=isActive2?'1':'0.45'; btn2.style.cursor=isActive2?'pointer':'not-allowed'; }
+    // 상단 2차 탭 버튼도 조건 제어
+    var tabBtn2 = document.getElementById('round-tab-2');
+    if(tabBtn2){
+      if(isActive2){
+        tabBtn2.disabled = false;
+        tabBtn2.style.opacity = '1';
+        tabBtn2.style.cursor = 'pointer';
+        tabBtn2.title = '';
+      } else {
+        tabBtn2.disabled = true;
+        tabBtn2.style.opacity = '0.4';
+        tabBtn2.style.cursor = 'not-allowed';
+        tabBtn2.title = inTime2 ? '미입금 수량이 없어 2차 매칭 불가' : '2차 매칭 가능 시간: 14:00~15:00';
+      }
+    }
     if(notice2){
       var msg2 = inTime2
         ? (failedCount > 0
