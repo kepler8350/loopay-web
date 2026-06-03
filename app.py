@@ -651,6 +651,10 @@ def get_me():
     except Exception:
         today_res = {}
     auto_reserve = u['auto_reserve'] if u['auto_reserve'] is not None else 0
+    # db.close() 전에 level_trade_active 계산
+    _level_trade_active = is_level_trade_active(db, uid)
+    _level_paid_at = u['level_paid_at'] if 'level_paid_at' in u.keys() else None
+    _level_cost = LEVEL_COST.get(lv, 0)
     db.close()
     # 오늘 예약 사용 포인트 계산
     today_reserve_count = today_res.get('bronze',0)+today_res.get('silver',0)+today_res.get('gold',0)
@@ -662,9 +666,9 @@ def get_me():
     return jsonify(id=u['id'],username=u['username'],nickname=u['nickname'],real_name=u['real_name'] if u['real_name'] else '',phone=u['phone'] if u['phone'] else '',bank=u['bank'] if u['bank'] else '',account_no=u['account_no'] if u['account_no'] else '',account_name=u['account_name'] if u['account_name'] else '',level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],maintain_points=_maintain,match_maintain_cost=_maintain,today_reserve_cost=0,cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve,
             suspended_until=u['suspended_until'] if 'suspended_until' in u.keys() else None,
             unpaid_count=int(u['unpaid_count'] or 0) if 'unpaid_count' in u.keys() else 0,
-            level_trade_active=is_level_trade_active(db, uid),
-            level_paid_at=u['level_paid_at'] if 'level_paid_at' in u.keys() else None,
-            level_cost=LEVEL_COST.get(lv, 0))
+            level_trade_active=_level_trade_active,
+            level_paid_at=_level_paid_at,
+            level_cost=_level_cost)
 
 @app.route('/api/reservation/preview', methods=['POST'])
 @jwt_required()
