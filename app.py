@@ -1552,6 +1552,7 @@ def admin_run_matching():
                 db.execute(
                     """UPDATE reservations SET status='unmatched'
                        WHERE match_round=? AND status='pending' AND reserve_date=?
+                       AND COALESCE(confirmed,0)=0
                        AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
                     (round_num, today)
                 )
