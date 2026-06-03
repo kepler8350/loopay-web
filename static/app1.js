@@ -347,7 +347,9 @@ async function loadCombineItems(){
     var _r=await fetch('/api/items',{headers:{'Authorization':'Bearer '+_tok}});
     if(!_r.ok){list.innerHTML='<div class="empty-msg">로드 실패<\/div>';return;}
     var d=await _r.json();
-    window._combineAllItems=(Array.isArray(d)?d:(d.items_flat||[]));
+    var _allItems=(Array.isArray(d)?d:(d.items_flat||[]));
+    // 판매가능 아이템만 결합 대상으로 필터
+    window._combineAllItems=_allItems.filter(function(it){return it.status_label==='판매가능';});
     combineSelected=[];
     renderCombineList();
     renderCombinePairs();
