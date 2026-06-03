@@ -312,10 +312,26 @@ async function loadProfileForm(){
     var d = await api('/user/profile');
     window._profileData = d;
     if(rows){
-      var fields = [
+      // 레벨 포인트 결제 정보
+    var lvCost = d.level_cost || 0;
+    var lvPaidAt = d.level_paid_at;
+    var lvDaysLeft = d.level_days_left;
+    var lvTradeActive = d.level_trade_active;
+    var lvPayInfo = '-';
+    if(lvCost === 0){
+      lvPayInfo = '무료';
+    } else if(lvPaidAt && lvDaysLeft !== null && lvDaysLeft !== undefined){
+      var color = lvDaysLeft <= 5 ? '#ef5350' : '#4caf50';
+      lvPayInfo = '<span style="color:'+color+';font-weight:700">'+lvPaidAt.slice(0,10)+' ('+lvDaysLeft+'일 남음)</span>';
+    } else {
+      lvPayInfo = '<span style="color:#ef5350;font-weight:700">미결제 (예약 불가)</span>';
+    }
+    var fields = [
         {label:'아이디', value: d.username||'-'},
         {label:'성명', value: d.real_name||'-'},
         {label:'레벨', value: (d.level||1)+'레벨'},
+        {label:'레벨 포인트', value: lvCost > 0 ? lvCost+'P / 30일' : '무료'},
+        {label:'결제일', value: lvPayInfo, html: true},
         {label:'휴대폰', value: d.phone||'-'},
         {label:'은행', value: d.bank||'-'},
         {label:'계좌번호', value: d.account_no||'-'},
@@ -324,9 +340,15 @@ async function loadProfileForm(){
       rows.innerHTML = fields.map(function(f){
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">'
           +'<span style="color:var(--text2);font-size:13px;min-width:70px">'+f.label+'</span>'
-          +'<span style="font-weight:600;font-size:13px;text-align:right">'+f.value+'</span>'
+          +'<span style="font-weight:600;font-size:13px;text-align:right">'+(f.html ? f.value : (f.value||'-'))+'</span>'
           +'</div>';
       }).join('');
+      // 레벨 포인트 결제 버튼 (3레벨 이상 + 미결제 or 만료 임박)
+      if(lvCost > 0){
+        var btnLabel = (!lvPaidAt || lvDaysLeft === 0) ? '포인트 결제하기 ('+lvCost+'P)' : '재결제하기 ('+lvCost+'P)';
+        var btnColor = (!lvTradeActive) ? '#1a4fa3' : '#888';
+        rows.innerHTML += '<div style="margin-top:12px"><button onclick="payLevelPoints()" style="width:100%;padding:11px;background:'+btnColor+';color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">'+btnLabel+'</button></div>';
+      }
     }
   }catch(e){
     if(rows) rows.innerHTML='<div style="color:#ef5350;font-size:13px">정보를 불러오지 못했습니다: '+e.message+'</div>';
@@ -349,6 +371,19 @@ function startEditProfile(){
 function cancelEditProfile(){
   document.getElementById('profile-view-mode').style.display='';
   document.getElementById('profile-edit-mode').style.display='none';
+}
+async function payLevelPoints(){
+  if(!confirm('레벨 거래유지 포인트를 결제하시겠습니까?')) return;
+  try{
+    var d = await api('/user/pay-level',{method:'POST'});
+    if(d.success){
+      toast('✅ 포인트 결제 완료! '+d.expire_at+'까지 거래 활성화','success');
+      await loadUserData();
+      await loadProfileForm();
+      // 예약 버튼 활성화
+      updateReserveByLevel();
+    } else toast(d.error||'결제 실패','error');
+  }catch(e){toast('오류: '+e.message,'error');}
 }
 async function doUpdateProfile(){
   var data={

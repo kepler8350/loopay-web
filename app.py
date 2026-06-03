@@ -259,10 +259,66 @@ _scheduler_thread.start()
 def get_today():
     """오늘 날짜 반환"""
     return get_now().date()
-from db import get_db, init_db, LEVEL_CONFIG, BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES, PENALTY_TABLE, get_sv_count, get_gd_count
+from db import get_db, init_db, LEVEL_CONFIG, LEVEL_COST, BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES, PENALTY_TABLE, get_sv_count, get_gd_count
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path='')
+def check_and_level_up(db, user_id):
+    """누적횟수 기반 자동 레벨업 체크 + 알림"""
+    u = db.execute("SELECT id, level, cumulative_count FROM users WHERE id=?", (user_id,)).fetchone()
+    if not u: return False
+    cur_lv = u['level'] or 1
+    cum = u['cumulative_count'] or 0
+    if cur_lv >= 10: return False
+
+    new_lv = cur_lv
+    for lv in range(cur_lv + 1, 11):
+        prev_cum = LEVEL_CONFIG.get(lv - 1, {}).get('cum') or 0
+        if cum >= prev_cum:
+            new_lv = lv
+        else:
+            break
+
+    if new_lv > cur_lv:
+        db.execute("UPDATE users SET level=? WHERE id=?", (new_lv, user_id))
+        cost = LEVEL_COST.get(new_lv, 0)
+        # 레벨 상승 알림 발송
+        if cost > 0:
+            msg = (
+                f"🎉 {new_lv}레벨로 상승하였습니다!\n"
+                f"\n{new_lv}레벨부터는 거래유지 포인트 결제가 필요합니다.\n"
+                f"• 필요 포인트: {cost}P / 30일\n"
+                f"\n내정보 > 레벨 포인트 결제 버튼을 눌러 결제하면\n"
+                f"30일간 구매예약·판매예약이 활성화됩니다."
+            )
+        else:
+            msg = f"🎉 {new_lv}레벨로 상승하였습니다!\n누적 예약횟수 {cum}회 달성!"
+        try:
+            insert_notification(db, user_id, 'level_up', f'{new_lv}레벨 달성!', msg)
+        except Exception:
+            pass
+        return new_lv
+    return False
+
+
+def is_level_trade_active(db, user_id):
+    """레벨 거래 활성화 여부: 3레벨 미만은 항상 True, 3레벨 이상은 level_paid_at 기준 30일 이내"""
+    u = db.execute("SELECT level, level_paid_at FROM users WHERE id=?", (user_id,)).fetchone()
+    if not u: return False
+    lv = u['level'] or 1
+    if lv < 3: return True
+    cost = LEVEL_COST.get(lv, 0)
+    if cost == 0: return True  # 무료 레벨(1,2,10)
+    paid_at = u['level_paid_at']
+    if not paid_at: return False
+    try:
+        paid_date = get_today().__class__.fromisoformat(str(paid_at)[:10])
+        days_passed = (get_today() - paid_date).days
+        return days_passed < 30
+    except Exception:
+        return False
+
+
 def get_price(bar_type, stage):
     conn = get_db()
     try:
@@ -590,7 +646,10 @@ def get_me():
         _maintain = 0
     return jsonify(id=u['id'],username=u['username'],nickname=u['nickname'],real_name=u['real_name'] if u['real_name'] else '',phone=u['phone'] if u['phone'] else '',bank=u['bank'] if u['bank'] else '',account_no=u['account_no'] if u['account_no'] else '',account_name=u['account_name'] if u['account_name'] else '',level=lv,charge_points=u['charge_points'],exchange_points=u['exchange_points'],total_points=u['charge_points']+u['exchange_points'],maintain_points=_maintain,match_maintain_cost=_maintain,today_reserve_cost=0,cumulative_count=u['cumulative_count'],next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve,
             suspended_until=u['suspended_until'] if 'suspended_until' in u.keys() else None,
-            unpaid_count=int(u['unpaid_count'] or 0) if 'unpaid_count' in u.keys() else 0)
+            unpaid_count=int(u['unpaid_count'] or 0) if 'unpaid_count' in u.keys() else 0,
+            level_trade_active=is_level_trade_active(db, uid),
+            level_paid_at=u['level_paid_at'] if 'level_paid_at' in u.keys() else None,
+            level_cost=LEVEL_COST.get(lv, 0))
 
 @app.route('/api/reservation/preview', methods=['POST'])
 @jwt_required()
@@ -602,6 +661,11 @@ def reservation_preview():
     u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
     lv = u['level']
     cfg = LEVEL_CONFIG[lv]
+    # 3레벨 이상: 레벨 포인트 결제 여부 확인
+    if not is_level_trade_active(db, uid):
+        cost = LEVEL_COST.get(lv, 0)
+        db.close()
+        return jsonify(error=f'{lv}레벨은 거래유지 포인트 {cost}P 결제 후 예약 가능합니다.', level_pay_required=True), 403
     if bz < cfg['bz_min'] or bz > cfg['bz_max']:
         db.close()
         return jsonify(error=f'브론즈 예약수는 {cfg["bz_min"]}~{cfg["bz_max"]}개 범위여야 합니다'), 400
@@ -1838,6 +1902,7 @@ with app.app_context():
             "ALTER TABLE users ADD COLUMN maintain_points INTEGER DEFAULT 0",
             "ALTER TABLE users ADD COLUMN suspended_until DATETIME",
             "ALTER TABLE users ADD COLUMN unpaid_count INTEGER DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN level_paid_at DATE DEFAULT NULL",
             "ALTER TABLE penalties ADD COLUMN match_id INTEGER",
             "ALTER TABLE penalties ADD COLUMN release_at DATETIME",
             "ALTER TABLE penalties ADD COLUMN match_round INTEGER DEFAULT 1",
@@ -2879,6 +2944,14 @@ def match_confirm_payment():
         except Exception:
             pass
 
+        # 6. 구매자 cumulative_count +1 + 레벨업 체크
+        try:
+            db.execute("UPDATE users SET cumulative_count=cumulative_count+1 WHERE id=?", (m['buyer_id'],))
+            db.commit()  # cumulative_count 먼저 커밋 후 레벨업 체크
+            leveled = check_and_level_up(db, m['buyer_id'])
+        except Exception:
+            pass
+
         db.commit()
         return jsonify(success=True, message='거래 완료')
     except Exception as e:
@@ -3605,9 +3678,15 @@ def create_sell_reservation():
     item_id = int(data.get('item_id', 0))
     db = get_db()
     try:
-        item = db.execute("SELECT * FROM items WHERE id=? AND user_id=? AND status IN ('reservable','active')", (item_id, uid)).fetchone()
+        item = db.execute("SELECT * FROM items WHERE id=? AND user_id=? AND status IN ('reservable','active','waiting')", (item_id, uid)).fetchone()
         if not item:
             return jsonify(error='판매예약 불가능한 아이템입니다'), 400
+        # 3레벨 이상: 레벨 포인트 결제 여부 확인
+        _u = db.execute("SELECT level, level_paid_at FROM users WHERE id=?", (uid,)).fetchone()
+        if not is_level_trade_active(db, uid):
+            _lv = _u['level'] if _u else 1
+            _cost = LEVEL_COST.get(_lv, 0)
+            return jsonify(error=f'{_lv}레벨은 거래유지 포인트 {_cost}P 결제 후 예약 가능합니다.', level_pay_required=True), 403
         days = days_since(item['purchase_date'])
         if days < 2:
             return jsonify(error=f'구매 후 3일째부터 판매예약 가능합니다 (현재 {days+1}일차)'), 400
@@ -3815,6 +3894,53 @@ def payment_complete():
     finally:
         db.close()
 
+@app.route('/api/user/pay-level', methods=['POST'])
+@jwt_required()
+def pay_level():
+    """레벨 거래유지 포인트 결제 (3레벨 이상)"""
+    uid = int(get_jwt_identity())
+    db = get_db()
+    try:
+        u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+        if not u: return jsonify(error='사용자 없음'), 404
+        lv = u['level'] or 1
+        cost = LEVEL_COST.get(lv, 0)
+        if cost == 0:
+            return jsonify(error='현재 레벨은 포인트 결제가 필요 없습니다.'), 400
+        # 포인트 확인 (충전포인트 우선)
+        total = (u['charge_points'] or 0) + (u['exchange_points'] or 0)
+        if total < cost:
+            return jsonify(error=f'포인트 부족: {cost}P 필요 (보유 {total}P)'), 400
+        # 차감 (충전포인트 우선)
+        ch = u['charge_points'] or 0
+        ex = u['exchange_points'] or 0
+        if ch >= cost:
+            ch_use, ex_use = cost, 0
+        else:
+            ch_use = ch
+            ex_use = cost - ch
+        today_str = get_today().isoformat()
+        db.execute(
+            "UPDATE users SET charge_points=charge_points-?, exchange_points=exchange_points-?, level_paid_at=? WHERE id=?",
+            (ch_use, ex_use, today_str, uid)
+        )
+        # 결제 완료 알림
+        expire_str = (get_today() + __import__('datetime').timedelta(days=30)).strftime('%Y-%m-%d')
+        insert_notification(db, uid, 'level_pay',
+            f'{lv}레벨 거래유지 포인트 결제 완료',
+            f"✅ {lv}레벨 거래유지 포인트 {cost}P 결제 완료\n\n"
+            f"• 결제일: {today_str}\n"
+            f"• 만료일: {expire_str}\n"
+            f"• 30일간 구매예약·판매예약이 활성화됩니다.")
+        db.commit()
+        return jsonify(success=True, paid_at=today_str, expire_at=expire_str, cost=cost)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/user/profile', methods=['GET'])
 @jwt_required()
 def get_user_profile():
@@ -3829,16 +3955,30 @@ def get_user_profile():
         def safe(k, default=''):
             v = udict.get(k)
             return v if v is not None else default
+        lv = udict.get('level') or 1
+        cost = LEVEL_COST.get(lv, 0)
+        paid_at = safe('level_paid_at') or None
+        days_left = None
+        if paid_at:
+            try:
+                paid_date = get_today().__class__.fromisoformat(str(paid_at)[:10])
+                days_left = max(0, 30 - (get_today() - paid_date).days)
+            except Exception:
+                days_left = None
         return jsonify(
             id=udict.get('id'),
             username=safe('username'),
-            real_name=safe('real_name') or safe('nickname'),  # real_name 없으면 nickname 표시
+            real_name=safe('real_name') or safe('nickname'),
             nickname=safe('nickname'),
             phone=safe('phone'),
             bank=safe('bank'),
             account_no=safe('account_no'),
             account_name=safe('account_name'),
-            level=udict.get('level') or 1,
+            level=lv,
+            level_cost=cost,
+            level_paid_at=paid_at,
+            level_days_left=days_left,
+            level_trade_active=is_level_trade_active(db, udict.get('id')),
         )
     finally:
         db.close()

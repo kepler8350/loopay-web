@@ -74,6 +74,7 @@ async function loadUserData(){
     renderHeader(d);
     renderBars(d);
     renderLevelTab();
+    updateReserveByLevel();
     // 예약 여부를 먼저 설정 후 enableReserveSection 호출 (포인트 미리보기 오작동 방지)
     _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
     enableReserveSection();
@@ -1466,6 +1467,40 @@ function disableReserveSection(){
     info.style.color='#4caf50';info.style.fontWeight='600';
   }
   bzCnt=0;
+}
+
+function updateReserveByLevel(){
+  // 레벨 3+이고 level_trade_active=false이면 구매/판매 예약 버튼 비활성화
+  if(!userData) return;
+  var lv = userData.level || 1;
+  var active = userData.level_trade_active !== false; // undefined = 활성(구버전 호환)
+  var cost = userData.level_cost || 0;
+  var btn = document.getElementById('reserve-btn');
+  var sellBtn = document.getElementById('sell-reserve-btn');
+  if(lv >= 3 && cost > 0 && !active){
+    // 비활성화
+    if(btn && !btn.disabled){
+      btn.disabled = true;
+      btn.style.opacity = '0.4';
+      btn.style.cursor = 'not-allowed';
+      btn.title = lv+'레벨 거래유지 포인트 미결제 — 내정보 탭에서 결제하세요';
+      btn.textContent = '포인트 결제 필요 (내정보 탭)';
+    }
+    // 판매 예약 버튼도
+    document.querySelectorAll('.sell-reserve-btn,[id*="sell-btn"],[onclick*="sellReserve"],[onclick*="판매예약"]').forEach(function(el){
+      el.disabled = true;
+      el.style.opacity = '0.4';
+      el.style.cursor = 'not-allowed';
+      el.title = lv+'레벨 거래유지 포인트 미결제';
+    });
+    // 안내 토스트 (처음 한 번만)
+    if(!window._levelPayWarned){
+      window._levelPayWarned = true;
+      toast('⚠️ '+lv+'레벨: 거래유지 포인트 '+cost+'P 결제 필요. 내정보 탭에서 결제하세요.', 'error');
+    }
+  } else {
+    window._levelPayWarned = false;
+  }
 }
 
 function scheduleReserveReset(){
