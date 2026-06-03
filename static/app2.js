@@ -254,7 +254,7 @@ function showSellConfirm(){
     var allItems = (userData.items.bronze||[]).concat(userData.items.silver||[]).concat(userData.items.gold||[]);
     allItems.forEach(function(it){
       var key = String(it.id);
-      if(!_itemCache[key] || !(_itemCache[key].sell_price)){
+      if(!_itemCache[key] || !(_itemCache[key].profit)){
         _itemCache[key] = {bar_type: it.bar_type||it.type, stage: it.stage, sell_price: it.sell_price, profit: it.profit, buy_price: it.buy_price, purchase_date: it.purchase_date};
       }
     });
