@@ -1787,10 +1787,24 @@ def admin_matching_status():
             'by_stage': by_stage
         }
 
+    # 오늘 1차 미입금 확정(failed) 수량
+    failed_count = db.execute(
+        "SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND status='failed' AND match_date=?",
+        (today,)
+    ).fetchone()['c']
+
+    # 1차 미매칭 구매예약 수 = r1 buy_count - r1 sell_count (매칭되지 않은 구매)
+    r1_data = get_round_data(1)
+    r2_data = get_round_data(2)
+    # 2차 탭에 표시할 구매예약 수 = 1차 미매칭 (1차 buy - 1차 sell)
+    r1_unmatched_buy = max(0, r1_data['buy_count'] - r1_data['sell_count'])
+
     result = {
-        'round1': get_round_data(1),
-        'round2': get_round_data(2),
-        'date': today
+        'round1': r1_data,
+        'round2': r2_data,
+        'date': today,
+        'failed_count': failed_count,
+        'r1_unmatched_buy': r1_unmatched_buy
     }
     db.close()
     return jsonify(result)

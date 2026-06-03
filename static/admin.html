@@ -906,50 +906,43 @@ async function deleteCharge(id){
 }
 
 async function updateMatchingBtn(){
-  // 서버(mock) 시간 기준으로 활성화 판단
   try{
     var tok = localStorage.getItem('admin_token');
-    var res = await fetch('/api/current-time', {headers:{'Authorization':'Bearer '+tok}});
-    var d = await res.json();
-    var h = d.hour;
-    var m = d.minute || 0;
-    var totalMin = h * 60 + m;
+    // 시간 + failed_count를 한번에 가져오기
+    var ct = await fetch('/api/current-time', {headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
+    var matchData = await fetch('/api/admin/matching-status', {headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
+
+    var h = ct.hour; var m = ct.minute || 0; var totalMin = h * 60 + m;
+    var failedCount = matchData.failed_count || 0;
 
     // 1차 매칭: 20:00~05:00 활성
     var isActive1 = (h >= 20 || h < 5);
     var btn1 = document.getElementById('btn-run-matching-1');
     var notice = document.getElementById('matching-time-notice');
-    if(btn1){
-      btn1.disabled = !isActive1;
-      btn1.style.opacity = isActive1 ? '1' : '0.45';
-      btn1.style.cursor = isActive1 ? 'pointer' : 'not-allowed';
-    }
+    if(btn1){ btn1.disabled=!isActive1; btn1.style.opacity=isActive1?'1':'0.45'; btn1.style.cursor=isActive1?'pointer':'not-allowed'; }
     if(notice){
       notice.textContent = isActive1
-        ? '✅ 매칭 가능 시간 (20:00~05:00) — 서버시간 '+d.time.slice(11,16)
-        : '⏳ 매칭 실행 가능: 20:00~05:00 (현재 '+d.time.slice(11,16)+')';
+        ? '✅ 매칭 가능 시간 (20:00~05:00) — 서버시간 '+ct.time.slice(11,16)
+        : '⏳ 매칭 실행 가능: 20:00~05:00 (현재 '+ct.time.slice(11,16)+')';
       notice.style.color = isActive1 ? '#66bb6a' : '#f9a825';
     }
 
-    // 2차 매칭: 14:00~15:00 활성 (840~900분) + 판매예약 수량 > 0
-    var _r2SellEl = document.getElementById('r2-sell');
-    var _r2SellCount = _r2SellEl ? parseInt(_r2SellEl.textContent)||0 : 0;
-    var isActive2 = (totalMin >= 840 && totalMin < 900) && _r2SellCount > 0;
+    // 2차 매칭: 14:00~15:00 (840~900분) + 1차 미입금(failed) 수량 > 0 일 때 활성화
+    var inTime2 = (totalMin >= 840 && totalMin < 900);
+    var isActive2 = inTime2 && failedCount > 0;
     var btn2 = document.getElementById('btn-run-matching-2');
     var notice2 = document.getElementById('matching-time-notice-2');
-    if(btn2){
-      btn2.disabled = !isActive2;
-      btn2.style.opacity = isActive2 ? '1' : '0.45';
-      btn2.style.cursor = isActive2 ? 'pointer' : 'not-allowed';
-    }
+    if(btn2){ btn2.disabled=!isActive2; btn2.style.opacity=isActive2?'1':'0.45'; btn2.style.cursor=isActive2?'pointer':'not-allowed'; }
     if(notice2){
-      notice2.textContent = isActive2
-        ? '✅ 2차 매칭 가능 시간 (14:00~15:00) — 서버시간 '+d.time.slice(11,16)
-        : '⏳ 2차 매칭 실행 가능: 14:00~15:00 (현재 '+d.time.slice(11,16)+')';
-      notice2.style.color = isActive2 ? '#66bb6a' : '#f9a825';
+      var msg2 = inTime2
+        ? (failedCount > 0
+            ? '✅ 2차 매칭 가능 — 미입금 '+failedCount+'건 — 서버시간 '+ct.time.slice(11,16)
+            : '⚠️ 2차 매칭 시간이지만 미입금 없음 ('+ct.time.slice(11,16)+')')
+        : '⏳ 2차 매칭 실행 가능: 14:00~15:00 (현재 '+ct.time.slice(11,16)+')';
+      notice2.textContent = msg2;
+      notice2.style.color = isActive2 ? '#66bb6a' : (inTime2 ? '#f9a825' : '#888');
     }
   }catch(e){
-    // fallback: 항상 활성화
     var btn = document.getElementById('btn-run-matching-1');
     if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
   }
@@ -1645,7 +1638,9 @@ async function loadMatchingStatus(){
     // ── 2차 매칭 ──
     var r2=d.round2||{};
     var mr2=r2.match_rate||0;
-    set('r2-buy', r2.buy_count!=null?r2.buy_count:'-');
+    // 2차 탭 구매예약 수 = 1차 미매칭(1차 buy - 1차 sell) 표시
+    var _r1UnmatchedBuy = (d.r1_unmatched_buy!=null) ? d.r1_unmatched_buy : (r2.buy_count!=null?r2.buy_count:'-');
+    set('r2-buy', _r1UnmatchedBuy);
     set('r2-sell', r2.sell_count!=null?r2.sell_count:'-');
     var rateEl2=document.getElementById('r2-rate');
     if(rateEl2){ rateEl2.textContent=mr2+'%'; rateEl2.style.color=mrc(mr2); }
