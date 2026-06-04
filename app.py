@@ -1882,6 +1882,21 @@ def admin_matching_status():
             [round_num, loopay_id] + _date_args + [today]
         ).fetchall()
 
+        # loopay 구매예약 bar_type별 집계 후 buy_by_type에 합산
+        _loopay_buy_by_type = db.execute(
+            """SELECT r.bar_type, COUNT(*) as cnt FROM reservations r
+               LEFT JOIN items i ON r.item_id=i.id
+               WHERE r.match_round=? AND r.status='pending' AND r.user_id=?
+               AND (i.status='waiting' OR r.item_id IS NULL)""",
+            [round_num, loopay_id]
+        ).fetchall()
+        # buy_by_type dict로 변환해서 합산
+        _bbt_dict = {r['bar_type']: r['cnt'] for r in buy_by_type}
+        for _r in _loopay_buy_by_type:
+            _bbt_dict[_r['bar_type']] = _bbt_dict.get(_r['bar_type'], 0) + _r['cnt']
+        buy_by_type = [{'bar_type': k, 'cnt': v} for k, v in _bbt_dict.items()]
+
+
         # ── 판매예약: loopay + 일반 사용자 모두 집계 ──
         # 구매예약(buy)은 user_id != loopay_id, 판매예약(sell)은 item_id 있음
         # 일반 사용자 판매예약: item_id IS NOT NULL, confirmed=1
