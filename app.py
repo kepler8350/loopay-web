@@ -1333,6 +1333,15 @@ def admin_run_matching():
 
         import random
 
+        # 매칭 전 loopay의 오늘 unmatched 예약 → pending 복원
+        db.execute(
+            """UPDATE reservations SET status='pending'
+               WHERE user_id=? AND status='unmatched'
+               AND reserve_date=?""",
+            (loopay_id, today)
+        )
+        db.commit()
+
         # 판매예약 조회: confirmed=1 + items.status='reservable' (loopay 구매예약 waiting 제외)
         sell_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
@@ -1389,7 +1398,7 @@ def admin_run_matching():
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                LEFT JOIN items i ON r.item_id = i.id
-               WHERE r.status='pending' AND r.match_round=?
+               WHERE r.status IN ('pending','unmatched') AND r.match_round=?
                AND r.reserve_date>=?
                AND u.username = 'loopay'
                AND (r.confirmed=1 OR COALESCE(r.confirmed,0)=0)
@@ -1860,7 +1869,7 @@ def admin_matching_status():
         _loopay_buy_cnt = db.execute(
             """SELECT COUNT(*) as c FROM reservations r
                LEFT JOIN items i ON r.item_id=i.id
-               WHERE r.match_round=? AND r.status='pending' AND r.user_id=?
+               WHERE r.match_round=? AND r.status IN ('pending','unmatched') AND r.user_id=?
                AND r.reserve_date>=?
                AND (i.status='waiting' OR r.item_id IS NULL)""",
             [round_num, loopay_id, today]
@@ -1887,7 +1896,7 @@ def admin_matching_status():
         _loopay_buy_by_type = db.execute(
             """SELECT r.bar_type, COUNT(*) as cnt FROM reservations r
                LEFT JOIN items i ON r.item_id=i.id
-               WHERE r.match_round=? AND r.status='pending' AND r.user_id=?
+               WHERE r.match_round=? AND r.status IN ('pending','unmatched') AND r.user_id=?
                AND r.reserve_date>=?
                AND (i.status='waiting' OR r.item_id IS NULL)
                GROUP BY r.bar_type""",
@@ -1912,7 +1921,7 @@ def admin_matching_status():
         _confirmed_sell = db.execute(
             """SELECT COUNT(*) as c FROM reservations r
                INNER JOIN items i ON r.item_id=i.id
-               WHERE r.match_round=? AND r.status='pending'
+               WHERE r.match_round=? AND r.status IN ('pending','unmatched')
                AND r.reserve_date>=?
                AND COALESCE(r.confirmed,0)=1
                AND i.status='reservable'""",
@@ -1927,7 +1936,7 @@ def admin_matching_status():
             by_type_rows = db.execute(
                 """SELECT r.bar_type, COUNT(*) as cnt FROM reservations r
                    INNER JOIN items i ON r.item_id=i.id
-                   WHERE r.match_round=? AND r.status='pending'
+                   WHERE r.match_round=? AND r.status IN ('pending','unmatched')
                    AND r.reserve_date>=?
                    AND COALESCE(r.confirmed,0)=1
                    AND i.status='reservable'
@@ -1938,7 +1947,7 @@ def admin_matching_status():
                 """SELECT r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1)) as stage, COUNT(*) as c
                    FROM reservations r
                    INNER JOIN items i ON r.item_id=i.id
-                   WHERE r.match_round=? AND r.status='pending'
+                   WHERE r.match_round=? AND r.status IN ('pending','unmatched')
                    AND r.reserve_date>=?
                    AND COALESCE(r.confirmed,0)=1
                    AND i.status='reservable'
