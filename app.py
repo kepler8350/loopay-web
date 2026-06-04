@@ -1354,9 +1354,11 @@ def admin_run_matching():
         # 확정된 예약만 사용 - reservable 아이템 자동등록 fallback 제거
 
         # 구매예약 조회 (loopay 제외, 랜덤)
-        buy_rows = db.execute(
+        # 일반 사용자 구매예약
+        _normal_buy_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
                CASE WHEN COALESCE(r.stage,0) <= 0 THEN 1 ELSE r.stage END as stage,
+               r.item_id,
                u.username as buyer_username, u.nickname as buyer_nickname,
                u.phone as buyer_phone, u.account_name as buyer_account_name
                FROM reservations r
@@ -1375,6 +1377,24 @@ def admin_run_matching():
                ORDER BY RANDOM()""",
             (round_num, today)
         ).fetchall()
+        # loopay 구매예약 (confirmed=1, item.status='waiting') 별도 조회
+        _loopay_buy_rows = db.execute(
+            """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
+               CASE WHEN COALESCE(r.stage,0) <= 0 THEN 1 ELSE r.stage END as stage,
+               r.item_id,
+               u.username as buyer_username, u.nickname as buyer_nickname,
+               u.phone as buyer_phone, u.account_name as buyer_account_name
+               FROM reservations r
+               LEFT JOIN users u ON r.user_id = u.id
+               LEFT JOIN items i ON r.item_id = i.id
+               WHERE r.status='pending' AND r.match_round=?
+               AND r.reserve_date=?
+               AND u.username = 'loopay'
+               AND (r.confirmed=1 OR COALESCE(r.confirmed,0)=0)
+               AND (i.status='waiting' OR r.item_id IS NULL)""",
+            (round_num, today)
+        ).fetchall()
+        buy_rows = list(_normal_buy_rows) + list(_loopay_buy_rows)
 
         # stage별로 분류
         sell_by_type_stage = {}
@@ -3667,22 +3687,35 @@ def admin_confirm_extra_reservations():
             r_id = row['id']
             bar_type = row['bar_type']
             stage = row['stage'] or 1
-            item_id = row['item_id']  # None이면 구매예약, 있으면 판매예약
+            item_id = row['item_id']
+            # 구매예약 여부: item_id가 있으면 아이템 status 확인
+            is_buy = False
             if item_id:
-                # 판매예약: 기존 아이템 상태 reservable로 + confirmed=1
+                existing_item = conn.execute(
+                    "SELECT status FROM items WHERE id=?", (item_id,)
+                ).fetchone()
+                is_buy = existing_item and existing_item['status'] == 'waiting'
+            else:
+                is_buy = True  # item_id 없으면 구매예약 (구버전 호환)
+
+            if is_buy:
+                # 구매예약 확정: 아이템 status를 waiting 유지 (매칭 대기),
+                # confirmed=1만 설정 → 매칭 시 구매자로 처리됨
+                conn.execute("UPDATE reservations SET confirmed=1 WHERE id=?", (r_id,))
+                # item_id가 없는 구버전은 아이템 생성
+                if not item_id:
+                    cur = conn.execute(
+                        "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'waiting',?)",
+                        (lid, bar_type, stage, today)
+                    )
+                    conn.execute(
+                        "UPDATE reservations SET item_id=? WHERE id=?",
+                        (cur.lastrowid, r_id)
+                    )
+            else:
+                # 판매예약 확정: 아이템 상태 reservable로 + confirmed=1
                 conn.execute("UPDATE items SET status='reservable' WHERE id=? AND user_id=?", (item_id, lid))
                 conn.execute("UPDATE reservations SET confirmed=1 WHERE id=?", (r_id,))
-            else:
-                # 구매예약: 아이템 새로 생성 후 confirmed=1
-                cur = conn.execute(
-                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
-                    (lid, bar_type, stage, today)
-                )
-                new_item_id = cur.lastrowid
-                conn.execute(
-                    "UPDATE reservations SET confirmed=1, item_id=? WHERE id=?",
-                    (new_item_id, r_id)
-                )
             confirmed_ids.append(r_id)
         conn.execute("PRAGMA foreign_keys=ON")
         conn.commit()
