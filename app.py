@@ -1892,7 +1892,7 @@ def admin_matching_status():
                INNER JOIN items i ON r.item_id=i.id
                WHERE r.match_round=? AND r.status='pending'
                AND COALESCE(r.confirmed,0)=1
-               AND r.reserve_date=?
+               AND r.reserve_date>=?
                AND i.status='reservable'""",
             (round_num, today)
         ).fetchone()['c']
@@ -1908,7 +1908,7 @@ def admin_matching_status():
                    INNER JOIN items i ON r.item_id=i.id
                    WHERE r.match_round=? AND r.status='pending'
                    AND COALESCE(r.confirmed,0)=1
-                   AND r.reserve_date=?
+                   AND r.reserve_date>=?
                    AND i.status='reservable'
                    GROUP BY r.bar_type""",
                 (round_num, today)
@@ -1919,7 +1919,7 @@ def admin_matching_status():
                    INNER JOIN items i ON r.item_id=i.id
                    WHERE r.match_round=? AND r.status='pending'
                    AND COALESCE(r.confirmed,0)=1
-                   AND r.reserve_date=?
+                   AND r.reserve_date>=?
                    AND i.status='reservable'
                    GROUP BY r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1))
                    ORDER BY r.bar_type, stage""",
