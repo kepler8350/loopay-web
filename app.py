@@ -3589,7 +3589,7 @@ def admin_loopay_extra_reservations():
             SELECT r.id, r.bar_type, r.status, r.reserve_date,
                    r.match_round,
                    COALESCE(r.confirmed,0) as confirmed,
-                   CASE WHEN r.item_id IS NOT NULL THEN 'sell' ELSE 'buy' END as type,
+                   CASE WHEN i.status = 'reservable' THEN 'sell' ELSE 'buy' END as type,
                    COALESCE(r.stage, COALESCE(i.stage, 0)) as stage
             FROM reservations r
             LEFT JOIN items i ON r.item_id = i.id
