@@ -1462,7 +1462,7 @@ def admin_run_matching():
                     db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
                 # buyer(loopay) 구매아이템 상태를 'loopay_matched'로 변경 (시스템아이템현황에서 구분)
                 if buyer.get('item_id'):
-                    db.execute("UPDATE items SET status='loopay_matched' WHERE id=? AND user_id=?",
+                    db.execute("UPDATE items SET status='matched' WHERE id=? AND user_id=?",
                                (buyer['item_id'], buyer['buyer_id']))
                 else:
                     # loopay 판매예약에 item_id가 없으면 자동 생성
@@ -2373,7 +2373,7 @@ def admin_reservation_status():
                    LEFT JOIN items i ON r.item_id=i.id
                    WHERE r.bar_type=? AND r.match_round=1 AND r.status='pending' AND r.confirmed=0
                    AND r.user_id=? AND r.reserve_date=?
-                   AND (r.item_id IS NULL OR (i.status='loopay_buy' OR i.status IS NULL))""",
+                   AND (r.item_id IS NULL OR i.status='waiting' OR i.status IS NULL)""",
                 (bar_type, loopay_id, today)
             ).fetchone()['cnt']
             extra_buy_confirmed = conn.execute(
@@ -2381,7 +2381,7 @@ def admin_reservation_status():
                    LEFT JOIN items i ON r.item_id=i.id
                    WHERE r.bar_type=? AND r.match_round=1 AND r.confirmed=1
                    AND r.user_id=? AND r.reserve_date=?
-                   AND (r.item_id IS NULL OR (i.status='loopay_buy' OR i.status IS NULL))""",
+                   AND (r.item_id IS NULL OR i.status='waiting' OR i.status IS NULL)""",
                 (bar_type, loopay_id, today)
             ).fetchone()['cnt']
             extra_buy = extra_buy_pending + extra_buy_confirmed
@@ -2545,7 +2545,7 @@ def admin_add_reservation():
             # 구매예약/판매예약 모두 loopay 아이템 생성 후 item_id 사용
             # (NOT NULL 제약 및 매칭 후 아이템 추적을 위해)
             cur = conn.execute(
-                "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'loopay_buy',?)",
+                "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'waiting',?)",
                 (loopay_id, bar_type, stage, today)
             )
             item_id = cur.lastrowid
@@ -3408,13 +3408,25 @@ def admin_loopay_items():
 
         # 이미 매핑된 match_id 추적 (중복 방지)
         used_match_ids = set()
-        STATUS_LABEL = {'loopay_buy':'구매예약중','loopay_matched':'구매매칭완료',
-                        'reservable':'판매가능','matched':'판매매칭완료','active':'보유중',
-                        'waiting':'결합아이템'}
+        STATUS_LABEL = {'reservable':'판매가능','matched':'판매매칭완료','active':'보유중','waiting':'대기중'}
+        # loopay의 구매예약과 연결된 아이템 ID 목록
+        buy_res_items = set(
+            r['item_id'] for r in conn.execute(
+                """SELECT r.item_id FROM reservations r
+                   INNER JOIN items i ON r.item_id=i.id
+                   WHERE r.user_id=? AND r.status='pending' AND i.status='waiting'""", (lid,)
+            ).fetchall() if r['item_id']
+        )
         rows_with_match = []
         for item in item_rows:
             d = dict(item)
-            d['item_type'] = STATUS_LABEL.get(d.get('status',''), d.get('status',''))
+            # 구매예약 연결 아이템 구분
+            if d.get('status') == 'waiting' and d['id'] in buy_res_items:
+                d['item_type'] = '구매예약중'
+                d['is_buy_reservation'] = True
+            else:
+                d['item_type'] = STATUS_LABEL.get(d.get('status',''), d.get('status',''))
+                d['is_buy_reservation'] = False
             bt = d['bar_type']
             st = d['stage'] or 1
             # 이 아이템의 status가 matched/sold인 경우만 match 찾기
