@@ -518,6 +518,8 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
       <select id="si-filter-status" onchange="renderSystemItems()" style="padding:5px 10px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:12px">
         <option value="">전체 상태</option>
         <option value="reservable">판매가능</option>
+        <option value="loopay_buy">구매예약중</option>
+        <option value="loopay_matched">구매매칭완료</option>
         <option value="waiting">대기중</option>
         <option value="matched">매칭완료</option>
         <option value="sold">판매완료</option>
@@ -1206,12 +1208,14 @@ async function loadSystemItems(){
         var all = _systemItems.filter(function(i){return i.bar_type===t;});
         var reservable = all.filter(function(i){return i.status==='reservable';}).length;
         var matched = all.filter(function(i){return i.status==='matched';}).length;
-        var sold = all.filter(function(i){return i.status==='sold';}).length;
+        var lbuy = all.filter(function(i){return i.status==='loopay_buy';}).length;
+        var lmatched = all.filter(function(i){return i.status==='loopay_matched';}).length;
         return '<div style="background:#1a1d2e;border:1px solid #2a2d40;border-radius:8px;padding:12px">'
           +'<div style="font-size:13px;font-weight:700;color:'+types[t].color+';margin-bottom:8px">'+types[t].name+' ('+all.length+'개)</div>'
           +'<div style="font-size:11px;color:#aaa">판매가능: <span style="color:#66bb6a;font-weight:600">'+reservable+'</span></div>'
-          +'<div style="font-size:11px;color:#aaa">매칭완료: <span style="color:#f9a825;font-weight:600">'+matched+'</span></div>'
-          +'<div style="font-size:11px;color:#aaa">판매완료: <span style="color:#888;font-weight:600">'+sold+'</span></div>'
+          +'<div style="font-size:11px;color:#aaa">판매매칭완료: <span style="color:#f9a825;font-weight:600">'+matched+'</span></div>'
+          +(lbuy>0?'<div style="font-size:11px;color:#42a5f5">▶ 구매예약중: <span style="font-weight:700">'+lbuy+'</span></div>':'')
+          +(lmatched>0?'<div style="font-size:11px;color:#ab47bc">▶ 구매매칭완료: <span style="font-weight:700">'+lmatched+'</span></div>':'')
           +'</div>';
       }).join('');
     }
@@ -1242,8 +1246,8 @@ function renderSystemItems(){
   }
   var tC={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var tN={bronze:'수정',silver:'루비',gold:'다이아'};
-  var sL={reservable:'판매가능',waiting:'대기중',matched:'매칭완료',sold:'판매완료',active:'보유중'};
-  var sC={reservable:'#66bb6a',waiting:'#f9a825',matched:'#1976d2',sold:'#888',active:'#aaa'};
+  var sL={reservable:'판매가능',waiting:'대기중',matched:'판매매칭완료',sold:'판매완료',active:'보유중',loopay_buy:'구매예약중',loopay_matched:'구매매칭완료'};
+  var sC={reservable:'#66bb6a',waiting:'#f9a825',matched:'#1976d2',sold:'#888',active:'#aaa',loopay_buy:'#42a5f5',loopay_matched:'#ab47bc'};
   var matchStatusKr={pending:'대기',matched:'매칭완료',paid:'송금',completed:'거래완료',cancelled:'취소',failed:'미입금',confirmed:'거래완료',unpaid:'미입금'};
   var matchStatusColor={pending:'#888',matched:'#f9a825',paid:'#42a5f5',completed:'#66bb6a',cancelled:'#ef5350',failed:'#ef5350',confirmed:'#66bb6a',unpaid:'#ef5350'};
   tbody.innerHTML = filtered.map(function(item,i){
@@ -1321,7 +1325,14 @@ function renderSystemItems(){
       +'<td style="padding:6px 8px;color:#64b5f6;font-size:11px">'+(item.buyer_username||'-')+'</td>'
       +'<td style="padding:6px 8px;color:#64b5f6;font-size:11px">'+(item.buyer_account_name||'-')+'</td>'
       +'<td style="padding:6px 8px;color:#64b5f6;font-size:11px">'+(item.buyer_account||'-')+'</td>'
-      +'<td style="padding:6px 8px">'+actionBtns+'</td>'
+      +'<td style="padding:6px 8px">'
+      // loopay 구매예약중: 삭제 버튼
+      + (item.status==='loopay_buy' ? '<button onclick="deleteLoopayBuyItem('+item.id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">🗑️ 삭제</button>' : '')
+      // loopay 구매매칭완료: 입금확인 + 취소 버튼
+      + (item.status==='loopay_matched' && item.match_id ? '<button onclick="adminConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>' : '')
+      // loopay reservable(매칭 후 보유): 판매예약 버튼
+      + (item.status==='reservable' && !item.match_id ? '<button onclick="loopayItemSellReserve('+item.id+')" style="padding:3px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 판매예약</button>' : '')
+      + actionBtns+'</td>'
       +'</tr>';
   }).join('');
 }
@@ -2380,6 +2391,25 @@ async function clearLuckyHistory(){
       toast('이력이 전체 삭제됐습니다');
     }
   }catch(e){toast('삭제 오류: '+e.message,'error');}
+}
+
+
+// ── loopay 구매아이템 관리 ──
+async function deleteLoopayBuyItem(itemId){
+  if(!confirm('loopay 구매예약 아이템을 삭제하시겠습니까?')) return;
+  var tok = localStorage.getItem('admin_token');
+  var r = await fetch('/api/admin/delete-loopay-items',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({ids:[itemId]})}).then(r=>r.json());
+  if(r.deleted){toast('삭제 완료'); loadSystemItems();}
+  else toast(r.error||'삭제 실패','error');
+}
+
+async function loopayItemSellReserve(itemId){
+  var round = window._currentMatchRound || 1;
+  if(!confirm('loopay 아이템을 판매예약으로 등록하시겠습니까? ('+round+'차 매칭)')) return;
+  var tok = localStorage.getItem('admin_token');
+  var r = await fetch('/api/admin/loopay-sell-reserve',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({item_id:itemId,match_round:round})}).then(r=>r.json());
+  if(r.success){toast('✅ 판매예약 등록 완료'); loadSystemItems(); loadMatchingStatus();}
+  else toast(r.error||'실패','error');
 }
 
 </script>

@@ -1460,6 +1460,10 @@ def admin_run_matching():
                 db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
                 if seller['item_id']:
                     db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
+                # buyer(loopay) 구매아이템 상태를 'loopay_matched'로 변경 (시스템아이템현황에서 구분)
+                if buyer.get('item_id'):
+                    db.execute("UPDATE items SET status='loopay_matched' WHERE id=? AND user_id=?",
+                               (buyer['item_id'], buyer['buyer_id']))
                 else:
                     # loopay 판매예약에 item_id가 없으면 자동 생성
                     try:
@@ -2365,11 +2369,19 @@ def admin_reservation_status():
             ).fetchone()['cnt']
             # loopay 추가예약 (match_round=1)
             extra_buy_pending = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND confirmed=0 AND user_id=? AND item_id IS NULL AND reserve_date=?",
+                """SELECT COUNT(*) as cnt FROM reservations r
+                   LEFT JOIN items i ON r.item_id=i.id
+                   WHERE r.bar_type=? AND r.match_round=1 AND r.status='pending' AND r.confirmed=0
+                   AND r.user_id=? AND r.reserve_date=?
+                   AND (r.item_id IS NULL OR (i.status='loopay_buy' OR i.status IS NULL))""",
                 (bar_type, loopay_id, today)
             ).fetchone()['cnt']
             extra_buy_confirmed = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND confirmed=1 AND user_id=? AND item_id IS NULL AND reserve_date=?",
+                """SELECT COUNT(*) as cnt FROM reservations r
+                   LEFT JOIN items i ON r.item_id=i.id
+                   WHERE r.bar_type=? AND r.match_round=1 AND r.confirmed=1
+                   AND r.user_id=? AND r.reserve_date=?
+                   AND (r.item_id IS NULL OR (i.status='loopay_buy' OR i.status IS NULL))""",
                 (bar_type, loopay_id, today)
             ).fetchone()['cnt']
             extra_buy = extra_buy_pending + extra_buy_confirmed
@@ -2530,15 +2542,15 @@ def admin_add_reservation():
         today = get_today().isoformat()
         conn.execute("PRAGMA foreign_keys=OFF")
         for _ in range(count):
-            item_id = None
+            # 구매예약/판매예약 모두 loopay 아이템 생성 후 item_id 사용
+            # (NOT NULL 제약 및 매칭 후 아이템 추적을 위해)
+            cur = conn.execute(
+                "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'loopay_buy',?)",
+                (loopay_id, bar_type, stage, today)
+            )
+            item_id = cur.lastrowid
             if res_type == 'sell':
-                # 판매예약: loopay 아이템 생성 후 예약
-                cur = conn.execute(
-                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
-                    (loopay_id, bar_type, stage, today)
-                )
-                item_id = cur.lastrowid
-            # 구매예약(buy): item_id=NULL로 INSERT
+                conn.execute("UPDATE items SET status='reservable' WHERE id=?", (item_id,))
             conn.execute(
                 "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
                 (loopay_id, item_id, bar_type, match_round, today, stage)
@@ -2984,8 +2996,24 @@ def match_confirm_payment():
         # 6. 구매자 cumulative_count +1 + 레벨업 체크
         try:
             db.execute("UPDATE users SET cumulative_count=cumulative_count+1 WHERE id=?", (m['buyer_id'],))
-            db.commit()  # cumulative_count 먼저 커밋 후 레벨업 체크
+            db.commit()
             leveled = check_and_level_up(db, m['buyer_id'])
+        except Exception:
+            pass
+        # 7. loopay가 buyer인 경우: loopay_matched 아이템 → reservable(판매가능) 전환
+        try:
+            _loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+            if _loopay and m['buyer_id'] == _loopay['id']:
+                # 이 match의 buyer reservation의 item_id 조회
+                _buyer_res = db.execute(
+                    "SELECT item_id FROM reservations WHERE id=?", (m['reservation_id'],)
+                ).fetchone()
+                if _buyer_res and _buyer_res['item_id']:
+                    db.execute(
+                        "UPDATE items SET status='reservable', purchase_date=? WHERE id=? AND user_id=?",
+                        (get_today().isoformat(), _buyer_res['item_id'], _loopay['id'])
+                    )
+                    db.commit()
         except Exception:
             pass
 
@@ -3359,7 +3387,7 @@ def admin_loopay_items():
             """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date,
                (SELECT MAX(r2.reserve_date) FROM reservations r2 WHERE r2.item_id = i.id) as reserve_date
                FROM items i
-               WHERE i.user_id = ? AND i.status != 'sold'
+               WHERE i.user_id = ? AND i.status NOT IN ('sold')
                ORDER BY i.id DESC""",
             (lid,)
         ).fetchall()
@@ -3380,9 +3408,13 @@ def admin_loopay_items():
 
         # 이미 매핑된 match_id 추적 (중복 방지)
         used_match_ids = set()
+        STATUS_LABEL = {'loopay_buy':'구매예약중','loopay_matched':'구매매칭완료',
+                        'reservable':'판매가능','matched':'판매매칭완료','active':'보유중',
+                        'waiting':'결합아이템'}
         rows_with_match = []
         for item in item_rows:
             d = dict(item)
+            d['item_type'] = STATUS_LABEL.get(d.get('status',''), d.get('status',''))
             bt = d['bar_type']
             st = d['stage'] or 1
             # 이 아이템의 status가 matched/sold인 경우만 match 찾기
@@ -3450,13 +3482,48 @@ def admin_loopay_items():
         db.close()
 
 # ── 시스템(loopay) 아이템 삭제 ──────────────────────
+@app.route('/api/admin/loopay-sell-reserve', methods=['POST'])
+@jwt_required()
+def admin_loopay_sell_reserve():
+    """loopay 보유아이템을 판매예약으로 추가 (추가예약과 동일 효과)"""
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    item_id = int(data.get('item_id', 0))
+    match_round = int(data.get('match_round', 1))
+    db = get_db()
+    try:
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay: return jsonify(error='loopay 계정 없음'), 404
+        lid = loopay['id']
+        item = db.execute(
+            "SELECT * FROM items WHERE id=? AND user_id=? AND status='reservable'",
+            (item_id, lid)
+        ).fetchone()
+        if not item: return jsonify(error='판매가능 상태 아이템 없음'), 404
+        today = get_today().isoformat()
+        # 아이템 상태 변경 + 판매예약 생성
+        db.execute("UPDATE items SET status='reservable' WHERE id=?", (item_id,))
+        db.execute(
+            "INSERT INTO reservations(user_id, item_id, bar_type, match_round, reserve_date, status, stage) VALUES(?,?,?,?,?,'pending',?)",
+            (lid, item_id, item['bar_type'], match_round, today, item['stage'] or 1)
+        )
+        db.commit()
+        return jsonify(success=True, item_id=item_id, bar_type=item['bar_type'], stage=item['stage'])
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/delete-loopay-items', methods=['POST'])
 @jwt_required()
 def admin_delete_loopay_items():
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     data = request.json or {}
-    item_ids = data.get('item_ids', [])
+    item_ids = data.get('item_ids', []) or data.get('ids', [])
     db = get_db()
     try:
         loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
