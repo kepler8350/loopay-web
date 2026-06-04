@@ -1227,6 +1227,8 @@ async function loadSystemItems(){
   }catch(e){
     if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="color:#ef5350;text-align:center;padding:16px">오류: '+e.message+'</td></tr>';
   }
+  // 버튼 활성/비활성 상태 업데이트 (매칭 가능 시간 확인)
+  try{ updateMatchingBtn(); }catch(e){}
 }
 function renderSystemItems(){
   var tbody = document.getElementById('si-tbody');
@@ -1615,11 +1617,12 @@ async function loadReservationStatus(){
 async function loadMatchingStatus(){
   var names={bronze:'수정',silver:'루비',gold:'다이아'};
   var colors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
-  // 새로고침 시 매칭 실행 버튼/문구 블록 복원
+  // 새로고침 시 매칭 실행 버튼/문구 블록 복원 후 시간 조건에 따라 활성화
   var _runBlock1 = document.getElementById('match-run-block-1');
   if(_runBlock1) _runBlock1.style.display='';
   var _runBlock2 = document.getElementById('match-run-block-2');
   if(_runBlock2) _runBlock2.style.display='';
+  // 버튼 활성/비활성은 updateMatchingBtn이 담당 (loadMatchingStatus 완료 후 호출)
   try{
     var tok=localStorage.getItem('admin_token');
     var d=await fetch('/api/admin/matching-status',{headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
