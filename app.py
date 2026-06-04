@@ -1889,14 +1889,17 @@ def admin_matching_status():
                LEFT JOIN items i ON r.item_id=i.id
                WHERE r.match_round=? AND r.status='pending' AND r.user_id=?
                AND r.reserve_date>=?
-               AND (i.status='waiting' OR r.item_id IS NULL)""",
+               AND (i.status='waiting' OR r.item_id IS NULL)
+               GROUP BY r.bar_type""",
             [round_num, loopay_id, today]
         ).fetchall()
-        # buy_by_type dict로 변환해서 합산
-        _bbt_dict = {r['bar_type']: r['cnt'] for r in buy_by_type}
+        # buy_by_type dict로 변환해서 합산 (null 키 제외)
+        _bbt_dict = {r['bar_type']: r['cnt'] for r in buy_by_type if r['bar_type']}
         for _r in _loopay_buy_by_type:
-            _bbt_dict[_r['bar_type']] = _bbt_dict.get(_r['bar_type'], 0) + _r['cnt']
-        buy_by_type = [{'bar_type': k, 'cnt': v} for k, v in _bbt_dict.items()]
+            if _r['bar_type']:  # null bar_type 제외
+                _bbt_dict[_r['bar_type']] = _bbt_dict.get(_r['bar_type'], 0) + _r['cnt']
+        buy_by_type = [{'bar_type': k, 'cnt': v} for k, v in _bbt_dict.items() if k and v > 0]
+
 
 
         # ── 판매예약: loopay + 일반 사용자 모두 집계 ──
