@@ -1227,8 +1227,6 @@ async function loadSystemItems(){
   }catch(e){
     if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="color:#ef5350;text-align:center;padding:16px">오류: '+e.message+'</td></tr>';
   }
-  // 버튼 활성/비활성 상태 업데이트 (매칭 가능 시간 확인)
-  try{ updateMatchingBtn(); }catch(e){}
 }
 function renderSystemItems(){
   var tbody = document.getElementById('si-tbody');
@@ -1682,6 +1680,7 @@ async function loadMatchingStatus(){
     var bbt2=document.getElementById('r2-buy-by-type'); if(bbt2) bbt2.innerHTML=mkTypeTable(r2.buy_by_type);
 
   }catch(e){ console.error('loadMatchingStatus:',e); }
+  try{ updateMatchingBtn(); }catch(_e){}
 }
 
 
