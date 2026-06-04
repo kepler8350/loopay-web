@@ -1946,8 +1946,16 @@ def admin_matching_status():
     ).fetchone()['c']
 
     # 1차 미매칭 구매예약 수 = r1 buy_count - r1 sell_count (매칭되지 않은 구매)
-    r1_data = get_round_data(1)
-    r2_data = get_round_data(2)
+    try:
+        r1_data = get_round_data(1)
+    except Exception as _e1:
+        import traceback; traceback.print_exc()
+        return jsonify(error='r1_error: '+str(_e1)), 500
+    try:
+        r2_data = get_round_data(2)
+    except Exception as _e2:
+        import traceback; traceback.print_exc()
+        return jsonify(error='r2_error: '+str(_e2)), 500
     # 2차 탭에 표시할 구매예약 수 = 1차 미매칭 (1차 buy - 1차 sell)
     r1_unmatched_buy = max(0, r1_data['buy_count'] - r1_data['sell_count'])
 
