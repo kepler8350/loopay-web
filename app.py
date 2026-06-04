@@ -1856,6 +1856,16 @@ def admin_matching_status():
             [round_num, loopay_id] + _date_args + [today]
         ).fetchone()['c']
 
+        # loopay 구매예약도 포함 (waiting 아이템이 있는 pending 예약)
+        _loopay_buy_cnt = db.execute(
+            """SELECT COUNT(*) as c FROM reservations r
+               LEFT JOIN items i ON r.item_id=i.id
+               WHERE r.match_round=? AND r.status='pending' AND r.user_id=?
+               AND (i.status='waiting' OR r.item_id IS NULL)""",
+            [round_num, loopay_id]
+        ).fetchone()['c']
+        buy_count = buy_count + _loopay_buy_cnt
+
         buy_by_type = db.execute(
             f"""SELECT bar_type, COUNT(*) as cnt FROM reservations r
                WHERE r.match_round=? AND r.status='pending' AND r.user_id!=?
@@ -1876,13 +1886,15 @@ def admin_matching_status():
         # 구매예약(buy)은 user_id != loopay_id, 판매예약(sell)은 item_id 있음
         # 일반 사용자 판매예약: item_id IS NOT NULL, confirmed=1
         # loopay 판매예약: user_id=loopay_id, confirmed=1
+        # 판매예약: items.status='reservable'인 것만 (loopay 구매예약 waiting 제외)
         _confirmed_sell = db.execute(
-            """SELECT COUNT(*) as c FROM reservations
-               WHERE match_round=? AND status='pending'
-               AND COALESCE(confirmed,0)=1
-               AND reserve_date=?
-               AND (user_id=? OR item_id IS NOT NULL)""",
-            (round_num, today, loopay_id)
+            """SELECT COUNT(*) as c FROM reservations r
+               INNER JOIN items i ON r.item_id=i.id
+               WHERE r.match_round=? AND r.status='pending'
+               AND COALESCE(r.confirmed,0)=1
+               AND r.reserve_date=?
+               AND i.status='reservable'""",
+            (round_num, today)
         ).fetchone()['c']
 
         sell_count = _confirmed_sell
@@ -1892,24 +1904,26 @@ def admin_matching_status():
         # by_type: loopay + 일반 사용자 판매예약 아이템별 집계
         if sell_count > 0:
             by_type_rows = db.execute(
-                """SELECT bar_type, COUNT(*) as cnt FROM reservations
-                   WHERE match_round=? AND status='pending'
-                   AND COALESCE(confirmed,0)=1
-                   AND reserve_date=?
-                   AND (user_id=? OR item_id IS NOT NULL)
-                   GROUP BY bar_type""",
-                (round_num, today, loopay_id)
-            ).fetchall()
-            by_stage_rows = db.execute(
-                """SELECT r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1)) as stage, COUNT(*) as cnt
-                   FROM reservations r LEFT JOIN items i ON r.item_id=i.id
+                """SELECT r.bar_type, COUNT(*) as cnt FROM reservations r
+                   INNER JOIN items i ON r.item_id=i.id
                    WHERE r.match_round=? AND r.status='pending'
                    AND COALESCE(r.confirmed,0)=1
                    AND r.reserve_date=?
-                   AND (r.user_id=? OR r.item_id IS NOT NULL)
+                   AND i.status='reservable'
+                   GROUP BY r.bar_type""",
+                (round_num, today)
+            ).fetchall()
+            by_stage_rows = db.execute(
+                """SELECT r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1)) as stage, COUNT(*) as c
+                   FROM reservations r
+                   INNER JOIN items i ON r.item_id=i.id
+                   WHERE r.match_round=? AND r.status='pending'
+                   AND COALESCE(r.confirmed,0)=1
+                   AND r.reserve_date=?
+                   AND i.status='reservable'
                    GROUP BY r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1))
                    ORDER BY r.bar_type, stage""",
-                (round_num, today, loopay_id)
+                (round_num, today)
             ).fetchall()
         else:
             by_type_rows = []
@@ -2492,11 +2506,13 @@ def admin_reservation_status():
             # 가격대별 집계 - loopay 판매추가예약 포함 (행운구매 대상)
             # 판매예약 가격대별: 모든 match_round 포함 (1차+2차), 일반 사용자+loopay 확정 sell
             # price_bands: item_id IS NOT NULL인 모든 판매예약 포함 (일반+loopay, 확정여부 무관)
+            # 판매예약 가격대별: items.status='reservable'인 것만 (loopay 구매예약 waiting 제외)
             all_sell = conn.execute(
                 """SELECT i.stage FROM reservations r
                    JOIN items i ON r.item_id=i.id
                    WHERE r.bar_type=? AND r.status='pending'
-                   AND r.item_id IS NOT NULL""",
+                   AND r.item_id IS NOT NULL
+                   AND i.status='reservable'""",
                 (bar_type,)
             ).fetchall()
             for row in all_sell:
