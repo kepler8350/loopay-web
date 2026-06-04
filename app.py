@@ -1902,11 +1902,11 @@ def admin_matching_status():
         # 일반 사용자 판매예약: item_id IS NOT NULL, confirmed=1
         # loopay 판매예약: user_id=loopay_id, confirmed=1
         # 판매예약: items.status='reservable'인 것만 (loopay 구매예약 waiting 제외)
+        # 판매예약: 일반사용자(item_id있고 reservable) + loopay(confirmed=1, reservable) - 구매예약(waiting) 제외
         _confirmed_sell = db.execute(
             """SELECT COUNT(*) as c FROM reservations r
                INNER JOIN items i ON r.item_id=i.id
                WHERE r.match_round=? AND r.status='pending'
-               AND COALESCE(r.confirmed,0)=1
                AND r.reserve_date>=?
                AND i.status='reservable'""",
             (round_num, today)
@@ -1922,7 +1922,6 @@ def admin_matching_status():
                 """SELECT r.bar_type, COUNT(*) as cnt FROM reservations r
                    INNER JOIN items i ON r.item_id=i.id
                    WHERE r.match_round=? AND r.status='pending'
-                   AND COALESCE(r.confirmed,0)=1
                    AND r.reserve_date>=?
                    AND i.status='reservable'
                    GROUP BY r.bar_type""",
@@ -1933,7 +1932,6 @@ def admin_matching_status():
                    FROM reservations r
                    INNER JOIN items i ON r.item_id=i.id
                    WHERE r.match_round=? AND r.status='pending'
-                   AND COALESCE(r.confirmed,0)=1
                    AND r.reserve_date>=?
                    AND i.status='reservable'
                    GROUP BY r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1))
