@@ -1455,8 +1455,8 @@ def admin_run_matching():
             while si < len(sellers) and bi < len(buyers):
                 seller = sellers[si]
                 buyer  = buyers[bi]
-                # 동일 사용자(판매자=구매자) 매칭 방지 → 다음 buyer 시도
-                if seller['seller_id'] == buyer['buyer_id']:
+                # 동일 사용자(판매자=구매자) 매칭 방지 → 단, loopay 판매↔구매는 허용
+                if seller['seller_id'] == buyer['buyer_id'] and seller.get('seller_username') != 'loopay':
                     bi += 1
                     continue
                 matched_seller_ids.add(seller['res_id'])
