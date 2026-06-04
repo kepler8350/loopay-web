@@ -1615,6 +1615,11 @@ async function loadReservationStatus(){
 async function loadMatchingStatus(){
   var names={bronze:'수정',silver:'루비',gold:'다이아'};
   var colors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+  // 새로고침 시 매칭 실행 버튼/문구 블록 복원
+  var _runBlock1 = document.getElementById('match-run-block-1');
+  if(_runBlock1) _runBlock1.style.display='';
+  var _runBlock2 = document.getElementById('match-run-block-2');
+  if(_runBlock2) _runBlock2.style.display='';
   try{
     var tok=localStorage.getItem('admin_token');
     var d=await fetch('/api/admin/matching-status',{headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
