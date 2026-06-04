@@ -1929,7 +1929,7 @@ def admin_matching_status():
             by_type_rows = []
             by_stage_rows = []
         by_type = [{'bar_type': r['bar_type'], 'count': r['cnt']} for r in by_type_rows]
-        by_stage = [{'bar_type': r['bar_type'], 'stage': r['stage'], 'count': r['cnt']} for r in by_stage_rows]
+        by_stage = [{'bar_type': r['bar_type'], 'stage': r['stage'], 'count': r['c']} for r in by_stage_rows]
         return {
             'buy_count': buy_count,
             'sell_count': sell_count,
