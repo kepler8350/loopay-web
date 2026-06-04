@@ -1861,8 +1861,9 @@ def admin_matching_status():
             """SELECT COUNT(*) as c FROM reservations r
                LEFT JOIN items i ON r.item_id=i.id
                WHERE r.match_round=? AND r.status='pending' AND r.user_id=?
+               AND r.reserve_date>=?
                AND (i.status='waiting' OR r.item_id IS NULL)""",
-            [round_num, loopay_id]
+            [round_num, loopay_id, today]
         ).fetchone()['c']
         buy_count = buy_count + _loopay_buy_cnt
 
@@ -1887,8 +1888,9 @@ def admin_matching_status():
             """SELECT r.bar_type, COUNT(*) as cnt FROM reservations r
                LEFT JOIN items i ON r.item_id=i.id
                WHERE r.match_round=? AND r.status='pending' AND r.user_id=?
+               AND r.reserve_date>=?
                AND (i.status='waiting' OR r.item_id IS NULL)""",
-            [round_num, loopay_id]
+            [round_num, loopay_id, today]
         ).fetchall()
         # buy_by_type dict로 변환해서 합산
         _bbt_dict = {r['bar_type']: r['cnt'] for r in buy_by_type}
@@ -1903,13 +1905,15 @@ def admin_matching_status():
         # loopay 판매예약: user_id=loopay_id, confirmed=1
         # 판매예약: items.status='reservable'인 것만 (loopay 구매예약 waiting 제외)
         # 판매예약: 일반사용자(item_id있고 reservable) + loopay(confirmed=1, reservable) - 구매예약(waiting) 제외
+        # 판매예약 집계: reservable 아이템 + loopay는 confirmed=1만 (구매예약 미확정 판매 제외)
         _confirmed_sell = db.execute(
             """SELECT COUNT(*) as c FROM reservations r
                INNER JOIN items i ON r.item_id=i.id
                WHERE r.match_round=? AND r.status='pending'
                AND r.reserve_date>=?
-               AND i.status='reservable'""",
-            (round_num, today)
+               AND i.status='reservable'
+               AND (r.user_id != ? OR COALESCE(r.confirmed,0)=1)""",
+            (round_num, today, loopay_id)
         ).fetchone()['c']
 
         sell_count = _confirmed_sell
@@ -1924,8 +1928,9 @@ def admin_matching_status():
                    WHERE r.match_round=? AND r.status='pending'
                    AND r.reserve_date>=?
                    AND i.status='reservable'
+                   AND (r.user_id != ? OR COALESCE(r.confirmed,0)=1)
                    GROUP BY r.bar_type""",
-                (round_num, today)
+                (round_num, today, loopay_id)
             ).fetchall()
             by_stage_rows = db.execute(
                 """SELECT r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1)) as stage, COUNT(*) as c
@@ -1934,9 +1939,10 @@ def admin_matching_status():
                    WHERE r.match_round=? AND r.status='pending'
                    AND r.reserve_date>=?
                    AND i.status='reservable'
+                   AND (r.user_id != ? OR COALESCE(r.confirmed,0)=1)
                    GROUP BY r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1))
                    ORDER BY r.bar_type, stage""",
-                (round_num, today)
+                (round_num, today, loopay_id)
             ).fetchall()
         else:
             by_type_rows = []
