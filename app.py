@@ -1390,7 +1390,7 @@ def admin_run_matching():
                LEFT JOIN users u ON r.user_id = u.id
                LEFT JOIN items i ON r.item_id = i.id
                WHERE r.status='pending' AND r.match_round=?
-               AND r.reserve_date=?
+               AND r.reserve_date>=?
                AND u.username = 'loopay'
                AND (r.confirmed=1 OR COALESCE(r.confirmed,0)=0)
                AND (i.status='waiting' OR r.item_id IS NULL)""",
@@ -2394,7 +2394,7 @@ def admin_reservation_status():
                 """SELECT COUNT(*) as cnt FROM reservations r
                    LEFT JOIN items i ON r.item_id=i.id
                    WHERE r.bar_type=? AND r.match_round=1 AND r.status='pending' AND r.confirmed=0
-                   AND r.user_id=? AND r.reserve_date=?
+                   AND r.user_id=? AND r.reserve_date>=?
                    AND (r.item_id IS NULL OR i.status='waiting' OR i.status IS NULL)""",
                 (bar_type, loopay_id, today)
             ).fetchone()['cnt']
@@ -2402,7 +2402,7 @@ def admin_reservation_status():
                 """SELECT COUNT(*) as cnt FROM reservations r
                    LEFT JOIN items i ON r.item_id=i.id
                    WHERE r.bar_type=? AND r.match_round=1 AND r.confirmed=1
-                   AND r.user_id=? AND r.reserve_date=?
+                   AND r.user_id=? AND r.reserve_date>=?
                    AND (r.item_id IS NULL OR i.status='waiting' OR i.status IS NULL)""",
                 (bar_type, loopay_id, today)
             ).fetchone()['cnt']
@@ -2444,7 +2444,7 @@ def admin_reservation_status():
                 """SELECT r.item_id FROM reservations r
                    INNER JOIN items i ON r.item_id=i.id
                    WHERE r.bar_type=? AND r.status='pending' AND r.confirmed=0
-                   AND r.user_id=? AND r.reserve_date=? AND r.match_round=1
+                   AND r.user_id=? AND r.reserve_date>=? AND r.match_round=1
                    AND i.status='reservable'""",
                 (bar_type, loopay_id, today)
             ).fetchall()
@@ -2452,7 +2452,7 @@ def admin_reservation_status():
                 """SELECT r.item_id FROM reservations r
                    INNER JOIN items i ON r.item_id=i.id
                    WHERE r.bar_type=? AND r.confirmed=1 AND r.status='pending'
-                   AND r.user_id=? AND r.reserve_date=? AND r.match_round=1
+                   AND r.user_id=? AND r.reserve_date>=? AND r.match_round=1
                    AND i.status='reservable'""",
                 (bar_type, loopay_id, today)
             ).fetchall()
@@ -3625,7 +3625,7 @@ def admin_loopay_extra_reservations():
             FROM reservations r
             LEFT JOIN items i ON r.item_id = i.id
             WHERE r.user_id = ? AND r.status = 'pending'
-            AND r.reserve_date = ?
+            AND r.reserve_date >= ?
             ORDER BY r.id DESC
         """, (lid, get_today().isoformat())).fetchall()
         return jsonify(reservations=[dict(r) for r in rows])
