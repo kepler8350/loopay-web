@@ -164,13 +164,15 @@ def _run_matching_internal(db, round_num, today):
                AND COALESCE(r.confirmed,0)=1""",
             (round_num,)
         ).fetchall()
-        # 루페이 시스템 sell 예약 (item_id 없는 것)
+        # 루페이 판매예약: confirmed=1 AND items.status='reservable' (구매예약 제외)
         loopay_sell_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
                COALESCE(r.stage,1) as stage
                FROM reservations r
+               INNER JOIN items i ON r.item_id = i.id
                WHERE r.status='pending' AND r.match_round=?
-               AND r.user_id=? AND COALESCE(r.confirmed,0)=1""",
+               AND r.user_id=? AND COALESCE(r.confirmed,0)=1
+               AND i.status='reservable'""",
             (round_num, loopay_id)
         ).fetchall()
         sell_rows = list(user_sell_rows) + list(loopay_sell_rows)
@@ -2437,12 +2439,21 @@ def admin_reservation_status():
             sell_total = sell_under32 + sell_33up + sell_split
 
             # loopay 추가 판매예약 (미확정 + 확정 모두)
+            # 판매예약: item_id IS NOT NULL AND items.status='reservable'
             extra_sell_pending = conn.execute(
-                "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.status='pending' AND r.confirmed=0 AND r.user_id=? AND r.item_id IS NOT NULL AND r.reserve_date=? AND r.match_round=1",
+                """SELECT r.item_id FROM reservations r
+                   INNER JOIN items i ON r.item_id=i.id
+                   WHERE r.bar_type=? AND r.status='pending' AND r.confirmed=0
+                   AND r.user_id=? AND r.reserve_date=? AND r.match_round=1
+                   AND i.status='reservable'""",
                 (bar_type, loopay_id, today)
             ).fetchall()
             extra_sell_confirmed_rows = conn.execute(
-                "SELECT r.item_id FROM reservations r WHERE r.bar_type=? AND r.confirmed=1 AND r.status='pending' AND r.user_id=? AND r.item_id IS NOT NULL AND r.reserve_date=? AND r.match_round=1",
+                """SELECT r.item_id FROM reservations r
+                   INNER JOIN items i ON r.item_id=i.id
+                   WHERE r.bar_type=? AND r.confirmed=1 AND r.status='pending'
+                   AND r.user_id=? AND r.reserve_date=? AND r.match_round=1
+                   AND i.status='reservable'""",
                 (bar_type, loopay_id, today)
             ).fetchall()
             extra_sell_rows = extra_sell_pending + extra_sell_confirmed_rows
