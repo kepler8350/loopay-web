@@ -3411,11 +3411,11 @@ def admin_loopay_items():
         STATUS_LABEL = {'reservable':'판매가능','matched':'판매매칭완료','active':'보유중','waiting':'대기중'}
         # loopay의 구매예약과 연결된 아이템 ID 목록
         buy_res_items = set(
-            r['item_id'] for r in conn.execute(
+            _r['item_id'] for _r in db.execute(
                 """SELECT r.item_id FROM reservations r
                    INNER JOIN items i ON r.item_id=i.id
                    WHERE r.user_id=? AND r.status='pending' AND i.status='waiting'""", (lid,)
-            ).fetchall() if r['item_id']
+            ).fetchall() if _r['item_id']
         )
         rows_with_match = []
         for item in item_rows:
