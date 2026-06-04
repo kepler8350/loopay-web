@@ -3487,6 +3487,8 @@ def admin_loopay_items():
                 'buyer_username': r.get('buyer_username'),
                 'buyer_account_name': r.get('buyer_account_name'),
                 'buyer_account': r.get('buyer_account'),
+                'item_type': r.get('item_type', r.get('status','')),
+                'is_buy_reservation': r.get('is_buy_reservation', False),
             } for r in rows],
             total=len(rows)
         )
