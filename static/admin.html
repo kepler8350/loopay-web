@@ -1946,7 +1946,7 @@ function approveUser(userId,action){
     if(d.success){
       if(action==='approve'){
         // 승인: 회원관리 페이지로 이동
-        showPage('users', document.querySelector('[data-page="users"]'));
+        showPage('members', document.querySelector('[data-page="members"]'));
         toast('✅ 승인 완료되었습니다.', 'success');
       } else {
         // 거절: 현재 리스트 새로고침
