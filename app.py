@@ -3601,10 +3601,12 @@ def admin_loopay_items():
                     d['match_round'] = _buy_m['match_round'] if 'match_round' in _buy_m.keys() else None
                     d['receipt_url'] = _buy_m['receipt_url'] if 'receipt_url' in _buy_m.keys() else None
                     d['seller_username'] = _buy_m['seller_username']
-                    d['seller_account_name'] = _buy_m['seller_account_name']
-                    d['seller_account'] = _buy_m['seller_account']
-                    d['seller_bank'] = _buy_m['seller_bank']
-                    d['seller_phone'] = _buy_m['seller_phone']
+                    # seller가 loopay 자신인 경우 system_settings에서 계좌정보 가져오기
+                    _s_is_loopay = (_buy_m['seller_username'] == 'loopay')
+                    d['seller_account_name'] = get_setting('loopay_account_name', '루페이') if _s_is_loopay else _buy_m['seller_account_name']
+                    d['seller_account'] = get_setting('loopay_account', _buy_m['seller_account']) if _s_is_loopay else _buy_m['seller_account']
+                    d['seller_bank'] = get_setting('loopay_bank', _buy_m['seller_bank']) if _s_is_loopay else _buy_m['seller_bank']
+                    d['seller_phone'] = get_setting('loopay_phone', _buy_m['seller_phone']) if _s_is_loopay else _buy_m['seller_phone']
                     d['buyer_username'] = 'loopay'
                     d['buyer_account_name'] = get_setting('loopay_account_name', '루페이')
                     d['buyer_account'] = get_setting('loopay_account', None)
