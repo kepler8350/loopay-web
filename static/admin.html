@@ -1937,14 +1937,27 @@ function loadMembers(){
 function approveUser(userId,action){
   var msg=action==='approve'?'승인하시겠습니까?':'거절(삭제)하시겠습니까?';
   if(!confirm(msg)) return;
+  var tok=localStorage.getItem('admin_token');
   fetch('/api/admin/approve-user',{method:'POST',
-    headers:{'Authorization':'Bearer admin-loopay-2026','Content-Type':'application/json'},
+    headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
     body:JSON.stringify({user_id:userId,action:action})})
   .then(function(r){return r.json();})
   .then(function(d){
-    if(d.success) loadMembers();
-    else alert('오류: '+(d.error||'unknown'));
-  });
+    if(d.success){
+      if(action==='approve'){
+        // 승인: 회원관리 페이지로 이동
+        showPage('users', document.querySelector('[data-page="users"]'));
+        toast('✅ 승인 완료되었습니다.', 'success');
+      } else {
+        // 거절: 현재 리스트 새로고침
+        loadPendingUsers();
+        toast('거절 처리되었습니다.', 'info');
+      }
+    } else {
+      toast('오류: '+(d.error||'unknown'), 'error');
+    }
+  })
+  .catch(function(e){ toast('오류: '+e.message, 'error'); });
 }
 // showPage 후 members 탭 클릭 시 자동 로드
 var _origShowPage=typeof showPage==='function'?showPage:null;
