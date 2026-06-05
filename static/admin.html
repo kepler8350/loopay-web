@@ -1810,11 +1810,14 @@ async function loadReservationStatus(){
 async function loadMatchingStatus(){
   var names={bronze:'수정',silver:'루비',gold:'다이아'};
   var colors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
-  // 새로고침 시 매칭 실행 버튼/문구 블록 복원 후 시간 조건에 따라 활성화
-  var _runBlock1 = document.getElementById('match-run-block-1');
-  if(_runBlock1) _runBlock1.style.display='';
-  var _runBlock2 = document.getElementById('match-run-block-2');
-  if(_runBlock2) _runBlock2.style.display='';
+  // 매칭 실행 버튼/문구 블록 복원 (runMatching 직후 호출 시엔 숨김 유지)
+  if(!window._matchingJustRan){
+    var _runBlock1 = document.getElementById('match-run-block-1');
+    if(_runBlock1) _runBlock1.style.display='';
+    var _runBlock2 = document.getElementById('match-run-block-2');
+    if(_runBlock2) _runBlock2.style.display='';
+  }
+  window._matchingJustRan = false;
   // 버튼 활성/비활성은 updateMatchingBtn이 담당 (loadMatchingStatus 완료 후 호출)
   try{
     var tok=localStorage.getItem('admin_token');
@@ -1883,18 +1886,21 @@ async function runMatching(roundNum){
   roundNum = roundNum||1;
   var btn = document.getElementById('btn-run-matching-'+roundNum);
   if(btn){ btn.disabled=true; btn.textContent='⏳ 실행 중...'; }
+  var _success = false;
   try{
     var d = await apiAdmin('/admin/run-matching', {method:'POST', body:JSON.stringify({round:roundNum})});
     if(!d.success){ throw new Error(d.error||'매칭 실패'); }
+    _success = true;
     toast(d.message||roundNum+'차 매칭 완료!', 'success');
-    // 매칭 실행 버튼 + 시간 문구 숨기기
+    // 매칭 성공 후 버튼/문구 블록 숨김 (비활성화 유지)
     var runBlockEl = document.getElementById('match-run-block-'+roundNum);
     if(runBlockEl) runBlockEl.style.display='none';
+    window._matchingJustRan = true; // loadMatchingStatus에서 블록 복원 방지
     loadMatchingStatus();
     if(typeof loadMatchRecords==='function') loadMatchRecords();
   }catch(e){
     toast(e.message||'오류', 'error');
-  }finally{
+    // 실패 시에만 버튼 복원
     if(btn){ btn.disabled=false; btn.textContent='⚡ '+roundNum+'차 매칭 실행하기'; }
     updateMatchingBtn();
   }
