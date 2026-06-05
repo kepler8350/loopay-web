@@ -1899,7 +1899,7 @@ def admin_matching_status():
         _loopay_buy_cnt = db.execute(
             """SELECT COUNT(*) as c FROM reservations r
                LEFT JOIN items i ON r.item_id=i.id
-               WHERE r.match_round=? AND r.status IN ('pending','unmatched') AND r.user_id=?
+               WHERE r.match_round=? AND r.status='pending' AND r.user_id=?
                AND r.reserve_date>=?
                AND (i.status='waiting' OR r.item_id IS NULL)""",
             [round_num, loopay_id, today]
@@ -3581,7 +3581,8 @@ def admin_loopay_items():
             _r['item_id'] for _r in db.execute(
                 """SELECT r.item_id FROM reservations r
                    INNER JOIN items i ON r.item_id=i.id
-                   WHERE r.user_id=? AND r.status='pending' AND i.status='waiting'""", (lid,)
+                   WHERE r.user_id=? AND r.status IN ('pending','unmatched')
+                   AND i.status='waiting'""", (lid,)
             ).fetchall() if _r['item_id']
         )
         rows_with_match = []

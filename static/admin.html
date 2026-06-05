@@ -1406,7 +1406,13 @@ function renderSystemItems(){
   var sC={reservable:'#66bb6a',waiting:'#f9a825',matched:'#1976d2',sold:'#888',active:'#aaa',loopay_buy:'#42a5f5',loopay_matched:'#ab47bc'};
   var matchStatusKr={pending:'대기',matched:'매칭완료',paid:'송금',completed:'거래완료',cancelled:'취소',failed:'미입금',confirmed:'거래완료',unpaid:'미입금'};
   var matchStatusColor={pending:'#888',matched:'#f9a825',paid:'#42a5f5',completed:'#66bb6a',cancelled:'#ef5350',failed:'#ef5350',confirmed:'#66bb6a',unpaid:'#ef5350'};
-  var sellItems = filtered.filter(function(i){ return !i.is_buy_reservation && !i.is_buy_matched; });
+  // 판매아이템: reservable 또는 matched(구매자 있음). waiting/is_buy_reservation/is_buy_matched 제외
+  var sellItems = filtered.filter(function(i){
+    if(i.is_buy_reservation || i.is_buy_matched) return false;
+    if(i.status === 'waiting') return false;  // 구매예약 아이템
+    if(i.status === 'matched' && !i.buyer_username && !i.match_id) return false; // 구매자 없는 matched
+    return true;
+  });
   var buyItems = filtered.filter(function(i){ return i.is_buy_reservation || i.is_buy_matched; });
   var buyTbody = document.getElementById('si-buy-tbody');
   tbody.innerHTML = sellItems.map(function(item,i){
