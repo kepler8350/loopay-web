@@ -916,8 +916,10 @@ async function updateMatchingBtn(){
     var h = ct.hour; var m = ct.minute || 0; var totalMin = h * 60 + m;
     var failedCount = matchData.failed_count || 0;
 
-    // 1차 매칭: 20:00~05:00 활성
-    var isActive1 = (h >= 20 || h < 5);
+    // 1차 매칭: 20:00~05:00 활성 (KST 기준 - 브라우저 로컬시간 사용)
+    var now_kst = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Seoul'}));
+    var kst_h = now_kst.getHours();
+    var isActive1 = (kst_h >= 20 || kst_h < 5);
     var btn1 = document.getElementById('btn-run-matching-1');
     var notice = document.getElementById('matching-time-notice');
     if(btn1){ btn1.disabled=!isActive1; btn1.style.opacity=isActive1?'1':'0.45'; btn1.style.cursor=isActive1?'pointer':'not-allowed'; }
