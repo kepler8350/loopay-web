@@ -3513,23 +3513,38 @@ def admin_loopay_items():
             return dict(m) if m else None
 
         def get_buy_match_for_item(item_id):
-            """loopay가 buyer인 매칭 조회 (item_id 기반)"""            # 예약 → match 연결
-            m = db.execute(
-                """SELECT m.id, m.status, m.bar_type, m.stage,
-                          u.account_name as seller_account_name,
-                          u.account_no as seller_account, u.bank as seller_bank,
-                          u.phone as seller_phone, u.username as seller_username
-                   FROM matches m
-                   LEFT JOIN reservations r ON m.buyer_res_id = r.id
-                   LEFT JOIN users u ON m.seller_id = u.id
-                   WHERE r.item_id = ? AND m.buyer_id = ?
-                     AND m.status IN ('pending', 'paid')
-                   ORDER BY m.id DESC LIMIT 1""",
-                (item_id, lid)
-            ).fetchone()
-            if not m:
-                # fallback: matches 테이블에 buyer_res_id 없으면 item_id로 직접 찾기
-                pass
+            """loopay가 buyer인 매칭 조회 (item_id 기반)"""            # 방법1: buyer_res_id → reservation → item_id
+            try:
+                m = db.execute(
+                    """SELECT m.id, m.status, m.bar_type, m.stage,
+                              u.account_name as seller_account_name,
+                              u.account_no as seller_account, u.bank as seller_bank,
+                              u.phone as seller_phone, u.username as seller_username
+                       FROM matches m
+                       LEFT JOIN reservations r ON m.buyer_res_id = r.id
+                       LEFT JOIN users u ON m.seller_id = u.id
+                       WHERE r.item_id = ? AND m.buyer_id = ?
+                         AND m.status IN ('pending', 'paid')
+                       ORDER BY m.id DESC LIMIT 1""",
+                    (item_id, lid)
+                ).fetchone()
+                # 방법2: reservation_id → reservation → item_id
+                if not m:
+                    m = db.execute(
+                        """SELECT m.id, m.status, m.bar_type, m.stage,
+                                  u.account_name as seller_account_name,
+                                  u.account_no as seller_account, u.bank as seller_bank,
+                                  u.phone as seller_phone, u.username as seller_username
+                           FROM matches m
+                           LEFT JOIN reservations r ON m.reservation_id = r.id
+                           LEFT JOIN users u ON m.seller_id = u.id
+                           WHERE r.item_id = ? AND m.buyer_id = ?
+                             AND m.status IN ('pending', 'paid')
+                           ORDER BY m.id DESC LIMIT 1""",
+                        (item_id, lid)
+                    ).fetchone()
+            except Exception:
+                m = None
             return dict(m) if m else None
 
         # 이미 매핑된 match_id 추적 (중복 방지)
@@ -3560,6 +3575,7 @@ def admin_loopay_items():
             # loopay가 구매자인 매칭 확인 (matched 아이템)
             if d['status'] == 'matched':
                 try:
+                    # 방법1: buyer_res_id → reservation → item_id 연결
                     _buy_m = db.execute(
                         """SELECT m.id, m.status, m.match_round, m.receipt_url,
                            seller.username as seller_username,
@@ -3575,6 +3591,23 @@ def admin_loopay_items():
                            ORDER BY m.id DESC LIMIT 1""",
                         (d['id'], lid)
                     ).fetchone()
+                    # 방법2: buyer_id + reservation.item_id 직접 조인
+                    if not _buy_m:
+                        _buy_m = db.execute(
+                            """SELECT m.id, m.status, m.match_round, m.receipt_url,
+                               seller.username as seller_username,
+                               seller.account_name as seller_account_name,
+                               seller.account_no as seller_account,
+                               seller.bank as seller_bank,
+                               seller.phone as seller_phone
+                               FROM matches m
+                               LEFT JOIN reservations r ON m.reservation_id = r.id
+                               LEFT JOIN users seller ON m.seller_id = seller.id
+                               WHERE r.item_id = ? AND m.buyer_id = ?
+                                 AND m.status IN ('pending', 'paid')
+                               ORDER BY m.id DESC LIMIT 1""",
+                            (d['id'], lid)
+                        ).fetchone()
                 except Exception:
                     _buy_m = None
                 if _buy_m:
