@@ -528,7 +528,8 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
   <!-- 요약 카드 -->
   <div id="si-summary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px"></div>
   <!-- 아이템 목록 테이블 -->
-  <div class="table-card">
+  <div class="table-card" style="margin-bottom:16px">
+    <div class="table-header"><div class="table-title">📤 판매 아이템</div></div>
     <div class="table-wrap" style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
@@ -549,6 +550,31 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
         </thead>
         <tbody id="si-tbody">
           <tr><td colspan="12" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="table-header"><div class="table-title">📥 구매 아이템</div></div>
+    <div class="table-wrap" style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#1a1a2e;color:#a0a0c0">
+            <th style="padding:8px;text-align:left">ID</th>
+            <th style="padding:8px;text-align:center">종류</th>
+            <th style="padding:8px;text-align:center">단계</th>
+            <th style="padding:8px;text-align:center">상태</th>
+            <th style="padding:8px;text-align:center">매칭상태</th>
+            <th style="padding:8px;text-align:left">구매일</th>
+            <th style="padding:8px;text-align:left">예약일</th>
+            <th style="padding:8px;text-align:left">판매자ID</th>
+            <th style="padding:8px;text-align:left">예금주</th>
+            <th style="padding:8px;text-align:left">계좌번호</th>
+            <th style="padding:8px;text-align:left">액션</th>
+          </tr>
+        </thead>
+        <tbody id="si-buy-tbody">
+          <tr><td colspan="11" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>
         </tbody>
       </table>
     </div>
@@ -1190,6 +1216,81 @@ async function adminReleasePenalty(penaltyId){
   }catch(e){ toast(e.message||'오류','error'); }
 }
 
+
+// ── 루페이 구매아이템 송금 모달 (사용자 화면 openPaymentModal과 동일 구조) ──
+var _adminRemitMatchId = null;
+function adminLoopayRemit(matchId, sellerAccName, sellerAcc, sellerBank){
+  _adminRemitMatchId = matchId;
+  var modal = document.getElementById('admin-remit-modal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'admin-remit-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = '<div style="background:#1a1d2e;border-radius:14px;padding:24px;width:90%;max-width:420px;border:1px solid #2a2d40;color:#e0e0e0">'
+    +'<div style="font-size:16px;font-weight:700;margin-bottom:16px;color:#64b5f6">💸 루페이 송금완료 확인</div>'
+    +'<div style="background:#12121f;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px">'
+    +'<div style="color:#aaa;margin-bottom:4px">판매자 계좌 (송금 대상)</div>'
+    +'<div style="color:#a5d6a7;font-weight:700">'+sellerAccName+' '+(sellerBank||'')+'</div>'
+    +'<div style="color:#e0e0e0;font-size:14px;font-weight:700;letter-spacing:1px">'+sellerAcc+'</div>'
+    +'</div>'
+    +'<div style="margin-bottom:12px">'
+    +'<label style="display:block;font-size:12px;color:#aaa;margin-bottom:6px">📎 영수증 이미지 <span style="color:#ef5350">(필수)</span></label>'
+    +'<input type="file" id="admin-remit-file" accept="image/*" style="width:100%;font-size:13px;color:#e0e0e0">'
+    +'</div>'
+    +'<div id="admin-remit-preview" style="margin-bottom:12px"></div>'
+    +'<div style="display:flex;gap:10px">'
+    +'<button onclick="closeAdminRemit()" style="flex:1;padding:10px;background:#37474f;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">취소</button>'
+    +'<button id="admin-remit-submit" onclick="submitAdminRemit()" disabled style="flex:1;padding:10px;background:#555;color:#aaa;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed">송금완료</button>'
+    +'</div>'
+    +'</div>';
+  modal.style.display = 'flex';
+  window._adminRemitBase64 = null;
+  document.getElementById('admin-remit-file').onchange = function(e){
+    var file = e.target.files[0];
+    var sbtn = document.getElementById('admin-remit-submit');
+    if(sbtn){sbtn.disabled=!file;sbtn.style.background=file?'#1976d2':'#555';sbtn.style.color=file?'#fff':'#aaa';sbtn.style.cursor=file?'pointer':'not-allowed';}
+    if(!file){window._adminRemitBase64=null;document.getElementById('admin-remit-preview').innerHTML='';return;}
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      window._adminRemitBase64=ev.target.result.split(',')[1];
+      document.getElementById('admin-remit-preview').innerHTML='<img src="'+ev.target.result+'" style="width:100%;border-radius:8px;max-height:180px;object-fit:contain">';
+    };
+    reader.readAsDataURL(file);
+  };
+}
+function closeAdminRemit(){
+  var modal=document.getElementById('admin-remit-modal');
+  if(modal) modal.style.display='none';
+  window._adminRemitBase64=null; _adminRemitMatchId=null;
+}
+async function submitAdminRemit(){
+  if(!_adminRemitMatchId){ closeAdminRemit(); return; }
+  var btn=document.getElementById('admin-remit-submit');
+  if(btn&&btn.disabled) return;
+  if(btn){btn.textContent='처리 중...';btn.disabled=true;}
+  try{
+    var tok=localStorage.getItem('admin_token');
+    var payload={match_id:_adminRemitMatchId};
+    if(window._adminRemitBase64) payload.image='data:image/jpeg;base64,'+window._adminRemitBase64;
+    var d=await fetch('/api/reservation/payment-complete',{method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify(payload)}).then(r=>r.json());
+    if(d.success){
+      closeAdminRemit();
+      toast('✅ 송금 처리 완료','success');
+      loadSystemItems();
+    } else {
+      toast(d.error||'처리 실패','error');
+      if(btn){btn.textContent='송금완료';btn.disabled=false;btn.style.background='#1976d2';btn.style.color='#fff';}
+    }
+  }catch(e){
+    toast(e.message||'오류','error');
+    if(btn){btn.textContent='송금완료';btn.disabled=false;}
+  }
+}
+
 async function loadSystemItems(){
   var tbody = document.getElementById('si-tbody');
   var summary = document.getElementById('si-summary');
@@ -1251,7 +1352,10 @@ function renderSystemItems(){
   var sC={reservable:'#66bb6a',waiting:'#f9a825',matched:'#1976d2',sold:'#888',active:'#aaa',loopay_buy:'#42a5f5',loopay_matched:'#ab47bc'};
   var matchStatusKr={pending:'대기',matched:'매칭완료',paid:'송금',completed:'거래완료',cancelled:'취소',failed:'미입금',confirmed:'거래완료',unpaid:'미입금'};
   var matchStatusColor={pending:'#888',matched:'#f9a825',paid:'#42a5f5',completed:'#66bb6a',cancelled:'#ef5350',failed:'#ef5350',confirmed:'#66bb6a',unpaid:'#ef5350'};
-  tbody.innerHTML = filtered.map(function(item,i){
+  var sellItems = filtered.filter(function(i){ return !i.is_buy_reservation && !i.is_buy_matched; });
+  var buyItems = filtered.filter(function(i){ return i.is_buy_reservation || i.is_buy_matched; });
+  var buyTbody = document.getElementById('si-buy-tbody');
+  tbody.innerHTML = sellItems.map(function(item,i){
     var bg = i%2===0?'#12121f':'#1a1a2e';
     var ms = item.match_status;
     var matchBadge = ms
@@ -1336,6 +1440,45 @@ function renderSystemItems(){
       + actionBtns+'</td>'
       +'</tr>';
   }).join('');
+
+  // 구매 아이템 테이블 렌더링
+  if(buyTbody){
+    if(!buyItems.length){
+      buyTbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:#888">구매 아이템 없음</td></tr>';
+    } else {
+      var tC2={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+      var tN2={bronze:'수정',silver:'루비',gold:'다이아'};
+      buyTbody.innerHTML = buyItems.map(function(item,bi){
+        var bg2 = bi%2===0?'#12121f':'#1a1a2e';
+        var statusLabel = item.is_buy_matched ? '구매매칭완료' : (item.is_buy_reservation ? '구매예약중' : '대기중');
+        var statusColor = item.is_buy_matched ? '#ab47bc' : (item.is_buy_reservation ? '#42a5f5' : '#f9a825');
+        var ms2 = item.match_status;
+        var mKr={pending:'대기',paid:'송금완료',confirmed:'거래완료',failed:'미입금'};
+        var mCol={pending:'#888',paid:'#42a5f5',confirmed:'#66bb6a',failed:'#ef5350'};
+        var mBadge = ms2 ? '<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(mCol[ms2]||'#888')+'33;color:'+(mCol[ms2]||'#888')+'">'+(mKr[ms2]||ms2)+'</span>' : '<span style="color:#555;font-size:11px">-</span>';
+        var sellerAccName = item.seller_account_name || '-';
+        var sellerAcc = item.seller_account || '-';
+        var sellerBank = item.seller_bank ? '('+item.seller_bank+')' : '';
+        var actionBtn = '';
+        if(item.is_buy_matched && item.match_id && ms2 === 'pending'){
+          actionBtn = '<button onclick="adminLoopayRemit('+item.match_id+',\''+sellerAccName+'\',\''+sellerAcc+'\',\''+sellerBank+'\')" style="padding:3px 10px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">💸 송금</button>';
+        }
+        return '<tr style="background:'+bg2+';border-bottom:1px solid #23243a">'
+          +'<td style="padding:6px 8px;color:#888">'+item.id+'</td>'
+          +'<td style="padding:6px 8px;text-align:center;color:'+tC2[item.bar_type]+'"><strong>'+tN2[item.bar_type]+'</strong></td>'
+          +'<td style="padding:6px 8px;text-align:center">'+(item.stage||1)+'단계</td>'
+          +'<td style="padding:6px 8px;text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+statusColor+'33;color:'+statusColor+'">'+statusLabel+'</span></td>'
+          +'<td style="padding:6px 8px;text-align:center">'+mBadge+'</td>'
+          +'<td style="padding:6px 8px;color:#888">'+(item.purchase_date||'-')+'</td>'
+          +'<td style="padding:6px 8px;color:#888">'+(item.reserve_date||'-')+'</td>'
+          +'<td style="padding:6px 8px;color:#a5d6a7">'+(item.seller_username||'-')+'</td>'
+          +'<td style="padding:6px 8px">'+(sellerAccName)+'</td>'
+          +'<td style="padding:6px 8px;font-size:11px">'+(item.seller_account||'-')+(item.seller_bank?' ('+item.seller_bank+')':'')+'</td>'
+          +'<td style="padding:6px 8px">'+actionBtn+'</td>'
+          +'</tr>';
+      }).join('');
+    }
+  }
 }
 
 // ── 매치 기록 ────────────────────────────────────────
