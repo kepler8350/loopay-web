@@ -1892,7 +1892,8 @@ async function runMatching(roundNum){
     if(!d.success){ throw new Error(d.error||'매칭 실패'); }
     _success = true;
     toast(d.message||roundNum+'차 매칭 완료!', 'success');
-    // 매칭 성공 후 버튼/문구 블록 숨김 (비활성화 유지)
+    // 매칭 성공 후: 버튼 텍스트 복원 + 비활성화 유지 + 블록 숨김
+    if(btn){ btn.disabled=true; btn.style.opacity='0.45'; btn.style.cursor='not-allowed'; btn.textContent='⚡ '+roundNum+'차 매칭 실행하기'; }
     var runBlockEl = document.getElementById('match-run-block-'+roundNum);
     if(runBlockEl) runBlockEl.style.display='none';
     window._matchingJustRan = true; // loadMatchingStatus에서 블록 복원 방지
