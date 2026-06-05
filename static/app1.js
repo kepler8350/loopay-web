@@ -701,20 +701,24 @@ async function doRegister(){
   var accountName=document.getElementById('reg-account-name').value.trim();
   var errEl=document.getElementById('register-error');
   errEl.textContent='';
-  if(!username||!password){errEl.textContent='아이디와 비밀번호는 필수입니다.';return;}if(!/^[a-z0-9]{6,16}$/.test(username)){errEl.textContent='아이디: 영소문자+숫자 6~16자로 입력해주세요.';return;}
+  if(!username||!password){errEl.textContent='아이디와 비밀번호는 필수입니다.';return;}if(!/^[a-z0-9]{6,16}$/.test(username)){errEl.textContent='아이디는 영문 소문자/숫자 6~16자여야 합니다.';return;}
   try{
     var realName=(document.getElementById('reg-real-name')?.value||'').trim();
     if(!realName){errEl.textContent='본인 이름을 입력해주세요';return;}
+    // 이름/예금주 일치 검증
+    if(accountName && realName !== accountName){
+      errEl.textContent='본인 이름과 예금주명이 일치해야 합니다.';return;
+    }
     var r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username,password,phone,bank,account_no:accountNo,account_name:accountName})});
+      body:JSON.stringify({username,password,phone,bank,account_no:accountNo,account_name:accountName,real_name:realName})});
     var d=await r.json();
     if(!r.ok){errEl.textContent=d.error||'회원가입 실패';return;}
-    document.getElementById('register-form').style.display='none';
-    var doneEl=document.getElementById('register-done');
-    if(doneEl){
-      doneEl.style.display='';
-      var msgEl=doneEl.querySelector('p,div');
-      if(msgEl) msgEl.textContent=d.auto_approved?'회원가입이 완료되었습니다! 바로 로그인하세요.':'회원가입이 완료되었습니다. 관리자 승인 후 로그인 가능합니다.';
+    // 가입 완료 후 바로 로그인 화면으로 (완료 화면 없음)
+    if(d.auto_approved){
+      errEl.style.color='#2e7d32';
+      errEl.textContent='회원가입이 완료되었습니다! 바로 로그인하세요.';
+    } else {
+      showLogin();
     }
   }catch(e){errEl.textContent='서버 오류: '+e.message;}
 }

@@ -825,7 +825,7 @@ async function loadPendingUsers(){
     tbody.innerHTML=list.map((u,i)=>`<tr>
       <td>${i+1}</td>
       <td><strong>${u.username||'-'}</strong></td>
-      <td>${u.nickname||'-'}</td>
+      <td>${u.real_name||u.nickname||'-'}</td>
       <td>${u.phone||'-'}</td>
       <td>${u.bank||'-'}</td>
       <td style="font-size:11px">${u.account_no||'-'}</td>
