@@ -3747,17 +3747,43 @@ def admin_delete_loopay_items():
             if not isinstance(item_ids, list) or not item_ids:
                 return jsonify(error='item_ids 필요'), 400
             placeholders = ','.join('?' * len(item_ids))
-            # 연결된 예약 먼저 삭제
+            int_ids = [int(i) for i in item_ids]
             db.execute("PRAGMA foreign_keys=OFF")
+            # loopay 소유 아이템: 예약 삭제 후 아이템 삭제
             db.execute(
                 f"DELETE FROM reservations WHERE user_id=? AND item_id IN ({placeholders})",
-                [lid] + [int(i) for i in item_ids]
+                [lid] + int_ids
             )
-            result = db.execute(
-                f"DELETE FROM items WHERE user_id=? AND id IN ({placeholders})",
-                [lid] + [int(i) for i in item_ids]
+            # loopay가 구매자인 매칭의 아이템 (buyer_id=loopay, 다른 사용자 소유)
+            # matches에서 이 아이템이 포함된 매칭 삭제 (buyer=loopay인 경우)
+            db.execute(
+                f"""DELETE FROM matches WHERE buyer_id=?
+                   AND seller_item_id IN ({placeholders})""",
+                [lid] + int_ids
             )
-            deleted = result.rowcount
+            # 아이템 삭제 (loopay 소유 or 매칭된 구매 아이템)
+            loopay_owned = db.execute(
+                f"SELECT id FROM items WHERE user_id=? AND id IN ({placeholders})",
+                [lid] + int_ids
+            ).fetchall()
+            loopay_owned_ids = [r['id'] for r in loopay_owned]
+            # 나머지: matches에서 buyer_id=loopay인 seller_item_id
+            buyer_matched = db.execute(
+                f"""SELECT DISTINCT m.seller_item_id FROM matches m
+                   WHERE m.buyer_id=? AND m.seller_item_id IN ({placeholders})""",
+                [lid] + int_ids
+            ).fetchall()
+            buyer_matched_ids = [r['seller_item_id'] for r in buyer_matched if r['seller_item_id']]
+            all_ids = list(set(loopay_owned_ids + buyer_matched_ids))
+            deleted = 0
+            if all_ids:
+                all_ph = ','.join('?'*len(all_ids))
+                # 해당 아이템의 matches 삭제
+                db.execute(f"DELETE FROM matches WHERE seller_item_id IN ({all_ph})", all_ids)
+                # 해당 아이템의 예약 삭제
+                db.execute(f"DELETE FROM reservations WHERE item_id IN ({all_ph})", all_ids)
+                result = db.execute(f"DELETE FROM items WHERE id IN ({all_ph})", all_ids)
+                deleted = result.rowcount
             db.execute("PRAGMA foreign_keys=ON")
         db.commit()
         return jsonify(success=True, deleted=deleted)
