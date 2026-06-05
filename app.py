@@ -1926,7 +1926,7 @@ def admin_matching_status():
         _loopay_buy_by_type = db.execute(
             """SELECT r.bar_type, COUNT(*) as cnt FROM reservations r
                LEFT JOIN items i ON r.item_id=i.id
-               WHERE r.match_round=? AND r.status IN ('pending','unmatched') AND r.user_id=?
+               WHERE r.match_round=? AND r.status='pending' AND r.user_id=?
                AND r.reserve_date>=?
                AND (i.status='waiting' OR r.item_id IS NULL)
                GROUP BY r.bar_type""",
