@@ -1181,9 +1181,12 @@ def admin_create_test_users():
     if not check_admin_auth():
         return jsonify(error='unauthorized'), 401
     from werkzeug.security import generate_password_hash
+    data = request.json or {}
+    count = min(int(data.get('count', 10)), 50)  # 최대 50명
+    points = int(data.get('points', 0))
     db = get_db()
     try:
-        test_users = [
+        all_test_users = [
             ('testuser01','홍길동','01011110001','국민은행','110123456789','홍길동'),
             ('testuser02','김민준','01022220002','신한은행','110234567890','김민준'),
             ('testuser03','이서연','01033330003','하나은행','110345678901','이서연'),
@@ -1195,6 +1198,13 @@ def admin_create_test_users():
             ('testuser09','임서준','01099990009','케이뱅크','1234567890123','임서준'),
             ('testuser10','오수아','01000000010','SC제일은행','110901234567','오수아'),
         ]
+        # count가 10 초과면 동적 생성
+        test_users = list(all_test_users[:min(count, 10)])
+        if count > 10:
+            banks = ['국민은행','신한은행','하나은행','우리은행','농협은행','기업은행']
+            for n in range(11, count+1):
+                uname = f'testuser{n:02d}'
+                test_users.append((uname, f'테스트{n:02d}', f'010{n:08d}', banks[n%len(banks)], f'11000{n:09d}', f'테스트{n:02d}'))
         created = []
         skipped = []
         for username,name,phone,bank,account,acname in test_users:
@@ -1204,12 +1214,12 @@ def admin_create_test_users():
                 continue
             pw = generate_password_hash('test1234')
             db.execute(
-                'INSERT INTO users (username,password_hash,nickname,phone,bank,account_no,account_name,approved) VALUES (?,?,?,?,?,?,?,0)',
-                (username,pw,name,phone,bank,account,acname)
+                'INSERT INTO users (username,password_hash,nickname,phone,bank,account_no,account_name,charge_points,approved) VALUES (?,?,?,?,?,?,?,?,0)',
+                (username,pw,name,phone,bank,account,acname,points)
             )
             created.append(username)
         db.commit()
-        return jsonify(success=True, created=created, skipped=skipped, password='test1234')
+        return jsonify(success=True, created=created, skipped=skipped, password='test1234', points=points)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500

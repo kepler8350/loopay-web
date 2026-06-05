@@ -716,7 +716,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
         <span id="mock-badge" style="display:none;background:#e65100;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px">테스트 모드</span>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <input type="datetime-local" id="mock-datetime-input" style="padding:8px 12px;background:#1a1d2e;border:1px solid #333;color:#fff;border-radius:6px;font-size:13px">
+        <input type="datetime-local" id="mock-datetime-input" style="padding:8px 12px;background:#1a1d2e;border:1px solid #333;color:#fff;border-radius:6px;font-size:13px;color-scheme:dark">
         <button onclick="setMockTime()" style="padding:8px 16px;background:#1976d2;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">설정한 시간으로 변경</button>
         <button onclick="resetMockTime()" style="padding:8px 16px;background:#2e7d32;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">현재 실제 시간으로 복원</button>
       </div>
@@ -724,12 +724,22 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
     </div>
   </div>
   <div class="table-card">
-    <div class="table-header"><span class="table-title">👥 테스트 회원 일괄 생성 (10명)</span></div>
+    <div class="table-header"><span class="table-title">👥 테스트 회원 일괄 생성</span></div>
     <div style="padding:16px">
-      <p style="color:#aaa;font-size:13px;margin-bottom:12px">비밀번호: <strong style="color:#4fc3f7">test1234</strong> / 이미 존재하면 건너롱</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-        <button onclick="createTestUsers()" style="padding:10px 20px;background:#1976d2;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600">테스트 회원 10명 생성</button>
-        <button onclick="approveAllTest()" style="padding:10px 20px;background:#2e7d32;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px">테스트 회원 전체 승인</button>
+      <p style="color:#aaa;font-size:13px;margin-bottom:12px">비밀번호: <strong style="color:#4fc3f7">test1234</strong> / 이미 존재하면 건너뜀</p>
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+        <div>
+          <label style="font-size:11px;color:#888;display:block;margin-bottom:4px">생성 인원</label>
+          <input id="test-user-count" type="number" value="10" min="1" max="50" style="width:80px;padding:8px 10px;background:#1a1d2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:13px;text-align:center">
+        </div>
+        <div>
+          <label style="font-size:11px;color:#888;display:block;margin-bottom:4px">충전 포인트 (일괄)</label>
+          <input id="test-user-points" type="number" value="0" min="0" step="100" style="width:120px;padding:8px 10px;background:#1a1d2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:13px;text-align:center" placeholder="0P">
+        </div>
+        <div style="display:flex;gap:8px;padding-bottom:1px">
+          <button onclick="createTestUsers()" style="padding:9px 20px;background:#1976d2;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">생성</button>
+          <button onclick="approveAllTest()" style="padding:9px 20px;background:#2e7d32;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">전체 승인</button>
+        </div>
       </div>
       <div id="test-users-result" style="font-size:13px;color:#aaa"></div>
     </div>
@@ -1962,20 +1972,34 @@ async function setMockTime(){
   var res=document.getElementById('time-result');
   if(!inp||!inp.value){if(res)res.textContent='날짜/시간을 입력해주세요.';return;}
   var dtVal=inp.value.replace('T',' ')+':00';
+  var tok=localStorage.getItem('admin_token');
   var r=await fetch('/api/admin/set-time',{method:'POST',
-    headers:{'Authorization':'Bearer admin-loopay-2026','Content-Type':'application/json'},
+    headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
     body:JSON.stringify({datetime:dtVal})});
   var d=await r.json();
-  if(res) res.innerHTML=d.success?'<span style="color:#4fc3f7">✅ 테스트 시간: '+d.mock_time+' (사용자 화면은 3초 내 자동 반영)</span>':'<span style="color:#c62828">❌ '+d.error+'</span>';
+  if(d.success){
+    if(res) res.innerHTML='<span style="color:#4fc3f7">✅ 테스트 시간 설정: '+d.mock_time+'</span>';
+    toast('✅ 시간 변경 완료: '+d.mock_time, 'success');
+  } else {
+    if(res) res.innerHTML='<span style="color:#c62828">❌ '+d.error+'</span>';
+    toast('시간 설정 실패', 'error');
+  }
   loadCurrentTime();
 }
 async function resetMockTime(){
   var res=document.getElementById('time-result');
+  var tok=localStorage.getItem('admin_token');
   var r=await fetch('/api/admin/set-time',{method:'POST',
-    headers:{'Authorization':'Bearer admin-loopay-2026','Content-Type':'application/json'},
+    headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
     body:JSON.stringify({datetime:null})});
   var d=await r.json();
-  if(res) res.innerHTML=d.success?'<span style="color:#4fc3f7">✅ 실제 시간 복원 (사용자 화면은 새로고침 필요)</span>':'<span style="color:#c62828">❌ '+d.error+'</span>';
+  if(d.success){
+    if(res) res.innerHTML='<span style="color:#66bb6a">✅ 실제 시간으로 복원 완료</span>';
+    toast('✅ 실제 시간으로 복원되었습니다.', 'success');
+  } else {
+    if(res) res.innerHTML='<span style="color:#c62828">❌ '+d.error+'</span>';
+    toast('복원 실패', 'error');
+  }
   var inp=document.getElementById('mock-datetime-input');
   if(inp) inp.value='';
   loadCurrentTime();
@@ -1983,17 +2007,27 @@ async function resetMockTime(){
 }
 async function createTestUsers(){
   var res=document.getElementById('test-users-result');
-  if(res) res.textContent='생성 중...';
+  var count=parseInt(document.getElementById('test-user-count')?.value||'10')||10;
+  var points=parseInt(document.getElementById('test-user-points')?.value||'0')||0;
+  if(res) res.textContent='생성 중... ('+count+'명)';
+  var tok=localStorage.getItem('admin_token');
   var r=await fetch('/api/admin/create-test-users',{method:'POST',
-    headers:{'Authorization':'Bearer admin-loopay-2026','Content-Type':'application/json'},body:'{}'});
+    headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+    body:JSON.stringify({count,points})});
   var d=await r.json();
   if(res){
     if(d.success){
-      var msg='✅ 생성: '+(d.created.length?d.created.join(', '):'없음');
-      if(d.skipped.length) msg+='<br>기존(건너롱): '+d.skipped.join(', ');
-      msg+='<br>비밀번호: <strong>'+d.password+'</strong>';
+      var msg='✅ '+d.created.length+'명 생성 완료';
+      if(points>0) msg+=' ('+points.toLocaleString()+'P 지급)';
+      if(d.created.length) msg+='<br><span style="color:#888;font-size:12px">'+d.created.join(', ')+'</span>';
+      if(d.skipped.length) msg+='<br><span style="color:#f9a825;font-size:12px">기존(건너뜀): '+d.skipped.join(', ')+'</span>';
+      msg+='<br><span style="font-size:12px">비밀번호: <strong>'+d.password+'</strong></span>';
       res.innerHTML='<span style="color:#4fc3f7">'+msg+'</span>';
-    } else res.innerHTML='<span style="color:#c62828">❌ '+d.error+'</span>';
+      toast('✅ 테스트 회원 '+d.created.length+'명 생성 완료', 'success');
+    } else {
+      res.innerHTML='<span style="color:#c62828">❌ '+d.error+'</span>';
+      toast('생성 실패: '+d.error, 'error');
+    }
   }
   if(typeof loadMembers==='function') loadMembers();
 }
