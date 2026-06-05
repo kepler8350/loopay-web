@@ -852,9 +852,9 @@ async function loadUsers(){
       <td>${u.username||'-'}</td>
       <td>${u.real_name||u.nickname||'-'}</td>
       <td><span class="badge badge-info">${u.level||1}L</span></td>
-      <td>${(u.total_charged_points||0).toLocaleString()}P</td>
+      <td>${(u.charge_points||0).toLocaleString()}P</td>
       <td>${(u.total_charged_amount||0).toLocaleString()}원</td>
-      <td>${u.exchange_points||0}</td>
+      <td>${(u.exchange_points||0).toLocaleString()}</td>
       <td>${u.total_reservations||0}</td>
       <td style="white-space:nowrap">
         <button onclick="showUserDetail(${u.id})" class="btn-primary btn-sm" style="margin-right:4px">상세</button>
