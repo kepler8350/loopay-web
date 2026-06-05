@@ -714,69 +714,73 @@ def reservation_preview():
 @jwt_required()
 def create_reservation():
     uid = int(get_jwt_identity())
-    data = request.json or {}
-    bz = int(data.get('bronze_count', 0))
-    # 클라이언트에서 독립적으로 선택한 sv/gd 값 사용 (없으면 자동 계산)
-    sv_from_client = data.get('silver_count')
-    gd_from_client = data.get('gold_count')
-    db = get_db()
-    u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
-    lv = u['level']
-    cfg = LEVEL_CONFIG[lv]
-    if bz < cfg['bz_min'] or bz > cfg['bz_max']:
-        db.close()
-        return jsonify(error='예약 수량 범위 초과'), 400
-    # sv/gd: 클라이언트 값 우선, 범위 제한
-    sv_max = cfg['sv_max']
-    gd_max = cfg['gd_max']
-    if sv_from_client is not None:
-        sv = max(0, min(int(sv_from_client), sv_max))
-    else:
-        sv = get_sv_count(bz) if bz >= cfg['bz_max'] else 0
-    if gd_from_client is not None:
-        gd = max(0, min(int(gd_from_client), gd_max))
-    else:
-        gd = get_gd_count(sv) if sv >= sv_max and sv_max > 0 else 0
-    total = bz + sv + gd
-    cost = total * 40
-    total_pts = u['charge_points'] + u['exchange_points']
-    if total_pts < cost:
-        db.close()
-        return jsonify(error=f'포인트 부족. 필요: {cost}P, 보유: {total_pts}P'), 400
-    today = get_today().isoformat()
-    counts = {'bronze': bz, 'silver': sv, 'gold': gd}
-    for bar_type, cnt in counts.items():
-        if cnt <= 0:
-            continue
-        reservable = db.execute("SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='reservable' AND julianday('now') - julianday(purchase_date) >= 1 LIMIT ?", (uid, bar_type, cnt)).fetchall()
-        if reservable:
-            # 실제 보유 아이템으로 예약
-            for item in reservable:
-                db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date) VALUES(?,?,?,?,?)", (uid,item['id'],bar_type,1,today))
-        else:
-            # 아이템 없어도 예약 수만큼 레코드 생성 (외래키 일시 해제)
-            db.execute("PRAGMA foreign_keys=OFF")
-            for _ in range(cnt):
-                db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date) VALUES(?,?,?,?,?)", (uid,0,bar_type,1,today))
-            db.execute("PRAGMA foreign_keys=ON")
-    # 예약 비용: charge_points/exchange_points에서 차감 후 maintain_points로 이동
-    # charge 먼저 차감, 부족하면 exchange로 보충
-    ch_use = min(u['charge_points'], cost)
-    ex_use = cost - ch_use
-    # 1단계: 포인트 차감 + cumulative 업데이트
-    db.execute("""UPDATE users
-       SET exchange_points=exchange_points-?,
-           charge_points=charge_points-?,
-           cumulative_count=cumulative_count+?
-       WHERE id=?""", (ex_use, ch_use, total, uid))
-    # 2단계: maintain_points에 비용 추가 (컬럼 없으면 무시)
     try:
-        db.execute("UPDATE users SET maintain_points=COALESCE(maintain_points,0)+? WHERE id=?", (cost, uid))
-    except Exception:
-        pass
-    db.commit()
-    db.close()
-    return jsonify(success=True,message=f'매칭예약 완료! 총 {total}회, {cost}P 차감',bronze=bz,silver=sv,gold=gd)
+      data = request.json or {}
+      bz = int(data.get('bronze_count', 0))
+      # 클라이언트에서 독립적으로 선택한 sv/gd 값 사용 (없으면 자동 계산)
+      sv_from_client = data.get('silver_count')
+      gd_from_client = data.get('gold_count')
+      db = get_db()
+      u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+      lv = u['level']
+      cfg = LEVEL_CONFIG[lv]
+      if bz < cfg['bz_min'] or bz > cfg['bz_max']:
+          db.close()
+          return jsonify(error='예약 수량 범위 초과'), 400
+      # sv/gd: 클라이언트 값 우선, 범위 제한
+      sv_max = cfg['sv_max']
+      gd_max = cfg['gd_max']
+      if sv_from_client is not None:
+          sv = max(0, min(int(sv_from_client), sv_max))
+      else:
+          sv = get_sv_count(bz) if bz >= cfg['bz_max'] else 0
+      if gd_from_client is not None:
+          gd = max(0, min(int(gd_from_client), gd_max))
+      else:
+          gd = get_gd_count(sv) if sv >= sv_max and sv_max > 0 else 0
+      total = bz + sv + gd
+      cost = total * 40
+      total_pts = u['charge_points'] + u['exchange_points']
+      if total_pts < cost:
+          db.close()
+          return jsonify(error=f'포인트 부족. 필요: {cost}P, 보유: {total_pts}P'), 400
+      today = get_today().isoformat()
+      counts = {'bronze': bz, 'silver': sv, 'gold': gd}
+      for bar_type, cnt in counts.items():
+          if cnt <= 0:
+              continue
+          reservable = db.execute("SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='reservable' AND julianday('now') - julianday(purchase_date) >= 1 LIMIT ?", (uid, bar_type, cnt)).fetchall()
+          if reservable:
+              # 실제 보유 아이템으로 예약
+              for item in reservable:
+                  db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date) VALUES(?,?,?,?,?)", (uid,item['id'],bar_type,1,today))
+          else:
+              # 아이템 없어도 예약 수만큼 레코드 생성 (외래키 일시 해제)
+              db.execute("PRAGMA foreign_keys=OFF")
+              for _ in range(cnt):
+                  db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date) VALUES(?,?,?,?,?)", (uid,0,bar_type,1,today))
+              db.execute("PRAGMA foreign_keys=ON")
+      # 예약 비용: charge_points/exchange_points에서 차감 후 maintain_points로 이동
+      # charge 먼저 차감, 부족하면 exchange로 보충
+      ch_use = min(u['charge_points'], cost)
+      ex_use = cost - ch_use
+      # 1단계: 포인트 차감 + cumulative 업데이트
+      db.execute("""UPDATE users
+         SET exchange_points=exchange_points-?,
+             charge_points=charge_points-?,
+             cumulative_count=cumulative_count+?
+         WHERE id=?""", (ex_use, ch_use, total, uid))
+      # 2단계: maintain_points에 비용 추가 (컬럼 없으면 무시)
+      try:
+          db.execute("UPDATE users SET maintain_points=COALESCE(maintain_points,0)+? WHERE id=?", (cost, uid))
+      except Exception:
+          pass
+      db.commit()
+      db.close()
+      return jsonify(success=True,message=f'매칭예약 완료! 총 {total}회, {cost}P 차감',bronze=bz,silver=sv,gold=gd)
+    except Exception as _e:
+        import traceback
+        return jsonify(error=str(_e), trace=traceback.format_exc()[-500:]), 500
 
 @app.route('/api/items', methods=['GET'])
 @jwt_required()
