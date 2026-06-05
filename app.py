@@ -931,10 +931,14 @@ def admin_reset_sequences():
     db = get_db()
     try:
         results = []
-        max_item = (db.execute("SELECT MAX(id) as m FROM items").fetchone() or {}).get('m') or 0
-        max_user = (db.execute("SELECT MAX(id) as m FROM users").fetchone() or {}).get('m') or 0
-        max_match = (db.execute("SELECT MAX(id) as m FROM matches").fetchone() or {}).get('m') or 0
-        max_res = (db.execute("SELECT MAX(id) as m FROM reservations").fetchone() or {}).get('m') or 0
+        _r = db.execute("SELECT MAX(id) as m FROM items").fetchone()
+        max_item = _r['m'] if _r and _r['m'] else 0
+        _r = db.execute("SELECT MAX(id) as m FROM users").fetchone()
+        max_user = _r['m'] if _r and _r['m'] else 0
+        _r = db.execute("SELECT MAX(id) as m FROM matches").fetchone()
+        max_match = _r['m'] if _r and _r['m'] else 0
+        _r = db.execute("SELECT MAX(id) as m FROM reservations").fetchone()
+        max_res = _r['m'] if _r and _r['m'] else 0
 
         reset_all = data.get('reset_all', False)
         if reset_all:
