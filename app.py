@@ -3591,7 +3591,7 @@ def admin_loopay_items():
                            ORDER BY m.id DESC LIMIT 1""",
                         (d['id'], lid)
                     ).fetchone()
-                    # 방법2: buyer_id + reservation.item_id 직접 조인
+                    # 방법2: reservation_id → reservation.item_id 조인
                     if not _buy_m:
                         _buy_m = db.execute(
                             """SELECT m.id, m.status, m.match_round, m.receipt_url,
@@ -3601,7 +3601,7 @@ def admin_loopay_items():
                                seller.bank as seller_bank,
                                seller.phone as seller_phone
                                FROM matches m
-                               LEFT JOIN reservations r ON m.reservation_id = r.id
+                               INNER JOIN reservations r ON m.reservation_id = r.id
                                LEFT JOIN users seller ON m.seller_id = seller.id
                                WHERE r.item_id = ? AND m.buyer_id = ?
                                  AND m.status IN ('pending', 'paid')
