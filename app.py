@@ -48,9 +48,13 @@ def _set_mock_time_to_db(dt):
         pass
 
 def get_now():
-    """현재 시간 반환 - 매번 DB에서 읽어 멀티워커 동기화"""
+    """현재 시간 반환 - 매번 DB에서 읽어 멀티워커 동기화 (KST 기준)"""
     mt = _get_mock_time_from_db()
-    return mt if mt else datetime.datetime.now()
+    if mt:
+        return mt
+    # Railway 서버는 UTC이므로 KST(+9)로 변환
+    # UTC+9 (KST) 변환
+    return datetime.datetime.utcnow() + datetime.timedelta(hours=9)
 
 
 def insert_notification(db, user_id, ntype, title, message):
