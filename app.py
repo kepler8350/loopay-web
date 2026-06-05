@@ -1519,11 +1519,11 @@ def admin_run_matching():
                     db.execute(
                         """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
                            buy_price, sell_price, match_round, match_date, status,
-                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id)
-                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?)""",
+                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id, buyer_res_id)
+                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?)""",
                         (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
                          bt, st, buy_price, sell_price, round_num, today,
-                         s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'], _seller_iid)
+                         s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'], _seller_iid, buyer['res_id'])
                     )
                 except Exception:
                     db.execute(
@@ -2021,6 +2021,7 @@ with app.app_context():
             "ALTER TABLE penalties ADD COLUMN match_round INTEGER DEFAULT 1",
             "ALTER TABLE penalties ADD COLUMN release_paid INTEGER DEFAULT 0",
             "ALTER TABLE matches ADD COLUMN receipt_url TEXT",
+            "ALTER TABLE matches ADD COLUMN buyer_res_id INTEGER",
             "ALTER TABLE notifications ADD COLUMN scheduled_at DATETIME",
         ]:
             try:
@@ -3558,21 +3559,24 @@ def admin_loopay_items():
             d['is_buy_matched'] = False
             # loopay가 구매자인 매칭 확인 (matched 아이템)
             if d['status'] == 'matched':
-                _buy_m = db.execute(
-                    """SELECT m.id, m.status, m.match_round, m.receipt_url,
-                       seller.username as seller_username,
-                       seller.account_name as seller_account_name,
-                       seller.account_no as seller_account,
-                       seller.bank as seller_bank,
-                       seller.phone as seller_phone
-                       FROM matches m
-                       LEFT JOIN reservations r ON m.buyer_res_id = r.id
-                       LEFT JOIN users seller ON m.seller_id = seller.id
-                       WHERE r.item_id = ? AND m.buyer_id = ?
-                         AND m.status IN ('pending', 'paid')
-                       ORDER BY m.id DESC LIMIT 1""",
-                    (d['id'], lid)
-                ).fetchone()
+                try:
+                    _buy_m = db.execute(
+                        """SELECT m.id, m.status, m.match_round, m.receipt_url,
+                           seller.username as seller_username,
+                           seller.account_name as seller_account_name,
+                           seller.account_no as seller_account,
+                           seller.bank as seller_bank,
+                           seller.phone as seller_phone
+                           FROM matches m
+                           LEFT JOIN reservations r ON m.buyer_res_id = r.id
+                           LEFT JOIN users seller ON m.seller_id = seller.id
+                           WHERE r.item_id = ? AND m.buyer_id = ?
+                             AND m.status IN ('pending', 'paid')
+                           ORDER BY m.id DESC LIMIT 1""",
+                        (d['id'], lid)
+                    ).fetchone()
+                except Exception:
+                    _buy_m = None
                 if _buy_m:
                     d['is_buy_matched'] = True
                     d['match_id'] = _buy_m['id']
