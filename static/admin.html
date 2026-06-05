@@ -1368,6 +1368,8 @@ async function loadSystemItems(){
     updateBuyDeleteBtn();
   }catch(e){
     if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="color:#ef5350;text-align:center;padding:16px">오류: '+e.message+'</td></tr>';
+    var buyTbodyErr = document.getElementById('si-buy-tbody');
+    if(buyTbodyErr) buyTbodyErr.innerHTML = '<tr><td colspan="12" style="color:#ef5350;text-align:center;padding:16px">오류: '+e.message+'</td></tr>';
   }
 }
 function renderSystemItems(){
@@ -1384,6 +1386,8 @@ function renderSystemItems(){
   if(totalEl) totalEl.textContent = '총 '+filtered.length+'개 (전체 '+_systemItems.length+'개)';
   if(!filtered.length){
     tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">아이템 없음</td></tr>';
+    var buyTbodyEmpty = document.getElementById('si-buy-tbody');
+    if(buyTbodyEmpty) buyTbodyEmpty.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">구매 아이템 없음</td></tr>';
     return;
   }
   var tC={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
