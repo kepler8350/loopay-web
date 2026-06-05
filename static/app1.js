@@ -705,8 +705,9 @@ async function doRegister(){
   try{
     var realName=(document.getElementById('reg-real-name')?.value||'').trim();
     if(!realName){errEl.textContent='본인 이름을 입력해주세요';return;}
-    // 이름/예금주 일치 검증
-    if(accountName && realName !== accountName){
+    // 이름/예금주 일치 검증 (예금주 입력시 반드시 일치해야 함)
+    if(!accountName){errEl.textContent='예금주명을 입력해주세요.';return;}
+    if(realName !== accountName){
       errEl.textContent='본인 이름과 예금주명이 일치해야 합니다.';return;
     }
     var r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},
