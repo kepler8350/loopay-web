@@ -744,6 +744,17 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
       <div id="test-users-result" style="font-size:13px;color:#aaa"></div>
     </div>
   </div>
+  <div class="table-card" style="margin-top:20px;border:1px solid #c62828">
+    <div class="table-header" style="background:#1a0a0a"><span class="table-title" style="color:#ef9a9a">⚠️ DB 초기화 (아이템ID / 회원ID)</span></div>
+    <div style="padding:16px">
+      <p style="color:#f9a825;font-size:12px;margin-bottom:12px">아이템 ID와 회원 ID 시퀀스를 현재 최댓값으로 동기화하거나, 전체 데이터를 삭제하고 1부터 재시작합니다.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <button onclick="resetIdSequences()" style="padding:9px 18px;background:#e65100;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">🔄 ID 시퀀스 동기화</button>
+        <button onclick="resetAllData()" style="padding:9px 18px;background:#b71c1c;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">🗑️ 전체 초기화 (1부터 재시작)</button>
+      </div>
+      <div id="reset-result" style="font-size:13px;color:#aaa"></div>
+    </div>
+  </div>
 </div>
 </div></div>
 <div class="toast" id="toast"></div>
@@ -2011,6 +2022,53 @@ async function resetMockTime(){
   loadCurrentTime();
   updateMatchingBtn();
 }
+
+// ── DB 초기화 ──────────────────────────────────────────────
+async function resetIdSequences(){
+  var res = document.getElementById('reset-result');
+  if(!window.confirm('아이템ID/회원ID 시퀀스를 현재 최댓값으로 동기화합니까?\n(데이터는 삭제되지 않습니다)')) return;
+  if(res) res.innerHTML = '<span style="color:#aaa">처리 중...</span>';
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var d = await fetch('/api/admin/reset-sequences',{method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify({targets:['items','users','matches','reservations']})
+    }).then(r=>r.json());
+    if(d.success){
+      var html2 = d.results.map(function(r){ return '<div>'+r+'</div>'; }).join('');
+      html2 += '<div style="color:#888;font-size:11px;margin-top:6px">현재 MAX: 아이템 '+d.current.items+' / 회원 '+d.current.users+'</div>';
+      if(res) res.innerHTML = '<span style="color:#66bb6a">'+html2+'</span>';
+      toast('✅ ID 시퀀스 동기화 완료', 'success');
+    } else {
+      if(res) res.innerHTML = '<span style="color:#ef5350">❌ '+d.error+'</span>';
+      toast('실패: '+d.error, 'error');
+    }
+  }catch(e){ if(res) res.innerHTML='<span style="color:#ef5350">❌ '+e.message+'</span>'; }
+}
+
+async function resetAllData(){
+  var res = document.getElementById('reset-result');
+  if(!window.confirm('⚠️ 주의: 모든 아이템/매칭/예약/충전 데이터가 삭제되고\n아이템ID와 회원ID가 1부터 재시작됩니다.\n\n계속하시겠습니까?')) return;
+  if(!window.confirm('정말로 전체 초기화 하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+  if(res) res.innerHTML = '<span style="color:#f9a825">초기화 중...</span>';
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var d = await fetch('/api/admin/reset-sequences',{method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify({reset_all:true})
+    }).then(r=>r.json());
+    if(d.success){
+      var html2 = d.results.map(function(r){ return '<div>'+r+'</div>'; }).join('');
+      if(res) res.innerHTML = '<span style="color:#66bb6a">'+html2+'</span>';
+      toast('✅ 전체 초기화 완료 — ID가 1부터 재시작됩니다', 'success');
+      if(typeof loadDashboard==='function') setTimeout(loadDashboard, 500);
+    } else {
+      if(res) res.innerHTML = '<span style="color:#ef5350">❌ '+d.error+'</span>';
+      toast('실패: '+d.error, 'error');
+    }
+  }catch(e){ if(res) res.innerHTML='<span style="color:#ef5350">❌ '+e.message+'</span>'; }
+}
+
 async function createTestUsers(){
   var res=document.getElementById('test-users-result');
   var count=parseInt(document.getElementById('test-user-count')?.value||'10')||10;
@@ -2065,7 +2123,7 @@ async function showUserDetail(uid){
   const modal=document.getElementById('user-detail-modal');
   if(!modal)return;
   modal.style.display='block';
-  document.getElementById('detail-title').textContent='회원 상세 (ID: '+uid+')';
+  document.getElementById('detail-title').textContent='회원 상세';
   const infoEl=document.getElementById('detail-user-info');
   if(infoEl)infoEl.innerHTML='<div style="padding:10px;color:#888">로딩 중...</div>';
   try{
@@ -2137,7 +2195,7 @@ async function showUserDetail(uid){
   if(modal && modal.parentElement !== document.body) document.body.appendChild(modal);
   if(!modal) return;
   modal.style.display = 'block';
-  document.getElementById('detail-title').textContent = '회원 상세 (ID: '+uid+')';
+  document.getElementById('detail-title').textContent = '회원 상세';
   var infoEl = document.getElementById('detail-user-info');
   if(infoEl) infoEl.innerHTML = '<div style="padding:10px;color:#888">로딩 중...</div>';
   try {
