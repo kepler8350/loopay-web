@@ -921,6 +921,57 @@ def get_levels():
 def get_penalty_table():
     return jsonify(penalties=[{'count':c,'days':d,'release_points':p} for c,d,p in PENALTY_TABLE])
 
+
+@app.route('/api/admin/reset-sequences', methods=['POST'])
+@jwt_required()
+def admin_reset_sequences():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    db = get_db()
+    try:
+        results = []
+        max_item = (db.execute("SELECT MAX(id) as m FROM items").fetchone() or {}).get('m') or 0
+        max_user = (db.execute("SELECT MAX(id) as m FROM users").fetchone() or {}).get('m') or 0
+        max_match = (db.execute("SELECT MAX(id) as m FROM matches").fetchone() or {}).get('m') or 0
+        max_res = (db.execute("SELECT MAX(id) as m FROM reservations").fetchone() or {}).get('m') or 0
+
+        reset_all = data.get('reset_all', False)
+        if reset_all:
+            for tbl in ['matches','reservations','items','notifications','charges','penalties']:
+                try:
+                    db.execute(f"DELETE FROM {tbl}")
+                    results.append(f"✅ {tbl} 전체 삭제")
+                except Exception as e:
+                    results.append(f"⚠️ {tbl}: {str(e)}")
+            db.execute("DELETE FROM users WHERE username NOT IN ('loopay','admin') AND username NOT LIKE 'admin%'")
+            results.append("✅ 테스트 회원 삭제 (loopay/admin 유지)")
+            for tbl in ['items','users','matches','reservations','notifications','charges']:
+                try:
+                    db.execute(f"UPDATE sqlite_sequence SET seq=0 WHERE name='{tbl}'")
+                    results.append(f"✅ {tbl} ID 시퀀스 → 1부터 시작")
+                except Exception as e:
+                    results.append(f"⚠️ {tbl} 시퀀스: {str(e)}")
+        else:
+            targets = data.get('targets', ['items','users'])
+            for tbl in targets:
+                try:
+                    row = db.execute(f"SELECT MAX(id) as m FROM {tbl}").fetchone()
+                    max_id = row['m'] if row and row['m'] else 0
+                    db.execute(f"UPDATE sqlite_sequence SET seq=? WHERE name=?", (max_id, tbl))
+                    results.append(f"✅ {tbl} 시퀀스 → {max_id}")
+                except Exception as e:
+                    results.append(f"⚠️ {tbl}: {str(e)}")
+
+        db.commit()
+        return jsonify(success=True, results=results,
+                       current={'items':max_item,'users':max_user,'matches':max_match,'reservations':max_res})
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/migrate-db', methods=['POST'])
 @jwt_required()
 def admin_migrate_db():
