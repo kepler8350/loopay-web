@@ -3572,10 +3572,9 @@ def admin_loopay_items():
             st = d['stage'] or 1
             # 이 아이템의 status가 matched/sold인 경우만 match 찾기
             d['is_buy_matched'] = False
-            # loopay가 구매자인 매칭 확인 (matched 아이템)
+            # loopay가 구매자인 매칭 확인: bar_type + stage + buyer_id=loopay 방식
             if d['status'] == 'matched':
                 try:
-                    # 방법1: buyer_res_id → reservation → item_id 연결
                     _buy_m = db.execute(
                         """SELECT m.id, m.status, m.match_round, m.receipt_url,
                            seller.username as seller_username,
@@ -3584,30 +3583,15 @@ def admin_loopay_items():
                            seller.bank as seller_bank,
                            seller.phone as seller_phone
                            FROM matches m
-                           LEFT JOIN reservations r ON m.buyer_res_id = r.id
                            LEFT JOIN users seller ON m.seller_id = seller.id
-                           WHERE r.item_id = ? AND m.buyer_id = ?
+                           WHERE m.buyer_id = ? AND m.bar_type = ? AND m.stage = ?
                              AND m.status IN ('pending', 'paid')
-                           ORDER BY m.id DESC LIMIT 1""",
-                        (d['id'], lid)
+                             AND m.id NOT IN ({})
+                           ORDER BY m.id DESC LIMIT 1""".format(
+                               ','.join(str(x) for x in used_match_ids) if used_match_ids else '0'
+                           ),
+                        (lid, bt, st)
                     ).fetchone()
-                    # 방법2: reservation_id → reservation.item_id 조인
-                    if not _buy_m:
-                        _buy_m = db.execute(
-                            """SELECT m.id, m.status, m.match_round, m.receipt_url,
-                               seller.username as seller_username,
-                               seller.account_name as seller_account_name,
-                               seller.account_no as seller_account,
-                               seller.bank as seller_bank,
-                               seller.phone as seller_phone
-                               FROM matches m
-                               INNER JOIN reservations r ON m.reservation_id = r.id
-                               LEFT JOIN users seller ON m.seller_id = seller.id
-                               WHERE r.item_id = ? AND m.buyer_id = ?
-                                 AND m.status IN ('pending', 'paid')
-                               ORDER BY m.id DESC LIMIT 1""",
-                            (d['id'], lid)
-                        ).fetchone()
                 except Exception:
                     _buy_m = None
                 if _buy_m:
@@ -3621,7 +3605,6 @@ def admin_loopay_items():
                     d['seller_account'] = _buy_m['seller_account']
                     d['seller_bank'] = _buy_m['seller_bank']
                     d['seller_phone'] = _buy_m['seller_phone']
-                    # loopay 자신의 계좌정보
                     d['buyer_username'] = 'loopay'
                     d['buyer_account_name'] = get_setting('loopay_account_name', '루페이')
                     d['buyer_account'] = get_setting('loopay_account', None)
