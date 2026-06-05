@@ -656,34 +656,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
         </div>
       </div>
 
-      <!-- 루페이 계정 정보 (추가예약 판매자 정보) -->
-      <div class="card" style="padding:16px;margin-bottom:12px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:#64b5f6">🏦 루페이 계좌 정보 (매칭 결과 판매자 정보로 표시)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div>
-            <label style="font-size:11px;color:#888;display:block;margin-bottom:4px">연락처</label>
-            <input id="loopay-phone" type="text" placeholder="01012345678"
-              style="width:100%;padding:7px 10px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:13px">
-          </div>
-          <div>
-            <label style="font-size:11px;color:#888;display:block;margin-bottom:4px">은행명</label>
-            <input id="loopay-bank" type="text" placeholder="국민은행"
-              style="width:100%;padding:7px 10px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:13px">
-          </div>
-          <div>
-            <label style="font-size:11px;color:#888;display:block;margin-bottom:4px">계좌번호</label>
-            <input id="loopay-account" type="text" placeholder="123456789012"
-              style="width:100%;padding:7px 10px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:13px">
-          </div>
-          <div>
-            <label style="font-size:11px;color:#888;display:block;margin-bottom:4px">예금주명</label>
-            <input id="loopay-account-name" type="text" placeholder="홍길동"
-              style="width:100%;padding:7px 10px;background:#1a1a2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:13px">
-          </div>
-        </div>
-      </div>
-
-      <!-- 2차 매칭 자동/수동 설정 -->
+      <!-- 2차 매칭 설정 (루페이 계좌 앞으로 이동) -->
       <div class="card" style="padding:14px 16px;margin-bottom:12px">
         <div class="card-title" style="margin-bottom:10px">⚡ 2차 매칭 설정</div>
         <div style="margin-bottom:10px">
@@ -703,6 +676,21 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
             </label>
           </div>
           <div style="font-size:11px;color:#666;margin-top:6px">자동 선택 시 매일 14:10에 2차 매칭이 자동으로 실행됩니다. 미입금확정 수량이 없으면 스킵됩니다.</div>
+        </div>
+      </div>
+
+      <!-- 루페이 계좌 정보 -->
+      <div class="card" style="padding:16px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:700;color:#64b5f6">🏦 루페이 계좌 정보</div>
+          <button onclick="addLoopayAccount()" style="padding:5px 12px;background:#1976d2;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">+ 계좌 추가</button>
+        </div>
+        <div style="font-size:11px;color:#888;margin-bottom:10px">
+          · <span style="color:#42a5f5">시스템계좌</span>: 매칭 결과 판매자 정보로 표시 (1개만 설정 가능)<br>
+          · <span style="color:#ab47bc">포인트계좌</span>: 포인트 충전 신청 시 입금 안내 계좌 (1개만 설정 가능)
+        </div>
+        <div id="loopay-accounts-list" style="display:flex;flex-direction:column;gap:8px">
+          <div style="text-align:center;color:#888;padding:12px;font-size:12px">로딩 중...</div>
         </div>
       </div>
 
@@ -2264,13 +2252,21 @@ async function loadSettings(){
     const autoApprove = (d.settings?.auto_approve === '1');
     _currentApproveMode = autoApprove ? 'auto' : 'manual';
     updateSettingsUI(_currentApproveMode);
-    // 루페이 계좌 정보 로드
+    // 루페이 계좌 목록 렌더링
     var s = d.settings || {};
-    var el = function(id){ return document.getElementById(id); };
-    if(el('loopay-phone'))       el('loopay-phone').value       = s.loopay_phone       || '';
-    if(el('loopay-bank'))        el('loopay-bank').value        = s.loopay_bank        || '';
-    if(el('loopay-account'))     el('loopay-account').value     = s.loopay_account     || '';
-    if(el('loopay-account-name'))el('loopay-account-name').value= s.loopay_account_name|| '';
+    try {
+      var accts = s.loopay_accounts ? JSON.parse(s.loopay_accounts) : [];
+      // 기존 단일계좌 설정 마이그레이션
+      if(!accts.length && s.loopay_account){
+        accts = [{
+          bank: s.loopay_bank||'', account: s.loopay_account||'',
+          account_name: s.loopay_account_name||'', phone: s.loopay_phone||'',
+          type: 'system'
+        }];
+      }
+      _loopayAccounts = accts;
+    } catch(e){ _loopayAccounts = []; }
+    renderLoopayAccounts();
   }catch(e){
     console.error('설정 로딩 실패:', e);
     toast('설정 로딩 실패: ' + e.message, 'error');
@@ -2295,6 +2291,141 @@ function updateSettingsUI(mode){
   }
 }
 
+
+// ── 루페이 계좌 관리 ──────────────────────────────────────────────────
+var _loopayAccounts = [];
+
+function renderLoopayAccounts(){
+  var list = document.getElementById('loopay-accounts-list');
+  if(!list) return;
+  if(!_loopayAccounts.length){
+    list.innerHTML = '<div style="text-align:center;color:#888;padding:12px;font-size:12px">등록된 계좌 없음 — 위 [+ 계좌 추가] 버튼으로 추가하세요</div>';
+    return;
+  }
+  list.innerHTML = _loopayAccounts.map(function(a,i){
+    var typeColor = a.type==='point' ? '#ab47bc' : '#42a5f5';
+    var typeName  = a.type==='point' ? '포인트계좌' : '시스템계좌';
+    var typeIcon  = a.type==='point' ? '💜' : '🔵';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#12121f;border-radius:8px;border:1px solid #2a2d40">'
+      +'<span style="padding:2px 10px;border-radius:12px;font-size:11px;background:'+typeColor+'22;color:'+typeColor+';white-space:nowrap;font-weight:700">'+typeIcon+' '+typeName+'</span>'
+      +'<span style="font-size:13px;color:#cdd6f4;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+        +'<strong>'+(a.account_name||'-')+'</strong>'
+        +' <span style="color:#888;font-size:11px">'+(a.bank||'')+'</span>'
+        +' <span style="color:#a0a0c0">'+(a.account||'')+'</span>'
+        +(a.phone?' <span style="color:#888;font-size:11px">'+a.phone+'</span>':'')
+      +'</span>'
+      +'<button onclick="editLoopayAccount('+i+')" style="padding:3px 8px;background:#37474f;color:#80cbc4;border:1px solid #546e7a;border-radius:4px;font-size:11px;cursor:pointer">수정</button>'
+      +'<button onclick="deleteLoopayAccount('+i+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">삭제</button>'
+      +'</div>';
+  }).join('');
+}
+
+function addLoopayAccount(){
+  showLoopayAccountModal(-1, {type:'system', bank:'', account:'', account_name:'', phone:''});
+}
+
+function editLoopayAccount(idx){
+  showLoopayAccountModal(idx, Object.assign({}, _loopayAccounts[idx]));
+}
+
+function deleteLoopayAccount(idx){
+  if(!window.confirm('이 계좌를 삭제하시겠습니까?')) return;
+  _loopayAccounts.splice(idx, 1);
+  renderLoopayAccounts();
+  saveLoopayAccounts();
+}
+
+function showLoopayAccountModal(idx, data){
+  var modal = document.getElementById('loopay-acct-modal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'loopay-acct-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+    document.body.appendChild(modal);
+  }
+  // 현재 각 타입 사용 여부 확인
+  var hasSystem = _loopayAccounts.some(function(a,i){ return a.type==='system' && i!==idx; });
+  var hasPoint  = _loopayAccounts.some(function(a,i){ return a.type==='point'  && i!==idx; });
+  modal.innerHTML = '<div style="background:#1a1d2e;border-radius:14px;padding:24px;width:90%;max-width:440px;border:1px solid #2a2d40;color:#e0e0e0">'
+    +'<div style="font-size:15px;font-weight:700;margin-bottom:16px;color:#64b5f6">'+(idx<0?'계좌 추가':'계좌 수정')+'</div>'
+    +'<div style="margin-bottom:10px">'
+    +'<label style="font-size:11px;color:#aaa;display:block;margin-bottom:4px">계좌 용도 <span style="color:#ef5350">(필수, 각 1개만)</span></label>'
+    +'<div style="display:flex;gap:10px">'
+    +'<label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 14px;border-radius:6px;border:1px solid '+(data.type==='system'?'#42a5f5':'#2d2d5e')+';background:'+(data.type==='system'?'#0d47a133':'transparent')+'" id="acct-type-system-lbl">'
+    +'<input type="radio" name="acct-type-radio" value="system" '+(data.type==='system'?'checked':'')+(hasSystem?' disabled':'')+' onchange="onAcctTypeChange()" style="cursor:pointer">'
+    +'<span style="color:#42a5f5;font-size:13px">🔵 시스템계좌</span>'+(hasSystem?' <span style="font-size:10px;color:#ef5350">(설정됨)</span>':'')
+    +'</label>'
+    +'<label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:7px 14px;border-radius:6px;border:1px solid '+(data.type==='point'?'#ab47bc':'#2d2d5e')+';background:'+(data.type==='point'?'#7b1fa233':'transparent')+'" id="acct-type-point-lbl">'
+    +'<input type="radio" name="acct-type-radio" value="point" '+(data.type==='point'?'checked':'')+(hasPoint?' disabled':'')+' onchange="onAcctTypeChange()" style="cursor:pointer">'
+    +'<span style="color:#ab47bc;font-size:13px">💜 포인트계좌</span>'+(hasPoint?' <span style="font-size:10px;color:#ef5350">(설정됨)</span>':'')
+    +'</label>'
+    +'</div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
+    +'<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:3px">예금주명</label><input id="acct-modal-name" value="'+(data.account_name||'')+'" placeholder="홍길동" style="width:100%;padding:7px 10px;background:#12121f;border:1px solid #2d2d5e;border-radius:6px;color:#e0e0e0;font-size:13px;box-sizing:border-box"></div>'
+    +'<div><label style="font-size:11px;color:#aaa;display:block;margin-bottom:3px">은행명</label><input id="acct-modal-bank" value="'+(data.bank||'')+'" placeholder="국민은행" style="width:100%;padding:7px 10px;background:#12121f;border:1px solid #2d2d5e;border-radius:6px;color:#e0e0e0;font-size:13px;box-sizing:border-box"></div>'
+    +'<div style="grid-column:1/-1"><label style="font-size:11px;color:#aaa;display:block;margin-bottom:3px">계좌번호</label><input id="acct-modal-account" value="'+(data.account||'')+'" placeholder="123456789012" style="width:100%;padding:7px 10px;background:#12121f;border:1px solid #2d2d5e;border-radius:6px;color:#e0e0e0;font-size:13px;box-sizing:border-box"></div>'
+    +'<div style="grid-column:1/-1"><label style="font-size:11px;color:#aaa;display:block;margin-bottom:3px">연락처</label><input id="acct-modal-phone" value="'+(data.phone||'')+'" placeholder="01012345678" style="width:100%;padding:7px 10px;background:#12121f;border:1px solid #2d2d5e;border-radius:6px;color:#e0e0e0;font-size:13px;box-sizing:border-box"></div>'
+    +'</div>'
+    +'<div id="acct-modal-err" style="color:#ef5350;font-size:12px;min-height:16px;margin-bottom:8px"></div>'
+    +'<div style="display:flex;gap:10px">'
+    +'<button onclick="closeLoopayAccountModal()" style="flex:1;padding:10px;background:#37474f;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">취소</button>'
+    +'<button onclick="saveLoopayAccountModal('+idx+')" style="flex:1;padding:10px;background:#1976d2;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">저장</button>'
+    +'</div>'
+    +'</div>';
+  modal.style.display = 'flex';
+}
+
+function onAcctTypeChange(){
+  var radios = document.querySelectorAll('[name="acct-type-radio"]');
+  radios.forEach(function(r){
+    var lbl = r.closest('label');
+    if(!lbl) return;
+    var color = r.value==='point' ? '#ab47bc' : '#42a5f5';
+    lbl.style.borderColor = r.checked ? color : '#2d2d5e';
+    lbl.style.background = r.checked ? (r.value==='point'?'#7b1fa233':'#0d47a133') : 'transparent';
+  });
+}
+
+function closeLoopayAccountModal(){
+  var m = document.getElementById('loopay-acct-modal');
+  if(m) m.style.display='none';
+}
+
+function saveLoopayAccountModal(idx){
+  var typeRadio = document.querySelector('[name="acct-type-radio"]:checked');
+  var name = (document.getElementById('acct-modal-name')?.value||'').trim();
+  var bank = (document.getElementById('acct-modal-bank')?.value||'').trim();
+  var account = (document.getElementById('acct-modal-account')?.value||'').trim();
+  var phone = (document.getElementById('acct-modal-phone')?.value||'').trim();
+  var errEl = document.getElementById('acct-modal-err');
+  if(!typeRadio){ errEl.textContent='계좌 용도를 선택해주세요.'; return; }
+  if(!name||!bank||!account){ errEl.textContent='예금주명, 은행명, 계좌번호는 필수입니다.'; return; }
+  errEl.textContent='';
+  var acct = {type: typeRadio.value, bank, account, account_name: name, phone};
+  if(idx < 0){ _loopayAccounts.push(acct); }
+  else { _loopayAccounts[idx] = acct; }
+  closeLoopayAccountModal();
+  renderLoopayAccounts();
+  saveLoopayAccounts();
+}
+
+async function saveLoopayAccounts(){
+  try{
+    await apiAdmin('/admin/settings', {
+      method:'POST',
+      body: JSON.stringify({
+        loopay_accounts: JSON.stringify(_loopayAccounts),
+        // 기존 단일 계좌 필드 동기화 (호환성)
+        loopay_bank:         (_loopayAccounts.find(function(a){return a.type==='system';})||_loopayAccounts[0]||{}).bank||'',
+        loopay_account:      (_loopayAccounts.find(function(a){return a.type==='system';})||_loopayAccounts[0]||{}).account||'',
+        loopay_account_name: (_loopayAccounts.find(function(a){return a.type==='system';})||_loopayAccounts[0]||{}).account_name||'',
+        loopay_phone:        (_loopayAccounts.find(function(a){return a.type==='system';})||_loopayAccounts[0]||{}).phone||''
+      })
+    });
+    toast('✅ 계좌 정보 저장 완료', 'success');
+  }catch(e){ toast('저장 실패: '+e.message, 'error'); }
+}
+
 async function saveSettings(){
   var btn = (typeof event!=='undefined' && event && event.target && event.target.tagName==='BUTTON') ? event.target : document.querySelector('[onclick="saveSettings()"]');
   var origText = btn ? btn.textContent : '';
@@ -2311,11 +2442,7 @@ async function saveSettings(){
     await apiAdmin('/admin/settings', {
       method:'POST',
       body: JSON.stringify({
-        auto_approve: isAuto ? '1' : '0',
-        loopay_phone:        el('loopay-phone'),
-        loopay_bank:         el('loopay-bank'),
-        loopay_account:      el('loopay-account'),
-        loopay_account_name: el('loopay-account-name')
+        auto_approve: isAuto ? '1' : '0'
       })
     });
     const msg = isAuto ? '✅ 자동 승인으로 변경되었습니다' : '✅ 수동 승인으로 변경되었습니다';

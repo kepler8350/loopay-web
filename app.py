@@ -863,12 +863,28 @@ def charge_request():
         # 루페이 계좌 정보 가져오기
         try:
             db2 = get_db()
-            _bank = db2.execute("SELECT value FROM system_settings WHERE key='loopay_bank'").fetchone()
-            _acct = db2.execute("SELECT value FROM system_settings WHERE key='loopay_account'").fetchone()
-            _name = db2.execute("SELECT value FROM system_settings WHERE key='loopay_account_name'").fetchone()
-            loopay_bank = _bank['value'] if _bank else '은행미설정'
-            loopay_acct = _acct['value'] if _acct else '계좌미설정'
-            loopay_acct_name = _name['value'] if _name else '루페이'
+            # 포인트계좌 우선 사용 (loopay_accounts JSON에서 type='point'인 항목)
+            _accounts_row = db2.execute("SELECT value FROM system_settings WHERE key='loopay_accounts'").fetchone()
+            loopay_bank = '은행미설정'; loopay_acct = '계좌미설정'; loopay_acct_name = '루페이'
+            if _accounts_row:
+                import json as _json
+                _accounts = _json.loads(_accounts_row['value'] or '[]')
+                # 포인트계좌 찾기
+                _point_acct = next((a for a in _accounts if a.get('type') == 'point'), None)
+                _sys_acct = next((a for a in _accounts if a.get('type') == 'system'), None)
+                _use = _point_acct or _sys_acct
+                if _use:
+                    loopay_bank = _use.get('bank', '은행미설정')
+                    loopay_acct = _use.get('account', '계좌미설정')
+                    loopay_acct_name = _use.get('account_name', '루페이')
+            else:
+                # 기존 단일 계좌 설정 호환
+                _bank = db2.execute("SELECT value FROM system_settings WHERE key='loopay_bank'").fetchone()
+                _acct = db2.execute("SELECT value FROM system_settings WHERE key='loopay_account'").fetchone()
+                _name = db2.execute("SELECT value FROM system_settings WHERE key='loopay_account_name'").fetchone()
+                loopay_bank = _bank['value'] if _bank else '은행미설정'
+                loopay_acct = _acct['value'] if _acct else '계좌미설정'
+                loopay_acct_name = _name['value'] if _name else '루페이'
             db2.close()
         except Exception:
             loopay_bank, loopay_acct, loopay_acct_name = '확인필요', '확인필요', '루페이'
