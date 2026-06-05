@@ -958,7 +958,13 @@ async function updateMatchingBtn(){
     var isActive1 = (_effH >= 20 || _effH < 5);
     var btn1 = document.getElementById('btn-run-matching-1');
     var notice = document.getElementById('matching-time-notice');
-    if(btn1){ btn1.disabled=!isActive1; btn1.style.opacity=isActive1?'1':'0.45'; btn1.style.cursor=isActive1?'pointer':'not-allowed'; }
+    // 매칭 성공 후 블록이 숨겨진 상태면 버튼 비활성 유지
+    var _rb1 = document.getElementById('match-run-block-1');
+    var _block1Hidden = _rb1 && _rb1.style.display === 'none';
+    if(btn1){ 
+      var _active1 = isActive1 && !_block1Hidden;
+      btn1.disabled=!_active1; btn1.style.opacity=_active1?'1':'0.45'; btn1.style.cursor=_active1?'pointer':'not-allowed'; 
+    }
     if(notice){
       notice.textContent = isActive1
         ? '✅ 매칭 가능 시간 (20:00~05:00) — 서버시간 '+ct.time.slice(11,16)
