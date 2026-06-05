@@ -714,12 +714,13 @@ async function doRegister(){
       body:JSON.stringify({username,password,phone,bank,account_no:accountNo,account_name:accountName,real_name:realName})});
     var d=await r.json();
     if(!r.ok){errEl.textContent=d.error||'회원가입 실패';return;}
-    // 가입 완료 후 바로 로그인 화면으로 (완료 화면 없음)
-    if(d.auto_approved){
-      errEl.style.color='#2e7d32';
-      errEl.textContent='회원가입이 완료되었습니다! 바로 로그인하세요.';
-    } else {
-      showLogin();
+    // 가입 완료 화면 표시
+    document.getElementById('register-form').style.display='none';
+    var doneEl = document.getElementById('register-done');
+    if(doneEl){
+      doneEl.style.display='';
+      var msgEl = document.getElementById('register-done-msg');
+      if(msgEl) msgEl.textContent = d.auto_approved ? '가입이 완료되었습니다! 바로 로그인하세요.' : '관리자 승인 후 로그인 가능합니다.';
     }
   }catch(e){errEl.textContent='서버 오류: '+e.message;}
 }
