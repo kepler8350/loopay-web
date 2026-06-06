@@ -1210,7 +1210,16 @@ def admin_approve_user():
         return jsonify(error='unauthorized'), 401
     data = request.json or {}
     user_id = data.get('user_id')
-    action = data.get('action')  # 'approve' or 'reject'
+    action = data.get('action')  # 'approve', 'reject', 'approve_all'
+    # 전체 승인
+    if action == 'approve_all':
+        db = get_db()
+        try:
+            result = db.execute("UPDATE users SET approved=1 WHERE approved=0 AND username NOT IN ('loopay','admin')")
+            db.commit()
+            return jsonify(success=True, approved_count=result.rowcount)
+        finally:
+            db.close()
     if not user_id or action not in ('approve','reject'):
         return jsonify(error='invalid params'), 400
     db = get_db()

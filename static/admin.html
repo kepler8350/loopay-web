@@ -478,7 +478,10 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
       <div class="card" style="overflow-x:auto">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <strong>승인 대기 목록</strong>
-          <button class="btn btn-secondary" style="font-size:12px;padding:5px 12px" onclick="loadPendingUsers()">새로고침</button>
+          <div style="display:flex;gap:8px">
+            <button onclick="approveAllPending()" style="padding:5px 14px;background:#2e7d32;color:#fff;border:none;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer">✅ 전체 승인</button>
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 12px" onclick="loadPendingUsers()">새로고침</button>
+          </div>
         </div>
         <table class="data-table" style="font-size:12px;min-width:700px">
           <thead>
@@ -1949,6 +1952,20 @@ function loadMembers(){
   })
   .catch(function(e){wrap.innerHTML='<div style="color:#c62828;padding:20px">오류: '+e.message+'</div>';});
 }
+async function approveAllPending(){
+  if(!window.confirm('승인 대기 중인 회원 전체를 승인하시겠습니까?')) return;
+  var tok=localStorage.getItem('admin_token');
+  var r=await fetch('/api/admin/approve-user',{method:'POST',
+    headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+    body:JSON.stringify({action:'approve_all'})});
+  var d=await r.json();
+  if(d.success){
+    toast('✅ '+d.approved_count+'명 전체 승인 완료', 'success');
+    loadPendingUsers();
+  } else {
+    toast('오류: '+(d.error||'실패'), 'error');
+  }
+}
 function approveUser(userId,action){
   var msg=action==='approve'?'승인하시겠습니까?':'거절(삭제)하시겠습니까?';
   if(!confirm(msg)) return;
@@ -2543,6 +2560,11 @@ async function saveSettings(){
         auto_approve: isAuto ? '1' : '0'
       })
     });
+    // 자동승인 ON 시 기존 미승인 회원도 일괄 승인
+    if(isAuto){
+      var ar = await apiAdmin('/admin/approve-user',{method:'POST',body:JSON.stringify({action:'approve_all'})});
+      if(ar.approved_count > 0) toast('✅ 기존 대기 회원 '+ar.approved_count+'명도 자동 승인됨', 'info');
+    }
     const msg = isAuto ? '✅ 자동 승인으로 변경되었습니다' : '✅ 수동 승인으로 변경되었습니다';
     toast(msg, 'success');
     // 저장 버튼 성공 표시
