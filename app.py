@@ -23,14 +23,18 @@ import datetime, sqlite3, os, threading
 
 def _get_mock_time_from_db():
     """DB의 system_settings에서 mock_time 읽기"""
+    db = None
     try:
         db = get_db()
         row = db.execute("SELECT value FROM system_settings WHERE key='mock_time'").fetchone()
-        db.close()
         if row and row['value']:
             return datetime.datetime.strptime(row['value'], '%Y-%m-%d %H:%M:%S')
     except Exception:
         pass
+    finally:
+        if db:
+            try: db.close()
+            except: pass
     return None
 
 def _set_mock_time_to_db(dt):
@@ -780,6 +784,8 @@ def create_reservation():
       return jsonify(success=True,message=f'매칭예약 완료! 총 {total}회, {cost}P 차감',bronze=bz,silver=sv,gold=gd)
     except Exception as _e:
         import traceback
+        try: db.close()
+        except: pass
         return jsonify(error=str(_e), trace=traceback.format_exc()[-500:]), 500
 
 @app.route('/api/items', methods=['GET'])
@@ -925,6 +931,28 @@ def get_levels():
 def get_penalty_table():
     return jsonify(penalties=[{'count':c,'days':d,'release_points':p} for c,d,p in PENALTY_TABLE])
 
+
+
+@app.route('/api/admin/db-unlock', methods=['POST'])
+@jwt_required()
+def admin_db_unlock():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = None
+    try:
+        db = get_db()
+        # WAL checkpoint 강제 실행으로 lock 해제
+        db.execute("PRAGMA wal_checkpoint(FULL)")
+        db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        # busy connection 확인
+        row = db.execute("PRAGMA wal_checkpoint").fetchone()
+        return jsonify(success=True, message='DB checkpoint 완료', checkpoint=dict(row) if row else None)
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+    finally:
+        if db:
+            try: db.close()
+            except: pass
 
 @app.route('/api/admin/reset-sequences', methods=['POST'])
 @jwt_required()

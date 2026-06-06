@@ -7,11 +7,14 @@ _local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'loopay.d
 DB_PATH = os.environ.get('DB_PATH', _volume_path if os.path.isdir('/data') else _local_path)
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH, timeout=30)
+    conn = sqlite3.connect(DB_PATH, timeout=60)
     conn.row_factory = sqlite3.Row
     try:
         conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
+        conn.execute("PRAGMA busy_timeout=60000")  # 60초 busy wait
         conn.execute("PRAGMA foreign_keys=ON")
+        conn.execute("PRAGMA wal_autocheckpoint=100")
     except sqlite3.OperationalError:
         pass
     return conn
