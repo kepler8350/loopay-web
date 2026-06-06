@@ -3843,6 +3843,8 @@ def admin_loopay_items():
                 'item_type': r.get('item_type', r.get('status','')),
                 'is_buy_reservation': r.get('is_buy_reservation', False),
                 'is_buy_matched': r.get('is_buy_matched', False),
+                'is_self_match': r.get('is_self_match', False),
+                'buy_match_confirmed': r.get('buy_match_confirmed', False),
             } for r in rows],
             total=len(rows)
         )
