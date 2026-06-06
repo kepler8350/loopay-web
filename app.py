@@ -1049,8 +1049,9 @@ def admin_pending_users():
     try:
         rows = db.execute("""
             SELECT id, username, nickname, phone, bank, account_no, account_name, approved, created_at
-            FROM users WHERE username IS NOT NULL
-            ORDER BY approved ASC, created_at DESC
+            FROM users WHERE username IS NOT NULL AND approved=0
+            AND username NOT IN ('admin','loopay')
+            ORDER BY created_at DESC
         """).fetchall()
         users = []
         for r in rows:
