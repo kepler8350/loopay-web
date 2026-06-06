@@ -3758,7 +3758,7 @@ def admin_loopay_items():
                     # confirmed된 구매매칭은 완료로 표시 (판매테이블 제외 대상)
                     d['buy_match_confirmed'] = (_buy_m['status'] == 'confirmed')
                     # 자기 자신과의 매칭(loopay seller + loopay buyer)이면 판매테이블에도 표시
-                    d['is_self_match'] = (_buy_m.get('seller_username') == 'loopay')
+                    d['is_self_match'] = (_buy_m['seller_username'] == 'loopay')
                     d['match_round'] = _buy_m['match_round'] if 'match_round' in _buy_m.keys() else None
                     d['receipt_url'] = _buy_m['receipt_url'] if 'receipt_url' in _buy_m.keys() else None
                     d['seller_username'] = _buy_m['seller_username']
