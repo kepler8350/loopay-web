@@ -3167,10 +3167,13 @@ def match_confirm_payment():
             # buyer에게 새 아이템 추가 (status는 DB 스키마에 따라 가능한 값 사용)
             # buyer 아이템은 'active'(보유중) 상태로 추가
             _stage = int(seller_item['stage'] or m['stage'] or 1) + 1  # 1단계 구매 → 2단계 아이템 획득
+            # loopay가 buyer인 경우 아이템 추가 스킵 (시스템 내부 구매예약이므로)
+            _buyer_is_loopay = (m['buyer_id'] == loopay_id)
             # 아이템 추가: reservable 상태로 (입금확인일 = 1일차)
-            _inserted = False
+            _inserted = _buyer_is_loopay  # loopay buyer면 스킵 처리
             _insert_err = None
-            for _item_status in ('reservable', 'active', 'waiting', 'matched'):
+            if not _buyer_is_loopay:
+              for _item_status in ('reservable', 'active', 'waiting', 'matched'):
                 try:
                     db.execute(
                         """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
@@ -3632,6 +3635,15 @@ def admin_loopay_items():
                (SELECT MAX(r2.reserve_date) FROM reservations r2 WHERE r2.item_id = i.id) as reserve_date
                FROM items i
                WHERE i.user_id = ? AND i.status NOT IN ('sold')
+               AND (
+                 -- reservable 아이템: add_reservation으로 추가된 것(reservation 연결)만 표시
+                 -- confirm_payment로 buyer에게 추가된 아이템(reservation 없음) 제외
+                 i.status != 'reservable'
+                 OR EXISTS (
+                   SELECT 1 FROM reservations r3
+                   WHERE r3.item_id = i.id
+                 )
+               )
                ORDER BY i.id DESC""",
             (lid,)
         ).fetchall()
