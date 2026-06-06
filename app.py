@@ -3123,6 +3123,9 @@ def match_confirm_payment():
         # 3. item을 buyer에게 이전 (seller 아이템은 sold, buyer에게 새 아이템 추가)
         from datetime import date as _date
         # seller 아이템 찾기: match_id와 연결된 loopay reservation → item
+        # loopay 계정 ID 조회
+        _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        loopay_id = _loopay_row['id'] if _loopay_row else None
         seller_item = None
         # loopay 판매예약(reservation)에서 이 match와 연결된 아이템 찾기
         # loopay의 reservation은 buyer의 reservation_id와 다름
