@@ -1563,16 +1563,24 @@ async function loadMatchRecords(){
   var tbody = document.getElementById('matches-tbody');
   if(tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
   try{
-    // 서버 시간 기준 당일 날짜 계산 후 필터
     var ct = await fetch('/api/current-time').then(r=>r.json());
     var today = ct.time.slice(0,10);
+    // 서버 당일 날짜로 먼저 조회
     var d = await apiAdmin('/admin/matches?date='+today);
-    // 결과가 없으면 날짜 필터 없이 전체 조회 후 당일 클라이언트 필터
-    if(!d.matches || d.matches.length === 0){
-      var d2 = await apiAdmin('/admin/matches');
-      _matchRecords = (d2.matches||[]).filter(function(m){ return m.match_date === today; });
-    } else {
+    if(d.matches && d.matches.length > 0){
       _matchRecords = d.matches;
+    } else {
+      // 없으면 전체 조회 후 가장 최근 날짜 기준으로 필터
+      var d2 = await apiAdmin('/admin/matches');
+      var allMatches = d2.matches || [];
+      if(allMatches.length > 0){
+        // 가장 최근 match_date 찾기
+        var latestDate = allMatches.reduce(function(acc,m){ return m.match_date > acc ? m.match_date : acc; }, '');
+        _matchRecords = allMatches.filter(function(m){ return m.match_date === latestDate; });
+        today = latestDate; // 표시용
+      } else {
+        _matchRecords = [];
+      }
     }
     _todayForMatch = today;
     renderMatchRecords();
