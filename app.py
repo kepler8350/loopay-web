@@ -3680,7 +3680,7 @@ def admin_loopay_items():
                            LEFT JOIN reservations r ON m.reservation_id = r.id
                            LEFT JOIN users u ON m.seller_id = u.id
                            WHERE r.item_id = ? AND m.buyer_id = ?
-                             AND m.status IN ('pending', 'paid')
+                             AND m.status IN ('pending', 'paid', 'confirmed')
                            ORDER BY m.id DESC LIMIT 1""",
                         (item_id, lid)
                     ).fetchone()
@@ -3727,7 +3727,7 @@ def admin_loopay_items():
                            FROM matches m
                            LEFT JOIN users seller ON m.seller_id = seller.id
                            WHERE m.buyer_id = ? AND m.bar_type = ? AND m.stage = ?
-                             AND m.status IN ('pending', 'paid')
+                             AND m.status IN ('pending', 'paid', 'confirmed')
                              AND m.id NOT IN ({})
                            ORDER BY m.id DESC LIMIT 1""".format(
                                ','.join(str(x) for x in used_match_ids) if used_match_ids else '0'
@@ -3740,6 +3740,8 @@ def admin_loopay_items():
                     d['is_buy_matched'] = True
                     d['match_id'] = _buy_m['id']
                     d['match_status'] = _buy_m['status']
+                    # confirmed된 구매매칭은 완료로 표시 (판매테이블 제외 대상)
+                    d['buy_match_confirmed'] = (_buy_m['status'] == 'confirmed')
                     d['match_round'] = _buy_m['match_round'] if 'match_round' in _buy_m.keys() else None
                     d['receipt_url'] = _buy_m['receipt_url'] if 'receipt_url' in _buy_m.keys() else None
                     d['seller_username'] = _buy_m['seller_username']
