@@ -2965,24 +2965,37 @@ def admin_get_matches():
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
     try:
-        # date 파라미터로 당일 필터 (없으면 오늘 기준)
+        # date 파라미터로 당일 필터 (없으면 전체 반환)
         date_param = request.args.get('date')
-        if not date_param:
-            date_param = get_today().isoformat()
-        sql = (
-            "SELECT m.id, m.match_date, m.bar_type, m.stage, m.match_round,"
-            " m.buy_price, m.sell_price, m.status,"
-            " b.username as buyer_username, b.nickname as buyer_nickname, b.phone as buyer_phone,"
-            " b.account_no as buyer_account, b.account_name as buyer_account_name,"
-            " s.username as seller_username, s.nickname as seller_nickname, s.phone as seller_phone,"
-            " s.bank as seller_bank, s.account_no as seller_account, s.account_name as seller_account_name"
-            " FROM matches m"
-            " LEFT JOIN users b ON m.buyer_id = b.id"
-            " LEFT JOIN users s ON m.seller_id = s.id"
-            " WHERE m.match_date = ?"
-            " ORDER BY m.id DESC"
-        )
-        rows = db.execute(sql, (date_param,)).fetchall()
+        if date_param:
+            sql = (
+                "SELECT m.id, m.match_date, m.bar_type, m.stage, m.match_round,"
+                " m.buy_price, m.sell_price, m.status,"
+                " b.username as buyer_username, b.nickname as buyer_nickname, b.phone as buyer_phone,"
+                " b.account_no as buyer_account, b.account_name as buyer_account_name,"
+                " s.username as seller_username, s.nickname as seller_nickname, s.phone as seller_phone,"
+                " s.bank as seller_bank, s.account_no as seller_account, s.account_name as seller_account_name"
+                " FROM matches m"
+                " LEFT JOIN users b ON m.buyer_id = b.id"
+                " LEFT JOIN users s ON m.seller_id = s.id"
+                " WHERE m.match_date = ?"
+                " ORDER BY m.id DESC"
+            )
+            rows = db.execute(sql, (date_param,)).fetchall()
+        else:
+            sql = (
+                "SELECT m.id, m.match_date, m.bar_type, m.stage, m.match_round,"
+                " m.buy_price, m.sell_price, m.status,"
+                " b.username as buyer_username, b.nickname as buyer_nickname, b.phone as buyer_phone,"
+                " b.account_no as buyer_account, b.account_name as buyer_account_name,"
+                " s.username as seller_username, s.nickname as seller_nickname, s.phone as seller_phone,"
+                " s.bank as seller_bank, s.account_no as seller_account, s.account_name as seller_account_name"
+                " FROM matches m"
+                " LEFT JOIN users b ON m.buyer_id = b.id"
+                " LEFT JOIN users s ON m.seller_id = s.id"
+                " ORDER BY m.id DESC LIMIT 200"
+            )
+            rows = db.execute(sql).fetchall()
         names = {'bronze':'수정','silver':'루비','gold':'다이아'}
         # system_settings에서 loopay 정보 로드
         def get_sys(key):
