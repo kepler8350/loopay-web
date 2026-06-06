@@ -1421,11 +1421,13 @@ function renderSystemItems(){
   var matchStatusKr={pending:'대기',matched:'매칭완료',paid:'송금',completed:'거래완료',cancelled:'취소',failed:'미입금',confirmed:'거래완료',unpaid:'미입금'};
   var matchStatusColor={pending:'#888',matched:'#f9a825',paid:'#42a5f5',completed:'#66bb6a',cancelled:'#ef5350',failed:'#ef5350',confirmed:'#66bb6a',unpaid:'#ef5350'};
   // 판매아이템: reservable 또는 matched(pending/paid). waiting/is_buy_reservation/is_buy_matched/confirmed 제외
+  // 단, loopay 자기매칭(is_self_match)은 판매테이블에도 표시
   var sellItems = filtered.filter(function(i){
-    if(i.is_buy_reservation || i.is_buy_matched) return false;
+    if(i.is_buy_reservation) return false;
+    if(i.is_buy_matched && !i.is_self_match) return false; // 자기매칭이 아닌 구매매칭은 제외
     if(i.status === 'waiting') return false;
     if(i.status === 'matched' && !i.match_id) return false; // 매칭 연결 없는 matched
-    if(i.status === 'matched' && i.match_status === 'confirmed') return false; // 입금확인 완료
+    if(i.status === 'matched' && i.match_status === 'confirmed' && !i.is_self_match) return false; // 입금확인 완료(자기매칭 제외)
     return true;
   });
   // 구매아이템: 1차 매칭 완료(pending/paid만). confirmed(입금확인 완료)는 제외
