@@ -1427,7 +1427,8 @@ function renderSystemItems(){
     if(i.status === 'matched' && !i.buyer_username && !i.match_id) return false; // 구매자 없는 matched
     return true;
   });
-  var buyItems = filtered.filter(function(i){ return i.is_buy_reservation || i.is_buy_matched; });
+  // 구매아이템: 1차 매칭 완료된 것만 (is_buy_matched=true). 미매칭 구매예약(waiting) 제외
+  var buyItems = filtered.filter(function(i){ return i.is_buy_matched === true; });
   var buyTbody = document.getElementById('si-buy-tbody');
   tbody.innerHTML = sellItems.map(function(item,i){
     var bg = i%2===0?'#12121f':'#1a1a2e';
@@ -1562,7 +1563,10 @@ async function loadMatchRecords(){
   var tbody = document.getElementById('matches-tbody');
   if(tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
   try{
-    var d = await apiAdmin('/admin/matches');
+    // 서버 시간 기준 당일 날짜로 필터
+    var ct = await fetch('/api/current-time').then(r=>r.json());
+    var today = ct.time.slice(0,10);
+    var d = await apiAdmin('/admin/matches?date='+today);
     _matchRecords = d.matches || [];
     renderMatchRecords();
   }catch(e){

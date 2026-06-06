@@ -2965,6 +2965,10 @@ def admin_get_matches():
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
     try:
+        # date 파라미터로 당일 필터 (없으면 오늘 기준)
+        date_param = request.args.get('date')
+        if not date_param:
+            date_param = get_today().isoformat()
         sql = (
             "SELECT m.id, m.match_date, m.bar_type, m.stage, m.match_round,"
             " m.buy_price, m.sell_price, m.status,"
@@ -2975,9 +2979,10 @@ def admin_get_matches():
             " FROM matches m"
             " LEFT JOIN users b ON m.buyer_id = b.id"
             " LEFT JOIN users s ON m.seller_id = s.id"
+            " WHERE m.match_date = ?"
             " ORDER BY m.id DESC"
         )
-        rows = db.execute(sql).fetchall()
+        rows = db.execute(sql, (date_param,)).fetchall()
         names = {'bronze':'수정','silver':'루비','gold':'다이아'}
         # system_settings에서 loopay 정보 로드
         def get_sys(key):
