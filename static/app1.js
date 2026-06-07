@@ -1289,7 +1289,7 @@ function renderMatchBuyList(items){
     var dateTxt = m.source==='reservation'?m.reserve_date:(m.match_date||'');
 
     if(m.status==='waiting'){
-      return '<div style="padding:10px 12px;margin-bottom:6px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">'        +'<div style="display:flex;justify-content:space-between;align-items:center">'        +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'        +'<span style="font-size:11px;color:'+statusColor+'">'+statusLabel+'</span>'        +'</div>'        +'<div style="font-size:11px;color:var(--text2);margin-top:4px">⏳ 매칭 대기 중'+(dateTxt?' · '+dateTxt:'')+'</div>'        +'</div>';
+      return '<div data-match-id="'+m.id+'" style="padding:10px 12px;margin-bottom:6px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">'        +'<div style="display:flex;justify-content:space-between;align-items:center">'        +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'        +'<span style="font-size:11px;color:'+statusColor+'">'+statusLabel+'</span>'        +'</div>'        +'<div style="font-size:11px;color:var(--text2);margin-top:4px">⏳ 매칭 대기 중'+(dateTxt?' · '+dateTxt:'')+'</div>'        +'</div>';
     }
 
     var infoHtml = '';
@@ -1464,14 +1464,33 @@ async function submitPayment(){
     var payload = {match_id: window._payMatchId};
     if(window._receiptBase64) payload.image = 'data:image/jpeg;base64,'+window._receiptBase64;
     var d = await api('/reservation/payment-complete', {method:'POST', body:JSON.stringify(payload)});
-    var m = document.getElementById('payment-modal');
-    if(m) m.style.display='none';
+    var modal = document.getElementById('payment-modal');
+    if(modal) modal.style.display='none';
     window._receiptBase64 = null;
+    var paidMatchId = window._payMatchId;
     window._payMatchId = null;
     if(btn){ btn.textContent='송금완료'; btn.disabled=false; }
-    loadMatchingTab();
+    if(d && d.success){
+      toast('송금 처리가 완료됐습니다.', 'success');
+      // 해당 match 카드만 상태 업데이트 (전체 리로드 대신)
+      var matchCard = document.querySelector('[data-match-id="'+paidMatchId+'"]');
+      if(matchCard){
+        // 카드 내 상태 뱃지 업데이트
+        var badge = matchCard.querySelector('.match-status');
+        if(badge){ badge.textContent='송금완료'; badge.style.color='#1976d2'; }
+        // 송금 버튼 숨기고 완료 메시지로 교체
+        var sendBtn = matchCard.querySelector('button[onclick*="openPaymentModal"]');
+        if(sendBtn){ sendBtn.outerHTML='<div style="font-size:12px;color:#1976d2;margin-top:6px;font-weight:600">✅ 송금완료 — 판매자 확인 대기</div>'; }
+      } else {
+        // 카드를 찾지 못한 경우에만 전체 리로드
+        loadMatchingTab();
+      }
+    } else {
+      toast((d&&d.error)||'처리 실패', 'error');
+    }
   }catch(e){
     if(btn){ btn.textContent='송금완료'; btn.disabled=false; }
+    toast('오류: '+e.message, 'error');
   }
 }
 
