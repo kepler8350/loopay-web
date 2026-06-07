@@ -1008,6 +1008,30 @@ def admin_reset_sequences():
     finally:
         db.close()
 
+@app.route('/api/admin/test-add-item', methods=['POST'])
+@jwt_required()
+def admin_test_add_item():
+    """테스트용 아이템 추가"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    db = get_db()
+    try:
+        cur = db.execute(
+            """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
+               VALUES(?, ?, ?, ?, ?)""",
+            (data.get('user_id'), data.get('bar_type','bronze'),
+             data.get('stage',1), data.get('purchase_date','2026-06-01'),
+             data.get('status','reservable'))
+        )
+        db.commit()
+        return jsonify(success=True, item_id=cur.lastrowid)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/fix-sell-reservations', methods=['POST'])
 @jwt_required()
 def admin_fix_sell_reservations():
