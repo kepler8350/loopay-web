@@ -1659,7 +1659,8 @@ async function loadReservationsLog(page){
   if(type)     params.set('type', type);
 
   try{
-    var d = await apiAdmin('/admin/reservations-list?' + params.toString());
+    var tok2 = localStorage.getItem('admin_token');
+    var d = await fetch('/api/admin/reservations-list?' + params.toString(),{headers:{'Authorization':'Bearer '+tok2}}).then(r=>r.json());
     _rlTotal = d.total || 0;
     var rows = d.reservations || [];
 
