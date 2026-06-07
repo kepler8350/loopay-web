@@ -1008,6 +1008,31 @@ def admin_reset_sequences():
     finally:
         db.close()
 
+@app.route('/api/admin/fix-sell-reservations', methods=['POST'])
+@jwt_required()
+def admin_fix_sell_reservations():
+    """판매예약됐으나 items.status가 reservable로 남은 아이템 정리"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    try:
+        # reservations에 pending 판매예약이 있는 아이템을 matched로 변경
+        result = db.execute(
+            """UPDATE items SET status='matched'
+               WHERE id IN (
+                 SELECT DISTINCT item_id FROM reservations
+                 WHERE item_id IS NOT NULL AND item_id > 0
+                   AND status='pending' AND confirmed=1
+               ) AND status='reservable'"""
+        )
+        db.commit()
+        return jsonify(success=True, fixed_count=result.rowcount)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/migrate-db', methods=['POST'])
 @jwt_required()
 def admin_migrate_db():
@@ -4269,6 +4294,8 @@ def create_sell_reservation():
             "INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,confirmed) VALUES(?,?,?,1,?,'pending',1)",
             (uid, item_id, item['bar_type'], today)
         )
+        # 아이템 상태를 'matched'로 변경하여 재예약 방지
+        db.execute("UPDATE items SET status='matched' WHERE id=?", (item_id,))
         db.commit()
         buy_p, sell_p = get_price(item['bar_type'], item['stage'])
         return jsonify(success=True, message='판매예약 완료!', sell_price=sell_p)
