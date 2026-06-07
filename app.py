@@ -2740,14 +2740,18 @@ def admin_reservations_list():
             where.append('r.reserve_date <= ?'); params.append(date_to)
     if username:
         where.append('u.username LIKE ?'); params.append(f'%{username}%')
-    if res_type == 'buy':
-        where.append("r.type = 'buy'")
-    elif res_type == 'sell':
-        where.append("r.type = 'sell'")
-
-    where_sql = ' AND '.join(where)
+    # 구매/판매 구분: loopay 계정 ID 기준
+    # 판매예약 = loopay user, 구매예약 = 일반 user
     conn = get_db()
     try:
+        _loopay_row = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        loopay_uid = _loopay_row['id'] if _loopay_row else -1
+        if res_type == 'sell':
+            where.append('r.user_id = ?'); params.append(loopay_uid)
+        elif res_type == 'buy':
+            where.append('r.user_id != ?'); params.append(loopay_uid)
+
+        where_sql = ' AND '.join(where)
         total_row = conn.execute(
             f'''SELECT COUNT(*) as cnt FROM reservations r
                 LEFT JOIN users u ON r.user_id = u.id
@@ -2755,9 +2759,11 @@ def admin_reservations_list():
         ).fetchone()
         total = total_row['cnt'] if total_row else 0
         rows = conn.execute(
-            f'''SELECT r.id, r.bar_type, r.type, r.match_round, r.status,
+            f'''SELECT r.id, r.bar_type, r.match_round, r.status,
                        r.reserve_date, r.created_at, r.item_id, r.confirmed,
-                       u.username, u.nickname, u.account_name
+                       r.stage,
+                       u.username, u.nickname, u.account_name,
+                       CASE WHEN r.user_id = {loopay_uid} THEN 'sell' ELSE 'buy' END as res_type
                 FROM reservations r
                 LEFT JOIN users u ON r.user_id = u.id
                 WHERE {where_sql}
