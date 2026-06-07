@@ -2852,6 +2852,7 @@ def admin_add_reservation():
         loopay_id = loopay_user['id']
         today = get_today().isoformat()
         match_round = int(data.get('match_round', 1))  # 기본 1차 매칭용
+        join_round2_val = int(data.get('join_round2', 0))  # 2차 매칭 참가 여부
         today = get_today().isoformat()
         conn.execute("PRAGMA foreign_keys=OFF")
         for _ in range(count):
@@ -2865,7 +2866,7 @@ def admin_add_reservation():
             if res_type == 'sell':
                 conn.execute("UPDATE items SET status='reservable' WHERE id=?", (item_id,))
             conn.execute(
-                "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
+                "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage, join_round2) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)",
                 (loopay_id, item_id, bar_type, match_round, today, stage, join_round2_val)
             )
         conn.execute("PRAGMA foreign_keys=ON")
