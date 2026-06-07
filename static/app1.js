@@ -1289,7 +1289,7 @@ function renderMatchBuyList(items){
     var dateTxt = m.source==='reservation'?m.reserve_date:(m.match_date||'');
 
     if(m.status==='waiting'){
-      return '<div data-match-id="'+m.id+'" style="padding:10px 12px;margin-bottom:6px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">'        +'<div style="display:flex;justify-content:space-between;align-items:center">'        +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'        +'<span style="font-size:11px;color:'+statusColor+'">'+statusLabel+'</span>'        +'</div>'        +'<div style="font-size:11px;color:var(--text2);margin-top:4px">⏳ 매칭 대기 중'+(dateTxt?' · '+dateTxt:'')+'</div>'        +'</div>';
+      return '<div style="padding:10px 12px;margin-bottom:6px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">'        +'<div style="display:flex;justify-content:space-between;align-items:center">'        +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'        +'<span style="font-size:11px;color:'+statusColor+'">'+statusLabel+'</span>'        +'</div>'        +'<div style="font-size:11px;color:var(--text2);margin-top:4px">⏳ 매칭 대기 중'+(dateTxt?' · '+dateTxt:'')+'</div>'        +'</div>';
     }
 
     var infoHtml = '';
@@ -1332,7 +1332,7 @@ function renderMatchBuyList(items){
       btnHtml = '<div style="font-size:12px;color:#66bb6a;margin-top:6px;font-weight:600">✅ 거래 완료</div>';
     }
 
-    return '<div style="padding:10px 12px;margin-bottom:6px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">'      +'<div style="display:flex;justify-content:space-between;align-items:center">'      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'      +'<span style="font-size:11px;color:'+statusColor+';font-weight:600">'+statusLabel+'</span>'      +'</div>'      +(dateTxt?'<div style="font-size:10px;color:var(--text2);margin-top:2px">'+dateTxt+'</div>':'')      +infoHtml+btnHtml      +'</div>';
+    return '<div data-match-id="'+m.id+'" style="padding:10px 12px;margin-bottom:6px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">'      +'<div style="display:flex;justify-content:space-between;align-items:center">'      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+'">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'      +'<span style="font-size:11px;color:'+statusColor+';font-weight:600">'+statusLabel+'</span>'      +'</div>'      +(dateTxt?'<div style="font-size:10px;color:var(--text2);margin-top:2px">'+dateTxt+'</div>':'')      +infoHtml+btnHtml      +'</div>';
   }).join('');
 }
 
