@@ -5,6 +5,21 @@ var _sellServerMin = typeof _sellServerMin !== 'undefined' ? _sellServerMin : 0;
 
 var _sellSelected={}; // 판매예약 선택 상태
 var _sellTabSelected={}; // 판매탭 선택 상태
+// 계좌번호 복사 함수
+function _copyAcct(acct, btn){
+  if(!acct) return;
+  navigator.clipboard.writeText(acct).then(function(){
+    if(btn){ var orig=btn.textContent; btn.textContent='✅'; setTimeout(function(){ btn.textContent=orig; }, 1500); }
+  }).catch(function(){
+    // clipboard API 실패 시 fallback
+    var el=document.createElement('textarea');
+    el.value=acct; el.style.position='fixed'; el.style.opacity='0';
+    document.body.appendChild(el); el.select();
+    try{ document.execCommand('copy'); if(btn){ var orig=btn.textContent; btn.textContent='✅'; setTimeout(function(){btn.textContent=orig;},1500); } }catch(e){}
+    document.body.removeChild(el);
+  });
+}
+
 var _reservedToday=false; // 오늘 구매예약 완료 여부
 var svCnt=0; var gdCnt=0; // 루비/다이아 선택 수량
 var LEVEL_CFG_JS={
@@ -1277,7 +1292,15 @@ function renderMatchBuyList(items){
 
     var infoHtml = '';
     if(hasMatchInfo){
-      infoHtml = '<div style="font-size:12px;color:var(--text2);margin:6px 0;line-height:1.9">'        +'<div>🏦 은행: <span style="color:var(--text)">'+(m.seller_bank||'-')+'</span></div>'        +'<div>💳 계좌: <span style="color:var(--text);font-weight:600">'+(m.seller_account||'-')+'</span></div>'        +'<div>👤 예금주: <span style="color:var(--text)">'+(m.seller_account_name||'-')+'</span></div>'        +'<div>💰 입금액: <span style="color:#f9a825;font-weight:600">'+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</span></div>'        +'</div>';
+      var _sellerAcct = m.seller_account||'';
+      infoHtml = '<div style="font-size:12px;color:var(--text2);margin:6px 0;line-height:1.9">'
+        +'<div>🏦 은행: <span style="color:var(--text)">'+(m.seller_bank||'-')+'</span></div>'
+        +'<div>💳 계좌: <span style="color:var(--text);font-weight:600">'+(_sellerAcct||'-')+'</span>'
+        +(_sellerAcct ? ' <button onclick="_copyAcct(\'' + _sellerAcct + '\',this)" style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px 0 4px;color:#90caf9;vertical-align:middle" title="계좌번호 복사">📋</button>' : '')
+        +'</div>'
+        +'<div>👤 예금주: <span style="color:var(--text)">'+(m.seller_account_name||'-')+'</span></div>'
+        +'<div>💰 입금액: <span style="color:#f9a825;font-weight:600">'+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</span></div>'
+        +'</div>';
     } else if(m.status==='pending'||m.status==='matched'){
       infoHtml = '<div style="font-size:11px;color:#f9a825;margin:6px 0">매칭완료 — 판매자 정보 확인 중</div>';
     }
