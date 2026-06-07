@@ -3008,37 +3008,50 @@ def admin_get_matches():
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
     try:
-        # date 파라미터로 당일 필터 (없으면 전체 반환)
-        date_param = request.args.get('date')
+        date_param = request.args.get('date', '')
+        date_from  = request.args.get('date_from', '')
+        date_to    = request.args.get('date_to', '')
+        username   = request.args.get('username', '').strip()
+        page       = int(request.args.get('page', 1))
+        per_page   = int(request.args.get('per_page', 200))
+        offset     = (page - 1) * per_page
+
+        where = ['1=1']
+        params = []
         if date_param:
-            sql = (
-                "SELECT m.id, m.match_date, m.bar_type, m.stage, m.match_round,"
-                " m.buy_price, m.sell_price, m.status,"
-                " b.username as buyer_username, b.nickname as buyer_nickname, b.phone as buyer_phone,"
-                " b.account_no as buyer_account, b.account_name as buyer_account_name,"
-                " s.username as seller_username, s.nickname as seller_nickname, s.phone as seller_phone,"
-                " s.bank as seller_bank, s.account_no as seller_account, s.account_name as seller_account_name"
-                " FROM matches m"
-                " LEFT JOIN users b ON m.buyer_id = b.id"
-                " LEFT JOIN users s ON m.seller_id = s.id"
-                " WHERE m.match_date = ?"
-                " ORDER BY m.id DESC"
-            )
-            rows = db.execute(sql, (date_param,)).fetchall()
+            where.append('m.match_date = ?'); params.append(date_param)
         else:
-            sql = (
-                "SELECT m.id, m.match_date, m.bar_type, m.stage, m.match_round,"
-                " m.buy_price, m.sell_price, m.status,"
-                " b.username as buyer_username, b.nickname as buyer_nickname, b.phone as buyer_phone,"
-                " b.account_no as buyer_account, b.account_name as buyer_account_name,"
-                " s.username as seller_username, s.nickname as seller_nickname, s.phone as seller_phone,"
-                " s.bank as seller_bank, s.account_no as seller_account, s.account_name as seller_account_name"
-                " FROM matches m"
-                " LEFT JOIN users b ON m.buyer_id = b.id"
-                " LEFT JOIN users s ON m.seller_id = s.id"
-                " ORDER BY m.id DESC LIMIT 200"
-            )
-            rows = db.execute(sql).fetchall()
+            if date_from:
+                where.append('m.match_date >= ?'); params.append(date_from)
+            if date_to:
+                where.append('m.match_date <= ?'); params.append(date_to)
+        if username:
+            where.append('(b.username LIKE ? OR s.username LIKE ?)')
+            params += ['%'+username+'%', '%'+username+'%']
+
+        where_sql = ' AND '.join(where)
+        total_row = db.execute(
+            'SELECT COUNT(*) as cnt FROM matches m'
+            ' LEFT JOIN users b ON m.buyer_id = b.id'
+            ' LEFT JOIN users s ON m.seller_id = s.id'
+            ' WHERE ' + where_sql, params
+        ).fetchone()
+        total = total_row['cnt'] if total_row else 0
+
+        rows = db.execute(
+            'SELECT m.id, m.match_date, m.bar_type, m.stage, m.match_round,'
+            ' m.buy_price, m.sell_price, m.status,'
+            ' b.username as buyer_username, b.nickname as buyer_nickname, b.phone as buyer_phone,'
+            ' b.account_no as buyer_account, b.account_name as buyer_account_name,'
+            ' s.username as seller_username, s.nickname as seller_nickname, s.phone as seller_phone,'
+            ' s.bank as seller_bank, s.account_no as seller_account, s.account_name as seller_account_name'
+            ' FROM matches m'
+            ' LEFT JOIN users b ON m.buyer_id = b.id'
+            ' LEFT JOIN users s ON m.seller_id = s.id'
+            ' WHERE ' + where_sql +
+            ' ORDER BY m.id DESC'
+            ' LIMIT ? OFFSET ?', params + [per_page, offset]
+        ).fetchall()
         names = {'bronze':'수정','silver':'루비','gold':'다이아'}
         # system_settings에서 loopay 정보 로드
         def get_sys(key):
