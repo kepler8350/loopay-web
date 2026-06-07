@@ -278,12 +278,12 @@ function showSellConfirm(){
       var _profit = it.profit || (it.sell_price - (it.buy_price||0));
       rows += '<div class="reserve-confirm-row">'
         +'<span>'+names[bt]+' '+it.stage+'단계</span>'
-        +'<span style="color:#f9a825">'+it.sell_price.toLocaleString()+'원 <span style="color:#66bb6a;font-size:11px">(+'+(_profit>0?_profit.toLocaleString():'?')+'원)</span></span>'
+        +'<span style="color:#f9a825">'+it.sell_price.toLocaleString()+'원 <span style="color:#66bb6a;font-size:11px">(차액 +'+(_profit>0?_profit.toLocaleString():'?')+'원)</span></span>'
         +'</div>';
     });
   });
   rows += '<div class="reserve-confirm-row total-row">'
-    +'<span>총 '+selected.length+'개 / 예상 수익</span>'
+    +'<span>총 '+selected.length+'개 / 차액 합계</span>'
     +'<span style="color:#66bb6a">+'+totalProfit.toLocaleString()+'원</span>'
     +'</div>';
   document.getElementById('sell-confirm-rows').innerHTML = rows;
