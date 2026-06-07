@@ -1095,6 +1095,8 @@ async function loadItemDetail(barType){
     updateBulkSellBtn(barType, items);
     // 아이템 캐시 업데이트 (판매보드에서 사용)
     items.forEach(function(it){ _itemCache[it.id]={bar_type:barType,stage:it.stage,sell_price:it.sell_price,profit:it.profit,buy_price:it.buy_price,purchase_date:it.purchase_date,days:it.days}; });
+    // 구매일자 내림차순 정렬 (최신 구매 아이템 위에)
+    items.sort(function(a,b){ return (b.purchase_date||'') > (a.purchase_date||'') ? 1 : (b.purchase_date||'') < (a.purchase_date||'') ? -1 : b.id - a.id; });
     var html=items.map(function(it){
       var dayNum = it.days + 1;
       // 결합아이템(waiting)은 1일째부터, 일반아이템은 2일째부터 판매가능
