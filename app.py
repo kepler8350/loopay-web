@@ -1873,10 +1873,18 @@ def admin_run_matching():
                        AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
                     (today,)
                 )
-                # 1차 loopay 미매칭 sell 예약도 정리
+                # 1차 loopay 미매칭: join_round2=1 이면 2차 전환, 아니면 unmatched
+                db.execute(
+                    """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
+                       WHERE match_round=1 AND status='pending'
+                       AND join_round2=1
+                       AND user_id=(SELECT id FROM users WHERE username='loopay')""",
+                    (today,)
+                )
                 db.execute(
                     """UPDATE reservations SET status='unmatched'
                        WHERE match_round=1 AND status='pending' AND reserve_date=?
+                       AND join_round2=0
                        AND user_id=(SELECT id FROM users WHERE username='loopay')""",
                     (today,)
                 )
