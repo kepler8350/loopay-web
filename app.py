@@ -637,7 +637,7 @@ def get_me():
     cfg = LEVEL_CONFIG.get(lv, {})
     next_cum = cfg.get('cum')
     pct = round(u['cumulative_count'] / next_cum * 100, 1) if next_cum else None
-    items = db.execute("SELECT * FROM items WHERE user_id=? AND status!='sold' ORDER BY bar_type, stage", (uid,)).fetchall()
+    items = db.execute("SELECT * FROM items WHERE user_id=? AND status IN ('reservable','active','waiting') ORDER BY bar_type, stage", (uid,)).fetchall()
     def fmt_item(it):
         buy, sell = get_price(it['bar_type'], it['stage'])
         d = days_since(it['purchase_date'])
