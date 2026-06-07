@@ -1679,7 +1679,7 @@ async function loadReservationsLog(page){
     var typeColors = {buy:'#ab47bc', sell:'#42a5f5'};
 
     if(tbody) tbody.innerHTML = rows.map(function(r, i){
-      var rowNo = (_rlPage-1)*_rlPerPage + i + 1;
+      var rowNo = ((_rlPage||1)-1)*(_rlPerPage||100) + i + 1;
       var bar = barNames[r.bar_type] || r.bar_type;
       var barColor = r.bar_type==='bronze'?'#cd7f32':r.bar_type==='silver'?'#c0c0c0':'#ffd700';
       var typeName = r.res_type==='sell'?'판매':'구매';
