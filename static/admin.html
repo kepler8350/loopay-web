@@ -1651,7 +1651,7 @@ async function loadReservationsLog(page){
   var username = document.getElementById('rl-username')?.value || '';
   var type     = document.getElementById('rl-type')?.value || '';
 
-  var params = new URLSearchParams({page: _rlPage, per_page: _rlPerPage});
+  var params = new URLSearchParams({page: _rlPage, per_page: (_rlPerPage || 100)});
   if(date)     params.set('date', date);
   if(dateFrom) params.set('date_from', dateFrom);
   if(dateTo)   params.set('date_to', dateTo);
