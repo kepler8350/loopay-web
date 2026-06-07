@@ -721,6 +721,12 @@ def create_reservation():
     try:
       data = request.json or {}
       bz = int(data.get('bronze_count', 0))
+      # 2차 매칭 참가 여부 (0/1) - 미입금 이력 없는 사람만 가능
+      _join_r2_req = 1 if data.get('join_round2') else 0
+      # 미입금 이력 확인 (unpaid_count > 0이면 2차 불가)
+      _u_check = db.execute("SELECT unpaid_count FROM users WHERE id=?", (uid,)).fetchone()
+      _has_unpaid = int((_u_check['unpaid_count'] if _u_check else 0) or 0) > 0
+      join_r2 = _join_r2_req if not _has_unpaid else 0
       # 클라이언트에서 독립적으로 선택한 sv/gd 값 사용 (없으면 자동 계산)
       sv_from_client = data.get('silver_count')
       gd_from_client = data.get('gold_count')
@@ -757,12 +763,12 @@ def create_reservation():
           if reservable:
               # 실제 보유 아이템으로 예약
               for item in reservable:
-                  db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date) VALUES(?,?,?,?,?)", (uid,item['id'],bar_type,1,today))
+                  db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,join_round2) VALUES(?,?,?,?,?,?)", (uid,item['id'],bar_type,1,today,join_r2))
           else:
               # 아이템 없어도 예약 수만큼 레코드 생성 (외래키 일시 해제)
               db.execute("PRAGMA foreign_keys=OFF")
               for _ in range(cnt):
-                  db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date) VALUES(?,?,?,?,?)", (uid,0,bar_type,1,today))
+                  db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,join_round2) VALUES(?,?,?,?,?,?)", (uid,0,bar_type,1,today,join_r2))
               db.execute("PRAGMA foreign_keys=ON")
       # 예약 비용: charge_points/exchange_points에서 차감 후 maintain_points로 이동
       # charge 먼저 차감, 부족하면 exchange로 보충
@@ -781,7 +787,7 @@ def create_reservation():
           pass
       db.commit()
       db.close()
-      return jsonify(success=True,message=f'매칭예약 완료! 총 {total}회, {cost}P 차감',bronze=bz,silver=sv,gold=gd)
+      return jsonify(success=True,message=f'매칭예약 완료! 총 {total}회, {cost}P 차감',bronze=bz,silver=sv,gold=gd,join_round2=join_r2,join_round2_denied=(_join_r2_req==1 and _has_unpaid))
     except Exception as _e:
         import traceback
         try: db.close()
@@ -1068,6 +1074,7 @@ def admin_migrate_db():
     migrations = [
         "ALTER TABLE users ADD COLUMN suspended_until DATETIME",
         "ALTER TABLE users ADD COLUMN unpaid_count INTEGER DEFAULT 0",
+        "ALTER TABLE reservations ADD COLUMN join_round2 INTEGER DEFAULT 0",
         "ALTER TABLE penalties ADD COLUMN match_id INTEGER",
         "ALTER TABLE penalties ADD COLUMN release_at DATETIME",
         "ALTER TABLE penalties ADD COLUMN match_round INTEGER DEFAULT 1",
@@ -1854,6 +1861,7 @@ def admin_run_matching():
                     """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
                        WHERE match_round=1 AND status='pending'
                        AND (item_id IS NULL OR item_id=0)
+                       AND join_round2=1
                        AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
                     (today,)
                 )
@@ -2858,7 +2866,7 @@ def admin_add_reservation():
                 conn.execute("UPDATE items SET status='reservable' WHERE id=?", (item_id,))
             conn.execute(
                 "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
-                (loopay_id, item_id, bar_type, match_round, today, stage)
+                (loopay_id, item_id, bar_type, match_round, today, stage, join_round2_val)
             )
         conn.execute("PRAGMA foreign_keys=ON")
         conn.commit()

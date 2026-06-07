@@ -280,7 +280,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 }
 .notif-blink{animation:notif-blink-anim 1s ease-in-out infinite!important;}
 </style>
-<script src="/static/app1.js?v=20260607074340"></script>
+<script src="/static/app1.js?v=20260607081140"></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -932,13 +932,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="reserve-confirm-row" id="rc-gd-row"><span>다이아</span><span id="rc-gd">-</span></div>
       <div class="reserve-confirm-row total-row"><span>총 예약 / 차감 포인트</span><span id="rc-total">-</span></div>
     </div>
+    <!-- 2차매칭 참가 체크박스 -->
+    <div id="rc-round2-section" style="margin:0 0 14px;padding:12px 14px;background:#f0f4ff;border-radius:10px;border:1px solid #c7d3f0">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+        <input type="checkbox" id="res-join-round2" style="width:18px;height:18px;margin-top:2px;accent-color:#1976d2;cursor:pointer">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#1565c0">2차 매칭 참가 신청</div>
+          <div style="font-size:11px;color:#555;margin-top:3px;line-height:1.5">1차 매칭 미매칭 시 2차 매칭에 참가합니다.<br>※ 미입금 이력이 있으면 자동으로 제외됩니다.</div>
+        </div>
+      </label>
+    </div>
     <div class="reserve-confirm-btns">
       <button class="btn-cancel-res" onclick="closeReserveConfirm()">취소</button>
       <button class="btn-confirm-res" onclick="doReservation()">예약 확정</button>
     </div>
   </div>
 </div>
-<script src="/static/app2.js?v=20260607072222"></script>
+<script src="/static/app2.js?v=20260607081140"></script>
 <!-- 패널티 해제 팝업 -->
 <div id="penalty-release-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
   <div style="background:#1a1a2e;border:1px solid #2d2d5e;border-radius:12px;padding:24px;width:320px;max-width:90vw">

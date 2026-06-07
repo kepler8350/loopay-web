@@ -161,6 +161,24 @@ function showReserveConfirm(){
   if(gd>0)document.getElementById('rc-gd').textContent=gd+'개';
   document.getElementById('rc-total').textContent=total+'회 / '+cost.toLocaleString()+'P 차감';
   document.getElementById('reserve-confirm-overlay').classList.add('show');
+
+  // 2차매칭 체크박스 상태 제어
+  var jr2Box = document.getElementById('res-join-round2');
+  var jr2Section = document.getElementById('rc-round2-section');
+  if(jr2Box && jr2Section){
+    var hasUnpaid = (userData && (userData.unpaid_count||0) > 0);
+    if(hasUnpaid){
+      jr2Box.checked = false;
+      jr2Box.disabled = true;
+      jr2Section.style.background = '#f5f5f5';
+      jr2Section.style.borderColor = '#ccc';
+      jr2Section.querySelector('div div:last-child').textContent = '미입금 이력이 있어 2차 매칭 참가가 불가합니다.';
+    } else {
+      jr2Box.disabled = false;
+      jr2Section.style.background = '#f0f4ff';
+      jr2Section.style.borderColor = '#c7d3f0';
+    }
+  }
 }
 function closeReserveConfirm(){
   document.getElementById('reserve-confirm-overlay').classList.remove('show');
@@ -504,9 +522,13 @@ async function doSellReservationBulk(){
 async function doReservation(){
   closeReserveConfirm();
   try{
-    const d=await api('/reservation/create',{method:'POST',body:JSON.stringify({bronze_count:bzCnt,silver_count:svCnt,gold_count:gdCnt})});
+    var _jr2 = document.getElementById('res-join-round2')?.checked ? 1 : 0;
+    const d=await api('/reservation/create',{method:'POST',body:JSON.stringify({bronze_count:bzCnt,silver_count:svCnt,gold_count:gdCnt,join_round2:_jr2})});
     if(d.success){
-      toast(d.message);
+      var msg = d.message;
+      if(d.join_round2_denied) msg += ' (미입금 이력으로 2차매칭 참가 불가)';
+      else if(d.join_round2) msg += ' ✓ 2차매칭 참가 신청됨';
+      toast(msg);
       disableReserveSection();
       await loadUserData();
     } else {
