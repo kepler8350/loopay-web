@@ -93,6 +93,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div class="nav-item" data-page="charges" onclick="showPage('charges',this)"><span class="nav-icon">&#128179;</span>&#52649;&#51204; &#44288;&#47532;</div>
 <div class="nav-item" data-page="reservations" onclick="showPage('reservations',this)"><span class="nav-icon">&#128203;</span>&#50696;&#50557; &#54788;&#54889;</div>
 <div class="nav-item" data-page="matching" onclick="showPage('matching',this)"><span class="nav-icon">&#9889;</span>&#47588;&#52845; &#49892;&#54665;</div>
+<div class="nav-item" data-page="reservations-log" onclick="showPage('reservations-log',this);loadReservationsLog()"><span class="nav-icon">📋</span>구매/판매 예약기록</div>
 <div class="nav-item" data-page="matches" onclick="showPage('matches',this);loadMatchRecords()"><span class="nav-icon">🗂️</span>매칭 기록</div>
 <div class="nav-item" data-page="system-items" onclick="showPage('system-items',this);loadSystemItems()"><span class="nav-icon">📦</span>시스템아이템현황</div>
 <div class="nav-item" data-page="penalties" onclick="showPage('penalties',this)"><span class="nav-icon">&#9888;</span>&#54056;&#45328;&#54000; &#44288;&#47532;</div>
@@ -589,6 +590,64 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
   <div id="si-total" style="font-size:12px;color:#888;margin-top:8px;text-align:right"></div>
 </div>
 </div><!-- /page-system-items -->
+
+<div id="page-reservations-log" class="page">
+  <div class="page-header"><h2 class="page-title">구매/판매 예약기록</h2><p class="page-sub">전체 구매·판매 예약 내역</p></div>
+
+  <!-- 검색 필터 -->
+  <div class="card" style="padding:14px 16px;margin-bottom:12px">
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+      <div>
+        <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">일자</label>
+        <input type="date" id="rl-date" style="padding:7px 10px;background:#1a1d2e;border:1px solid #2d2d5e;border-radius:6px;color:#fff;font-size:12px;color-scheme:dark">
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:6px">
+        <div>
+          <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">기간 시작</label>
+          <input type="date" id="rl-date-from" style="padding:7px 10px;background:#1a1d2e;border:1px solid #2d2d5e;border-radius:6px;color:#fff;font-size:12px;color-scheme:dark">
+        </div>
+        <span style="color:#888;font-size:12px;padding-bottom:8px">~</span>
+        <div>
+          <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">기간 종료</label>
+          <input type="date" id="rl-date-to" style="padding:7px 10px;background:#1a1d2e;border:1px solid #2d2d5e;border-radius:6px;color:#fff;font-size:12px;color-scheme:dark">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">아이디</label>
+        <input type="text" id="rl-username" placeholder="아이디 검색" style="padding:7px 10px;background:#1a1d2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:12px;width:130px">
+      </div>
+      <div>
+        <label style="font-size:11px;color:#888;display:block;margin-bottom:3px">구분</label>
+        <select id="rl-type" style="padding:7px 10px;background:#1a1d2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:12px">
+          <option value="">전체</option>
+          <option value="buy">구매</option>
+          <option value="sell">판매</option>
+        </select>
+      </div>
+      <button onclick="loadReservationsLog()" style="padding:8px 18px;background:#1976d2;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer">🔍 검색</button>
+      <button onclick="rlResetFilter()" style="padding:8px 12px;background:#37474f;color:#cdd6f4;border:1px solid #546e7a;border-radius:6px;font-size:12px;cursor:pointer">초기화</button>
+    </div>
+    <div id="rl-summary" style="margin-top:10px;font-size:12px;color:#888"></div>
+  </div>
+
+  <!-- 테이블 -->
+  <div class="card" style="overflow-x:auto;padding:0">
+    <table class="data-table" style="font-size:12px;width:100%">
+      <thead>
+        <tr>
+          <th>No</th><th>예약일</th><th>아이디</th><th>성명</th>
+          <th>구분</th><th>종류</th><th>차수</th><th>상태</th>
+          <th>아이템ID</th><th>확인</th><th>등록일시</th>
+        </tr>
+      </thead>
+      <tbody id="rl-tbody">
+        <tr><td colspan="11" style="text-align:center;padding:20px;color:#888">조회 버튼을 눌러주세요</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- 페이지네이션 -->
+  <div id="rl-pagination" style="display:flex;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap"></div>
+</div>
 
 <div id="page-matches" class="page">
   <h2 class="page-title">매칭 기록</h2>
@@ -1564,6 +1623,108 @@ function renderSystemItems(){
 
 // ── 매치 기록 ────────────────────────────────────────
 var _matchRecords = [];
+
+// ── 구매/판매 예약기록 ────────────────────────────────────────
+var _rlPage = 1;
+var _rlTotal = 0;
+var _rlPerPage = 100;
+
+function rlResetFilter(){
+  document.getElementById('rl-date').value = '';
+  document.getElementById('rl-date-from').value = '';
+  document.getElementById('rl-date-to').value = '';
+  document.getElementById('rl-username').value = '';
+  document.getElementById('rl-type').value = '';
+  _rlPage = 1;
+  loadReservationsLog();
+}
+
+async function loadReservationsLog(page){
+  _rlPage = page || 1;
+  var tbody = document.getElementById('rl-tbody');
+  var summary = document.getElementById('rl-summary');
+  if(tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
+
+  var date     = document.getElementById('rl-date')?.value || '';
+  var dateFrom = document.getElementById('rl-date-from')?.value || '';
+  var dateTo   = document.getElementById('rl-date-to')?.value || '';
+  var username = document.getElementById('rl-username')?.value || '';
+  var type     = document.getElementById('rl-type')?.value || '';
+
+  var params = new URLSearchParams({page: _rlPage, per_page: _rlPerPage});
+  if(date)     params.set('date', date);
+  if(dateFrom) params.set('date_from', dateFrom);
+  if(dateTo)   params.set('date_to', dateTo);
+  if(username) params.set('username', username);
+  if(type)     params.set('type', type);
+
+  try{
+    var d = await apiAdmin('/admin/reservations-list?' + params.toString());
+    _rlTotal = d.total || 0;
+    var rows = d.reservations || [];
+
+    if(summary){
+      summary.textContent = '총 ' + _rlTotal + '건' + (date||dateFrom||dateTo||username||type ? ' (필터 적용)' : '');
+    }
+
+    if(!rows.length){
+      if(tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:#888">예약 내역 없음</td></tr>';
+      rlRenderPagination();
+      return;
+    }
+
+    var barNames = {bronze:'수정', silver:'루비', gold:'다이아'};
+    var statusColors = {pending:'#42a5f5', matched:'#66bb6a', unmatched:'#ef9a9a', cancelled:'#888'};
+    var typeColors = {buy:'#ab47bc', sell:'#42a5f5'};
+
+    if(tbody) tbody.innerHTML = rows.map(function(r, i){
+      var rowNo = (_rlPage-1)*_rlPerPage + i + 1;
+      var bar = barNames[r.bar_type] || r.bar_type;
+      var barColor = r.bar_type==='bronze'?'#cd7f32':r.bar_type==='silver'?'#c0c0c0':'#ffd700';
+      var typeName = r.type==='buy'?'구매':'판매';
+      var typeColor = typeColors[r.type] || '#888';
+      var statusColor = statusColors[r.status] || '#888';
+      var confirmedBadge = r.confirmed ? '<span style="font-size:10px;background:#1b5e20;color:#a5d6a7;padding:1px 5px;border-radius:3px">확인</span>' : '';
+      var createdAt = (r.created_at||'').slice(0,16);
+      return '<tr style="border-bottom:1px solid #2a2a40">'
+        +'<td style="text-align:center;color:#888">'+rowNo+'</td>'
+        +'<td style="text-align:center">'+r.reserve_date+'</td>'
+        +'<td><strong style="color:#4fc3f7">'+r.username+'</strong></td>'
+        +'<td style="color:#aaa">'+(r.account_name||r.nickname||'-')+'</td>'
+        +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+typeColor+'22;color:'+typeColor+';font-weight:700">'+typeName+'</span></td>'
+        +'<td style="font-weight:700;color:'+barColor+'">'+bar+'</td>'
+        +'<td style="text-align:center;color:#888">'+(r.match_round||'-')+'차</td>'
+        +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+statusColor+'22;color:'+statusColor+'">'+r.status+'</span></td>'
+        +'<td style="text-align:center;color:#888">'+(r.item_id||'-')+'</td>'
+        +'<td style="text-align:center">'+confirmedBadge+'</td>'
+        +'<td style="color:#666;font-size:11px">'+createdAt+'</td>'
+        +'</tr>';
+    }).join('');
+
+    rlRenderPagination();
+  }catch(e){
+    if(tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:16px;color:#ef5350">'+e.message+'</td></tr>';
+  }
+}
+
+function rlRenderPagination(){
+  var el = document.getElementById('rl-pagination');
+  if(!el) return;
+  var totalPages = Math.ceil(_rlTotal / _rlPerPage);
+  if(totalPages <= 1){ el.innerHTML=''; return; }
+  var html2 = '';
+  var start = Math.max(1, _rlPage-3);
+  var end   = Math.min(totalPages, _rlPage+3);
+  if(_rlPage > 1) html2 += '<button onclick="loadReservationsLog(1)" style="'+rlPagBtn()+'">«</button><button onclick="loadReservationsLog('+(_rlPage-1)+')" style="'+rlPagBtn()+'">‹</button>';
+  for(var p=start;p<=end;p++){
+    var active = p===_rlPage ? 'background:#1976d2;color:#fff;' : '';
+    html2 += '<button onclick="loadReservationsLog('+p+')" style="'+rlPagBtn()+active+'">'+p+'</button>';
+  }
+  if(_rlPage < totalPages) html2 += '<button onclick="loadReservationsLog('+(_rlPage+1)+')" style="'+rlPagBtn()+'">›</button><button onclick="loadReservationsLog('+totalPages+')" style="'+rlPagBtn()+'">»</button>';
+  el.innerHTML = html2;
+}
+function rlPagBtn(){ return 'padding:5px 10px;background:#1a1d2e;border:1px solid #2d2d5e;color:#cdd6f4;border-radius:5px;cursor:pointer;font-size:12px;'; }
+
 async function loadMatchRecords(){
   var tbody = document.getElementById('matches-tbody');
   if(tbody) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';

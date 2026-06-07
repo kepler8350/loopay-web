@@ -2718,16 +2718,53 @@ def admin_reservation_status():
 @app.route('/api/admin/reservations-list', methods=['GET'])
 @jwt_required()
 def admin_reservations_list():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    date_from   = request.args.get('date_from', '')
+    date_to     = request.args.get('date_to', '')
+    single_date = request.args.get('date', '')
+    username    = request.args.get('username', '').strip()
+    res_type    = request.args.get('type', '')   # 'buy' | 'sell' | ''
+    page        = int(request.args.get('page', 1))
+    per_page    = int(request.args.get('per_page', 100))
+    offset      = (page - 1) * per_page
+
+    where = ['1=1']
+    params = []
+    if single_date:
+        where.append('r.reserve_date = ?'); params.append(single_date)
+    else:
+        if date_from:
+            where.append('r.reserve_date >= ?'); params.append(date_from)
+        if date_to:
+            where.append('r.reserve_date <= ?'); params.append(date_to)
+    if username:
+        where.append('u.username LIKE ?'); params.append(f'%{username}%')
+    if res_type == 'buy':
+        where.append("r.type = 'buy'")
+    elif res_type == 'sell':
+        where.append("r.type = 'sell'")
+
+    where_sql = ' AND '.join(where)
     conn = get_db()
     try:
+        total_row = conn.execute(
+            f'''SELECT COUNT(*) as cnt FROM reservations r
+                LEFT JOIN users u ON r.user_id = u.id
+                WHERE {where_sql}''', params
+        ).fetchone()
+        total = total_row['cnt'] if total_row else 0
         rows = conn.execute(
-            '''SELECT r.id, r.bar_type, r.match_round, r.status, r.reserve_date,
-                      u.username, u.nickname
-               FROM reservations r
-               LEFT JOIN users u ON r.user_id = u.id
-               ORDER BY r.reserve_date DESC, r.created_at DESC LIMIT 200'''
+            f'''SELECT r.id, r.bar_type, r.type, r.match_round, r.status,
+                       r.reserve_date, r.created_at, r.item_id, r.confirmed,
+                       u.username, u.nickname, u.account_name
+                FROM reservations r
+                LEFT JOIN users u ON r.user_id = u.id
+                WHERE {where_sql}
+                ORDER BY r.reserve_date DESC, r.id DESC
+                LIMIT ? OFFSET ?''', params + [per_page, offset]
         ).fetchall()
-        return jsonify(reservations=[dict(row) for row in rows])
+        return jsonify(reservations=[dict(row) for row in rows], total=total, page=page, per_page=per_page)
     finally:
         conn.close()
 
