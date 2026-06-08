@@ -3967,6 +3967,8 @@ def admin_loopay_items():
                 'is_buy_matched': r.get('is_buy_matched', False),
                 'is_self_match': r.get('is_self_match', False),
                 'buy_match_confirmed': r.get('buy_match_confirmed', False),
+                'buy_price': get_price(r['bar_type'], r['stage'])[0],
+                'sell_price': get_price(r['bar_type'], r['stage'])[1],
             } for r in rows],
             total=len(rows)
         )
