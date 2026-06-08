@@ -2244,7 +2244,7 @@ async function deleteLoopayBuyItem(itemId){
   else toast(r.error||'삭제 실패','error');
 }
 
-async async function loopayItemSellReserve(itemId){
+async function loopayItemSellReserve(itemId){
   var round = window._currentMatchRound || 1;
   if(!confirm('loopay 아이템을 판매예약으로 등록하시겠습니까? ('+round+'차 매칭)')) return;
   var tok = localStorage.getItem('admin_token');
