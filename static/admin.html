@@ -79,9 +79,11 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div id="login-screen"><div class="login-box">
 <div class="login-logo">LOOPAY</div>
 <div class="login-sub">&#44288;&#47532;&#51088; &#45824;&#49884;&#48372;&#46300;</div>
-<input id="adm-user" class="login-input" type="text" placeholder="ID">
-<input id="adm-pass" class="login-input" type="password" placeholder="PW">
-<button class="login-btn" onclick="doLogin()">&#47196;&#44536;&#51064;</button>
+<form id="login-form" onsubmit="event.preventDefault();doLogin();">
+<input id="adm-user" class="login-input" type="text" placeholder="ID" autocomplete="username" autofocus>
+<input id="adm-pass" class="login-input" type="password" placeholder="PW" autocomplete="current-password">
+<button class="login-btn" type="submit">&#47196;&#44536;&#51064;</button>
+</form>
 </div></div>
 <div class="app" id="admin-app" style="display:none">
 <div class="sidebar">
@@ -3130,4 +3132,14 @@ async async function loopayItemSellReserve(itemId){
     <div id="detail-content" style="min-height:200px;color:#cdd6f4">로딩 중...</div>
   </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var btn = document.getElementById('login-btn');
+  if(btn) btn.addEventListener('click', doLogin);
+  var pw = document.getElementById('adm-pass');
+  if(pw) pw.addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+  var id = document.getElementById('adm-user');
+  if(id) id.addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+});
+</script>
 </body></html>
