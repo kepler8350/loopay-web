@@ -3295,8 +3295,22 @@ def match_confirm_payment():
             # loopay가 buyer인 경우 아이템 추가 스킵 (시스템 내부 구매예약이므로)
             _buyer_is_loopay = (m['buyer_id'] == loopay_id)
             # 아이템 추가: reservable 상태로 (입금확인일 = 1일차)
-            _inserted = _buyer_is_loopay  # loopay buyer면 스킵 처리
+            _inserted = False
             _insert_err = None
+            # loopay가 buyer인 경우: 구매 reservation의 item_id 아이템 stage+1 업데이트
+            if _buyer_is_loopay:
+                try:
+                    _lr = db.execute(
+                        "SELECT item_id FROM reservations WHERE id=?", (m['reservation_id'],)
+                    ).fetchone()
+                    if _lr and _lr['item_id']:
+                        db.execute(
+                            "UPDATE items SET stage=?, status='reservable', purchase_date=? WHERE id=? AND user_id=?",
+                            (_stage, get_today().isoformat(), _lr['item_id'], loopay_id)
+                        )
+                    _inserted = True
+                except Exception as _le:
+                    _insert_err = str(_le)
             if not _buyer_is_loopay:
               for _item_status in ('reservable', 'active', 'waiting', 'matched'):
                 try:
@@ -3372,22 +3386,7 @@ def match_confirm_payment():
             leveled = check_and_level_up(db, m['buyer_id'])
         except Exception:
             pass
-        # 7. loopay가 buyer인 경우: loopay_matched 아이템 → reservable(판매가능) 전환
-        try:
-            _loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
-            if _loopay and m['buyer_id'] == _loopay['id']:
-                # 이 match의 buyer reservation의 item_id 조회
-                _buyer_res = db.execute(
-                    "SELECT item_id FROM reservations WHERE id=?", (m['reservation_id'],)
-                ).fetchone()
-                if _buyer_res and _buyer_res['item_id']:
-                    db.execute(
-                        "UPDATE items SET status='reservable', purchase_date=? WHERE id=? AND user_id=?",
-                        (get_today().isoformat(), _buyer_res['item_id'], _loopay['id'])
-                    )
-                    db.commit()
-        except Exception:
-            pass
+        # 7. loopay buyer: step 3에서 stage+1+reservable 처리 완료
 
         db.commit()
         return jsonify(success=True, message='거래 완료')
