@@ -428,6 +428,36 @@ def admin():
     resp.headers['Expires'] = '0'
     return resp
 
+@app.route('/admin-login', methods=['POST'])
+def admin_login_form():
+    """서버사이드 관리자 로그인 (form submit 방식)"""
+    from flask import make_response, redirect, Response
+    import os
+    username = request.form.get('username') or ''
+    password = request.form.get('password') or ''
+    db = get_db()
+    admin = db.execute("SELECT * FROM admins WHERE username=?", (username,)).fetchone()
+    db.close()
+    if not admin or not check_password_hash(admin['password_hash'], password):
+        path = os.path.join(STATIC_DIR, 'admin.html')
+        with open(path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        # 에러 메시지 삽입
+        content = content.replace('</form>', '<p style="color:#ef5350;margin-top:8px;font-size:13px">아이디 또는 비밀번호가 틀렸습니다.</p></form>', 1)
+        resp = make_response(Response(content, mimetype='text/html'))
+        return resp
+    token = create_access_token(identity='admin:'+str(admin['id']), expires_delta=timedelta(hours=24))
+    # 토큰을 쿠키에 저장하고 admin 앱 화면 직접 반환
+    path = os.path.join(STATIC_DIR, 'admin.html')
+    with open(path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    # 토큰을 script로 localStorage에 설정 후 화면 전환
+    inject_script = f'<script>localStorage.setItem("admin_token","{token}");document.getElementById("login-screen").style.display="none";document.getElementById("admin-app").style.display="flex";document.addEventListener("DOMContentLoaded",function(){{if(typeof loadDashboard==="function")loadDashboard();}});</script>'
+    content = content.replace('</body>', inject_script + '</body>', 1)
+    resp = make_response(Response(content, mimetype='text/html'))
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return resp
+
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     """아이디/비밀번호 회원가입"""
