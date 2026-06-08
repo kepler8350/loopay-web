@@ -446,7 +446,7 @@ def admin_login_form():
         content = content.replace('</form>', '<p style="color:#ef5350;margin-top:8px;font-size:13px">아이디 또는 비밀번호가 틀렸습니다.</p></form>', 1)
         resp = make_response(Response(content, mimetype='text/html'))
         return resp
-    token = create_access_token(identity='admin:'+str(admin['id']), expires_delta=timedelta(hours=24))
+    token = create_access_token(identity='admin:'+str(admin['id']), expires_delta=datetime.timedelta(hours=24))
     # 토큰을 쿠키에 저장하고 admin 앱 화면 직접 반환
     path = os.path.join(STATIC_DIR, 'admin.html')
     with open(path, 'r', encoding='utf-8') as f:
