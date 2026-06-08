@@ -447,15 +447,10 @@ def admin_login_form():
         resp = make_response(Response(content, mimetype='text/html'))
         return resp
     token = create_access_token(identity='admin:'+str(admin['id']), expires_delta=datetime.timedelta(hours=24))
-    # 토큰을 쿠키에 저장하고 admin 앱 화면 직접 반환
-    path = os.path.join(STATIC_DIR, 'admin.html')
-    with open(path, 'r', encoding='utf-8') as f:
-        content = f.read()
-    # 토큰을 script로 localStorage에 설정 후 화면 전환
-    inject_script = f'<script>localStorage.setItem("admin_token","{token}");document.getElementById("login-screen").style.display="none";document.getElementById("admin-app").style.display="flex";document.addEventListener("DOMContentLoaded",function(){{if(typeof loadDashboard==="function")loadDashboard();}});</script>'
-    content = content.replace('</body>', inject_script + '</body>', 1)
-    resp = make_response(Response(content, mimetype='text/html'))
-    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    # 토큰을 쿠키에 저장하고 /admin으로 리다이렉트
+    from flask import redirect, make_response
+    resp = make_response(redirect('/admin'))
+    resp.set_cookie('admin_token', token, max_age=86400, httponly=False, samesite='Lax')
     return resp
 
 @app.route('/api/auth/register', methods=['POST'])

@@ -887,4 +887,24 @@ document.addEventListener('DOMContentLoaded', function(){
   if(id) id.addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
 });
 </script>
+<script>
+// 쿠키에서 admin_token을 읽어 localStorage로 이동 (서버사이드 로그인 후)
+(function(){
+  var m = document.cookie.match(/(?:^|;\s*)admin_token=([^;]+)/);
+  if(m){
+    localStorage.setItem('admin_token', decodeURIComponent(m[1]));
+    // 쿠키 삭제
+    document.cookie = 'admin_token=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+    // 로그인 화면 숨기고 앱 표시
+    var ls = document.getElementById('login-screen');
+    var aa = document.getElementById('admin-app');
+    if(ls) ls.style.display='none';
+    if(aa) aa.style.display='flex';
+    // 대시보드 로드
+    window.addEventListener('load', function(){
+      if(typeof loadDashboard === 'function') loadDashboard();
+    });
+  }
+})();
+</script>
 </body></html>
