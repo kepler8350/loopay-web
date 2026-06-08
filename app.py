@@ -3756,13 +3756,21 @@ def admin_loopay_items():
         # 아이템 목록 먼저 가져오기
         item_rows = db.execute(
             """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date,
-               (SELECT MAX(r2.reserve_date) FROM reservations r2 WHERE r2.item_id = i.id) as reserve_date
+               (SELECT MAX(r2.reserve_date) FROM reservations r2 WHERE r2.item_id = i.id) as reserve_date,
+               (SELECT r4.match_round FROM reservations r4
+                WHERE r4.item_id = i.id AND r4.status='pending' AND r4.user_id=i.user_id
+                ORDER BY r4.id DESC LIMIT 1) as sell_reservation_round,
+               (SELECT r4.reserve_date FROM reservations r4
+                WHERE r4.item_id = i.id AND r4.status='pending' AND r4.user_id=i.user_id
+                ORDER BY r4.id DESC LIMIT 1) as sell_reservation_date,
+               (SELECT r4.id FROM reservations r4
+                WHERE r4.item_id = i.id AND r4.status='pending' AND r4.user_id=i.user_id
+                ORDER BY r4.id DESC LIMIT 1) as sell_reservation_id
                FROM items i
                WHERE i.user_id = ? AND i.status NOT IN ('sold')
                AND (
-                 -- reservable 아이템: add_reservation으로 추가된 것(reservation 연결)만 표시
-                 -- confirm_payment로 buyer에게 추가된 아이템(reservation 없음) 제외
-                 i.status != 'reservable'
+                 -- reservable/matched 아이템: reservation 연결된 것만 표시
+                 i.status NOT IN ('reservable','matched')
                  OR EXISTS (
                    SELECT 1 FROM reservations r3
                    WHERE r3.item_id = i.id
@@ -3968,6 +3976,9 @@ def admin_loopay_items():
                 'buy_match_confirmed': r.get('buy_match_confirmed', False),
                 'buy_price': get_price(r['bar_type'], r['stage'])[0],
                 'sell_price': get_price(r['bar_type'], r['stage'])[1],
+                'sell_reservation_round': r.get('sell_reservation_round'),
+                'sell_reservation_date': r.get('sell_reservation_date'),
+                'sell_reservation_id': r.get('sell_reservation_id'),
             } for r in rows],
             total=len(rows)
         )
@@ -3996,7 +4007,7 @@ def admin_loopay_sell_reserve():
         if not item: return jsonify(error='판매가능 상태 아이템 없음'), 404
         today = get_today().isoformat()
         # 아이템 상태 변경 + 판매예약 생성
-        db.execute("UPDATE items SET status='reservable' WHERE id=?", (item_id,))
+        db.execute("UPDATE items SET status='matched' WHERE id=?", (item_id,))
         db.execute(
             "INSERT INTO reservations(user_id, item_id, bar_type, match_round, reserve_date, status, stage) VALUES(?,?,?,?,?,'pending',?)",
             (lid, item_id, item['bar_type'], match_round, today, item['stage'] or 1)

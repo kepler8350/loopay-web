@@ -1514,7 +1514,7 @@ function renderSystemItems(){
   }
   var tC={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var tN={bronze:'수정',silver:'루비',gold:'다이아'};
-  var sL={reservable:'판매가능',waiting:'대기중',matched:'판매매칭완료',sold:'판매완료',active:'보유중',loopay_buy:'구매예약중',loopay_matched:'구매매칭완료'};
+  var sL={reservable:'판매가능',waiting:'대기중',matched:'판매매칭완료',sold:'판매완료',active:'보유중',loopay_buy:'구매예약중',loopay_matched:'구매매칭완료',sell_reserved:'판매예약중'};
   var sC={reservable:'#66bb6a',waiting:'#f9a825',matched:'#1976d2',sold:'#888',active:'#aaa',loopay_buy:'#42a5f5',loopay_matched:'#ab47bc'};
   var matchStatusKr={pending:'대기',matched:'매칭완료',paid:'송금',completed:'거래완료',cancelled:'취소',failed:'미입금',confirmed:'거래완료',unpaid:'미입금'};
   var matchStatusColor={pending:'#888',matched:'#f9a825',paid:'#42a5f5',completed:'#66bb6a',cancelled:'#ef5350',failed:'#ef5350',confirmed:'#66bb6a',unpaid:'#ef5350'};
@@ -1535,6 +1535,8 @@ function renderSystemItems(){
   var buyTbody = document.getElementById('si-buy-tbody');
   tbody.innerHTML = sellItems.map(function(item,i){
     var bg = i%2===0?'#12121f':'#1a1a2e';
+    // 판매예약 중 상태 판별 (matched 상태 + sell_reservation_id 있음)
+    var isSellReserved = (item.status==='matched' && !item.match_status && item.sell_reservation_id);
     var ms = item.match_status;
     var matchBadge = ms
       ? '<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(matchStatusColor[ms]||'#888')+'33;color:'+(matchStatusColor[ms]||'#888')+'">'+(matchStatusKr[ms]||ms)+'</span>'
@@ -1601,10 +1603,10 @@ function renderSystemItems(){
       +'<td style="padding:6px 8px;color:#555">'+item.id+'</td>'
       +'<td style="padding:6px 8px;text-align:center;color:'+(tC[item.bar_type]||'#fff')+'"><strong>'+(tN[item.bar_type]||item.bar_type)+'</strong></td>'
       +'<td style="padding:6px 8px;text-align:center">'+(item.stage||'-')+'단계</td>'
-      +'<td style="padding:6px 8px;text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(sC[item.status]||'#555')+'33;color:'+(sC[item.status]||'#aaa')+'">'+(sL[item.status]||item.status)+'</span></td>'
-      +'<td style="padding:6px 8px;text-align:center">'+matchBadge+'</td>'
+      +'<td style="padding:6px 8px;text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(isSellReserved?'#f9a82522':((sC[item.status]||'#555')+'33'))+';color:'+(isSellReserved?'#f9a825':(sC[item.status]||'#aaa'))+'">'+(isSellReserved?'판매예약중':(sL[item.status]||item.status))+'</span></td>'
+      +'<td style="padding:6px 8px;text-align:center">'+(isSellReserved?'<span style="padding:2px 6px;border-radius:8px;font-size:11px;background:#f9a82522;color:#f9a825">'+(item.sell_reservation_round||1)+'차</span>':matchBadge)+'</td>'
       +'<td style="padding:6px 8px;color:#888;font-size:11px">'+(item.purchase_date||'-')+'</td>'
-      +'<td style="padding:6px 8px;color:#888;font-size:11px">'+(item.reserve_date||'-')+'</td>'
+      +'<td style="padding:6px 8px;color:#888;font-size:11px">'+(isSellReserved?(item.sell_reservation_date||item.reserve_date||'-'):(item.reserve_date||'-'))+'</td>'
       +'<td style="padding:6px 8px;text-align:right;color:#90caf9;font-size:11px">'+(item.buy_price?item.buy_price.toLocaleString()+'원':'-')+'</td>'
       +'<td style="padding:6px 8px;text-align:right;color:#f9a825;font-size:11px;font-weight:600">'+(item.sell_price?item.sell_price.toLocaleString()+'원':'-')+'</td>'
       +'<td style="padding:6px 8px;color:#64b5f6;font-size:11px">'+(item.buyer_username||'-')+'</td>'
@@ -1616,7 +1618,7 @@ function renderSystemItems(){
       // loopay 구매매칭완료: 입금확인 + 취소 버튼
       + (false && item.match_id  /* loopay_matched → matched로 통합됨 */ ? '<button onclick="adminConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>' : '')
       // loopay reservable(매칭 후 보유): 판매예약 버튼
-      + (item.status==='reservable' && !item.match_id ? '<button onclick="loopayItemSellReserve('+item.id+')" style="padding:3px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 판매예약</button>' : '')
+      + (item.status==='reservable' && !item.match_id && !item.sell_reservation_id ? '<button onclick="loopayItemSellReserve('+item.id+')" style="padding:3px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 판매예약</button>' : '')
       + actionBtns+'</td>'
       +'</tr>';
   }).join('');
@@ -3103,7 +3105,7 @@ async function deleteLoopayBuyItem(itemId){
   else toast(r.error||'삭제 실패','error');
 }
 
-async function loopayItemSellReserve(itemId){
+async async function loopayItemSellReserve(itemId){
   var round = window._currentMatchRound || 1;
   if(!confirm('loopay 아이템을 판매예약으로 등록하시겠습니까? ('+round+'차 매칭)')) return;
   var tok = localStorage.getItem('admin_token');
