@@ -291,28 +291,6 @@ async function deleteAllUsers(){
 
 // ── 시스템아이템현황 ────────────────────────────────
 
-async function adminConfirmPayment(matchId){
-  try{
-    var tok = localStorage.getItem('admin_token');
-    var r = await fetch('/api/match/confirm-payment',{method:'POST',
-      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-      body:JSON.stringify({match_id:matchId})});
-    var d = await r.json();
-    if(d.success){toast('송금 확인 완료','success');loadSystemItems();}
-    else toast(d.error||'오류','error');
-  }catch(e){toast(e.message,'error');}
-}
-async function adminReportUnpaid(matchId){
-  try{
-    var tok = localStorage.getItem('admin_token');
-    var r = await fetch('/api/match/report-unpaid',{method:'POST',
-      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-      body:JSON.stringify({match_id:matchId})});
-    var d = await r.json();
-    if(d.success){toast('미입금 처리 완료','success');loadSystemItems();}
-    else toast(d.error||'오류','error');
-  }catch(e){toast(e.message,'error');}
-}
 
 async function adminWarnUnpaid(matchId){
   try{
@@ -441,7 +419,6 @@ var _systemItems = [];
 var _serverHour = 0;
 var _serverMin = 0;
 var _unpaidClickedAt = {}; // matchId → 마지막 클릭 시각(ms)
-async 
 async function saveRound2Auto(val){
   try{
     var tok=localStorage.getItem('admin_token');
@@ -1560,33 +1537,6 @@ var _origShow2=typeof showPage==='function'?showPage:null;
 if(_origShow2){ showPage=function(page,el){ _origShow2(page,el); if(page==='testtools') loadCurrentTime(); }; }
 
 var _detailUserId = null;
-async function showUserDetail(uid){
-  _detailUserId=uid;
-  const modal=document.getElementById('user-detail-modal');
-  if(!modal)return;
-  modal.style.display='block';
-  document.getElementById('detail-title').textContent='회원 상세';
-  const infoEl=document.getElementById('detail-user-info');
-  if(infoEl)infoEl.innerHTML='<div style="padding:10px;color:#888">로딩 중...</div>';
-  try{
-    const d=await apiAdmin('/admin/user/'+uid);
-    const u=d.user||{};
-    if(infoEl)infoEl.innerHTML=`<div style="background:#2a2a3e;border-radius:8px;padding:12px;margin-bottom:12px">
-      <table class="detail-table">
-        <tr><th>아이디</th><td>${u.username||'-'}</td></tr>
-        <tr><th>성명</th><td>${(u.nickname&&u.nickname!==u.username?u.nickname:u.account_name)||u.nickname||'-'}</td></tr>
-        <tr><th>휴대폰</th><td>${u.phone||'-'}</td></tr>
-        <tr><th>은행명</th><td>${u.bank||'-'}</td></tr>
-        <tr><th>계좌번호</th><td>${u.account_no||'-'}</td></tr>
-        <tr><th>가입일</th><td>${(u.created_at||'-').slice(0,10)}</td></tr>
-        <tr><th>레벨</th><td>${u.level||1}</td></tr>
-        <tr><th>충전P</th><td>${u.charge_points||0}P</td></tr>
-        <tr><th>전환P</th><td>${u.exchange_points||0}P</td></tr>
-      </table>
-    </div>`;
-  }catch(e){if(infoEl)infoEl.textContent=e.message;}
-  showDetailTab('charge');
-}
 
 
 
