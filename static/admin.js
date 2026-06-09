@@ -640,7 +640,7 @@ function renderSystemItems(){
     if(i.is_buy_reservation) return false;
     if(i.is_buy_matched && !i.is_self_match) return false; // 자기매칭이 아닌 구매매칭은 제외
     if(i.status === 'waiting') return false;
-    if(i.status === 'matched' && !i.match_id) return false; // 매칭 연결 없는 matched
+    if(i.status === 'matched' && !i.match_id && !i.sell_reservation_id) return false; // 매칭/판매예약 연결 없는 matched
     if(i.status === 'matched' && i.match_status === 'confirmed' && !i.is_self_match) return false; // 입금확인 완료(자기매칭 제외)
     return true;
   });
@@ -733,8 +733,9 @@ function renderSystemItems(){
       + (item.is_buy_reservation ? '<button onclick="deleteLoopayBuyItem('+item.id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">🗑️ 삭제</button>' : '')
       // loopay 구매매칭완료: 입금확인 + 취소 버튼
       + (false && item.match_id  /* loopay_matched → matched로 통합됨 */ ? '<button onclick="adminConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>' : '')
-      // loopay reservable(매칭 후 보유): 판매예약 버튼
-      + (item.status==='reservable' && !item.match_id && !item.sell_reservation_id ? '<button onclick="loopayItemSellReserve('+item.id+')" style="padding:3px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 판매예약</button>' : '')
+      // loopay reservable(매칭 후 보유): 판매예약 버튼 / 판매예약중 배지
+      + (isSellReserved ? '<span style="padding:3px 8px;border-radius:8px;font-size:11px;background:#f9a82522;color:#f9a825;font-weight:700">📋 판매예약중</span>' : '')
+      + (!isSellReserved && item.status==='reservable' && !item.match_id && !item.sell_reservation_id ? '<button onclick="loopayItemSellReserve('+item.id+')" style="padding:3px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 판매예약</button>' : '')
       + actionBtns+'</td>'
       +'</tr>';
   }).join('');
@@ -2200,7 +2201,19 @@ async function loopayItemSellReserve(itemId){
   if(!confirm('loopay 아이템을 판매예약으로 등록하시겠습니까? ('+round+'차 매칭)')) return;
   var tok = localStorage.getItem('admin_token');
   var r = await fetch('/api/admin/loopay-sell-reserve',{method:'POST',headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({item_id:itemId,match_round:round})}).then(r=>r.json());
-  if(r.success){toast('✅ 판매예약 등록 완료'); loadSystemItems(); loadMatchingStatus();}
+  if(r.success){
+    toast('✅ 판매예약 등록 완료');
+    // 전체 리로드 없이 _systemItems 배열에서 해당 아이템 상태만 업데이트 후 재렌더
+    var target = (_systemItems||[]).find(function(x){ return x.id === itemId; });
+    if(target){
+      target.status = 'matched';
+      target.sell_reservation_id = 1; // 판매예약 생성됨 표시
+      renderSystemItems();
+    } else {
+      loadSystemItems();
+    }
+    loadMatchingStatus();
+  }
   else toast(r.error||'실패','error');
 }
 
