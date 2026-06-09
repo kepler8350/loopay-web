@@ -797,13 +797,13 @@ def create_reservation():
       # 2차 매칭 참가 여부 (0/1) - 미입금 이력 없는 사람만 가능
       _join_r2_req = 1 if data.get('join_round2') else 0
       # 미입금 이력 확인 (unpaid_count > 0이면 2차 불가)
+      db = get_db()
       _u_check = db.execute("SELECT unpaid_count FROM users WHERE id=?", (uid,)).fetchone()
       _has_unpaid = int((_u_check['unpaid_count'] if _u_check else 0) or 0) > 0
       join_r2 = _join_r2_req if not _has_unpaid else 0
       # 클라이언트에서 독립적으로 선택한 sv/gd 값 사용 (없으면 자동 계산)
       sv_from_client = data.get('silver_count')
       gd_from_client = data.get('gold_count')
-      db = get_db()
       u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
       lv = u['level']
       cfg = LEVEL_CONFIG[lv]
