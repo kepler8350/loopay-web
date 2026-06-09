@@ -278,15 +278,12 @@ LEVEL_CONFIG = {
     4:{'bz_min':0,'bz_max':14,'sv_min':0,'sv_max':7,'gd_min':0,'gd_max':5,'cum':1740},
     5:{'bz_min':0,'bz_max':20,'sv_min':0,'sv_max':9,'gd_min':0,'gd_max':7,'cum':2850},
     6:{'bz_min':0,'bz_max':27,'sv_min':0,'sv_max':13,'gd_min':0,'gd_max':9,'cum':4350},
-    7:{'bz_min':0,'bz_max':34,'sv_min':0,'sv_max':17,'gd_min':0,'gd_max':12,'cum':6450},
-    8:{'bz_min':0,'bz_max':42,'sv_min':0,'sv_max':22,'gd_min':0,'gd_max':15,'cum':9450},
-    9:{'bz_min':0,'bz_max':51,'sv_min':0,'sv_max':27,'gd_min':0,'gd_max':20,'cum':12450},
-    10:{'bz_min':0,'bz_max':60,'sv_min':0,'sv_max':34,'gd_min':0,'gd_max':26,'cum':None}
+    7:{'bz_min':0,'bz_max':34,'sv_min':0,'sv_max':17,'gd_min':0,'gd_max':12,'cum':6450}
 }
 
 # 레벨별 거래유지 포인트 비용 (월 30일, 3레벨부터 유료)
 LEVEL_COST = {
-    1: 0, 2: 0, 3: 100, 4: 100, 5: 150, 6: 150, 7: 200, 8: 100, 9: 100, 10: 0
+    1: 0, 2: 0, 3: 100, 4: 200, 5: 350, 6: 500, 7: 700
 }
 
 # 최고단계 아이템 분할 규칙

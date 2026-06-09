@@ -327,10 +327,10 @@ def check_and_level_up(db, user_id):
     if not u: return False
     cur_lv = u['level'] or 1
     cum = u['cumulative_count'] or 0
-    if cur_lv >= 10: return False
+    if cur_lv >= 7: return False
 
     new_lv = cur_lv
-    for lv in range(cur_lv + 1, 11):
+    for lv in range(cur_lv + 1, 8):
         prev_cum = LEVEL_CONFIG.get(lv - 1, {}).get('cum') or 0
         if cum >= prev_cum:
             new_lv = lv
