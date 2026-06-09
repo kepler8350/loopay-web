@@ -804,7 +804,7 @@ async function loadReservationsLog(page){
   _rlPage = page || 1;
   var tbody = document.getElementById('rl-tbody');
   var summary = document.getElementById('rl-summary');
-  if(tbody) tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
+  if(tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
 
   var date     = document.getElementById('rl-date')?.value || '';
   var dateFrom = document.getElementById('rl-date-from')?.value || '';
@@ -848,18 +848,20 @@ async function loadReservationsLog(page){
       var statusColor = statusColors[r.status] || '#888';
       var confirmedBadge = r.confirmed ? '<span style="font-size:10px;background:#1b5e20;color:#a5d6a7;padding:1px 5px;border-radius:3px">확인</span>' : '';
       var createdAt = (r.created_at||'').slice(0,16);
+      var statusKo = {reservable:'예약가능', active:'활성', waiting:'대기중', matched:'매칭완료',
+        sold:'판매완료', reserved:'예약중', cancelled:'취소', confirmed:'확정',
+        pending:'대기', 'sell_reserved':'판매예약중'}[r.status] || r.status;
       return '<tr style="border-bottom:1px solid #2a2a40">'
         +'<td style="text-align:center;color:#888">'+rowNo+'</td>'
         +'<td style="text-align:center">'+r.reserve_date+'</td>'
-        +'<td><strong style="color:#4fc3f7">'+r.username+'</strong></td>'
-        +'<td style="color:#aaa">'+(r.account_name||r.nickname||'-')+'</td>'
+        +'<td style="text-align:center"><strong style="color:#4fc3f7">'+r.username+'</strong></td>'
+        +'<td style="text-align:center;color:#aaa">'+(r.account_name||r.nickname||'-')+'</td>'
         +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+typeColor+'22;color:'+typeColor+';font-weight:700">'+typeName+'</span></td>'
-        +'<td style="font-weight:700;color:'+barColor+'">'+bar+'</td>'
+        +'<td style="text-align:center;font-weight:700;color:'+barColor+'">'+bar+'</td>'
         +'<td style="text-align:center;color:#888">'+(r.match_round||'-')+'차</td>'
-        +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+statusColor+'22;color:'+statusColor+'">'+r.status+'</span></td>'
-        +'<td style="text-align:center;color:#888">'+(r.item_id||'-')+'</td>'
+        +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+statusColor+'22;color:'+statusColor+'">'+statusKo+'</span></td>'
         +'<td style="text-align:center">'+confirmedBadge+'</td>'
-        +'<td style="color:#666;font-size:11px">'+createdAt+'</td>'
+        +'<td style="text-align:center;color:#666;font-size:11px">'+createdAt+'</td>'
         +'</tr>';
     }).join('');
 
