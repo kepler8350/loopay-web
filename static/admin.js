@@ -804,7 +804,7 @@ async function loadReservationsLog(page){
   _rlPage = page || 1;
   var tbody = document.getElementById('rl-tbody');
   var summary = document.getElementById('rl-summary');
-  if(tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
+  if(tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">로딩 중...</td></tr>';
 
   var date     = document.getElementById('rl-date')?.value || '';
   var dateFrom = document.getElementById('rl-date-from')?.value || '';
@@ -861,8 +861,6 @@ async function loadReservationsLog(page){
         +'<td style="text-align:center;font-weight:700;color:'+barColor+'">'+bar+'</td>'
         +'<td style="text-align:center;color:#888">'+(r.match_round||'-')+'차</td>'
         +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+statusColor+'22;color:'+statusColor+'">'+statusKo+'</span></td>'
-        +'<td style="text-align:center">'+confirmedBadge+'</td>'
-        +'<td style="text-align:center;color:#666;font-size:11px">'+createdAt+'</td>'
         +'</tr>';
     }).join('');
 
