@@ -194,18 +194,31 @@ def _run_matching_internal(db, round_num, today):
             (today, loopay_id)
         ).fetchall()
 
+        import random as _random
         sell_by = {}
         for r in sell_rows:
             key = (r['bar_type'], r['stage'])
             sell_by.setdefault(key, []).append(dict(r))
-        buy_by = {}
+
+        # 구매예약: stage=0이면 단계 미지정 (랜덤 매칭), 아니면 단계별 매칭
+        buy_staged = []   # stage > 0: 단계 지정 구매
+        buy_random = []   # stage = 0: 단계 미지정 구매 (bar_type 랜덤 매칭)
         for r in buy_rows:
+            if (r['stage'] or 0) == 0:
+                buy_random.append(dict(r))
+            else:
+                buy_staged.append(dict(r))
+
+        buy_by = {}
+        for r in buy_staged:
             key = (r['bar_type'], r['stage'])
             buy_by.setdefault(key, []).append(dict(r))
 
         matched_s = set(); matched_b = set()
         _cnt_map = {}
         pairs = []
+
+        # ── 1단계: stage 지정 구매예약 매칭 (기존 로직) ──
         for key in set(list(sell_by.keys()) + list(buy_by.keys())):
             sellers = [s for s in sell_by.get(key, []) if s['res_id'] not in matched_s]
             buyers = [b for b in buy_by.get(key, []) if b['res_id'] not in matched_b]
@@ -228,6 +241,41 @@ def _run_matching_internal(db, round_num, today):
                 )
                 _cnt_map[buyer['buyer_id']] = _cnt_map.get(buyer['buyer_id'], 0) + 1
                 pairs.append({'bar_type': bt, 'buyer_id': buyer['buyer_id']})
+
+        # ── 2단계: stage=0 구매예약 → 남은 판매 아이템 중 bar_type 랜덤 매칭 ──
+        for buyer in buy_random:
+            if buyer['res_id'] in matched_b:
+                continue
+            bt = buyer['bar_type']
+            # bar_type 동일한 미매칭 판매 아이템 풀
+            avail_sellers = [
+                s for key, slist in sell_by.items()
+                if key[0] == bt
+                for s in slist
+                if s['res_id'] not in matched_s
+            ]
+            if not avail_sellers:
+                continue
+            # 랜덤 선택
+            seller = _random.choice(avail_sellers)
+            st = seller['stage']
+            matched_s.add(seller['res_id']); matched_b.add(buyer['res_id'])
+            if seller['item_id']:
+                db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
+            db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
+            db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
+            pr = db.execute("SELECT * FROM prices WHERE bar_type=? AND stage=?", (bt, st)).fetchone()
+            buy_p = pr['buy_price'] if pr else 0
+            sell_p = pr['sell_price'] if pr else 0
+            db.execute(
+                """INSERT INTO matches(reservation_id,buyer_id,seller_id,bar_type,stage,
+                   buy_price,sell_price,match_round,match_date,status,points_deducted)
+                   VALUES(?,?,?,?,?,?,?,2,?,'pending',0)""",
+                (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
+                 bt, st, buy_p, sell_p, today)
+            )
+            _cnt_map[buyer['buyer_id']] = _cnt_map.get(buyer['buyer_id'], 0) + 1
+            pairs.append({'bar_type': bt, 'buyer_id': buyer['buyer_id']})
 
         # 포인트 정산
         for bid, bcnt in _cnt_map.items():
@@ -2890,17 +2938,18 @@ def admin_add_reservation():
         conn.execute("PRAGMA foreign_keys=OFF")
         for _ in range(count):
             # 구매예약/판매예약 모두 loopay 아이템 생성 후 item_id 사용
-            # (NOT NULL 제약 및 매칭 후 아이템 추적을 위해)
+            # 구매예약은 stage=0 (단계 미지정 - 매칭시 랜덤)
+            item_stage = 0 if res_type == 'buy' else stage
             cur = conn.execute(
                 "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'waiting',?)",
-                (loopay_id, bar_type, stage, today)
+                (loopay_id, bar_type, item_stage, today)
             )
             item_id = cur.lastrowid
             if res_type == 'sell':
                 conn.execute("UPDATE items SET status='reservable' WHERE id=?", (item_id,))
             conn.execute(
                 "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage, join_round2) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)",
-                (loopay_id, item_id, bar_type, match_round, today, stage, join_round2_val)
+                (loopay_id, item_id, bar_type, match_round, today, item_stage, join_round2_val)
             )
         conn.execute("PRAGMA foreign_keys=ON")
         conn.commit()

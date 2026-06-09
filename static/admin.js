@@ -1102,7 +1102,7 @@ async function loadExtraReservations(){
         +'<td style="padding:6px 8px;color:#888">'+(i+1)+'</td>'
         +'<td style="padding:6px 8px;color:'+colors[item.bar_type]+';font-weight:700">'+(names[item.bar_type]||item.bar_type)+'</td>'
         +'<td style="padding:6px 8px">'+kindLabel+'</td>'
-        +'<td style="padding:6px 8px;text-align:center">'+item.stage+'단계</td>'
+        +'<td style="padding:6px 8px;text-align:center">'+(item.type==='buy' ? '<span style="color:#555">-</span>' : (item.stage||'-')+'단계')+'</td>'
         +'<td style="padding:6px 8px;color:#888">'+item.reserve_date+'</td>'
         +'<td style="padding:6px 8px;text-align:center">'+statusLabel+'</td>'
         +'<td style="padding:6px 8px;text-align:center">'+confirmBtn+'</td>'
