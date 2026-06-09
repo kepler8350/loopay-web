@@ -836,12 +836,12 @@ def create_reservation():
           if reservable:
               # 실제 보유 아이템으로 예약
               for item in reservable:
-                  db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,join_round2) VALUES(?,?,?,?,?,?)", (uid,item['id'],bar_type,1,today,join_r2))
+                  db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,confirmed,join_round2) VALUES(?,?,?,?,?,'pending',0,?)", (uid,item['id'],bar_type,1,today,join_r2))
           else:
               # 아이템 없어도 예약 수만큼 레코드 생성 (외래키 일시 해제)
               db.execute("PRAGMA foreign_keys=OFF")
               for _ in range(cnt):
-                  db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,join_round2) VALUES(?,?,?,?,?,?)", (uid,0,bar_type,1,today,join_r2))
+                  db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,confirmed,join_round2) VALUES(?,?,?,?,?,'pending',0,?)", (uid,0,bar_type,1,today,join_r2))
               db.execute("PRAGMA foreign_keys=ON")
       # 예약 비용: charge_points/exchange_points에서 차감 후 maintain_points로 이동
       # charge 먼저 차감, 부족하면 exchange로 보충
@@ -1664,7 +1664,7 @@ def admin_run_matching():
                u.phone as buyer_phone, u.account_name as buyer_account_name
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
-               WHERE r.status='pending' AND r.match_round=?
+               WHERE (r.status='pending' OR r.status IS NULL) AND r.match_round=?
                AND COALESCE(r.confirmed,0)=0
                AND u.username != 'loopay'
                AND r.user_id NOT IN (
@@ -2738,7 +2738,7 @@ def admin_reservation_status():
         for bar_type in ['bronze', 'silver', 'gold']:
             # 사용자 구매예약 (match_round=1, loopay 제외)
             user_buy = conn.execute(
-                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND status='pending' AND confirmed=0 AND user_id!=? AND reserve_date=?",
+                "SELECT COUNT(*) as cnt FROM reservations WHERE bar_type=? AND match_round=1 AND (status='pending' OR status IS NULL) AND (confirmed=0 OR confirmed IS NULL) AND user_id!=? AND reserve_date=?",
                 (bar_type, loopay_id, today)
             ).fetchone()['cnt']
             # loopay 추가예약 (match_round=1)
