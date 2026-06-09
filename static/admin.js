@@ -446,7 +446,10 @@ async function loadAdminPenalties(){
     var d = await apiAdmin('/admin/penalties');
     var penalties = d.penalties || [];
     if(!penalties.length){
-      tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">패널티 없음</td></tr>';
+      tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:#888">패널티 없음</td></tr>';
+      var allCb = document.getElementById('penalty-check-all');
+      if(allCb){ allCb.checked=false; allCb.indeterminate=false; }
+      updatePenaltyDelBtn();
       return;
     }
     var now = new Date();
@@ -457,16 +460,14 @@ async function loadAdminPenalties(){
         : '<span style="padding:1px 5px;border-radius:6px;font-size:10px;background:#1565c033;color:#90caf9">1차</span>';
       var isActive = !p.is_released && p.suspended_until && new Date(p.suspended_until.replace(' ','T')) > now;
       var isPaid = !p.is_released && (p.release_paid === 1 || p.release_paid === true);
-      // 상태: 해제됨 / 패널티납부 / 정지중
       var statusBadge = p.is_released
         ? '<span style="background:#1b5e2022;color:#66bb6a;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:700">해제됨</span>'
         : (isPaid
             ? '<span style="background:#f9a82222;color:#f9a825;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:700">패널티납부</span>'
             : '<span style="background:#c6282822;color:#ef5350;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:700">정지중</span>');
-      // 자동해제 예정일 표시 (release_paid=1이면)
       var releaseAtText = isPaid && p.release_at ? '<br><span style="font-size:10px;color:#888">자동해제: '+p.release_at.slice(0,10)+'</span>' : '';
-      var releaseBtn = ''
       return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
+        +'<td style="padding:6px;text-align:center"><input type="checkbox" class="penalty-check" data-id="'+p.id+'" onchange="updatePenaltyDelBtn()" style="cursor:pointer"></td>'
         +'<td style="padding:6px;text-align:center;color:#888">'+p.id+'</td>'
         +'<td style="padding:6px;color:#64b5f6">'+p.username+'<br><span style="color:#888;font-size:10px">'+p.nickname+'</span></td>'
         +'<td style="padding:6px;text-align:center;color:#f9a825">'+(p.total_count||p.unpaid_count)+'회'+(p.total_count && p.total_count > p.unpaid_count ? '<span style="font-size:10px;color:#888"> (누적 '+p.total_count+')</span>' : '')+'</td>'
@@ -476,10 +477,41 @@ async function loadAdminPenalties(){
         +'<td style="padding:6px;text-align:center;font-size:11px;color:#888">'+(p.created_at||'').slice(0,16)+'</td>'
         +'<td style="padding:6px;text-align:center;font-size:11px">'+(p.suspended_until||'-').slice(0,10)+'</td>'
         +'<td style="padding:6px;text-align:center">'+statusBadge+releaseAtText+'</td>'
-        
         +'</tr>';
     }).join('');
-  }catch(e){ if(tbody) tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:#ef5350">오류: '+e.message+'</td></tr>'; }
+    var allCb = document.getElementById('penalty-check-all');
+    if(allCb){ allCb.checked=false; allCb.indeterminate=false; }
+    updatePenaltyDelBtn();
+  }catch(e){ if(tbody) tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:#ef5350">오류: '+e.message+'</td></tr>'; }
+}
+
+function toggleAllPenalties(cb){
+  document.querySelectorAll('.penalty-check').forEach(function(el){ el.checked=cb.checked; });
+  updatePenaltyDelBtn();
+}
+
+function updatePenaltyDelBtn(){
+  var checked = document.querySelectorAll('.penalty-check:checked');
+  var all = document.querySelectorAll('.penalty-check');
+  var btn = document.getElementById('penalty-del-btn');
+  var allCb = document.getElementById('penalty-check-all');
+  if(btn) btn.style.display = checked.length>0 ? '' : 'none';
+  if(allCb){
+    allCb.checked = all.length>0 && checked.length===all.length;
+    allCb.indeterminate = checked.length>0 && checked.length<all.length;
+  }
+}
+
+async function deleteSelectedPenalties(){
+  var checked = document.querySelectorAll('.penalty-check:checked');
+  if(!checked.length){ alert('선택된 항목이 없습니다.'); return; }
+  var ids = Array.from(checked).map(function(el){ return parseInt(el.dataset.id); });
+  if(!confirm(ids.length+'건의 패널티를 삭제하고 해당 사용자의 정지 상태를 초기화하시겠습니까?')) return;
+  try{
+    var d = await apiAdmin('/admin/penalties/delete',{method:'POST',body:JSON.stringify({ids:ids})});
+    toast('✅ '+d.deleted+'건 삭제 완료 (사용자 정지 상태 초기화)', 'success');
+    loadAdminPenalties();
+  }catch(e){ toast(e.message||'삭제 실패','error'); }
 }
 
 async function adminReleasePenalty(penaltyId){

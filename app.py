@@ -1333,6 +1333,40 @@ def admin_release_penalty():
         db.close()
 
 
+@app.route('/api/admin/penalties/delete', methods=['POST'])
+@jwt_required()
+def admin_delete_penalties():
+    """선택된 패널티 레코드 삭제 + 해당 유저 정지 상태 초기화"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    ids = [int(x) for x in data.get('ids', [])]
+    if not ids: return jsonify(error='ids 필요'), 400
+    db = get_db()
+    try:
+        ph = ','.join('?' * len(ids))
+        # 삭제할 패널티의 user_id 수집
+        rows = db.execute(f"SELECT DISTINCT user_id FROM penalties WHERE id IN ({ph})", ids).fetchall()
+        affected_users = [r['user_id'] for r in rows]
+        # 패널티 레코드 삭제
+        db.execute(f"DELETE FROM penalties WHERE id IN ({ph})", ids)
+        # 각 유저별로 남은 활성 패널티가 없으면 suspended_until 초기화
+        for uid in affected_users:
+            remaining = db.execute(
+                "SELECT id FROM penalties WHERE user_id=? AND is_released=0",
+                (uid,)
+            ).fetchone()
+            if not remaining:
+                db.execute("UPDATE users SET suspended_until=NULL WHERE id=?", (uid,))
+        db.commit()
+        return jsonify(success=True, deleted=len(ids))
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/approve-user', methods=['POST'])
 def admin_approve_user():
     """회원 승인/거절"""
