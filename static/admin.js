@@ -850,7 +850,8 @@ async function loadReservationsLog(page){
       var createdAt = (r.created_at||'').slice(0,16);
       var statusKo = {reservable:'예약가능', active:'활성', waiting:'대기중', matched:'매칭완료',
         sold:'판매완료', reserved:'예약중', cancelled:'취소', confirmed:'확정',
-        pending:'대기', 'sell_reserved':'판매예약중'}[r.status] || r.status;
+        pending:'대기', sell_reserved:'판매예약중', unmatched:'미매칭',
+        expired:'만료', rejected:'거절', complete:'완료'}[r.status] || r.status;
       return '<tr style="border-bottom:1px solid #2a2a40">'
         +'<td style="text-align:center;color:#888">'+rowNo+'</td>'
         +'<td style="text-align:center">'+r.reserve_date+'</td>'
