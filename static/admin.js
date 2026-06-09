@@ -885,6 +885,12 @@ async function loadReservationsLog(page){
         sold:'판매완료', reserved:'예약중', cancelled:'취소', confirmed:'확정',
         pending:'대기', sell_reserved:'판매예약중', unmatched:'미매칭',
         expired:'만료', rejected:'거절', complete:'완료'}[r.status] || r.status;
+      // 2차 참가 배지: 구매예약만 표시
+      var round2Badge = r.res_type==='buy'
+        ? (r.join_round2
+            ? '<span style="padding:2px 7px;border-radius:8px;font-size:11px;background:#2e7d3222;color:#66bb6a;font-weight:700">참가</span>'
+            : '<span style="padding:2px 7px;border-radius:8px;font-size:11px;background:#c6282822;color:#ef5350;font-weight:700">미참가</span>')
+        : '<span style="color:#555;font-size:11px">-</span>';
       return '<tr style="border-bottom:1px solid #2a2a40">'
         +'<td style="text-align:center;color:#888">'+rowNo+'</td>'
         +'<td style="text-align:center">'+r.reserve_date+'</td>'
@@ -894,6 +900,7 @@ async function loadReservationsLog(page){
         +'<td style="text-align:center;font-weight:700;color:'+barColor+'">'+bar+'</td>'
         +'<td style="text-align:center;color:#888">'+(r.match_round||'-')+'차</td>'
         +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+statusColor+'22;color:'+statusColor+'">'+statusKo+'</span></td>'
+        +'<td style="text-align:center">'+round2Badge+'</td>'
         +'</tr>';
     }).join('');
 

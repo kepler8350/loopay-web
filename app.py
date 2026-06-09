@@ -2933,7 +2933,7 @@ def admin_reservations_list():
         rows = conn.execute(
             f'''SELECT r.id, r.bar_type, r.match_round, r.status,
                        r.reserve_date, r.created_at, r.item_id, r.confirmed,
-                       r.stage,
+                       r.stage, COALESCE(r.join_round2, 0) as join_round2,
                        u.username, u.nickname, u.account_name,
                        CASE WHEN r.user_id = {loopay_uid} THEN 'sell' ELSE 'buy' END as res_type
                 FROM reservations r
