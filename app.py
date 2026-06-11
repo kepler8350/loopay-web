@@ -2274,6 +2274,19 @@ def admin_matching_status():
         (today,)
     ).fetchone()['c']
 
+    # 미입금 상세: 아이디, 아이템 종류, 단계
+    failed_list = db.execute(
+        """SELECT u.username, u.nickname, m.bar_type, m.stage, m.id as match_id
+           FROM matches m
+           LEFT JOIN users u ON m.buyer_id = u.id
+           WHERE m.match_round=1 AND m.status='failed' AND m.match_date=?
+           ORDER BY m.bar_type, m.stage""",
+        (today,)
+    ).fetchall()
+    failed_details = [{'username': r['username'], 'nickname': r['nickname'],
+                        'bar_type': r['bar_type'], 'stage': r['stage'],
+                        'match_id': r['match_id']} for r in failed_list]
+
     # 1차 미매칭 구매예약 수 = r1 buy_count - r1 sell_count (매칭되지 않은 구매)
     try:
         r1_data = get_round_data(1)
@@ -2293,6 +2306,7 @@ def admin_matching_status():
         'round2': r2_data,
         'date': today,
         'failed_count': failed_count,
+        'failed_details': failed_details,
         'r1_unmatched_buy': r1_unmatched_buy
     }
     db.close()

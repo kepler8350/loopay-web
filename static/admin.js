@@ -221,9 +221,8 @@ async function updateMatchingBtn(){
       notice.style.color = isActive1 ? '#66bb6a' : '#f9a825';
     }
 
-    // 2차 매칭: 14:00~15:00 (840~900분) + 1차 미입금(failed) 수량 > 0 일 때 활성화
-    var inTime2 = (totalMin >= 840 && totalMin < 900);
-    var isActive2 = inTime2 && failedCount > 0;
+    // 2차 매칭: 1차 미입금(failed) 수량 > 0 이면 활성화 (시간 무관)
+    var isActive2 = failedCount > 0;
     var btn2 = document.getElementById('btn-run-matching-2');
     var notice2 = document.getElementById('matching-time-notice-2');
     if(btn2){ btn2.disabled=!isActive2; btn2.style.opacity=isActive2?'1':'0.45'; btn2.style.cursor=isActive2?'pointer':'not-allowed'; }
@@ -239,17 +238,15 @@ async function updateMatchingBtn(){
         tabBtn2.disabled = true;
         tabBtn2.style.opacity = '0.4';
         tabBtn2.style.cursor = 'not-allowed';
-        tabBtn2.title = inTime2 ? '미입금 수량이 없어 2차 매칭 불가' : '2차 매칭 가능 시간: 14:00~15:00';
+        tabBtn2.title = '미입금 수량이 없어 2차 매칭 불가';
       }
     }
     if(notice2){
-      var msg2 = inTime2
-        ? (failedCount > 0
-            ? '✅ 2차 매칭 가능 — 미입금 '+failedCount+'건 — 서버시간 '+ct.time.slice(11,16)
-            : '⚠️ 2차 매칭 시간이지만 미입금 없음 ('+ct.time.slice(11,16)+')')
-        : '⏳ 2차 매칭 실행 가능: 14:00~15:00 (현재 '+ct.time.slice(11,16)+')';
+      var msg2 = isActive2
+        ? '✅ 2차 매칭 가능 — 미입금 '+failedCount+'건 — 서버시간 '+ct.time.slice(11,16)
+        : '⚠️ 미입금 없음 — 2차 매칭 불필요 ('+ct.time.slice(11,16)+')';
       notice2.textContent = msg2;
-      notice2.style.color = isActive2 ? '#66bb6a' : (inTime2 ? '#f9a825' : '#888');
+      notice2.style.color = isActive2 ? '#66bb6a' : '#888';
     }
   }catch(e){
     var btn = document.getElementById('btn-run-matching-1');
@@ -1343,6 +1340,36 @@ async function loadMatchingStatus(){
     if(rateEl2){ rateEl2.textContent=mr2+'%'; rateEl2.style.color=mrc(mr2); }
     var bt2=document.getElementById('r2-by-type'); if(bt2) bt2.innerHTML=mkTypeTable(r2.by_type);
     var bbt2=document.getElementById('r2-buy-by-type'); if(bbt2) bbt2.innerHTML=mkTypeTable(r2.buy_by_type);
+
+    // 미입금 현황 렌더링
+    var barNames={bronze:'수정',silver:'루비',gold:'다이아'};
+    var barColors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+    var failedDetails = d.failed_details || [];
+    var failedBadge = document.getElementById('r2-failed-count-badge');
+    var failedList = document.getElementById('r2-failed-list');
+    if(failedBadge) failedBadge.textContent = failedDetails.length > 0 ? '총 '+failedDetails.length+'건' : '없음';
+    if(failedList){
+      if(!failedDetails.length){
+        failedList.innerHTML = '<div style="padding:12px 16px;color:#888;font-size:12px;text-align:center">미입금 없음</div>';
+      } else {
+        failedList.innerHTML = '<table style="width:100%;font-size:12px;border-collapse:collapse">'
+          +'<thead><tr style="background:#1a1d2e">'
+          +'<th style="padding:7px 12px;text-align:left">아이디</th>'
+          +'<th style="padding:7px 12px;text-align:left">성명</th>'
+          +'<th style="padding:7px 12px;text-align:center">아이템</th>'
+          +'<th style="padding:7px 12px;text-align:center">단계</th>'
+          +'</tr></thead><tbody>'
+          +failedDetails.map(function(f){
+            return '<tr style="border-bottom:1px solid #2a2a40">'
+              +'<td style="padding:7px 12px;color:#ef5350;font-weight:700">'+f.username+'</td>'
+              +'<td style="padding:7px 12px;color:#aaa">'+(f.nickname||'-')+'</td>'
+              +'<td style="padding:7px 12px;text-align:center;font-weight:700;color:'+(barColors[f.bar_type]||'#eee')+'">'+(barNames[f.bar_type]||f.bar_type)+'</td>'
+              +'<td style="padding:7px 12px;text-align:center;color:#888">'+(f.stage||'-')+'단계</td>'
+              +'</tr>';
+          }).join('')
+          +'</tbody></table>';
+      }
+    }
 
   }catch(e){ console.error('loadMatchingStatus:',e); }
   try{ updateMatchingBtn(); }catch(_e){}
