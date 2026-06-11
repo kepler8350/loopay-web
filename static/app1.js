@@ -1013,9 +1013,17 @@ async function syncServerTime(){
     // 서버는 항상 KST(UTC+9) 반환 → '+09:00' 명시로 정확히 파싱
     function parseKST(s){ return new Date(s.replace(' ','T')+'+09:00').getTime(); }
     if(d.is_mock){
-      _isMockTime = true;
-      _mockBaseMs = parseKST(d.time);
-      _mockFetchAt = fetchEnd - latency;
+      var newBase = parseKST(d.time);
+      // mock 시간이 바뀐 경우(관리자가 다른 시간으로 변경)에만 재설정
+      // 이미 같은 시간으로 설정된 경우에는 _mockFetchAt을 갱신하지 않음
+      // → 시계가 멈추지 않고 흐르도록 유지
+      if(!_isMockTime || Math.abs(newBase - _mockBaseMs) > 2000){
+        // 처음 설정하거나 시간 값이 2초 이상 다를 때만 기준점 재설정
+        _isMockTime = true;
+        _mockBaseMs = newBase;
+        _mockFetchAt = fetchEnd - latency;
+      }
+      // 이미 같은 mock 시간이면 _mockBaseMs/_mockFetchAt 유지 → 시계 흐름 보존
     } else {
       _isMockTime = false;
       _mockBaseMs = 0; _mockFetchAt = 0;
@@ -1034,7 +1042,8 @@ function getEffectiveDate(){
 // mock 시간 직접 설정 (테스트도구용 - 서버 없이도 동작)
 function setMockTimeLocal(datetimeStr){
   _isMockTime = true;
-  _mockBaseMs = new Date(datetimeStr.replace(' ','T')).getTime();
+  // KST 명시 파싱 (+09:00)
+  _mockBaseMs = new Date(datetimeStr.replace(' ','T')+'+09:00').getTime();
   _mockFetchAt = Date.now();
   _saveMockToStorage(_mockBaseMs, _mockFetchAt);
 }
