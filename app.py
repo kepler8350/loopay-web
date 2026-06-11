@@ -2269,19 +2269,21 @@ def admin_matching_status():
         }
 
     # 오늘 1차 미입금 확정(failed) 수량
+    import datetime as _dt2
+    _yesterday = (_dt2.date.fromisoformat(today) - _dt2.timedelta(days=1)).isoformat()
     failed_count = db.execute(
-        "SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND status='failed' AND match_date=?",
-        (today,)
+        "SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND status='failed' AND match_date IN (?,?)",
+        (today, _yesterday)
     ).fetchone()['c']
 
-    # 미입금 상세: 아이디, 아이템 종류, 단계
+    # 미입금 상세: 아이디, 아이템 종류, 단계 (오늘+어제)
     failed_list = db.execute(
         """SELECT u.username, u.nickname, m.bar_type, m.stage, m.id as match_id
            FROM matches m
            LEFT JOIN users u ON m.buyer_id = u.id
-           WHERE m.match_round=1 AND m.status='failed' AND m.match_date=?
+           WHERE m.match_round=1 AND m.status='failed' AND m.match_date IN (?,?)
            ORDER BY m.bar_type, m.stage""",
-        (today,)
+        (today, _yesterday)
     ).fetchall()
     failed_details = [{'username': r['username'], 'nickname': r['nickname'],
                         'bar_type': r['bar_type'], 'stage': r['stage'],
@@ -3578,20 +3580,88 @@ def match_report_unpaid():
 @app.route('/api/user/confirm-unpaid', methods=['POST'])
 @jwt_required()
 def user_confirm_unpaid():
-    identity = get_jwt_identity()
+    """판매자(사용자 또는 loopay)가 미입금 버튼 클릭 → admin_confirm_unpaid와 동일한 후처리"""    identity = get_jwt_identity()
     if str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
     uid = int(identity)
     data = request.json or {}
     match_id = int(data.get('match_id', 0))
     db = get_db()
     try:
+        # 판매자 본인 또는 loopay 계정 허용
+        loopay_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        loopay_id = loopay_row['id'] if loopay_row else -1
         m = db.execute(
-            "SELECT * FROM matches WHERE id=? AND seller_id=? AND status IN ('pending','paid')",
-            (match_id, uid)
+            "SELECT * FROM matches WHERE id=? AND status IN ('pending','paid')",
+            (match_id,)
         ).fetchone()
         if not m:
-            return jsonify(error='처리 불가 (권한 없음 또는 상태 오류)'), 400
+            return jsonify(error='처리 불가 (매칭 없음 또는 상태 오류)'), 400
+        # 판매자 본인이거나 loopay 계정만 허용
+        seller_id = m['seller_id'] if 'seller_id' in m.keys() else None
+        if uid != loopay_id and uid != seller_id:
+            return jsonify(error='권한 없음'), 403
+
+        bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+
+        # 1. match status → failed
         db.execute("UPDATE matches SET status='failed' WHERE id=?", (match_id,))
+
+        # 2. 구매예약 → 2차 매칭 대기
+        if m['reservation_id']:
+            db.execute("UPDATE reservations SET status='pending', match_round=2 WHERE id=?",
+                       (m['reservation_id'],))
+
+        # 3. loopay 판매 아이템 → reservable + 2차 sell 예약 생성
+        _seller_uid = loopay_id or seller_id
+        seller_item = db.execute(
+            """SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='matched'
+               ORDER BY id DESC LIMIT 1""",
+            (_seller_uid, m['bar_type'])
+        ).fetchone() if _seller_uid else None
+        if seller_item:
+            db.execute("UPDATE items SET status='reservable' WHERE id=?", (seller_item['id'],))
+            _today = get_today().isoformat()
+            _stage = m['stage'] or 1
+            _dup = db.execute(
+                """SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND stage=?
+                   AND match_round=2 AND status='pending' AND reserve_date=? AND item_id=?""",
+                (_seller_uid, m['bar_type'], _stage, _today, seller_item['id'])
+            ).fetchone()
+            if not _dup:
+                db.execute(
+                    """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed,item_id)
+                       VALUES(?,?,?,2,'pending',?,1,?)""",
+                    (_seller_uid, m['bar_type'], _stage, _today, seller_item['id'])
+                )
+
+        # 4. 구매자 패널티 처리
+        buyer_id = m['buyer_id']
+        if buyer_id:
+            buyer_row = db.execute("SELECT unpaid_count FROM users WHERE id=?", (buyer_id,)).fetchone()
+            current_count = int(buyer_row['unpaid_count'] or 0) + 1 if buyer_row else 1
+            penalty_entry = next((p for p in PENALTY_TABLE if p[0] == current_count), PENALTY_TABLE[-1])
+            suspend_days = penalty_entry[1]
+            release_pts  = penalty_entry[2]
+            _now_str  = get_now().strftime('%Y-%m-%d %H:%M:%S')
+            from datetime import timedelta
+            _release_dt = get_now() + timedelta(days=suspend_days)
+            _release_str = _release_dt.strftime('%Y-%m-%d %H:%M:%S')
+            db.execute("UPDATE users SET unpaid_count=?, suspended_until=? WHERE id=?",
+                       (current_count, _release_str, buyer_id))
+            db.execute(
+                """INSERT INTO penalties(user_id,unpaid_count,suspend_days,release_points,is_released,created_at,match_id,match_round)
+                   VALUES(?,?,?,?,0,?,?,?)""",
+                (buyer_id, current_count, suspend_days, release_pts, _now_str, match_id, m['match_round'] or 1)
+            )
+            # 미입금 구매자 2차 예약 제외
+            db.execute("UPDATE reservations SET status='unmatched' WHERE user_id=? AND match_round=2 AND status='pending'",
+                       (buyer_id,))
+            try:
+                insert_notification(db, buyer_id, 'unpaid_penalty', '미입금 패널티',
+                    f'{bar_names.get(m["bar_type"],m["bar_type"])} 거래 미입금이 확정됐습니다. 거래가 정지됩니다.')
+            except Exception:
+                pass
+
         db.commit()
         return jsonify(success=True)
     except Exception as e:
