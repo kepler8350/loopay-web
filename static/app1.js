@@ -1010,14 +1010,16 @@ async function syncServerTime(){
     var d = await res.json();
     var fetchEnd = Date.now();
     var latency = (fetchEnd - fetchStart) / 2;
+    // 서버는 항상 KST(UTC+9) 반환 → '+09:00' 명시로 정확히 파싱
+    function parseKST(s){ return new Date(s.replace(' ','T')+'+09:00').getTime(); }
     if(d.is_mock){
       _isMockTime = true;
-      _mockBaseMs = new Date(d.time.replace(' ','T')).getTime();
+      _mockBaseMs = parseKST(d.time);
       _mockFetchAt = fetchEnd - latency;
     } else {
       _isMockTime = false;
       _mockBaseMs = 0; _mockFetchAt = 0;
-      var serverMs = new Date(d.time.replace(' ','T')).getTime();
+      var serverMs = parseKST(d.time);
       _serverTimeOffset = serverMs - (fetchEnd - latency);
     }
   }catch(e){}

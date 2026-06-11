@@ -1399,9 +1399,10 @@ def admin_approve_user():
 
 @app.route('/api/current-time', methods=['GET'])
 def get_current_time():
-    """현재 서버 시간 반환 (mock 시간 포함)"""
+    """현재 서버 시간 반환 (mock 시간 포함, 항상 KST 기준)"""
     mt = _get_mock_time_from_db()
-    now = mt if mt else datetime.datetime.now()
+    # mock 없을 때는 get_now()와 동일하게 KST(UTC+9) 사용
+    now = mt if mt else (datetime.datetime.utcnow() + datetime.timedelta(hours=9))
     return jsonify(
         time=now.strftime('%Y-%m-%d %H:%M:%S'),
         hour=now.hour,
