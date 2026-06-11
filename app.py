@@ -3580,7 +3580,8 @@ def match_report_unpaid():
 @app.route('/api/user/confirm-unpaid', methods=['POST'])
 @jwt_required()
 def user_confirm_unpaid():
-    """판매자(사용자 또는 loopay)가 미입금 버튼 클릭 → admin_confirm_unpaid와 동일한 후처리"""    identity = get_jwt_identity()
+    """판매자(사용자 또는 loopay)가 미입금 버튼 클릭 → admin_confirm_unpaid와 동일한 후처리"""
+    identity = get_jwt_identity()
     if str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
     uid = int(identity)
     data = request.json or {}
