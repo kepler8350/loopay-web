@@ -1366,6 +1366,97 @@ def admin_delete_penalties():
     finally:
         db.close()
 
+@app.route('/api/admin/penalties/add', methods=['POST'])
+@jwt_required()
+def admin_add_penalty():
+    """관리자가 특정 사용자에게 패널티 직접 부여"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    username = data.get('username', '').strip()
+    reason = data.get('reason', '관리자 수동 부여').strip()
+    suspend_days = int(data.get('suspend_days', 3))
+    db = get_db()
+    try:
+        user = db.execute("SELECT id, unpaid_count, suspended_until FROM users WHERE username=?", (username,)).fetchone()
+        if not user:
+            return jsonify(error=f'사용자 {username} 없음'), 404
+        uid = user['id']
+        current_count = int(user['unpaid_count'] or 0) + 1
+        # PENALTY_TABLE에서 정지일수/해제포인트 조회
+        penalty_entry = next((p for p in PENALTY_TABLE if p[0] == current_count), PENALTY_TABLE[-1])
+        # suspend_days는 요청값 우선, 없으면 PENALTY_TABLE 기준
+        if suspend_days <= 0:
+            suspend_days = penalty_entry[1]
+        release_pts = penalty_entry[2]
+        _now_str = get_now().strftime('%Y-%m-%d %H:%M:%S')
+        from datetime import timedelta
+        _release_dt = get_now() + timedelta(days=suspend_days)
+        _release_str = _release_dt.strftime('%Y-%m-%d %H:%M:%S')
+        # 사용자 정지 처리
+        db.execute("UPDATE users SET unpaid_count=?, suspended_until=? WHERE id=?",
+                   (current_count, _release_str, uid))
+        # 패널티 레코드 추가
+        db.execute(
+            """INSERT INTO penalties(user_id,unpaid_count,suspend_days,release_points,is_released,created_at,match_id,match_round)
+               VALUES(?,?,?,?,0,?,NULL,0)""",
+            (uid, current_count, suspend_days, release_pts, _now_str)
+        )
+        # 알림
+        try:
+            insert_notification(db, uid, 'penalty_added', '관리자 패널티 부여',
+                f'관리자에 의해 거래가 정지되었습니다. 사유: {reason}. 정지 기간: {suspend_days}일')
+        except Exception:
+            pass
+        db.commit()
+        return jsonify(success=True, suspend_days=suspend_days, release_points=release_pts,
+                       suspended_until=_release_str, username=username)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/penalties/release-user', methods=['POST'])
+@jwt_required()
+def admin_release_user_penalty():
+    """관리자가 특정 사용자의 모든 활성 패널티 즉시 해제"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    username = data.get('username', '').strip()
+    penalty_id = data.get('penalty_id')  # 특정 패널티 해제
+    db = get_db()
+    try:
+        if penalty_id:
+            p = db.execute("SELECT user_id FROM penalties WHERE id=?", (penalty_id,)).fetchone()
+            if not p: return jsonify(error='패널티 없음'), 404
+            uid = p['user_id']
+            db.execute("UPDATE penalties SET is_released=1 WHERE id=?", (penalty_id,))
+        else:
+            user = db.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone()
+            if not user: return jsonify(error=f'사용자 없음'), 404
+            uid = user['id']
+            db.execute("UPDATE penalties SET is_released=1 WHERE user_id=? AND is_released=0", (uid,))
+        # 남은 활성 패널티 확인
+        remaining = db.execute("SELECT id FROM penalties WHERE user_id=? AND is_released=0", (uid,)).fetchone()
+        if not remaining:
+            db.execute("UPDATE users SET suspended_until=NULL WHERE id=?", (uid,))
+        try:
+            insert_notification(db, uid, 'penalty_released', '거래 정지 해제',
+                '관리자에 의해 거래 정지가 해제되었습니다. 지금 바로 거래를 재개할 수 있습니다.')
+        except Exception:
+            pass
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 
 @app.route('/api/admin/approve-user', methods=['POST'])
 def admin_approve_user():

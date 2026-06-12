@@ -443,7 +443,7 @@ async function loadAdminPenalties(){
     var d = await apiAdmin('/admin/penalties');
     var penalties = d.penalties || [];
     if(!penalties.length){
-      tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:#888">패널티 없음</td></tr>';
+      tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:20px;color:#888">패널티 없음</td></tr>';
       var allCb = document.getElementById('penalty-check-all');
       if(allCb){ allCb.checked=false; allCb.indeterminate=false; }
       updatePenaltyDelBtn();
@@ -474,12 +474,13 @@ async function loadAdminPenalties(){
         +'<td style="padding:6px;text-align:center;font-size:11px;color:#888">'+(p.created_at||'').slice(0,16)+'</td>'
         +'<td style="padding:6px;text-align:center;font-size:11px">'+(p.suspended_until||'-').slice(0,10)+'</td>'
         +'<td style="padding:6px;text-align:center">'+statusBadge+releaseAtText+'</td>'
+        +'<td style="padding:6px;text-align:center">'+(p.is_released?'':('<button onclick="releaseUserPenalty('+p.id+')" style="padding:2px 10px;background:#1b5e20;color:#a5d6a7;border:none;border-radius:4px;font-size:11px;cursor:pointer">✅ 해제</button>'))+'</td>'
         +'</tr>';
     }).join('');
     var allCb = document.getElementById('penalty-check-all');
     if(allCb){ allCb.checked=false; allCb.indeterminate=false; }
     updatePenaltyDelBtn();
-  }catch(e){ if(tbody) tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:#ef5350">오류: '+e.message+'</td></tr>'; }
+  }catch(e){ if(tbody) tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:20px;color:#ef5350">오류: '+e.message+'</td></tr>'; }
 }
 
 function toggleAllPenalties(cb){
@@ -509,6 +510,35 @@ async function deleteSelectedPenalties(){
     toast('✅ '+d.deleted+'건 삭제 완료 (사용자 정지 상태 초기화)', 'success');
     loadAdminPenalties();
   }catch(e){ toast(e.message||'삭제 실패','error'); }
+}
+
+async function addManualPenalty(){
+  var username = (document.getElementById('penalty-add-username')?.value||'').trim();
+  var days = parseInt(document.getElementById('penalty-add-days')?.value||3);
+  var reason = (document.getElementById('penalty-add-reason')?.value||'관리자 수동 부여').trim();
+  var resEl = document.getElementById('penalty-add-result');
+  if(!username){ toast('사용자 아이디를 입력하세요','error'); return; }
+  if(!confirm(username+'에게 '+days+'일 거래정지 패널티를 부여하시겠습니까?')) return;
+  try{
+    var d = await apiAdmin('/admin/penalties/add',{method:'POST',body:JSON.stringify({username,suspend_days:days,reason})});
+    if(resEl) resEl.innerHTML='<span style="color:#66bb6a">✅ '+d.username+' 패널티 부여 완료 — '+d.suspend_days+'일 정지 (해제일: '+d.suspended_until.slice(0,10)+')</span>';
+    toast('✅ 패널티 부여 완료', 'success');
+    document.getElementById('penalty-add-username').value='';
+    document.getElementById('penalty-add-reason').value='';
+    loadAdminPenalties();
+  }catch(e){
+    if(resEl) resEl.innerHTML='<span style="color:#ef5350">❌ '+( e.message||'실패')+'</span>';
+    toast(e.message||'패널티 부여 실패','error');
+  }
+}
+
+async function releaseUserPenalty(penaltyId){
+  if(!confirm('이 패널티를 즉시 해제하시겠습니까?')) return;
+  try{
+    await apiAdmin('/admin/penalties/release-user',{method:'POST',body:JSON.stringify({penalty_id:penaltyId})});
+    toast('✅ 패널티 해제 완료', 'success');
+    loadAdminPenalties();
+  }catch(e){ toast(e.message||'해제 실패','error'); }
 }
 
 async function adminReleasePenalty(penaltyId){

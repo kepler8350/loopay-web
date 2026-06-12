@@ -434,6 +434,32 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 <div id="page-penalties" class="page">
   <h2 class="page-title">패널티 관리</h2>
   <p class="page-subtitle">미입금 패널티 내역 확인 및 해제 관리</p>
+
+  <!-- 패널티 직접 부여 -->
+  <div class="card" style="padding:14px 16px;margin-bottom:12px;border:1px solid #c6282833">
+    <div class="card-title" style="margin-bottom:12px;color:#ef9a9a">⚠️ 패널티 직접 부여</div>
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+      <div style="flex:1;min-width:150px">
+        <div style="font-size:11px;color:#888;margin-bottom:4px">사용자 아이디</div>
+        <input id="penalty-add-username" type="text" placeholder="아이디 입력"
+          style="width:100%;padding:7px 10px;background:#1a1d2e;border:1px solid #333;border-radius:6px;color:#fff;font-size:12px;box-sizing:border-box">
+      </div>
+      <div style="width:100px">
+        <div style="font-size:11px;color:#888;margin-bottom:4px">정지일수</div>
+        <input id="penalty-add-days" type="number" min="1" max="365" value="3"
+          style="width:100%;padding:7px 10px;background:#1a1d2e;border:1px solid #333;border-radius:6px;color:#fff;font-size:12px;box-sizing:border-box">
+      </div>
+      <div style="flex:2;min-width:200px">
+        <div style="font-size:11px;color:#888;margin-bottom:4px">사유</div>
+        <input id="penalty-add-reason" type="text" placeholder="패널티 사유 입력"
+          style="width:100%;padding:7px 10px;background:#1a1d2e;border:1px solid #333;border-radius:6px;color:#fff;font-size:12px;box-sizing:border-box">
+      </div>
+      <button onclick="addManualPenalty()" style="padding:7px 18px;background:#c62828;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;height:32px">
+        🚫 패널티 부여
+      </button>
+    </div>
+    <div id="penalty-add-result" style="margin-top:8px;font-size:12px"></div>
+  </div>
   <div class="card" style="padding:14px 16px;margin-bottom:12px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div class="card-title">패널티 목록</div>
@@ -456,6 +482,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
             <th style="padding:8px;text-align:center">발생일시</th>
             <th style="padding:8px;text-align:center">정지해제일</th>
             <th style="padding:8px;text-align:center">상태</th>
+            <th style="padding:8px;text-align:center">관리</th>
           </tr>
         </thead>
         <tbody id="admin-penalty-tbody">
