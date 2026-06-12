@@ -5187,3 +5187,26 @@ def admin_resolve_unpaid(res_id):
     finally:
         db.close()
 
+
+
+@app.route('/api/admin/testtools/set-purchase-date', methods=['POST'])
+@jwt_required()
+def testtools_set_purchase_date():
+    """테스트용: 아이템 purchase_date 강제 변경"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    item_ids = data.get('item_ids', [])
+    purchase_date = data.get('purchase_date', '2026-06-01')
+    if not item_ids: return jsonify(error='item_ids 필요'), 400
+    db = get_db()
+    try:
+        ph = ','.join('?'*len(item_ids))
+        db.execute(f"UPDATE items SET purchase_date=? WHERE id IN ({ph})",
+                   [purchase_date] + list(item_ids))
+        db.commit()
+        return jsonify(success=True, updated=len(item_ids))
+    except Exception as e:
+        db.rollback(); return jsonify(error=str(e)), 500
+    finally:
+        db.close()
