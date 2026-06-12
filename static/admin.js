@@ -135,6 +135,27 @@ async function loadUsers(){
 
 
 
+async function grantPoints(){
+  var username = (document.getElementById('grant-username')?.value||'').trim();
+  var points = parseInt(document.getElementById('grant-points')?.value||0);
+  var reason = (document.getElementById('grant-reason')?.value||'관리자 지급').trim();
+  var resEl = document.getElementById('grant-result');
+  if(!username){ toast('사용자 아이디를 입력하세요','error'); return; }
+  if(!points||points<1){ toast('포인트를 1 이상 입력하세요','error'); return; }
+  if(!confirm(username+'에게 '+points.toLocaleString()+'P를 지급하시겠습니까?')) return;
+  try{
+    var d = await apiAdmin('/admin/grant-points',{method:'POST',body:JSON.stringify({username,points,reason})});
+    if(resEl) resEl.innerHTML='<span style="color:#66bb6a">✅ '+d.username+'에게 '+d.points.toLocaleString()+'P 지급 완료 ('+d.before.toLocaleString()+'P → '+d.after.toLocaleString()+'P)</span>';
+    toast('✅ '+d.points.toLocaleString()+'P 지급 완료', 'success');
+    document.getElementById('grant-username').value='';
+    document.getElementById('grant-points').value='';
+    document.getElementById('grant-reason').value='';
+  }catch(e){
+    if(resEl) resEl.innerHTML='<span style="color:#ef5350">❌ '+(e.message||'실패')+'</span>';
+    toast(e.message||'포인트 지급 실패','error');
+  }
+}
+
 async function loadCharges(showAll){
   var _showAll = (showAll === true) || (document.getElementById('charge-filter-all')?.checked);
   // 탭 버튼 상태 업데이트

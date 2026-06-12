@@ -5301,3 +5301,43 @@ def testtools_set_purchase_date():
         db.rollback(); return jsonify(error=str(e)), 500
     finally:
         db.close()
+
+
+@app.route('/api/admin/grant-points', methods=['POST'])
+@jwt_required()
+def admin_grant_points():
+    """관리자가 특정 사용자에게 포인트 직접 부여"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    username = data.get('username', '').strip()
+    points = int(data.get('points', 0))
+    reason = data.get('reason', '관리자 지급').strip()
+    if not username: return jsonify(error='아이디 필요'), 400
+    if points <= 0: return jsonify(error='포인트는 1 이상이어야 합니다'), 400
+    db = get_db()
+    try:
+        user = db.execute("SELECT id, username, charge_points FROM users WHERE username=?", (username,)).fetchone()
+        if not user: return jsonify(error=f'사용자 {username} 없음'), 404
+        uid = user['id']
+        before = int(user['charge_points'] or 0)
+        after = before + points
+        db.execute("UPDATE users SET charge_points=charge_points+? WHERE id=?", (points, uid))
+        # charge_requests에 기록 (포인트=points, amount=0, 관리자 지급으로 표시)
+        db.execute(
+            """INSERT INTO charge_requests(user_id, amount, points, status, created_at, confirmed_at)
+               VALUES(?, 0, ?, 'confirmed', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)""",
+            (uid, points)
+        )
+        try:
+            insert_notification(db, uid, 'charge', '포인트 지급',
+                f'관리자가 {points:,}P를 지급했습니다. 사유: {reason}')
+        except Exception:
+            pass
+        db.commit()
+        return jsonify(success=True, username=username, points=points, before=before, after=after)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
