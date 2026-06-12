@@ -4541,8 +4541,8 @@ def create_sell_reservation():
             "INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,confirmed) VALUES(?,?,?,1,?,'pending',1)",
             (uid, item_id, item['bar_type'], today)
         )
-        # 아이템 상태를 'matched'로 변경하여 재예약 방지
-        db.execute("UPDATE items SET status='matched' WHERE id=?", (item_id,))
+        # 아이템 상태를 'sell_reserved'로 변경 (판매예약 중, 매칭 집계 포함)
+        db.execute("UPDATE items SET status='sell_reserved' WHERE id=?", (item_id,))
         db.commit()
         buy_p, sell_p = get_price(item['bar_type'], item['stage'])
         return jsonify(success=True, message='판매예약 완료!', sell_price=sell_p)
