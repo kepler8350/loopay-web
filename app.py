@@ -1646,7 +1646,7 @@ def admin_run_matching():
                WHERE r.status='pending' AND r.match_round=?
                AND r.reserve_date=?
                AND COALESCE(r.confirmed,0)=1
-               AND i.status IN ('reservable','sell_reserved')""",
+               AND i.status='reservable'""",
             (round_num, today)
         ).fetchall()
 
@@ -2224,7 +2224,7 @@ def admin_matching_status():
                WHERE r.match_round=? AND r.status IN ('pending','unmatched')
                AND r.reserve_date>=?
                AND COALESCE(r.confirmed,0)=1
-               AND i.status IN ('reservable','sell_reserved')""",
+               AND i.status='reservable'""",
             (round_num, today)
         ).fetchone()['c']
         sell_count = _confirmed_sell
@@ -2867,7 +2867,7 @@ def admin_reservation_status():
                    JOIN items i ON r.item_id=i.id
                    WHERE r.bar_type=? AND r.status='pending'
                    AND r.item_id IS NOT NULL
-                   AND i.status IN ('reservable','sell_reserved')""",
+                   AND i.status='reservable'""",
                 (bar_type,)
             ).fetchall()
             for row in all_sell:
@@ -4541,8 +4541,8 @@ def create_sell_reservation():
             "INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,confirmed) VALUES(?,?,?,1,?,'pending',1)",
             (uid, item_id, item['bar_type'], today)
         )
-        # 아이템 상태를 'sell_reserved'로 변경 (판매예약 중, 매칭 집계 포함)
-        db.execute("UPDATE items SET status='sell_reserved' WHERE id=?", (item_id,))
+        # 아이템 상태 유지: reservations.confirmed=1로 판매예약 식별
+        # (DB CHECK 제약상 sell_reserved 불가 → reservable 유지)
         db.commit()
         buy_p, sell_p = get_price(item['bar_type'], item['stage'])
         return jsonify(success=True, message='판매예약 완료!', sell_price=sell_p)
