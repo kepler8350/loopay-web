@@ -2041,8 +2041,11 @@ def admin_run_matching():
                          seller.get('seller_account',''), seller.get('seller_account_name',''),
                          buyer.get('buyer_phone',''), _siid3, buyer['res_id'])
                     )
-                except Exception:
-                    pass
+                except Exception as _e3:
+                    import traceback; traceback.print_exc()
+                    _match_errors = getattr(db, '_match_errors', [])
+                    _match_errors.append(str(_e3))
+                    db._match_errors = _match_errors
 
                 s_phone3 = _g3('loopay_phone', seller.get('seller_phone','')) if is_lp else seller.get('seller_phone','')
                 s_bank3  = _g3('loopay_bank',  seller.get('seller_bank',''))  if is_lp else seller.get('seller_bank','')
@@ -2198,6 +2201,7 @@ def admin_run_matching():
         return jsonify(
             success=True,
             matched=total_matched,
+            match_errors=getattr(db, '_match_errors', []),
             message=f'{round_num}차 매칭 완료: {total_matched}건',
 
             pairs=matched_pairs
