@@ -1764,6 +1764,7 @@ def admin_run_matching():
         _normal_buy_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
                CASE WHEN COALESCE(r.stage,0) <= 0 THEN 1 ELSE r.stage END as stage,
+               COALESCE(r.stage, 0) as raw_stage,
                r.item_id,
                u.username as buyer_username, u.nickname as buyer_nickname,
                u.phone as buyer_phone, u.account_name as buyer_account_name
@@ -1817,7 +1818,7 @@ def admin_run_matching():
         for r in buy_rows:
             bt = r['bar_type']
             # stage=0이면 랜덤(any stage) 버킷에 분리
-            raw_stage = r['stage'] if r['stage'] else 0
+            raw_stage = r['raw_stage'] if 'raw_stage' in r.keys() else (r['stage'] if r['stage'] else 0)
             if raw_stage == 0:
                 if bt not in buy_any_stage:
                     buy_any_stage[bt] = []
