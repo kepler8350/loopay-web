@@ -1831,6 +1831,10 @@ def admin_run_matching():
 
 
         # stage=0 랜덤 구매예약 → 남은 판매예약과 bar_type 기준 매칭 (stage별 매칭 이후)
+        if 'matched_buyer_ids' not in dir():
+            matched_buyer_ids = set()
+        if 'matched_seller_ids' not in dir():
+            matched_seller_ids = set()
         for bt in list(buy_any_stage.keys()):
             rand_buyers = [b for b in buy_any_stage.get(bt, []) if b['res_id'] not in matched_buyer_ids]
             avail_sellers = []
