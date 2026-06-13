@@ -634,6 +634,20 @@ function doLogout() {
   // 전역 userData/token 초기화
   userData = null;
   token = '';
+  window._isSuspended = false;
+  // ★ 거래정지로 인해 비활성화된 버튼 스타일 초기화
+  ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){ el.disabled=false; el.style.cursor=''; el.style.opacity=''; }
+  });
+  var reserveBtn = document.getElementById('reserve-btn');
+  if(reserveBtn){ reserveBtn.disabled=false; reserveBtn.style.opacity=''; reserveBtn.style.cursor=''; reserveBtn.title=''; }
+  var sellBtn = document.getElementById('sell-reserve-btn');
+  if(sellBtn){ sellBtn.disabled=false; sellBtn.style.opacity=''; sellBtn.style.cursor=''; }
+  var banner = document.getElementById('suspend-banner');
+  if(banner) banner.style.display='none';
+  var badge = document.getElementById('suspend-badge');
+  if(badge) badge.style.display='none';
   // 모든 동적 탭 콘텐츠 초기화
   _clearAllTabContents();
   document.getElementById('main-app').style.display = 'none';
@@ -1950,6 +1964,23 @@ function checkSuspended(d){
     var badge = document.getElementById('suspend-badge');
     if(badge) badge.style.display='inline';
   } else {
+    // ★ 정지 해제 시: 버튼 스타일 완전 복원
+    ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el){ el.disabled=false; el.style.cursor=''; el.style.opacity=''; }
+    });
+    var reserveBtn = document.getElementById('reserve-btn');
+    if(reserveBtn){
+      reserveBtn.disabled=false;
+      reserveBtn.style.opacity='';
+      reserveBtn.style.cursor='';
+      reserveBtn.title='';
+    }
+    document.querySelectorAll('.sell-reserve-btn,[onclick*="doSellReservation"],[onclick*="판매 예약하기"]').forEach(function(b){
+      b.disabled=false; b.style.opacity=''; b.style.cursor='';
+    });
+    var sellBtn = document.getElementById('sell-reserve-btn') || document.querySelector('[onclick*="doSellReservationBulk"]');
+    if(sellBtn){ sellBtn.disabled=false; sellBtn.style.opacity=''; sellBtn.style.cursor=''; }
     var banner = document.getElementById('suspend-banner');
     if(banner) banner.style.display='none';
     var badge = document.getElementById('suspend-badge');
