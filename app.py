@@ -3091,14 +3091,14 @@ def admin_add_reservation():
                     (loopay_id, bar_type, match_round, today, join_round2_val)
                 )
             else:
-                # 판매예약: 아이템 생성 후 item_id 연결, confirmed=1
+                # 판매예약: 아이템 생성 후 item_id 연결, confirmed=0 (확정 버튼으로 확정)
                 cur = conn.execute(
-                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
+                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'waiting',?)",
                     (loopay_id, bar_type, stage, today)
                 )
                 item_id = cur.lastrowid
                 conn.execute(
-                    "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage, join_round2, confirmed) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, 1)",
+                    "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage, join_round2, confirmed) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, 0)",
                     (loopay_id, item_id, bar_type, match_round, today, stage, join_round2_val)
                 )
         conn.execute("PRAGMA foreign_keys=ON")
@@ -4398,7 +4398,7 @@ def admin_loopay_extra_reservations():
             SELECT r.id, r.bar_type, r.status, r.reserve_date,
                    r.match_round,
                    COALESCE(r.confirmed,0) as confirmed,
-                   CASE WHEN i.status = 'reservable' THEN 'sell' ELSE 'buy' END as type,
+                   CASE WHEN r.item_id > 0 THEN 'sell' ELSE 'buy' END as type,
                    COALESCE(r.stage, COALESCE(i.stage, 0)) as stage
             FROM reservations r
             LEFT JOIN items i ON r.item_id = i.id
