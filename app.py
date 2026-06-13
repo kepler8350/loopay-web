@@ -711,10 +711,22 @@ def get_me():
     next_cum = cfg.get('cum')
     pct = round(u['cumulative_count'] / next_cum * 100, 1) if next_cum else None
     items = db.execute("SELECT * FROM items WHERE user_id=? AND status IN ('reservable','active','waiting') ORDER BY bar_type, stage", (uid,)).fetchall()
+    # 판매예약중인 아이템 확인 (reservations.status='pending'인 것)
+    _item_ids = [i['id'] for i in items]
+    _pending_sell_set = set()
+    if _item_ids:
+        _ph = ','.join('?'*len(_item_ids))
+        _pending_rows = db.execute(
+            f"SELECT item_id FROM reservations WHERE item_id IN ({_ph}) AND status='pending' AND confirmed=1",
+            _item_ids
+        ).fetchall()
+        _pending_sell_set = {r['item_id'] for r in _pending_rows}
     def fmt_item(it):
         buy, sell = get_price(it['bar_type'], it['stage'])
         d = days_since(it['purchase_date'])
-        return {'id':it['id'],'bar_type':it['bar_type'],'stage':it['stage'],'purchase_date':it['purchase_date'],'days':d,'status_label':item_status_label(it['status'],it['purchase_date']),'buy_price':buy,'sell_price':sell,'profit':sell-buy}
+        # 판매예약중인 아이템은 status_label 오버라이드
+        s_label = '판매예약중' if it['id'] in _pending_sell_set else item_status_label(it['status'], it['purchase_date'])
+        return {'id':it['id'],'bar_type':it['bar_type'],'stage':it['stage'],'purchase_date':it['purchase_date'],'days':d,'status_label':s_label,'buy_price':buy,'sell_price':sell,'profit':sell-buy}
     bronze = [fmt_item(i) for i in items if i['bar_type']=='bronze']
     silver = [fmt_item(i) for i in items if i['bar_type']=='silver']
     gold   = [fmt_item(i) for i in items if i['bar_type']=='gold']
