@@ -1727,13 +1727,23 @@ def admin_run_matching():
 
         import random
 
-        # 매칭 전 모든 unmatched 판매예약 → 현재 round로 복원
+        # 매칭 전 모든 loopay 판매예약(pending/unmatched 모두) → 현재 round로 리셋
         db.execute(
             """UPDATE reservations SET status='pending', match_round=?, reserve_date=?
+               WHERE status IN ('pending', 'unmatched')
+               AND item_id IS NOT NULL AND item_id > 0
+               AND user_id = ?
+               AND confirmed=1""",
+            (round_num, today, loopay_id)
+        )
+        # 일반 사용자 판매예약도 unmatched면 현재 round로 복원
+        db.execute(
+            """UPDATE reservations SET status='pending', match_round=?
                WHERE status='unmatched'
                AND item_id IS NOT NULL AND item_id > 0
+               AND user_id != ?
                AND confirmed=1""",
-            (round_num, today)
+            (round_num, loopay_id)
         )
         db.commit()
 
