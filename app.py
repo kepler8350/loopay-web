@@ -3137,6 +3137,12 @@ def admin_add_reservation():
                     (loopay_id, bar_type, match_round, today, join_round2_val)
                 )
             else:
+                # 판매예약: stage 범위 검증
+                _stage_max_map = {'bronze': 20, 'silver': 16, 'gold': 14}
+                _stage_max = _stage_max_map.get(bar_type, 20)
+                if stage > _stage_max:
+                    conn.rollback()
+                    return jsonify(error=f'{bar_type} 판매예약 단계는 최대 {_stage_max}단계입니다.'), 400
                 # 판매예약: 아이템 생성 후 item_id 연결, confirmed=0 (확정 버튼으로 확정)
                 cur = conn.execute(
                     "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'waiting',?)",

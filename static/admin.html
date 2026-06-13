@@ -335,7 +335,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end;flex-wrap:wrap">
           <div>
             <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">아이템</label>
-            <select id="add-res-type" class="input" style="width:100%">
+            <select id="add-res-type" class="input" style="width:100%" onchange="toggleResStage(document.getElementById('add-res-kind').value)">
               <option value="bronze">수정</option>
               <option value="silver">루비</option>
               <option value="gold">다이아</option>

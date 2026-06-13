@@ -1006,6 +1006,11 @@ function rlRenderPagination(){
 }
 function rlPagBtn(){ return 'padding:5px 10px;background:#1a1d2e;border:1px solid #2d2d5e;color:#cdd6f4;border-radius:5px;cursor:pointer;font-size:12px;'; }
 
+function getResStageMax(){
+  var barType = document.getElementById('add-res-type')?.value || 'bronze';
+  return {'bronze': 20, 'silver': 16, 'gold': 14}[barType] || 20;
+}
+
 function toggleResStage(kind){
   var stageEl = document.getElementById('add-res-stage');
   if(!stageEl) return;
@@ -1020,6 +1025,9 @@ function toggleResStage(kind){
     stageEl.style.background = '';
     stageEl.style.color = '';
     stageEl.style.cursor = '';
+    var maxStage = getResStageMax();
+    stageEl.max = maxStage;
+    if(parseInt(stageEl.value) > maxStage) stageEl.value = maxStage;
   }
 }
 
