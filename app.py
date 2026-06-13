@@ -3086,7 +3086,7 @@ def admin_add_reservation():
             if res_type == 'buy':
                 # 구매예약: item_id=NULL (단계 미지정, 매칭 시 랜덤 판매아이템과 연결)
                 conn.execute(
-                    "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage, join_round2, confirmed) VALUES (?, NULL, ?, ?, ?, 'pending', 0, ?, 0)",
+                    "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage, join_round2, confirmed) VALUES (?, 0, ?, ?, ?, 'pending', 0, ?, 0)",
                     (loopay_id, bar_type, match_round, today, join_round2_val)
                 )
             else:
