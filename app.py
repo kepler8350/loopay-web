@@ -2170,7 +2170,7 @@ def admin_run_matching():
         _debug_sell = len(sell_rows)
         _debug_buy = len(buy_rows)
         _debug_buy_any = {k: len(v) for k,v in buy_any_stage.items()}
-                return jsonify(
+        return jsonify(
             success=True,
             matched=total_matched,
             _debug={'sell_rows':_debug_sell,'buy_rows':_debug_buy,'buy_any':_debug_buy_any},
