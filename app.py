@@ -188,10 +188,10 @@ def _run_matching_internal(db, round_num, today):
             """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
                COALESCE(r.stage,1) as stage
                FROM reservations r
-               WHERE r.status='pending' AND r.match_round=2
+               WHERE r.status='pending' AND r.match_round=?
                AND r.reserve_date=? AND (r.item_id IS NULL OR r.item_id=0)
                AND r.user_id != ?""",
-            (today, loopay_id)
+            (round_num, today, loopay_id)
         ).fetchall()
 
         import random as _random
