@@ -1727,12 +1727,13 @@ def admin_run_matching():
 
         import random
 
-        # 매칭 전 loopay의 오늘 unmatched 예약 → pending 복원
+        # 매칭 전 모든 unmatched 판매예약 → 현재 round로 복원
         db.execute(
-            """UPDATE reservations SET status='pending'
-               WHERE user_id=? AND status='unmatched'
-               AND reserve_date=?""",
-            (loopay_id, today)
+            """UPDATE reservations SET status='pending', match_round=?, reserve_date=?
+               WHERE status='unmatched'
+               AND item_id IS NOT NULL AND item_id > 0
+               AND confirmed=1""",
+            (round_num, today)
         )
         db.commit()
 
@@ -2117,9 +2118,8 @@ def admin_run_matching():
                 # 1차 미매칭 판매예약도 2차로 전환 (구매예약이 이미 2차로 넘어갔으므로)
                 db.execute(
                     """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
-                       WHERE match_round=1 AND status='pending'
-                       AND item_id IS NOT NULL AND item_id != 0
-                       AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
+                       WHERE match_round=1 AND status IN ('pending','unmatched')
+                       AND item_id IS NOT NULL AND item_id > 0""",
                     (today,)
                 )
                 # 1차 loopay 미매칭: join_round2=1 이면 2차 전환, 아니면 unmatched
