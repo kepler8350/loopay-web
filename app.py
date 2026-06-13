@@ -1746,7 +1746,7 @@ def admin_run_matching():
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                INNER JOIN items i ON r.item_id = i.id
-               WHERE r.status='pending' AND r.match_round=?
+               WHERE r.status IN ('pending','unmatched') AND r.match_round=?
                AND r.reserve_date=?
                AND COALESCE(r.confirmed,0)=1
                AND i.status='reservable'""",
@@ -4500,7 +4500,7 @@ def admin_confirm_extra_reservations():
             else:
                 # 판매예약 확정: 아이템 상태 reservable로 + confirmed=1
                 conn.execute("UPDATE items SET status='reservable' WHERE id=? AND user_id=?", (item_id, lid))
-                conn.execute("UPDATE reservations SET confirmed=1 WHERE id=?", (r_id,))
+                conn.execute("UPDATE reservations SET confirmed=1, status='pending' WHERE id=?", (r_id,))
             confirmed_ids.append(r_id)
         conn.execute("PRAGMA foreign_keys=ON")
         conn.commit()
