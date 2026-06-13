@@ -243,7 +243,8 @@ async function updateMatchingBtn(){
     }
 
     // 2차 매칭: 1차 미입금(failed) 수량 > 0 이면 활성화 (시간 무관)
-    var isActive2 = failedCount > 0;
+    var r2BuyCount = (matchData.round2||{}).buy_count || 0;
+    var isActive2 = failedCount > 0 || r2BuyCount > 0;
     var btn2 = document.getElementById('btn-run-matching-2');
     var notice2 = document.getElementById('matching-time-notice-2');
     if(btn2){ btn2.disabled=!isActive2; btn2.style.opacity=isActive2?'1':'0.45'; btn2.style.cursor=isActive2?'pointer':'not-allowed'; }
