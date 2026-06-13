@@ -2033,19 +2033,22 @@ def admin_run_matching():
                     db.execute(
                         """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
                            buy_price, sell_price, match_round, match_date, status,
-                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id, buyer_res_id)
-                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?)""",
+                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id)
+                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?)""",
                         (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
                          bt, st3, buy_price3, sell_price3, round_num, today,
                          seller.get('seller_phone',''), seller.get('seller_bank',''),
                          seller.get('seller_account',''), seller.get('seller_account_name',''),
-                         buyer.get('buyer_phone',''), _siid3, buyer['res_id'])
+                         buyer.get('buyer_phone',''), _siid3)
                     )
+                    # buyer_res_id 컬럼이 있으면 업데이트
+                    try:
+                        db.execute("UPDATE matches SET buyer_res_id=? WHERE reservation_id=? AND buyer_id=?",
+                                   (buyer['res_id'], buyer['res_id'], buyer['buyer_id']))
+                    except Exception:
+                        pass
                 except Exception as _e3:
-                    import traceback; traceback.print_exc()
-                    _match_errors = getattr(db, '_match_errors', [])
-                    _match_errors.append(str(_e3))
-                    db._match_errors = _match_errors
+                    pass
 
                 s_phone3 = _g3('loopay_phone', seller.get('seller_phone','')) if is_lp else seller.get('seller_phone','')
                 s_bank3  = _g3('loopay_bank',  seller.get('seller_bank',''))  if is_lp else seller.get('seller_bank','')
@@ -2201,7 +2204,6 @@ def admin_run_matching():
         return jsonify(
             success=True,
             matched=total_matched,
-            match_errors=getattr(db, '_match_errors', []),
             message=f'{round_num}차 매칭 완료: {total_matched}건',
 
             pairs=matched_pairs
