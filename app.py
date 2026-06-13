@@ -2378,7 +2378,19 @@ def admin_matching_status():
                AND i.status='reservable'""",
             (round_num, today)
         ).fetchone()['c']
-        sell_count = _confirmed_sell
+        # loopay 판매예약은 match_round 무관하게 집계 (매칭 실행 시 round로 리셋되므로)
+        _loopay_sell = db.execute(
+            """SELECT COUNT(*) as c FROM reservations r
+               INNER JOIN items i ON r.item_id=i.id
+               INNER JOIN users u ON r.user_id=u.id
+               WHERE r.status IN ('pending','unmatched')
+               AND r.reserve_date>=?
+               AND COALESCE(r.confirmed,0)=1
+               AND i.status IN ('reservable','waiting')
+               AND u.username='loopay'""",
+            (today,)
+        ).fetchone()['c']
+        sell_count = max(_confirmed_sell, _loopay_sell)
 
         rate = round(min(buy_count, sell_count) / buy_count * 100, 1) if buy_count > 0 else 0.0
 
