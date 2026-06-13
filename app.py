@@ -3031,9 +3031,9 @@ def admin_reservations_list():
         elif res_type == 'buy':
             where.append('r.user_id != ?'); params.append(loopay_uid)
 
-        # loopay 미확정 구매예약(confirmed=0, item_id IS NULL/0) 제외 → 확정된 것만 표시
+        # loopay 미확정 예약(confirmed=0, 구매/판매 모두) 제외 → 확정된 것만 표시
         where.append(
-            f'NOT (r.user_id = {loopay_uid} AND (r.item_id IS NULL OR r.item_id = 0) AND COALESCE(r.confirmed,0) = 0)'
+            f'NOT (r.user_id = {loopay_uid} AND COALESCE(r.confirmed,0) = 0)'
         )
         where_sql = ' AND '.join(where)
         total_row = conn.execute(
