@@ -1835,6 +1835,10 @@ def admin_run_matching():
             matched_buyer_ids = set()
         if 'matched_seller_ids' not in dir():
             matched_seller_ids = set()
+        if 'matched_pairs' not in dir():
+            matched_pairs = []
+        if 'total_matched' not in dir():
+            total_matched = 0
         for bt in list(buy_any_stage.keys()):
             rand_buyers = [b for b in buy_any_stage.get(bt, []) if b['res_id'] not in matched_buyer_ids]
             avail_sellers = []
