@@ -1752,7 +1752,7 @@ def admin_run_matching():
                AND i.status='reservable'""",
             (round_num, today)
         ).fetchall()
-        import sys; print(f'[DEBUG] sell_rows={len(sell_rows)}, round={round_num}, today={today}', file=sys.stderr)
+
 
         # loopay_id 조회 (이후 로직에서 사용)
         _loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
@@ -2167,9 +2167,13 @@ def admin_run_matching():
                 pass
         db.commit()
 
-        return jsonify(
+        _debug_sell = len(sell_rows)
+        _debug_buy = len(buy_rows)
+        _debug_buy_any = {k: len(v) for k,v in buy_any_stage.items()}
+                return jsonify(
             success=True,
             matched=total_matched,
+            _debug={'sell_rows':_debug_sell,'buy_rows':_debug_buy,'buy_any':_debug_buy_any},
             message=f'{round_num}차 매칭 완료: {total_matched}건',
 
             pairs=matched_pairs
