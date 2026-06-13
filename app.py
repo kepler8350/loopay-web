@@ -2027,6 +2027,10 @@ def admin_run_matching():
                 if buyer.get('item_id'):
                     db.execute("UPDATE items SET status='matched' WHERE id=? AND user_id=?", (buyer['item_id'], buyer['buyer_id']))
 
+                s_phone3 = _g3('loopay_phone', seller.get('seller_phone','')) if is_lp else seller.get('seller_phone','')
+                s_bank3  = _g3('loopay_bank',  seller.get('seller_bank',''))  if is_lp else seller.get('seller_bank','')
+                s_acct3  = _g3('loopay_account', seller.get('seller_account','')) if is_lp else seller.get('seller_account','')
+                s_acct_name3 = _g3('loopay_account_name', seller.get('seller_account_name','')) if is_lp else seller.get('seller_account_name','')
                 # INSERT INTO matches
                 _siid3 = seller.get('item_id')
                 try:
@@ -2049,10 +2053,6 @@ def admin_run_matching():
                 except Exception as _e3:
                     pass
 
-                s_phone3 = _g3('loopay_phone', seller.get('seller_phone','')) if is_lp else seller.get('seller_phone','')
-                s_bank3  = _g3('loopay_bank',  seller.get('seller_bank',''))  if is_lp else seller.get('seller_bank','')
-                s_acct3  = _g3('loopay_account', seller.get('seller_account','')) if is_lp else seller.get('seller_account','')
-                s_acct_name3 = _g3('loopay_account_name', seller.get('seller_account_name','')) if is_lp else seller.get('seller_account_name','')
 
                 matched_pairs.append({
                     'bar_type':bt,'bar_name':names.get(bt,bt),'stage':st3,
