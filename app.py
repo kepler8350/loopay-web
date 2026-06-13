@@ -3043,7 +3043,7 @@ def admin_reservations_list():
                        r.reserve_date, r.created_at, r.item_id, r.confirmed,
                        r.stage, COALESCE(r.join_round2, 0) as join_round2,
                        u.username, u.nickname, u.account_name,
-                       CASE WHEN r.user_id = {loopay_uid} THEN 'sell' ELSE 'buy' END as res_type
+                       CASE WHEN r.user_id = {loopay_uid} AND r.item_id IS NOT NULL AND r.item_id > 0 THEN 'sell' ELSE 'buy' END as res_type
                 FROM reservations r
                 LEFT JOIN users u ON r.user_id = u.id
                 WHERE {where_sql}
