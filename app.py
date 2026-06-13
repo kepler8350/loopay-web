@@ -2937,11 +2937,15 @@ def admin_reservation_status():
             sell_33up = 0     # 33만원 이상
             sell_split = 0    # 분할 (10~33만원 미만)
 
+            _sd2 = _stg_def.get(bar_type, {'under_max':19,'special':20,'split_min':11}) if '_stg_def' in dir() else {'bronze':{'under_max':19,'special':20,'split_min':11},'silver':{'under_max':15,'special':16,'split_min':9},'gold':{'under_max':13,'special':14,'split_min':8}}.get(bar_type,{'under_max':19,'special':20,'split_min':11})
             for row in sell_rows:
-                sp = prices.get((bar_type, row['stage'] or 1), 0) if row['stage'] else 0
-                if sp >= 330000:
+                _rs = row['stage'] or 1
+                sp = prices.get((bar_type, _rs), 0) if _rs else 0
+                if _rs > _sd2['special']:
                     sell_33up += 1
-                elif sp >= 100000:
+                elif _rs == _sd2['special']:
+                    sell_33up += 1
+                elif _rs >= _sd2['split_min'] and sp >= 100000:
                     sell_split += 1
                 else:
                     sell_under32 += 1
@@ -2970,6 +2974,13 @@ def admin_reservation_status():
             extra_sell_33up = 0
             extra_sell_split = 0
             extra_sell_new = 0
+            # bar_type별 단계 범위: (일반단계최대, 특수단계, 분할최소단계)
+            _stg_def = {
+                'bronze': {'under_max': 19, 'special': 20, 'split_min': 11},  # 1~19=일반, 20=특수, 11~19=분할
+                'silver': {'under_max': 15, 'special': 16, 'split_min': 9},   # 1~15=일반, 16=특수, 9~15=분할
+                'gold':   {'under_max': 13, 'special': 14, 'split_min': 8},   # 1~13=일반, 14=특수, 8~13=분할
+            }
+            _sd = _stg_def.get(bar_type, {'under_max':19,'special':20,'split_min':11})
             for _er in extra_sell_rows:
                 _item_id = _er['item_id'] if isinstance(_er, dict) else _er[0]
                 if _item_id:
@@ -2978,11 +2989,13 @@ def admin_reservation_status():
                 else:
                     _st = 1
                 _sp = prices.get((bar_type, _st), 0)
-                if _sp >= 330000:
+                if _st > _sd['special']:      # 21단계+, 17단계+, 15단계+ → 33up
                     extra_sell_33up += 1
-                elif _sp >= 100000:
+                elif _st == _sd['special']:   # 20단계, 16단계, 14단계 → 33up
+                    extra_sell_33up += 1
+                elif _st >= _sd['split_min'] and _sp >= 100000:  # 분할가능 단계+가격
                     extra_sell_split += 1
-                else:
+                else:                         # 1~저단계 → under32
                     extra_sell_under32 += 1
             extra_sell_total = extra_sell_under32 + extra_sell_33up + extra_sell_split
 
