@@ -1752,6 +1752,7 @@ def admin_run_matching():
                AND i.status='reservable'""",
             (round_num, today)
         ).fetchall()
+        import sys; print(f'[DEBUG] sell_rows={len(sell_rows)}, round={round_num}, today={today}', file=sys.stderr)
 
         # loopay_id 조회 (이후 로직에서 사용)
         _loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
