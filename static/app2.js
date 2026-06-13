@@ -69,7 +69,7 @@ function renderBars(d){
       const _barName2={bronze:'수정',silver:'루비',gold:'다이아'};
       // 이슈11: 3일째(days>=2)면 판매 선택 가능
       // 이슈11: 판매가능 상태일 때만 선택 가능 (서버에서 days>=2면 '판매가능' 반환)
-      const _canSell2=(it.status_label==='판매가능');
+      const _canSell2=(it.status_label==='판매가능') || (['reservable','active'].includes(it.status) && (it.days||0) >= 2);
       // 아이템 캐시 등록
       _itemCache[String(it.id)] = {bar_type: t, stage: it.stage, sell_price: it.sell_price, profit: it.profit, buy_price: it.buy_price};
       var _isSelected = !!_sellSelected[String(it.id)];
@@ -244,8 +244,9 @@ function toggleItemSellSelect(itemId, barType){
       var items = userData.items[barType]||[];
       var item = items.find(function(x){ return String(x.id)===id; });
       if(item){
-        // 이슈11: status_label='판매가능'이면 선택 가능
-        canSell = item.status_label === '판매가능';
+        // status_label='판매가능' 또는 status가 reservable/active이고 days>=2
+        canSell = item.status_label === '판매가능'
+          || (['reservable','active'].includes(item.status) && (item.days||0) >= 2);
         _itemCache[id] = {bar_type: barType, stage: item.stage, sell_price: item.sell_price, profit: item.profit, buy_price: item.buy_price};
       }
     }

@@ -425,7 +425,7 @@ def item_status_label(status, purchase_date):
         except Exception:
             days = 0
     status_map = {
-        'active': '보유중',
+        'active': '판매가능' if days >= 2 else '보유중',      # active도 3일째부터 판매가능
         'reservable': '판매가능' if days >= 2 else '보유중',
         'waiting': '판매가능' if days >= 1 else '보유중',  # 결합아이템: 1일째부터 판매가능
         'sold': '판매완료',
