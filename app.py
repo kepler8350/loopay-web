@@ -1830,48 +1830,7 @@ def admin_run_matching():
                 buy_by_type_stage[key].append(dict(r))
 
 
-        # stage=0 랜덤 구매예약 → 남은 판매예약과 bar_type 기준 매칭 (stage별 매칭 이후)
-        if 'matched_buyer_ids' not in dir():
-            matched_buyer_ids = set()
-        if 'matched_seller_ids' not in dir():
-            matched_seller_ids = set()
-        if 'matched_pairs' not in dir():
-            matched_pairs = []
-        if 'total_matched' not in dir():
-            total_matched = 0
-        _dbg_sell_stage = {str(k): len(v) for k,v in sell_by_type_stage.items()}
-        for bt in list(buy_any_stage.keys()):
-            rand_buyers = [b for b in buy_any_stage.get(bt, []) if b['res_id'] not in matched_buyer_ids]
-            avail_sellers = []
-            for (sbt, sst), slist in sell_by_type_stage.items():
-                if sbt == bt:
-                    avail_sellers += [s for s in slist if s['res_id'] not in matched_seller_ids]
-            import random as _rnd2; _rnd2.shuffle(avail_sellers)
-            bi2, si2 = 0, 0
-            while bi2 < len(rand_buyers) and si2 < len(avail_sellers):
-                buyer = rand_buyers[bi2]
-                seller = avail_sellers[si2]
-                if seller['seller_id'] == buyer['buyer_id'] and seller.get('seller_username') != 'loopay':
-                    si2 += 1
-                    continue
-                matched_seller_ids.add(seller['res_id'])
-                matched_buyer_ids.add(buyer['res_id'])
-                bi2 += 1; si2 += 1
-                is_loopay2 = (seller['seller_username'] == 'loopay')
-                def _gs2(key, fallback):
-                    _r2 = db.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
-                    return _r2['value'] if _r2 else fallback
-                s_phone = _gs2('loopay_phone', seller.get('seller_phone','')) if is_loopay2 else seller.get('seller_phone','')
-                s_bank  = _gs2('loopay_bank',  seller.get('seller_bank',''))  if is_loopay2 else seller.get('seller_bank','')
-                s_acct  = _gs2('loopay_account', seller.get('seller_account','')) if is_loopay2 else seller.get('seller_account','')
-                s_acct_name = _gs2('loopay_account_name', seller.get('seller_account_name','')) if is_loopay2 else seller.get('seller_account_name','')
-                matched_pairs.append({
-                    'bar_type': bt, 'bar_name': {'bronze':'수정','silver':'루비','gold':'다이아'}.get(bt,bt),
-                    'stage': seller.get('stage',1),
-                    'seller': dict(seller), 'buyer': dict(buyer),
-                    's_phone': s_phone, 's_bank': s_bank, 's_acct': s_acct, 's_acct_name': s_acct_name,
-                })
-                total_matched += 1
+
 
         # 이전 호환용
         sell_by_type = {'bronze': [], 'silver': [], 'gold': []}
@@ -2028,6 +1987,32 @@ def admin_run_matching():
 
         # ── buyer별 포인트 즉시 환원 ──
         # matched_pairs에서 buyer_id별 매칭 수 집계
+
+        # stage=0 랜덤 구매예약 → bar_type 기준으로 남은 판매자와 매칭
+        for bt in list(buy_any_stage.keys()):
+            rand_buyers = [b for b in buy_any_stage[bt] if b['res_id'] not in matched_buyer_ids]
+            avail_sellers = [s for (sbt,sst),slist in sell_by_type_stage.items()
+                             if sbt==bt for s in slist if s['res_id'] not in matched_seller_ids]
+            import random as _r3; _r3.shuffle(avail_sellers)
+            bi3 = si3 = 0
+            while bi3 < len(rand_buyers) and si3 < len(avail_sellers):
+                buyer = rand_buyers[bi3]; seller = avail_sellers[si3]
+                if seller['seller_id']==buyer['buyer_id'] and seller.get('seller_username')!='loopay':
+                    si3 += 1; continue
+                matched_seller_ids.add(seller['res_id']); matched_buyer_ids.add(buyer['res_id'])
+                bi3 += 1; si3 += 1
+                is_lp = (seller['seller_username']=='loopay')
+                def _g3(k,fb): _rv=db.execute("SELECT value FROM system_settings WHERE key=?",(k,)).fetchone(); return _rv['value'] if _rv else fb
+                matched_pairs.append({
+                    'bar_type':bt,'bar_name':names.get(bt,bt),'stage':seller.get('stage',1),
+                    'seller':dict(seller),'buyer':dict(buyer),
+                    's_phone':_g3('loopay_phone',seller.get('seller_phone','')) if is_lp else seller.get('seller_phone',''),
+                    's_bank':_g3('loopay_bank',seller.get('seller_bank','')) if is_lp else seller.get('seller_bank',''),
+                    's_acct':_g3('loopay_account',seller.get('seller_account','')) if is_lp else seller.get('seller_account',''),
+                    's_acct_name':_g3('loopay_account_name',seller.get('seller_account_name','')) if is_lp else seller.get('seller_account_name',''),
+                })
+                total_matched += 1
+
         # ── 포인트 정산: 오늘 buy_rows의 모든 buyer 대상 ──
         # matched_pairs에서 buyer별 매칭 수 집계
         _buyer_match_cnt = {}
