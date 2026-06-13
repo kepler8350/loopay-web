@@ -962,7 +962,7 @@ async function loadReservationsLog(page){
       var statusKo = {reservable:'예약가능', active:'활성', waiting:'대기중', matched:'매칭완료',
         sold:'판매완료', reserved:'예약중', cancelled:'취소', confirmed:'확정',
         pending:'대기', sell_reserved:'판매예약중', unmatched:'미매칭',
-        expired:'만료', rejected:'거절', complete:'완료'}[r.status] || r.status;='';let adminToken=null;
+        expired:'만료', rejected:'거절', complete:'완료'}[r.status] || r.status;
 function toast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'info');setTimeout(()=>t.classList.remove('show'),3000);}
 async function apiAdmin(path,opts){opts=opts||{};const tok=localStorage.getItem('admin_token');const res=await fetch('/api'+path,Object.assign({},opts,{headers:Object.assign({'Content-Type':'application/json','Authorization':'Bearer '+tok},opts.headers||{})}));const data=await res.json();if(!res.ok)throw new Error(data.error||res.statusText);return data;}
 async function doLogin(){
