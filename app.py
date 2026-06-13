@@ -3031,6 +3031,10 @@ def admin_reservations_list():
         elif res_type == 'buy':
             where.append('r.user_id != ?'); params.append(loopay_uid)
 
+        # loopay 미확정 구매예약(confirmed=0, item_id IS NULL/0) 제외 → 확정된 것만 표시
+        where.append(
+            f'NOT (r.user_id = {loopay_uid} AND (r.item_id IS NULL OR r.item_id = 0) AND COALESCE(r.confirmed,0) = 0)'
+        )
         where_sql = ' AND '.join(where)
         total_row = conn.execute(
             f'''SELECT COUNT(*) as cnt FROM reservations r
@@ -3079,20 +3083,23 @@ def admin_add_reservation():
         today = get_today().isoformat()
         conn.execute("PRAGMA foreign_keys=OFF")
         for _ in range(count):
-            # 구매예약/판매예약 모두 loopay 아이템 생성 후 item_id 사용
-            # 구매예약은 stage=0 (단계 미지정 - 매칭시 랜덤)
-            item_stage = 0 if res_type == 'buy' else stage
-            cur = conn.execute(
-                "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'waiting',?)",
-                (loopay_id, bar_type, item_stage, today)
-            )
-            item_id = cur.lastrowid
-            if res_type == 'sell':
-                conn.execute("UPDATE items SET status='reservable' WHERE id=?", (item_id,))
-            conn.execute(
-                "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage, join_round2) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)",
-                (loopay_id, item_id, bar_type, match_round, today, item_stage, join_round2_val)
-            )
+            if res_type == 'buy':
+                # 구매예약: item_id=NULL (단계 미지정, 매칭 시 랜덤 판매아이템과 연결)
+                conn.execute(
+                    "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage, join_round2, confirmed) VALUES (?, NULL, ?, ?, ?, 'pending', 0, ?, 0)",
+                    (loopay_id, bar_type, match_round, today, join_round2_val)
+                )
+            else:
+                # 판매예약: 아이템 생성 후 item_id 연결, confirmed=1
+                cur = conn.execute(
+                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
+                    (loopay_id, bar_type, stage, today)
+                )
+                item_id = cur.lastrowid
+                conn.execute(
+                    "INSERT INTO reservations (user_id, item_id, bar_type, match_round, reserve_date, status, stage, join_round2, confirmed) VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, 1)",
+                    (loopay_id, item_id, bar_type, match_round, today, stage, join_round2_val)
+                )
         conn.execute("PRAGMA foreign_keys=ON")
         conn.commit()
         return jsonify({'success': True, 'added': count})
