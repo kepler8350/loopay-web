@@ -1816,7 +1816,7 @@ def admin_run_matching():
         for r in buy_rows:
             bt = r['bar_type']
             # stage=0이면 랜덤(any stage) 버킷에 분리
-            raw_stage = r.get('stage') or 0
+            raw_stage = r['stage'] if r['stage'] else 0
             if raw_stage == 0:
                 if bt not in buy_any_stage:
                     buy_any_stage[bt] = []
