@@ -4477,30 +4477,14 @@ def admin_confirm_extra_reservations():
             bar_type = row['bar_type']
             stage = row['stage'] or 1
             item_id = row['item_id']
-            # 구매예약 여부: item_id가 있으면 아이템 status 확인
-            is_buy = False
-            if item_id:
-                existing_item = conn.execute(
-                    "SELECT status FROM items WHERE id=?", (item_id,)
-                ).fetchone()
-                is_buy = existing_item and existing_item['status'] == 'waiting'
-            else:
-                is_buy = True  # item_id 없으면 구매예약 (구버전 호환)
+            # 구매예약 여부: item_id=0이면 구매, item_id>0이면 판매
+            is_buy = (not item_id) or (item_id == 0)
 
             if is_buy:
                 # 구매예약 확정: 아이템 status를 waiting 유지 (매칭 대기),
                 # confirmed=1만 설정 → 매칭 시 구매자로 처리됨
                 conn.execute("UPDATE reservations SET confirmed=1 WHERE id=?", (r_id,))
-                # item_id가 없는 구버전은 아이템 생성
-                if not item_id:
-                    cur = conn.execute(
-                        "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'waiting',?)",
-                        (lid, bar_type, stage, today)
-                    )
-                    conn.execute(
-                        "UPDATE reservations SET item_id=? WHERE id=?",
-                        (cur.lastrowid, r_id)
-                    )
+
             else:
                 # 판매예약 확정: 아이템 상태 reservable로 + confirmed=1
                 conn.execute("UPDATE items SET status='reservable' WHERE id=? AND user_id=?", (item_id, lid))
