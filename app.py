@@ -5349,3 +5349,25 @@ def admin_grant_points():
         return jsonify(error=str(e)), 500
     finally:
         db.close()
+
+
+@app.route('/api/admin/reservations/delete', methods=['POST'])
+@jwt_required()
+def admin_delete_reservations():
+    """관리자 구매/판매 예약기록 선택 삭제"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    ids = [int(x) for x in data.get('ids', [])]
+    if not ids: return jsonify(error='ids 필요'), 400
+    db = get_db()
+    try:
+        ph = ','.join('?' * len(ids))
+        db.execute(f"DELETE FROM reservations WHERE id IN ({ph})", ids)
+        db.commit()
+        return jsonify(success=True, deleted=len(ids))
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
