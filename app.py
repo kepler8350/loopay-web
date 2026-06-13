@@ -1839,6 +1839,7 @@ def admin_run_matching():
             matched_pairs = []
         if 'total_matched' not in dir():
             total_matched = 0
+        _dbg_sell_stage = {str(k): len(v) for k,v in sell_by_type_stage.items()}
         for bt in list(buy_any_stage.keys()):
             rand_buyers = [b for b in buy_any_stage.get(bt, []) if b['res_id'] not in matched_buyer_ids]
             avail_sellers = []
@@ -2173,7 +2174,7 @@ def admin_run_matching():
         return jsonify(
             success=True,
             matched=total_matched,
-            _debug={'sell_rows':_debug_sell,'buy_rows':_debug_buy,'buy_any':_debug_buy_any},
+            _debug={'sell_rows':_debug_sell,'buy_rows':_debug_buy,'buy_any':_debug_buy_any,'sell_stage':_dbg_sell_stage},
             message=f'{round_num}차 매칭 완료: {total_matched}건',
 
             pairs=matched_pairs
