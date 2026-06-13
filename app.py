@@ -2902,10 +2902,9 @@ def admin_reservation_status():
             # loopay 추가예약 (match_round=1)
             extra_buy_pending = conn.execute(
                 """SELECT COUNT(*) as cnt FROM reservations r
-                   LEFT JOIN items i ON r.item_id=i.id
                    WHERE r.bar_type=? AND r.match_round=1 AND r.status='pending' AND r.confirmed=0
                    AND r.user_id=? AND r.reserve_date>=?
-                   AND (r.item_id IS NULL OR i.status='waiting' OR i.status IS NULL)""",
+                   AND (r.item_id IS NULL OR r.item_id=0)""",
                 (bar_type, loopay_id, today)
             ).fetchone()['cnt']
             extra_buy_confirmed = conn.execute(
@@ -2955,7 +2954,7 @@ def admin_reservation_status():
                    INNER JOIN items i ON r.item_id=i.id
                    WHERE r.bar_type=? AND r.status='pending' AND r.confirmed=0
                    AND r.user_id=? AND r.reserve_date>=? AND r.match_round=1
-                   AND i.status='reservable'""",
+                   AND i.status IN ('waiting','reservable')""",
                 (bar_type, loopay_id, today)
             ).fetchall()
             extra_sell_confirmed_rows = conn.execute(
@@ -3007,8 +3006,8 @@ def admin_reservation_status():
                 """SELECT i.stage FROM reservations r
                    JOIN items i ON r.item_id=i.id
                    WHERE r.bar_type=? AND r.status='pending'
-                   AND r.item_id IS NOT NULL
-                   AND i.status='reservable'""",
+                   AND r.item_id IS NOT NULL AND r.item_id > 0
+                   AND i.status IN ('reservable','waiting')""",
                 (bar_type,)
             ).fetchall()
             for row in all_sell:
