@@ -2037,8 +2037,7 @@ def admin_run_matching():
                            VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?)""",
                         (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
                          bt, st3, buy_price3, sell_price3, round_num, today,
-                         seller.get('seller_phone',''), seller.get('seller_bank',''),
-                         seller.get('seller_account',''), seller.get('seller_account_name',''),
+                         s_phone3, s_bank3, s_acct3, s_acct_name3,
                          buyer.get('buyer_phone',''), _siid3)
                     )
                     # buyer_res_id 컬럼이 있으면 업데이트
