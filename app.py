@@ -2575,6 +2575,35 @@ with app.app_context():
         _c.close()
     except Exception:
         pass
+    # matches 테이블에서 loopay seller인데 phone/bank/account가 null인 것 수정
+    try:
+        import sqlite3 as _sq3b
+        from db import DB_PATH as _DB_PATH_b
+        _cb = _sq3b.connect(_DB_PATH_b, timeout=10)
+        _cb.row_factory = _sq3b.Row
+        _loopay_b = _cb.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if _loopay_b:
+            _lid_b = _loopay_b['id']
+            _ph = _cb.execute("SELECT value FROM system_settings WHERE key='loopay_phone'").fetchone()
+            _bk = _cb.execute("SELECT value FROM system_settings WHERE key='loopay_bank'").fetchone()
+            _ac = _cb.execute("SELECT value FROM system_settings WHERE key='loopay_account'").fetchone()
+            _an = _cb.execute("SELECT value FROM system_settings WHERE key='loopay_account_name'").fetchone()
+            if _ph and _bk and _ac:
+                _cb.execute(
+                    """UPDATE matches SET
+                        seller_phone=?, seller_bank=?, seller_account=?, seller_account_name=?
+                       WHERE seller_id=?
+                       AND (seller_phone IS NULL OR seller_phone=''
+                            OR seller_bank IS NULL OR seller_bank=''
+                            OR seller_account IS NULL OR seller_account='')""",
+                    (_ph['value'], _bk['value'], _ac['value'],
+                     _an['value'] if _an else '루페이', _lid_b)
+                )
+                _cb.commit()
+        _cb.close()
+    except Exception:
+        pass
+
     # get_now()가 매번 DB에서 읽으므로 별도 복원 불필요
 
 
