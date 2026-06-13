@@ -1812,15 +1812,66 @@ def admin_run_matching():
             sell_by_type_stage[key].append(dict(r))
 
         buy_by_type_stage = {}
+        buy_any_stage = {}  # stage=0 (랜덤): bar_type별만 분류
         for r in buy_rows:
             bt = r['bar_type']
-            st = (dict(r).get('stage') or 1)
-            key = (bt, st)
-            if key not in buy_by_type_stage:
-                buy_by_type_stage[key] = []
-            buy_by_type_stage[key].append(dict(r))
+            # stage=0이면 랜덤(any stage) 버킷에 분리
+            raw_stage = r.get('stage') or 0
+            if raw_stage == 0:
+                if bt not in buy_any_stage:
+                    buy_any_stage[bt] = []
+                buy_any_stage[bt].append(dict(r))
+            else:
+                key = (bt, raw_stage)
+                if key not in buy_by_type_stage:
+                    buy_by_type_stage[key] = []
+                buy_by_type_stage[key].append(dict(r))
 
-        # 이전 호환용
+        
+        # stage=0 랜덤 구매예약 → 남은 판매예약과 bar_type 기준 매칭
+        for bt in list(buy_any_stage.keys()):
+            rand_buyers = [b for b in buy_any_stage.get(bt, []) if b['res_id'] not in matched_buyer_ids]
+            # 해당 bar_type의 남은 판매자 (stage 무관)
+            avail_sellers = []
+            for (sbt, sst), slist in sell_by_type_stage.items():
+                if sbt == bt:
+                    avail_sellers += [s for s in slist if s['res_id'] not in matched_seller_ids]
+            import random as _rnd2; _rnd2.shuffle(avail_sellers)
+            bi, si = 0, 0
+            while bi < len(rand_buyers) and si < len(avail_sellers):
+                buyer = rand_buyers[bi]
+                seller = avail_sellers[si]
+                if seller['seller_id'] == buyer['buyer_id'] and seller.get('seller_username') != 'loopay':
+                    si += 1
+                    continue
+                matched_seller_ids.add(seller['res_id'])
+                matched_buyer_ids.add(buyer['res_id'])
+                bi += 1; si += 1
+
+                is_loopay = (seller['seller_username'] == 'loopay')
+                def get_setting(key, fallback):
+                    r2 = db.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
+                    return r2['value'] if r2 else fallback
+                if is_loopay:
+                    s_phone = get_setting('loopay_phone', seller.get('seller_phone',''))
+                    s_bank  = get_setting('loopay_bank',  seller.get('seller_bank',''))
+                    s_acct  = get_setting('loopay_account', seller.get('seller_account',''))
+                    s_acct_name = get_setting('loopay_account_name', seller.get('seller_account_name',''))
+                else:
+                    s_phone = seller.get('seller_phone','')
+                    s_bank  = seller.get('seller_bank','')
+                    s_acct  = seller.get('seller_account','')
+                    s_acct_name = seller.get('seller_account_name','')
+                matched_pairs.append({
+                    'bar_type': bt, 'bar_name': {'bronze':'수정','silver':'루비','gold':'다이아'}.get(bt, bt),
+                    'stage': seller.get('stage', 1),
+                    'seller': dict(seller), 'buyer': dict(buyer),
+                    's_phone': s_phone, 's_bank': s_bank,
+                    's_acct': s_acct, 's_acct_name': s_acct_name,
+                })
+                total_matched += 1
+
+# 이전 호환용
         sell_by_type = {'bronze': [], 'silver': [], 'gold': []}
         buy_by_type = {'bronze': [], 'silver': [], 'gold': []}
         for r in sell_rows:
