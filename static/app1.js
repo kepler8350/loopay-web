@@ -1306,7 +1306,8 @@ function renderMatchBuyList(items){
     el.innerHTML='<div style="text-align:center;color:#aaa;padding:20px;font-size:13px">구매예약 없음</div>';
     return;
   }
-  var h = getEffectiveDate ? getEffectiveDate().getHours() : new Date().getHours();
+  var _effDate = getEffectiveDate ? getEffectiveDate() : new Date();
+  var h = (_effDate.getUTCHours() + 9) % 24;  // KST = UTC+9
   el.innerHTML = items.map(function(m){
     var statusLabel = {waiting:'예약대기',pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'입금',unpaid:'미입금',failed:'미입금'}[m.status]||m.status;
     var statusColor = {waiting:'#90caf9',pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
