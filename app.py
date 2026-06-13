@@ -2937,12 +2937,12 @@ def admin_reservation_status():
             sell_33up = 0     # 33만원 이상
             sell_split = 0    # 분할 (10~33만원 미만)
 
+            # 단계 범위 기준 분류
+            _stage_max = {'bronze': 20, 'silver': 16, 'gold': 14}.get(bar_type, 20)
             for row in sell_rows:
-                sp = prices.get((bar_type, row['stage'] or 1), 0) if row['stage'] else 0
-                if sp >= 330000:
+                _st = row['stage'] or 1
+                if _st > _stage_max:
                     sell_33up += 1
-                elif sp >= 100000:
-                    sell_split += 1
                 else:
                     sell_under32 += 1
             sell_total = sell_under32 + sell_33up + sell_split
@@ -2977,11 +2977,8 @@ def admin_reservation_status():
                     _st = (_item['stage'] if _item else None) or 1
                 else:
                     _st = 1
-                _sp = prices.get((bar_type, _st), 0)
-                if _sp >= 330000:
+                if _st > _stage_max:
                     extra_sell_33up += 1
-                elif _sp >= 100000:
-                    extra_sell_split += 1
                 else:
                     extra_sell_under32 += 1
             extra_sell_total = extra_sell_under32 + extra_sell_33up + extra_sell_split
