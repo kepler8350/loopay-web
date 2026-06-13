@@ -2014,13 +2014,45 @@ def admin_run_matching():
                 bi3 += 1; si3 += 1
                 is_lp = (seller['seller_username']=='loopay')
                 def _g3(k,fb): _rv=db.execute("SELECT value FROM system_settings WHERE key=?",(k,)).fetchone(); return _rv['value'] if _rv else fb
+                st3 = seller.get('stage', 1)
+                _pr3 = db.execute("SELECT buy_price, sell_price FROM prices WHERE bar_type=? AND stage=?", (bt, st3)).fetchone()
+                buy_price3  = _pr3['buy_price']  if _pr3 else 0
+                sell_price3 = _pr3['sell_price'] if _pr3 else 0
+
+                # DB 업데이트: reservations status='matched'
+                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
+                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
+                if seller.get('item_id'):
+                    db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
+                if buyer.get('item_id'):
+                    db.execute("UPDATE items SET status='matched' WHERE id=? AND user_id=?", (buyer['item_id'], buyer['buyer_id']))
+
+                # INSERT INTO matches
+                _siid3 = seller.get('item_id')
+                try:
+                    db.execute(
+                        """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
+                           buy_price, sell_price, match_round, match_date, status,
+                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id, buyer_res_id)
+                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?)""",
+                        (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
+                         bt, st3, buy_price3, sell_price3, round_num, today,
+                         seller.get('seller_phone',''), seller.get('seller_bank',''),
+                         seller.get('seller_account',''), seller.get('seller_account_name',''),
+                         buyer.get('buyer_phone',''), _siid3, buyer['res_id'])
+                    )
+                except Exception:
+                    pass
+
+                s_phone3 = _g3('loopay_phone', seller.get('seller_phone','')) if is_lp else seller.get('seller_phone','')
+                s_bank3  = _g3('loopay_bank',  seller.get('seller_bank',''))  if is_lp else seller.get('seller_bank','')
+                s_acct3  = _g3('loopay_account', seller.get('seller_account','')) if is_lp else seller.get('seller_account','')
+                s_acct_name3 = _g3('loopay_account_name', seller.get('seller_account_name','')) if is_lp else seller.get('seller_account_name','')
+
                 matched_pairs.append({
-                    'bar_type':bt,'bar_name':names.get(bt,bt),'stage':seller.get('stage',1),
+                    'bar_type':bt,'bar_name':names.get(bt,bt),'stage':st3,
                     'seller':dict(seller),'buyer':dict(buyer),
-                    's_phone':_g3('loopay_phone',seller.get('seller_phone','')) if is_lp else seller.get('seller_phone',''),
-                    's_bank':_g3('loopay_bank',seller.get('seller_bank','')) if is_lp else seller.get('seller_bank',''),
-                    's_acct':_g3('loopay_account',seller.get('seller_account','')) if is_lp else seller.get('seller_account',''),
-                    's_acct_name':_g3('loopay_account_name',seller.get('seller_account_name','')) if is_lp else seller.get('seller_account_name',''),
+                    's_phone':s_phone3,'s_bank':s_bank3,'s_acct':s_acct3,'s_acct_name':s_acct_name3,
                 })
                 total_matched += 1
 
