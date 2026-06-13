@@ -2159,7 +2159,7 @@ def admin_run_matching():
         return jsonify(
             success=True,
             matched=total_matched,
-            _debug={'sell_rows':_debug_sell,'buy_rows':_debug_buy,'buy_any':_debug_buy_any,'sell_stage':_dbg_sell_stage},
+            _debug={'sell_rows':_debug_sell,'buy_rows':_debug_buy,'buy_any':_debug_buy_any},
             message=f'{round_num}차 매칭 완료: {total_matched}건',
 
             pairs=matched_pairs
