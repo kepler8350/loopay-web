@@ -106,13 +106,13 @@ def _auto_round2_scheduler():
                 pass
 
             # ── 13:00 자동 입금확인: paid 상태 → confirmed (송금했는데 판매자가 미확인) ──
-            if h == 13 and m == 0 and today != _last_run_date_1301:
+            if h == 13 and m < 5 and today != _last_run_date_1301:
                 _last_run_date_1301 = today
                 db = get_db()
                 try:
                     paid_1301 = db.execute(
                         """SELECT id, seller_item_id FROM matches
-                           WHERE match_round=1 AND status='paid' AND match_date=?""",
+                           WHERE match_round=1 AND status='paid' AND match_date<=?""",
                         (today,)
                     ).fetchall()
                     for m_row in paid_1301:
@@ -128,14 +128,14 @@ def _auto_round2_scheduler():
                     db.close()
 
             # ── 14:01 자동 입금확인 + 미송금 2차이전 + 2차매칭 ──
-            if h == 14 and m == 1 and today != _last_run_date:
+            if h == 14 and m < 5 and today != _last_run_date:
                 _last_run_date = today
                 db = get_db()
                 try:
                     # 1) 송금완료(paid) → 자동 입금확인(confirmed)
                     paid_matches = db.execute(
                         """SELECT id FROM matches
-                           WHERE match_round=1 AND status='paid' AND match_date=?""",
+                           WHERE match_round=1 AND status='paid' AND match_date<=?""",
                         (today,)
                     ).fetchall()
                     for m_row in paid_matches:
@@ -184,13 +184,13 @@ def _auto_round2_scheduler():
                     db.close()
 
             # ── 19:00 2차 자동 입금확인: 2차 paid → confirmed ──
-            if h == 19 and m == 0 and today != _last_run_date_1901:
+            if h == 19 and m < 5 and today != _last_run_date_1901:
                 _last_run_date_1901 = today
                 db = get_db()
                 try:
                     paid_1901 = db.execute(
                         """SELECT id, seller_item_id FROM matches
-                           WHERE match_round=2 AND status='paid' AND match_date=?""",
+                           WHERE match_round=2 AND status='paid' AND match_date<=?""",
                         (today,)
                     ).fetchall()
                     for m_row in paid_1901:
@@ -206,7 +206,7 @@ def _auto_round2_scheduler():
                     db.close()
 
             # ── 20:01 2차매칭 자동 입금확인 + 미송금 failed 처리 ──
-            if h == 20 and m == 1 and today != _last_run_date_r2:
+            if h == 20 and m < 5 and today != _last_run_date_r2:
                 _last_run_date_r2 = today
                 db = get_db()
                 try:
@@ -5562,6 +5562,36 @@ def admin_resolve_unpaid(res_id):
         db.close()
 
 
+
+@app.route('/api/admin/auto-confirm-paid', methods=['POST'])
+@jwt_required()
+def admin_auto_confirm_paid():
+    """수동으로 paid→confirmed 자동 입금확인 실행 (테스트/긴급용)"""
+    uid = int(get_jwt_identity())
+    db = get_db()
+    try:
+        admin_u = db.execute("SELECT is_admin FROM users WHERE id=?", (uid,)).fetchone()
+        if not admin_u or not admin_u['is_admin']:
+            return jsonify(error='권한 없음'), 403
+        today = get_today().isoformat()
+        paid_rows = db.execute(
+            """SELECT id, seller_item_id FROM matches
+               WHERE status='paid' AND match_date<=?""",
+            (today,)
+        ).fetchall()
+        count = 0
+        for m_row in paid_rows:
+            db.execute("UPDATE matches SET status='confirmed' WHERE id=?", (m_row['id'],))
+            if m_row['seller_item_id']:
+                db.execute("UPDATE items SET status='sold' WHERE id=?", (m_row['seller_item_id'],))
+            count += 1
+        db.commit()
+        return jsonify(success=True, confirmed_count=count)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
 
 @app.route('/api/admin/testtools/set-purchase-date', methods=['POST'])
 @jwt_required()
