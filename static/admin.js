@@ -977,6 +977,7 @@ async function loadReservationsLog(page){
         +'<td style="text-align:center;color:#aaa">'+(r.account_name||r.nickname||'-')+'</td>'
         +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+typeColor+'22;color:'+typeColor+';font-weight:700">'+typeName+'</span></td>'
         +'<td style="text-align:center;font-weight:700;color:'+barColor+'">'+bar+'</td>'
+        +'<td style="text-align:center;color:#aaa">'+(r.stage>0?r.stage+'단계':'-')+'</td>'
         +'<td style="text-align:center;color:#888">'+(r.match_round||'-')+'차</td>'
         +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+statusColor+'22;color:'+statusColor+'">'+statusKo+'</span></td>'
         +'<td style="text-align:center">'+round2Badge+'</td>'
