@@ -1698,6 +1698,9 @@ function updateResUI(BZ_MIN,BZ_MAX){
   var _byUser = _reservedToday;
   document.getElementById('r-bz-m').disabled=(_byUser || !_isRT || bzCnt<=BZ_MIN);
   document.getElementById('r-bz-p').disabled=(_byUser || !_isRT || bzCnt>=BZ_MAX);
+  // 예약 완료 시 수정 wrap 전체 비활성화
+  var bzWrap = document.getElementById('r-bz-wrap');
+  if(bzWrap){ bzWrap.style.opacity = _byUser ? '0.5' : ''; bzWrap.style.pointerEvents = _byUser ? 'none' : ''; }
 
   // 루비: 수정이 BZ_MAX 도달해야 선택 가능
   var svUnlocked = (bzCnt >= BZ_MAX) && SV_MAX > 0;
@@ -1710,6 +1713,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
     : '(수정 '+BZ_MAX+'개 달성 시 선택 가능)';
   document.getElementById('r-sv-note').textContent = '수정 '+BZ_MAX+'개 예약 시 루비 선택 가능';
   document.getElementById('r-sv-wrap').className = 'r-wrap'+(svUnlocked?'':' locked');
+  var svWrap2 = document.getElementById('r-sv-wrap');
+  if(svWrap2){ svWrap2.style.opacity = _byUser ? '0.5' : ''; svWrap2.style.pointerEvents = _byUser ? 'none' : ''; }
   var svMBtn = document.getElementById('r-sv-m');
   var svPBtn = document.getElementById('r-sv-p');
   if(svMBtn) svMBtn.disabled = (_byUser || !_isRT || !svUnlocked || sv <= 0);
@@ -1726,6 +1731,8 @@ function updateResUI(BZ_MIN,BZ_MAX){
     : '(루비 '+SV_MAX+'개 달성 시 선택 가능)';
   document.getElementById('r-gd-note').textContent = '루비 '+SV_MAX+'개 예약 시 다이아 선택 가능';
   document.getElementById('r-gd-wrap').className = 'r-wrap'+(gdUnlocked?'':' locked');
+  var gdWrap2 = document.getElementById('r-gd-wrap');
+  if(gdWrap2){ gdWrap2.style.opacity = _byUser ? '0.5' : ''; gdWrap2.style.pointerEvents = _byUser ? 'none' : ''; }
   var gdMBtn = document.getElementById('r-gd-m');
   var gdPBtn = document.getElementById('r-gd-p');
   if(gdMBtn) gdMBtn.disabled = (_byUser || !_isRT || !gdUnlocked || gd <= 0);
@@ -1784,7 +1791,8 @@ function updateReserveDefaults(lv){
   var cfg=d.level_config||LEVEL_CFG_JS[lv]||LEVEL_CFG_JS[1];
   var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
   var todayBz=tr.bronze||0;
-  bzCnt = todayBz > 0 ? Math.min(Math.max(todayBz,BZ_MIN),BZ_MAX) : BZ_MIN;
+  // 예약 완료 시 수정 수량도 0으로 표시 (비활성화 상태로 통일)
+  bzCnt = (_reservedToday || todayBz > 0) ? 0 : BZ_MIN;
   // 루비/다이아는 항상 0으로 초기화 (매번 새로 선택)
   svCnt = 0;
   gdCnt = 0;
