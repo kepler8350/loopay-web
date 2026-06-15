@@ -1576,6 +1576,20 @@ function disableReserveSection(){
     info.style.color='#4caf50';info.style.fontWeight='600';
   }
   bzCnt=0; svCnt=0; gdCnt=0;
+  // 비동기 loadUserData 이후에도 비활성화 유지되도록 재확인
+  setTimeout(function(){
+    if(!_reservedToday) return;
+    var btn2=document.getElementById('reserve-btn');
+    if(btn2 && btn2.textContent.indexOf('오늘 예약 완료')>=0){
+      btn2.disabled=true;
+      btn2.style.background='';  // CSS :disabled 처리
+      btn2.style.cursor='not-allowed';
+    }
+    ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el){el.disabled=true;el.style.opacity='0.3';}
+    });
+  }, 500);
 }
 
 function updateReserveByLevel(){
