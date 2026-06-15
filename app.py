@@ -3180,7 +3180,7 @@ def admin_reservations_list():
                        r.reserve_date, r.created_at, r.item_id, r.confirmed,
                        r.stage, COALESCE(r.join_round2, 0) as join_round2,
                        u.username, u.nickname, u.account_name,
-                       CASE WHEN r.user_id = {loopay_uid} AND r.item_id > 0 AND i_type.status IN ('reservable','matched','sold') THEN 'sell' ELSE 'buy' END as res_type
+                       CASE WHEN r.item_id > 0 AND COALESCE(r.confirmed,0)=1 AND i_type.status IN ('reservable','waiting','matched','sold') THEN 'sell' ELSE 'buy' END as res_type
                 FROM reservations r
                 LEFT JOIN users u ON r.user_id = u.id
                 LEFT JOIN items i_type ON r.item_id = i_type.id AND r.item_id > 0
