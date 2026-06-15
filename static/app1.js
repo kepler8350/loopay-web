@@ -569,7 +569,7 @@ function renderPairResult(pairIdx, resp){
       +'<div class="row"><span class="label">결합 판매가</span><span class="val green">'+resp.combined_sell.toLocaleString()+'원</span></div>'
       +'<div class="row"><span class="label">포인트 비용</span><span class="val red">250P (30,000원)</span></div>'
       +'<div class="row" style="border-top:1px solid #333;margin-top:5px;padding-top:5px">'
-      +'<span class="label" style="font-weight:700">최종 순수익</span>'
+      +'<span class="label" style="font-weight:700">최종 차액</span>'
       +'<span class="val green" style="font-size:14px;font-weight:700">'+resp.net_profit.toLocaleString()+'원</span></div>';
   } else {
     el.innerHTML='<span style="color:#c62828;font-size:13px">'+(resp.error||'결합 불가')+'</span>';
