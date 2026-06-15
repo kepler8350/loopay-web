@@ -5575,11 +5575,12 @@ def admin_auto_confirm_paid():
         admin_u = db.execute("SELECT username FROM users WHERE id=?", (uid,)).fetchone()
         if not admin_u or admin_u['username'] != 'admin':
             return jsonify(error='권한 없음'), 403
-        today = get_today().isoformat()
+        import datetime as _dt_ac
+        real_today = (_dt_ac.datetime.utcnow() + _dt_ac.timedelta(hours=9)).strftime('%Y-%m-%d')
         paid_rows = db.execute(
             """SELECT id, seller_item_id FROM matches
                WHERE status='paid' AND match_date<=?""",
-            (today,)
+            (real_today,)
         ).fetchall()
         count = 0
         for m_row in paid_rows:
