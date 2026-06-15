@@ -1760,7 +1760,7 @@ def admin_run_matching():
                WHERE r.status IN ('pending','unmatched') AND r.match_round=?
                AND r.reserve_date=?
                AND COALESCE(r.confirmed,0)=1
-               AND i.status='reservable'""",
+               AND i.status IN ('reservable','waiting')""",
             (round_num, today)
         ).fetchall()
 
@@ -2412,7 +2412,7 @@ def admin_matching_status():
                WHERE r.match_round=? AND r.status IN ('pending','unmatched')
                AND r.reserve_date>=?
                AND COALESCE(r.confirmed,0)=1
-               AND i.status='reservable'""",
+               AND i.status IN ('reservable','waiting')""",
             (round_num, today)
         ).fetchone()['c']
         # loopay 판매예약은 match_round 무관하게 집계 (매칭 실행 시 round로 리셋되므로)
@@ -2439,7 +2439,7 @@ def admin_matching_status():
                    WHERE r.match_round=? AND r.status IN ('pending','unmatched')
                    AND r.reserve_date>=?
                    AND COALESCE(r.confirmed,0)=1
-                   AND i.status='reservable'
+                   AND i.status IN ('reservable','waiting')
                    GROUP BY r.bar_type""",
                 (round_num, today)
             ).fetchall()
