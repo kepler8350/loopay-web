@@ -1661,8 +1661,9 @@ function enableReserveSection(){
     var _lvActive = (userData && userData.level_trade_active !== false) || !(userData && userData.level_cost > 0);
     var _canEnable = _lvActive && (_avail2 > 0) && (_h3 >= 5 && _h3 < 20) && (_curTotal2 === 0 || _avail2 >= _curTotal2 * 40);
     btn.disabled = !_canEnable;
-    btn.style.opacity = _canEnable ? '1' : '0.4';
-    btn.style.cursor = _canEnable ? 'pointer' : 'not-allowed';
+    btn.style.opacity = _canEnable ? '' : '0.4';
+    btn.style.background = '';  // CSS :disabled가 자동 회색 처리
+    btn.style.cursor = _canEnable ? '' : 'not-allowed';
     btn.title = !_lvActive ? (userData.level||'')+'레벨 거래유지 포인트 미결제 — 내정보 탭에서 결제하세요' : (_avail2 <= 0 ? '포인트가 부족합니다' : (!(_h3>=5&&_h3<20) ? '05:00~20:00에만 가능합니다' : ''));
     btn.textContent = !_lvActive ? '포인트 결제 필요 (내정보 탭에서 결제)' : '구매 예약하기 (40P × 매칭예약수)';
     btn.onclick = function(){ if(btn.disabled) return; showReserveConfirm(); };
