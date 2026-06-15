@@ -1105,6 +1105,7 @@ function renderMatchRecords(){
   if(!tbody) return;
   var colors = {bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var statusKr = {pending:'대기',matched:'매칭',paid:'송금',confirmed:'입금',completed:'완료',cancelled:'취소',failed:'미입금'};
+  var statusColor = {pending:'#ffffff',confirmed:'#66bb6a',paid:'#f9a825',failed:'#ef5350',matched:'#90caf9',completed:'#ce93d8',cancelled:'#888888'};
   if(!_matchRecords.length){
     tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">매치 기록 없음</td></tr>';
     return;
@@ -1130,7 +1131,7 @@ function renderMatchRecords(){
       +'<td style="padding:6px;color:#a5d6a7;font-size:11px">'+(seller.account_name||'-')+'</td>'
       +'<td style="padding:6px;color:#a5d6a7;font-size:11px">'+(seller.account||'-')+'</td>'
       +'<td style="padding:6px;text-align:right;color:#f9a825">'+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</td>'
-      +'<td style="padding:6px;text-align:center;font-size:11px">'+(statusKr[m.status]||m.status||'-')+'</td>'
+      +'<td style="padding:6px;text-align:center;font-size:11px;font-weight:700;color:'+(statusColor[m.status]||'#aaa')+'">'+(statusKr[m.status]||m.status||'-')+'</td>'
       +'</tr>';
   }).join('');
   updateMatchSelectedCount();
