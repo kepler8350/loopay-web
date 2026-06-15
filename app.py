@@ -4762,8 +4762,8 @@ def create_sell_reservation():
         if existing:
             return jsonify(error='이미 예약된 아이템입니다'), 400
         db.execute(
-            "INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,confirmed) VALUES(?,?,?,1,?,'pending',1)",
-            (uid, item_id, item['bar_type'], today)
+            "INSERT INTO reservations(user_id,item_id,bar_type,stage,match_round,reserve_date,status,confirmed) VALUES(?,?,?,?,1,?,'pending',1)",
+            (uid, item_id, item['bar_type'], item['stage'], today)
         )
         # 아이템 상태 유지: reservations.confirmed=1로 판매예약 식별
         # (DB CHECK 제약상 sell_reserved 불가 → reservable 유지)
