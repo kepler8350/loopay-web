@@ -5572,8 +5572,8 @@ def admin_auto_confirm_paid():
     uid = int(get_jwt_identity())
     db = get_db()
     try:
-        admin_u = db.execute("SELECT is_admin FROM users WHERE id=?", (uid,)).fetchone()
-        if not admin_u or not admin_u['is_admin']:
+        admin_u = db.execute("SELECT username FROM users WHERE id=?", (uid,)).fetchone()
+        if not admin_u or admin_u['username'] != 'admin':
             return jsonify(error='권한 없음'), 403
         today = get_today().isoformat()
         paid_rows = db.execute(
