@@ -76,7 +76,8 @@ def _auto_round2_scheduler():
     import time
     _last_run_date = None       # 14:01 1차 자동처리 실행일
     _last_run_date_r2 = None    # 20:01 2차 자동처리 실행일
-    _last_run_date_1301 = None  # 13:01 자동 입금확인 실행일
+    _last_run_date_1301 = None  # 13:00 자동 입금확인 실행일 (1차)
+    _last_run_date_1901 = None  # 19:00 자동 입금확인 실행일 (2차)
     while True:
         try:
             now = get_now()
@@ -104,8 +105,8 @@ def _auto_round2_scheduler():
             except Exception:
                 pass
 
-            # ── 13:01 자동 입금확인: paid 상태 → confirmed (송금했는데 판매자가 미확인) ──
-            if h == 13 and m == 1 and today != _last_run_date_1301:
+            # ── 13:00 자동 입금확인: paid 상태 → confirmed (송금했는데 판매자가 미확인) ──
+            if h == 13 and m == 0 and today != _last_run_date_1301:
                 _last_run_date_1301 = today
                 db = get_db()
                 try:
@@ -176,6 +177,28 @@ def _auto_round2_scheduler():
                     row = db.execute("SELECT value FROM system_settings WHERE key='round2_auto'").fetchone()
                     if row and row['value'] == 'true':
                         _run_matching_internal(db, 2, today)
+                except Exception:
+                    try: db.rollback()
+                    except: pass
+                finally:
+                    db.close()
+
+            # ── 19:00 2차 자동 입금확인: 2차 paid → confirmed ──
+            if h == 19 and m == 0 and today != _last_run_date_1901:
+                _last_run_date_1901 = today
+                db = get_db()
+                try:
+                    paid_1901 = db.execute(
+                        """SELECT id, seller_item_id FROM matches
+                           WHERE match_round=2 AND status='paid' AND match_date=?""",
+                        (today,)
+                    ).fetchall()
+                    for m_row in paid_1901:
+                        db.execute("UPDATE matches SET status='confirmed' WHERE id=?", (m_row['id'],))
+                        if m_row['seller_item_id']:
+                            db.execute("UPDATE items SET status='sold' WHERE id=?", (m_row['seller_item_id'],))
+                    if paid_1901:
+                        db.commit()
                 except Exception:
                     try: db.rollback()
                     except: pass
