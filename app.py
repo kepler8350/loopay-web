@@ -5569,12 +5569,12 @@ def admin_resolve_unpaid(res_id):
 @jwt_required()
 def admin_auto_confirm_paid():
     """수동으로 paid→confirmed 자동 입금확인 실행 (테스트/긴급용)"""
-    uid = int(get_jwt_identity())
+    identity = get_jwt_identity()
+    # admin 토큰: 'admin:숫자' 형식, 일반 사용자: 숫자
+    if not str(identity).startswith('admin:'):
+        return jsonify(error='권한 없음'), 403
     db = get_db()
     try:
-        admin_u = db.execute("SELECT username FROM users WHERE id=?", (uid,)).fetchone()
-        if not admin_u or admin_u['username'] != 'admin':
-            return jsonify(error='권한 없음'), 403
         import datetime as _dt_ac
         real_today = (_dt_ac.datetime.utcnow() + _dt_ac.timedelta(hours=9)).strftime('%Y-%m-%d')
         paid_rows = db.execute(
