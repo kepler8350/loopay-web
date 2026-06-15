@@ -91,9 +91,9 @@ async function loadUserData(){
     renderLevelTab();
     updateReserveByLevel();
     // 예약 여부를 먼저 설정 후 enableReserveSection 호출 (포인트 미리보기 오작동 방지)
-    _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
-    enableReserveSection();
-    _reservedToday = !!(d.today_reservations && (d.today_reservations.bronze||0) > 0);
+    var _todayRes = d.today_reservations || {};
+    _reservedToday = !!((_todayRes.bronze||0) + (_todayRes.silver||0) + (_todayRes.gold||0) > 0);
+    if(!_reservedToday) enableReserveSection();
     updateReserveDefaults(d.level);  // UI 업데이트 (내부적으로 updateResUI 호출, _reservedToday 참조)
     if(_reservedToday){
       disableReserveSection();  // 버튼 텍스트/스타일 최종 적용
@@ -1635,6 +1635,8 @@ function scheduleReserveReset(){
 function enableReserveSection(){
   _reservedToday=false;
   var btn = document.getElementById('reserve-btn');
+  // 사용자가 직접 비활성화한 경우 복원하지 않음
+  if(btn && btn.dataset.disabledByUser) { delete btn.dataset.disabledByUser; }
   if(btn){
     // 포인트 + 시간 체크 후 활성화
     var _avail2 = ((userData&&userData.charge_points)||0) + ((userData&&userData.exchange_points)||0);
