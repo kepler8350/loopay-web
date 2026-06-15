@@ -5017,7 +5017,7 @@ def item_split():
         for piece in cfg['pieces']:
             for _ in range(piece['count']):
                 db.execute(
-                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
+                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'waiting',?)",
                     (uid, bar_type, piece['stage'], today)
                 )
                 pieces_created.append({'stage': piece['stage']})

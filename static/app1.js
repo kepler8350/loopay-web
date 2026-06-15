@@ -1182,7 +1182,7 @@ async function loadItemDetail(barType){
         +_sellBadge
         +'</div>'
         +'<div class="item-detail-info" style="font-size:12px;color:var(--text2);margin-top:3px">'+(it.status==='waiting'?'결합일: ':'구매일: ')+it.purchase_date+' ('+(it.status==='waiting'?'결합 ':'')+dayNum+'일째)</div>'
-        +'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+(it.status==='waiting'?'결합가 ':'구매 ')+it.buy_price.toLocaleString()+'원 → 판매 '+it.sell_price.toLocaleString()+'원 (차액 +'+it.profit.toLocaleString()+'원)</div>'
+        +'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+((it.status==='waiting'&&it.combine_buy_price)?'결합가 ':'구매 ')+it.buy_price.toLocaleString()+'원 → 판매 '+it.sell_price.toLocaleString()+'원 (차액 +'+it.profit.toLocaleString()+'원)</div>'
         +_maxStageBtns
         +'</div>';
     }).join('');
