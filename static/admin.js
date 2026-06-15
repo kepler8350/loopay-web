@@ -779,11 +779,11 @@ function renderSystemItems(){
       } else {
         actionBtns += '<button disabled style="padding:3px 8px;background:#2a2a3a;color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">✅ 입금확인</button>';
       }
-      // ② 입금요청: 입금확인 안됨 + 12:30~13:00(750~780) + 쿨타임OK → 활성
-      //   입금확인 되면 비활성, 13:00이후 비활성, 클릭후 9분 쿨타임
-      if (!_isConfirmed && _inWarnWindow && _coolOk) {
+      // ② 입금요청: 입금확인 안됨 + 송금완료 아님 + 12:30~13:00(750~780) + 쿨타임OK → 활성
+      //   입금확인 버튼 활성화(paid) 시 비활성, 13:00이후 비활성, 클릭후 9분 쿨타임
+      if (!_isConfirmed && !_isPaid && _inWarnWindow && _coolOk) {
         actionBtns += '<button onclick="adminWarnUnpaid('+item.match_id+')" style="padding:3px 8px;background:#f57c00;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📨 입금요청</button>';
-      } else if (!_isConfirmed && _inWarnWindow && !_coolOk) {
+      } else if (!_isConfirmed && !_isPaid && _inWarnWindow && !_coolOk) {
         actionBtns += '<button disabled title="9분 후 재활성화" style="padding:3px 8px;background:#2a2a3a;color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">📨 입금요청</button>';
       } else {
         actionBtns += '<button disabled style="padding:3px 8px;background:#2a2a3a;color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">📨 입금요청</button>';
