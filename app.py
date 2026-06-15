@@ -74,7 +74,8 @@ def insert_notification(db, user_id, ntype, title, message):
 def _auto_round2_scheduler():
     """14:10 자동 2차매칭 + 매 정시 패널티 자동 해제"""
     import time
-    _last_run_date = None
+    _last_run_date = None      # 14:01 1차 자동처리 실행일
+    _last_run_date_r2 = None   # 20:01 2차 자동처리 실행일
     while True:
         try:
             now = get_now()
@@ -102,14 +103,99 @@ def _auto_round2_scheduler():
             except Exception:
                 pass
 
-            # ── 14:10 자동 2차매칭 ──
-            if h == 14 and m == 10 and today != _last_run_date:
+            # ── 14:01 자동 입금확인 + 미송금 2차이전 + 2차매칭 ──
+            if h == 14 and m == 1 and today != _last_run_date:
+                _last_run_date = today
                 db = get_db()
                 try:
+                    # 1) 송금완료(paid) → 자동 입금확인(confirmed)
+                    paid_matches = db.execute(
+                        """SELECT id FROM matches
+                           WHERE match_round=1 AND status='paid' AND match_date=?""",
+                        (today,)
+                    ).fetchall()
+                    for m_row in paid_matches:
+                        db.execute("UPDATE matches SET status='confirmed' WHERE id=?", (m_row['id'],))
+                        # 아이템 sold 처리
+                        db.execute(
+                            """UPDATE items SET status='sold'
+                               WHERE id=(SELECT seller_item_id FROM matches WHERE id=?)""",
+                            (m_row['id'],)
+                        )
+                    if paid_matches:
+                        db.commit()
+
+                    # 2) 미송금(pending) 1차 매칭 → 자동 failed(미입금) 처리
+                    pending_matches = db.execute(
+                        """SELECT id, seller_id, bar_type, stage, seller_item_id
+                           FROM matches
+                           WHERE match_round=1 AND status='pending' AND match_date=?""",
+                        (today,)
+                    ).fetchall()
+                    for m_row in pending_matches:
+                        db.execute("UPDATE matches SET status='failed' WHERE id=?", (m_row['id'],))
+                        # 판매 아이템 복원 (reservable로)
+                        if m_row['seller_item_id']:
+                            db.execute(
+                                "UPDATE items SET status='reservable' WHERE id=?",
+                                (m_row['seller_item_id'],)
+                            )
+                        # 판매예약 복원 (unmatched → pending)
+                        db.execute(
+                            """UPDATE reservations SET status='unmatched'
+                               WHERE id=(SELECT reservation_id FROM matches WHERE id=?)""",
+                            (m_row['id'],)
+                        )
+                    if pending_matches:
+                        db.commit()
+
+                    # 3) round2_auto 설정이면 자동 2차매칭 실행
                     row = db.execute("SELECT value FROM system_settings WHERE key='round2_auto'").fetchone()
                     if row and row['value'] == 'true':
-                        _last_run_date = today
                         _run_matching_internal(db, 2, today)
+                except Exception:
+                    try: db.rollback()
+                    except: pass
+                finally:
+                    db.close()
+
+            # ── 20:01 2차매칭 자동 입금확인 + 미송금 failed 처리 ──
+            if h == 20 and m == 1 and today != _last_run_date_r2:
+                _last_run_date_r2 = today
+                db = get_db()
+                try:
+                    # 1) 2차 송금완료(paid) → 자동 입금확인(confirmed)
+                    paid2 = db.execute(
+                        """SELECT id FROM matches
+                           WHERE match_round=2 AND status='paid' AND match_date=?""",
+                        (today,)
+                    ).fetchall()
+                    for m_row in paid2:
+                        db.execute("UPDATE matches SET status='confirmed' WHERE id=?", (m_row['id'],))
+                        db.execute(
+                            """UPDATE items SET status='sold'
+                               WHERE id=(SELECT seller_item_id FROM matches WHERE id=?)""",
+                            (m_row['id'],)
+                        )
+                    # 2) 2차 미송금(pending) → failed
+                    pending2 = db.execute(
+                        """SELECT id, seller_item_id FROM matches
+                           WHERE match_round=2 AND status='pending' AND match_date=?""",
+                        (today,)
+                    ).fetchall()
+                    for m_row in pending2:
+                        db.execute("UPDATE matches SET status='failed' WHERE id=?", (m_row['id'],))
+                        if m_row['seller_item_id']:
+                            db.execute("UPDATE items SET status='reservable' WHERE id=?", (m_row['seller_item_id'],))
+                        db.execute(
+                            """UPDATE reservations SET status='unmatched'
+                               WHERE id=(SELECT reservation_id FROM matches WHERE id=?)""",
+                            (m_row['id'],)
+                        )
+                    db.commit()
+                except Exception:
+                    try: db.rollback()
+                    except: pass
                 finally:
                     db.close()
         except Exception:
