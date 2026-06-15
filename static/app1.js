@@ -1585,10 +1585,22 @@ function disableReserveSection(){
       btn2.style.background='';  // CSS :disabled 처리
       btn2.style.cursor='not-allowed';
     }
+    // +/- 버튼 비활성화
     ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
       var el=document.getElementById(id);
       if(el){el.disabled=true;el.style.opacity='0.3';}
     });
+    // 수량 숫자 표시를 모두 0으로 (이미 예약 완료이므로 새 선택 불가)
+    ['r-bz-v','r-sv-v','r-gd-v'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el) el.textContent='0';
+    });
+    // wrap 전체 비활성화
+    ['r-bz-wrap','r-sv-wrap','r-gd-wrap'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el){el.style.opacity='0.5';el.style.pointerEvents='none';}
+    });
+    bzCnt=0; svCnt=0; gdCnt=0;
   }, 500);
 }
 
