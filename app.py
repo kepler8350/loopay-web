@@ -427,7 +427,7 @@ def item_status_label(status, purchase_date):
     status_map = {
         'active': '판매가능' if days >= 2 else '보유중',      # active도 3일째부터 판매가능
         'reservable': '판매가능' if days >= 2 else '보유중',
-        'waiting': '판매가능' if days >= 1 else '보유중',  # 결합아이템: 1일째부터 판매가능
+        'waiting': '판매가능',  # 결합아이템: 당일부터 판매가능
         'sold': '판매완료',
         'pending': '매칭중',
         'matched': '매칭완료',
@@ -2696,9 +2696,8 @@ def combine_execute():
         for it in [i1, i2]:
             if it['status'] == 'waiting':
                 return jsonify({'error': '이미 결합된 아이템은 다시 결합할 수 없습니다.'}), 400
-            lbl = item_status_label(it['status'], it['purchase_date'])
-            if lbl != '판매가능':
-                return jsonify({'error': f'판매가능 상태 아이템만 결합할 수 있습니다 (현재: {lbl})'}), 400
+            if it['status'] not in ('active', 'reservable'):
+                return jsonify({'error': f'보유 중인 아이템만 결합할 수 있습니다 (현재: {it["status"]})'}), 400
         user = dict(conn.execute('SELECT * FROM users WHERE id=?', (user_id,)).fetchone())
         if user['charge_points'] < 250:
             return jsonify({'error': 'insufficient points (need 250P)'}), 400
@@ -4751,9 +4750,11 @@ def create_sell_reservation():
             _lv = _u['level'] if _u else 1
             _cost = LEVEL_COST.get(_lv, 0)
             return jsonify(error=f'{_lv}레벨은 거래유지 포인트 {_cost}P 결제 후 예약 가능합니다.', level_pay_required=True), 403
-        days = days_since(item['purchase_date'])
-        if days < 2:
-            return jsonify(error=f'구매 후 3일째부터 판매예약 가능합니다 (현재 {days+1}일차)'), 400
+        # 결합아이템(waiting)은 당일 판매예약 가능, 일반아이템은 3일째부터
+        if item['status'] != 'waiting':
+            days = days_since(item['purchase_date'])
+            if days < 2:
+                return jsonify(error=f'구매 후 3일째부터 판매예약 가능합니다 (현재 {days+1}일차)'), 400
         today = get_today().isoformat()
         existing = db.execute(
             "SELECT id FROM reservations WHERE item_id=? AND status='pending'", (item_id,)

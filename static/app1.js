@@ -365,8 +365,9 @@ async function loadCombineItems(){
     var d=await _r.json();
     var _allItems=(Array.isArray(d)?d:(d.items_flat||[]));
     // 판매가능 아이템만 결합 대상으로 필터
-    // 판매가능 + waiting(결합아이템) 제외: 한번 결합된 아이템은 재결합 불가
-    window._combineAllItems=_allItems.filter(function(it){ return it.status_label==='판매가능' && it.status!=='waiting'; });
+    // 보유중(reservable/active) 아이템만 결합 가능 (판매가능일 무관), waiting(결합아이템) 재결합 불가
+    // 결합판매: 판매가능일 관계없이 보유중(reservable/active) 아이템 결합 가능
+    window._combineAllItems=_allItems.filter(function(it){ return (it.status==='reservable'||it.status==='active') && it.status!=='waiting'; });
     combineSelected=[];
     renderCombineList();
     renderCombinePairs();
@@ -1124,8 +1125,8 @@ async function loadItemDetail(barType){
     items.sort(function(a,b){ return (b.purchase_date||'') > (a.purchase_date||'') ? 1 : (b.purchase_date||'') < (a.purchase_date||'') ? -1 : b.id - a.id; });
     var html=items.map(function(it){
       var dayNum = it.days + 1;
-      // 결합아이템(waiting)은 1일째부터, 일반아이템은 2일째부터 판매가능
-      var _minDays = (it.status==='waiting') ? 1 : 2;
+      // 결합아이템(waiting)은 당일부터, 일반아이템은 3일째(days>=2)부터 판매가능
+      var _minDays = (it.status==='waiting') ? 0 : 2;  // 결합아이템은 당일부터 판매가능
       var canSell = it.days>=_minDays && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료' && it.status_label!=='판매예약';
       var isSelected = !!_sellSelected[it.id];
       var rawLabel = it.status_label||'보유중';
@@ -1191,7 +1192,7 @@ async function loadItemDetail(barType){
     var _headerNoteEl = container.closest('.detail-panel')?.querySelector('.detail-panel-title span[style*="color:#aaa"]')
                       || container.parentElement?.querySelector('.detail-panel-title span[style*="color:#aaa"]');
     if(_headerNoteEl){
-      _headerNoteEl.textContent = _allWaiting ? '결합 2일째부터 판매가능' : (_hasWaiting ? '결합:2일째/구매:3일째부터 판매가능' : '구매 3일째부터 판매가능');
+      _headerNoteEl.textContent = _allWaiting ? '결합 당일부터 판매가능' : (_hasWaiting ? '결합:당일/구매:3일째부터 판매가능' : '구매 3일째부터 판매가능');
     }
   }catch(e){
     container.innerHTML='<div style="color:#ef5350;padding:12px">오류: '+e.message+'</div>';
