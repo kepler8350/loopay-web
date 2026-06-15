@@ -69,9 +69,7 @@ async function api(path, opts={}){
 
 
 
-async 
-
-function showMainApp(){
+async function showMainApp(){
   document.getElementById('login-screen').style.display='none';
   const m=document.getElementById('main-app');
   m.style.display='flex'; m.style.flexDirection='column'; m.style.height='100vh';
@@ -1546,8 +1544,7 @@ function doPaymentComplete(resId){ openPaymentModal(resId); }
 
 
 
-async 
-function disableReserveSection(){
+async function disableReserveSection(){
   _reservedToday=true;
   // 구매 예약하기 버튼 비활성화 (회색 처리)
   var btn=document.getElementById('reserve-btn');
