@@ -2604,6 +2604,24 @@ with app.app_context():
     except Exception:
         pass
 
+    # 판매예약 중 stage=0인 것을 아이템의 stage로 보정
+    try:
+        import sqlite3 as _sq3c
+        from db import DB_PATH as _DB_PATH_c
+        _cc = _sq3c.connect(_DB_PATH_c, timeout=10)
+        _cc.execute(
+            """UPDATE reservations SET stage=(
+                SELECT i.stage FROM items i WHERE i.id=reservations.item_id
+            )
+            WHERE confirmed=1 AND item_id>0
+            AND (stage IS NULL OR stage=0)
+            AND EXISTS(SELECT 1 FROM items i2 WHERE i2.id=reservations.item_id AND i2.stage>0)"""
+        )
+        _cc.commit()
+        _cc.close()
+    except Exception:
+        pass
+
     # get_now()가 매번 DB에서 읽으므로 별도 복원 불필요
 
 
