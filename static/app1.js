@@ -928,8 +928,9 @@ function updateTimeBar(){
     var _noPoints = (_curTotal === 0) ? true : (_avail < _curCost);
     var _btnOk = isReserveTime && !_noPoints;
     reserveBtn.disabled = !_btnOk;
-    reserveBtn.style.opacity = _btnOk ? '1' : '0.4';
-    reserveBtn.style.cursor = _btnOk ? 'pointer' : 'not-allowed';
+    reserveBtn.style.opacity = _btnOk ? '' : '0.4';
+    reserveBtn.style.background = '';  // CSS 클래스가 처리
+    reserveBtn.style.cursor = _btnOk ? '' : 'not-allowed';
     if(!isReserveTime) reserveBtn.title = '구매·판매 예약은 05:00~20:00에만 가능합니다';
     else if(_noPoints) reserveBtn.title = '포인트가 부족합니다';
     else reserveBtn.title = '';
@@ -1552,9 +1553,9 @@ function disableReserveSection(){
   var btn=document.getElementById('reserve-btn');
   if(btn){
     btn.disabled=true;
-    btn.style.opacity='0.5';
-    btn.style.background='#9e9e9e';
-    btn.style.cursor='not-allowed';
+    btn.style.opacity='';
+    btn.style.background='';
+    btn.style.cursor='';
     btn.textContent='오늘 예약 완료';
     btn.dataset.disabledByUser='1';
   }
