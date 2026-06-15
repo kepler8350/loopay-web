@@ -108,23 +108,23 @@ def _auto_round2_scheduler():
             if h == 13 and m == 1 and today != _last_run_date_1301:
                 _last_run_date_1301 = today
                 db = get_db()
-                    try:
-                        paid_1301 = db.execute(
-                            """SELECT id, seller_item_id FROM matches
-                               WHERE match_round=1 AND status='paid' AND match_date=?""",
-                            (today,)
-                        ).fetchall()
-                        for m_row in paid_1301:
-                            db.execute("UPDATE matches SET status='confirmed' WHERE id=?", (m_row['id'],))
-                            if m_row['seller_item_id']:
-                                db.execute("UPDATE items SET status='sold' WHERE id=?", (m_row['seller_item_id'],))
-                        if paid_1301:
-                            db.commit()
-                    except Exception:
-                        try: db.rollback()
-                        except: pass
-                    finally:
-                        db.close()
+                try:
+                    paid_1301 = db.execute(
+                        """SELECT id, seller_item_id FROM matches
+                           WHERE match_round=1 AND status='paid' AND match_date=?""",
+                        (today,)
+                    ).fetchall()
+                    for m_row in paid_1301:
+                        db.execute("UPDATE matches SET status='confirmed' WHERE id=?", (m_row['id'],))
+                        if m_row['seller_item_id']:
+                            db.execute("UPDATE items SET status='sold' WHERE id=?", (m_row['seller_item_id'],))
+                    if paid_1301:
+                        db.commit()
+                except Exception:
+                    try: db.rollback()
+                    except: pass
+                finally:
+                    db.close()
 
             # ── 14:01 자동 입금확인 + 미송금 2차이전 + 2차매칭 ──
             if h == 14 and m == 1 and today != _last_run_date:
