@@ -953,7 +953,9 @@ function updateTimeBar(){
   }
   // 구매예약 수량 +/- 버튼 (예약시간 외 OR 오늘 이미 예약 완료 시 비활성화)
   // userData에서 직접 재확인 (비동기 덮어쓰기 방지)
-  if(userData && userData.today_reservations && (userData.today_reservations.bronze||0) > 0){
+  var _todayTotal = userData && userData.today_reservations ?
+    ((userData.today_reservations.bronze||0) + (userData.today_reservations.silver||0) + (userData.today_reservations.gold||0)) : 0;
+  if(_todayTotal > 0){
     if(!_reservedToday) disableReserveSection();  // 버튼 텍스트도 업데이트
     _reservedToday = true;
   }
@@ -1546,13 +1548,25 @@ function doPaymentComplete(resId){ openPaymentModal(resId); }
 async 
 function disableReserveSection(){
   _reservedToday=true;
-  // 구매 예약하기 버튼 비활성화
+  // 구매 예약하기 버튼 비활성화 (회색 처리)
   var btn=document.getElementById('reserve-btn');
-  if(btn){btn.disabled=true;btn.style.opacity='0.5';btn.textContent='오늘 예약 완료';btn.dataset.disabledByUser='1';}
+  if(btn){
+    btn.disabled=true;
+    btn.style.opacity='0.5';
+    btn.style.background='#9e9e9e';
+    btn.style.cursor='not-allowed';
+    btn.textContent='오늘 예약 완료';
+    btn.dataset.disabledByUser='1';
+  }
   // +/- 버튼 모두 비활성화 (수정/루비/다이아)
   ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
     var el=document.getElementById(id);
-    if(el){el.disabled=true;el.style.opacity='0.4';}
+    if(el){el.disabled=true;el.style.opacity='0.3';el.style.cursor='not-allowed';}
+  });
+  // 수량 입력란도 비활성화 (readonly)
+  ['bz-cnt','sv-cnt','gd-cnt'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){el.disabled=true;el.style.opacity='0.4';el.style.cursor='not-allowed';}
   });
   // 예약 섹션 전체에 완료 메시지 표시
   var info=document.getElementById('r-info');
@@ -1560,7 +1574,7 @@ function disableReserveSection(){
     info.innerHTML='✅ 오늘 구매예약 완료! 매칭 실행 시 포인트가 차감됩니다.';
     info.style.color='#4caf50';info.style.fontWeight='600';
   }
-  bzCnt=0;
+  bzCnt=0; svCnt=0; gdCnt=0;
 }
 
 function updateReserveByLevel(){
