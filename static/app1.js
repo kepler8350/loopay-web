@@ -1080,7 +1080,7 @@ function startTimeBar(){
 }
 
 // ── 아이템 상세보기 (판매예약 포함) ──
-async async function toggleDetail(type){
+async function toggleDetail(type){
   var panel=document.getElementById('detail-'+type);
   var card=document.getElementById('card-'+type);
   var masterPanel=document.getElementById('bar-detail-panel');
