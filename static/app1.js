@@ -1227,13 +1227,7 @@ function toggleSellSelect(itemId, barType){
   // 같은날 구매한 아이템만 선택 가능
   var clickedInfo = _itemCache[itemId];
   var selectedIds = Object.keys(_sellSelected).filter(function(id){return _sellSelected[id];});
-  if(!_sellSelected[itemId] && selectedIds.length > 0 && clickedInfo){
-    var firstInfo = _itemCache[parseInt(selectedIds[0])];
-    if(firstInfo && firstInfo.purchase_date && clickedInfo.purchase_date !== firstInfo.purchase_date){
-      toast('같은 날 구매한 아이템만 선택 가능합니다 (이미 선택: '+firstInfo.purchase_date+')');
-      return;
-    }
-  }
+  
   _sellSelected[itemId] = !_sellSelected[itemId];
   var card = document.getElementById('icard-'+itemId);
   var badge = document.getElementById('badge-'+itemId);
