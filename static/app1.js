@@ -581,7 +581,7 @@ function executeCombine(){
   // 결합 불가 쌍 사전 체크 (수익 23,000원 초과 등)
   var blocked = combinePairs.filter(function(pair){ return pair._preview && !pair._preview.can_combine; });
   if(blocked.length > 0){
-    alert('결합 불가 쌍이 있습니다.\n수익합계가 23,000원을 초과하면 결합할 수 없습니다.');
+    alert('결합 불가 쌍이 있습니다.\n차익합계가 23,000원을 초과하면 결합할 수 없습니다.');
     return;
   }
   var tok=localStorage.getItem('lp_token')||'';
