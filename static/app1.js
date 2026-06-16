@@ -1179,15 +1179,7 @@ async function loadItemDetail(barType){
           +'<button onclick="doItemConvert('+it.id+','+it.sell_price+',\''+it.bar_type+'\','+it.stage+')" style="flex:1;padding:7px 0;background:#2e7d32;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">💎 포인트전환</button>'
           +'</div>'
         : '';
-      return '<div class="item-detail-card" id="icard-'+it.id+'"'+_cardOnclick+' style="'+_cardStyle+';cursor:'+(_cardCanSell?'pointer':'default')+'">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center">'
-        +'<span class="item-detail-stage">'+names[it.bar_type||barType]+' '+it.stage+'단계</span>'
-        +_sellBadge
-        +'</div>'
-        +'<div class="item-detail-info" style="font-size:12px;color:var(--text2);margin-top:3px">'+(it.status==='waiting'?'결합일: ':'구매일: ')+it.purchase_date+' ('+(it.status==='waiting'?'결합 ':'')+dayNum+'일째)</div>'
-        +'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+((it.status==='waiting'&&it.combine_buy_price)?'결합가 ':'구매 ')+it.buy_price.toLocaleString()+'원 → 판매 '+it.sell_price.toLocaleString()+'원 (차액 +'+it.profit.toLocaleString()+'원)</div>'
-        +_maxStageBtns
-        +'</div>';
+      return '<div class="item-row" id="icard-'+it.id+'"'+_cardOnclick+' style="cursor:'+(_cardCanSell?'pointer':'default')+(_cardSelected?';background:rgba(123,31,162,0.15);border:1.5px solid #7b1fa2;':';')+'">'        +'<div class="item-hd">'        +'<span class="item-stage">'+it.stage+'단계 '+names[it.bar_type||barType]+'</span>'        +_sellBadge        +'</div>'        +'<div class="item-date">'+(it.status==='waiting'?'결합일: ':'구매일: ')+it.purchase_date+' ('+(it.status==='waiting'?'결합 ':'')+dayNum+'일째)</div>'        +'<div class="item-price">'+((it.status==='waiting'&&it.combine_buy_price)?'결합가 ':'구매 ')+'<span style="color:#aaa">'+it.buy_price.toLocaleString()+'원</span> → 판매 <span style="color:#f9a825">'+it.sell_price.toLocaleString()+'원</span> <span style="color:#66bb6a;font-size:12px">(+'+(it.profit.toLocaleString())+'원)</span></div>'        +(!_cardCanSell && it.status_label!=='판매예약중' && it.status_label!=='매칭완료' && it.status_label!=='매칭중' ? '<div style="font-size:10px;color:#f9a825;margin-top:2px">⏳ 구매 3일째부터 판매예약 가능 (현재 '+dayNum+'일째)</div>' : '')        +_maxStageBtns        +'</div>';
     }).join('');
     container.innerHTML=html;
     // 결합아이템 포함 여부에 따라 헤더 안내 텍스트 업데이트
