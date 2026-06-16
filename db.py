@@ -288,9 +288,9 @@ LEVEL_COST = {
 
 # 최고단계 아이템 분할 규칙
 SPLIT_CONFIG = {
-    'bronze': {'max_stage': 21, 'pieces': [{'stage': 10, 'count': 1}, {'stage': 11, 'count': 3}]},
-    'silver':  {'max_stage': 17, 'pieces': [{'stage': 8,  'count': 1}, {'stage': 9,  'count': 3}]},
-    'gold':    {'max_stage': 15, 'pieces': [{'stage': 8,  'count': 4}]},
+    'bronze': {'max_stage': 21, 'pieces': [{'stage': 9,  'count': 1}, {'stage': 10, 'count': 3}]},
+    'silver':  {'max_stage': 17, 'pieces': [{'stage': 7,  'count': 1}, {'stage': 8,  'count': 3}]},
+    'gold':    {'max_stage': 15, 'pieces': [{'stage': 7,  'count': 4}]},
 }
 
 def get_sv_count(bz): return 5 if bz>=10 else 4
