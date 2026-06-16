@@ -95,7 +95,7 @@ function renderBars(d){
           + '<span class="item-stage">' + it.stage + '단계 ' + _barName2[t] + '</span>'
           + _badge
         + '</div>'
-        + '<div class="item-date">구매일: ' + it.purchase_date + ' (' + it.days + '일째)</div>'
+        + '<div class="item-date">구매일: ' + it.purchase_date + ' (' + (it.days+1) + '일째)</div>'
         + '<div class="item-price">구매 <span style="color:#aaa">' + it.buy_price.toLocaleString() + '원</span> → 판매 <span style="color:#f9a825">' + it.sell_price.toLocaleString() + '원</span> <span style="color:#66bb6a;font-size:12px">(' + profitStr + '원)</span></div>'
         + (!_canSell2 ? '<div style="font-size:10px;color:#f9a825;margin-top:2px">⏳ 구매 3일째부터 판매예약 가능 (현재 ' + (it.days+1) + '일째)</div>' : '')
         + '</div>';
