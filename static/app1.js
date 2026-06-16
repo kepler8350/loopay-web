@@ -1080,11 +1080,15 @@ function startTimeBar(){
 }
 
 // ── 아이템 상세보기 (판매예약 포함) ──
-async function toggleDetail(type){
+async async function toggleDetail(type){
   var panel=document.getElementById('detail-'+type);
   var card=document.getElementById('card-'+type);
   var masterPanel=document.getElementById('bar-detail-panel');
   var isOpen=panel&&panel.style.display!=='none';
+  // 다른 타입으로 전환 시 _sellSelected 초기화
+  var prevType = window._currentBarType || null;
+  if(prevType && prevType !== type) _sellSelected = {};
+  window._currentBarType = type;
   ['bronze','silver','gold'].forEach(function(t){
     var p2=document.getElementById('detail-'+t);
     var c2=document.getElementById('card-'+t);
@@ -1093,6 +1097,7 @@ async function toggleDetail(type){
   });
   if(isOpen){
     if(masterPanel) masterPanel.style.display='none';
+    window._currentBarType = null;
     return;
   }
   if(masterPanel) masterPanel.style.display='block';
@@ -1149,8 +1154,6 @@ async function loadItemDetail(barType){
         +badgeText+'</span>';
       // 일차 안내 (canSell 아닐 때만 표시)
       var dayNote = '';  // 판매 가능 안내 제거 (형식1)
-      // 이슈11: 판매가능 상태면 onclick 추가
-      // 이슈11: 판매가능 상태면 onclick 추가
       var _isMaxStage = !!(it.is_max_stage);
       var _cardCanSell = (it.status_label === '판매가능') && !_isMaxStage;
       var _cardSelected = !!_sellSelected[String(it.id)];
