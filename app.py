@@ -5635,6 +5635,32 @@ def testtools_create_item():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/create-buy-reservation', methods=['POST'])
+def testtools_create_buy_reservation():
+    tok = request.headers.get('Authorization','').replace('Bearer ','')
+    try:
+        from flask_jwt_extended import decode_token
+        ident = decode_token(tok).get('sub','')
+        if not str(ident).startswith('admin:'): return jsonify(error='권한 없음'), 403
+    except: return jsonify(error='인증 오류'), 401
+    data = request.json or {}
+    user_id = data.get('user_id')
+    bar_type = data.get('bar_type','bronze')
+    match_date = data.get('match_date', get_today().isoformat())
+    if not user_id: return jsonify(error='user_id 필요'), 400
+    db = get_db()
+    try:
+        cur = db.execute(
+            """INSERT INTO reservations(user_id,bar_type,match_round,match_date,status,confirmed)
+               VALUES(?,?,1,?,'pending',0)""",
+            (user_id, bar_type, match_date)
+        )
+        db.commit()
+        return jsonify(success=True, reservation_id=cur.lastrowid)
+    except Exception as e:
+        db.rollback(); return jsonify(error=str(e)), 500
+    finally: db.close()
+
 @app.route('/api/admin/testtools/set-purchase-date', methods=['POST'])
 @jwt_required()
 def testtools_set_purchase_date():
