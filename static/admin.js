@@ -232,7 +232,9 @@ async function updateMatchingBtn(){
     var _rb1 = document.getElementById('match-run-block-1');
     var _block1Hidden = _rb1 && _rb1.style.display === 'none';
     if(btn1){ 
-      var _active1 = isActive1 && !_block1Hidden;
+      // 1차 매칭이 방금 실행됐으면 버튼 비활성화 유지
+      var _justRan1 = window._matchingJustRan && window._matchingRanRound===1;
+      var _active1 = isActive1 && !_block1Hidden && !_justRan1;
       btn1.disabled=!_active1; btn1.style.opacity=_active1?'1':'0.45'; btn1.style.cursor=_active1?'pointer':'not-allowed'; 
     }
     if(notice){
@@ -1415,8 +1417,11 @@ async function loadMatchingStatus(){
     // ── 1차 매칭 ──
     var r1=d.round1||{};
     var mr1=r1.match_rate||0;
-    set('r1-buy', r1.buy_count!=null?r1.buy_count:'-');
-    set('r1-sell', r1.sell_count!=null?r1.sell_count:'-');
+    // 1차 매칭이 방금 실행됐으면 구매/판매예약수 0으로 표시
+    var _r1BuyDisplay = (window._matchingJustRan && window._matchingRanRound===1) ? 0 : (r1.buy_count!=null?r1.buy_count:'-');
+    var _r1SellDisplay = (window._matchingJustRan && window._matchingRanRound===1) ? 0 : (r1.sell_count!=null?r1.sell_count:'-');
+    set('r1-buy', _r1BuyDisplay);
+    set('r1-sell', _r1SellDisplay);
     var rateEl1=document.getElementById('r1-rate');
     if(rateEl1){ rateEl1.textContent=mr1+'%'; rateEl1.style.color=mrc(mr1); }
     var bb1=document.getElementById('r1-buy-by-type'); if(bb1) bb1.innerHTML=mkTypeTable(r1.buy_by_type);
@@ -1484,7 +1489,16 @@ async function runMatching(roundNum){
     if(btn){ btn.disabled=true; btn.style.opacity='0.45'; btn.style.cursor='not-allowed'; btn.textContent='⚡ '+roundNum+'차 매칭 실행하기'; }
     var runBlockEl = document.getElementById('match-run-block-'+roundNum);
     if(runBlockEl) runBlockEl.style.display='none';
+    // 매칭 완료 후 구매예약 수량 즉시 0으로 표시
+    var buyEl = document.getElementById('r'+roundNum+'-buy');
+    var sellEl = document.getElementById('r'+roundNum+'-sell');
+    if(buyEl) buyEl.textContent = '0';
+    if(roundNum===1){
+      // 1차 매칭 후 구매/판매예약 카드 수량 0 표시
+      var rateEl = document.querySelector('#matching-rate-1, [id*="rate"]');
+    }
     window._matchingJustRan = true; // loadMatchingStatus에서 블록 복원 방지
+    window._matchingRanRound = roundNum; // 어느 차수가 실행됐는지 기록
     loadMatchingStatus();
     if(typeof loadMatchRecords==='function') loadMatchRecords();
   }catch(e){
