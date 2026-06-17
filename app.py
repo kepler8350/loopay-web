@@ -5651,7 +5651,7 @@ def testtools_create_buy_reservation():
     db = get_db()
     try:
         cur = db.execute(
-            """INSERT INTO reservations(user_id,bar_type,match_round,match_date,status,confirmed)
+            """INSERT INTO reservations(user_id,bar_type,match_round,reserve_date,status,confirmed)
                VALUES(?,?,1,?,'pending',0)""",
             (user_id, bar_type, match_date)
         )
