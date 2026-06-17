@@ -232,9 +232,8 @@ async function updateMatchingBtn(){
     var _rb1 = document.getElementById('match-run-block-1');
     var _block1Hidden = _rb1 && _rb1.style.display === 'none';
     if(btn1){ 
-      // 1차 매칭이 방금 실행됐으면 버튼 비활성화 유지
-      var _justRan1 = window._matchingJustRan && window._matchingRanRound===1;
-      var _active1 = isActive1 && !_block1Hidden && !_justRan1;
+      // 1차 매칭이 실행됐으면 버튼 비활성화 유지 (새로고침 전까지)
+      var _active1 = isActive1 && !_block1Hidden && !window._r1MatchingDone;
       btn1.disabled=!_active1; btn1.style.opacity=_active1?'1':'0.45'; btn1.style.cursor=_active1?'pointer':'not-allowed'; 
     }
     if(notice){
@@ -1417,9 +1416,9 @@ async function loadMatchingStatus(){
     // ── 1차 매칭 ──
     var r1=d.round1||{};
     var mr1=r1.match_rate||0;
-    // 1차 매칭이 방금 실행됐으면 구매/판매예약수 0으로 표시
-    var _r1BuyDisplay = (window._matchingJustRan && window._matchingRanRound===1) ? 0 : (r1.buy_count!=null?r1.buy_count:'-');
-    var _r1SellDisplay = (window._matchingJustRan && window._matchingRanRound===1) ? 0 : (r1.sell_count!=null?r1.sell_count:'-');
+    // 1차 매칭이 실행됐으면 구매/판매예약수 0 유지 (새로고침 전까지)
+    var _r1BuyDisplay = window._r1MatchingDone ? 0 : (r1.buy_count!=null?r1.buy_count:'-');
+    var _r1SellDisplay = window._r1MatchingDone ? 0 : (r1.sell_count!=null?r1.sell_count:'-');
     set('r1-buy', _r1BuyDisplay);
     set('r1-sell', _r1SellDisplay);
     var rateEl1=document.getElementById('r1-rate');
@@ -1499,6 +1498,14 @@ async function runMatching(roundNum){
     }
     window._matchingJustRan = true; // loadMatchingStatus에서 블록 복원 방지
     window._matchingRanRound = roundNum; // 어느 차수가 실행됐는지 기록
+    // 1차 매칭 실행 직후: 구매/판매예약 수 즉시 0으로 표시
+    if(roundNum===1){
+      window._r1MatchingDone = true;
+      var _rb = document.getElementById('r1-buy');
+      var _rs = document.getElementById('r1-sell');
+      if(_rb) _rb.textContent='0';
+      if(_rs) _rs.textContent='0';
+    }
     loadMatchingStatus();
     if(typeof loadMatchRecords==='function') loadMatchRecords();
   }catch(e){
