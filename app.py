@@ -1811,6 +1811,11 @@ def admin_run_matching():
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     data = request.json or {}
     round_num = int(data.get('round', 1))
+    # 2차 매칭은 14:00~14:59 에만 실행 가능
+    if round_num == 2:
+        _now2 = get_now()
+        if _now2.hour != 14:
+            return jsonify(error='2차 매칭은 14:00~14:59 에만 실행 가능합니다'), 400
     db = get_db()
     try:
         today = get_today().isoformat()
