@@ -5650,11 +5650,13 @@ def testtools_create_buy_reservation():
     if not user_id: return jsonify(error='user_id 필요'), 400
     db = get_db()
     try:
+        db.execute("PRAGMA foreign_keys=OFF")
         cur = db.execute(
-            """INSERT INTO reservations(user_id,bar_type,match_round,reserve_date,status,confirmed)
-               VALUES(?,?,1,?,'pending',0)""",
+            """INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,confirmed)
+               VALUES(?,0,?,1,?,'pending',0)""",
             (user_id, bar_type, match_date)
         )
+        db.execute("PRAGMA foreign_keys=ON")
         db.commit()
         return jsonify(success=True, reservation_id=cur.lastrowid)
     except Exception as e:
