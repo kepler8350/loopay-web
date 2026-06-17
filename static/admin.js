@@ -1366,7 +1366,7 @@ async function loadReservationStatus(){
 }
 
 
-async async function loadMatchingStatus(){
+async function loadMatchingStatus(){
   var names={bronze:'수정',silver:'루비',gold:'다이아'};
   var colors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   // 매칭 실행 버튼/문구 블록 복원 (runMatching 직후 호출 시엔 숨김 유지)
