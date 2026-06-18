@@ -1388,6 +1388,13 @@ async function loadMatchingStatus(){
     var set=function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v!=null?v:'-'; };
     var mrc=function(r){ return r>=80?'#66bb6a':r>=50?'#f9a825':'#ef5350'; };
 
+
+    // 아이템별 순서 정렬: 수정(bronze) > 루비(silver) > 다이아(gold)
+    var _barOrder = {bronze:0, silver:1, gold:2};
+    function sortByBarType(data){
+      if(!data) return data;
+      return data.slice().sort(function(a,b){ return (_barOrder[a.bar_type]||9) - (_barOrder[b.bar_type]||9); });
+    }
     function mkTypeTable(data){
       if(!data||!data.length) return '<div style="padding:16px;color:#888;text-align:center">데이터 없음</div>';
       return '<table style="width:100%;font-size:12px;border-collapse:collapse">'
@@ -1425,7 +1432,7 @@ async function loadMatchingStatus(){
     set('r1-sell', _r1SellDisplay);
     var rateEl1=document.getElementById('r1-rate');
     if(rateEl1){ rateEl1.textContent=mr1+'%'; rateEl1.style.color=mrc(mr1); }
-    var bb1=document.getElementById('r1-buy-by-type'); if(bb1) bb1.innerHTML=mkTypeTable(r1.buy_by_type);
+    var bb1=document.getElementById('r1-buy-by-type'); if(bb1) bb1.innerHTML=mkTypeTable(sortByBarType(r1.buy_by_type));
     var bt1=document.getElementById('r1-by-type'); if(bt1) bt1.innerHTML=mkTypeTable(r1.by_type);
 
 
