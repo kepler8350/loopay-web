@@ -2498,7 +2498,7 @@ def admin_matching_status():
                LEFT JOIN items i ON r.item_id=i.id
                WHERE r.match_round=? AND r.status='pending' AND r.user_id=?
                AND r.reserve_date>=?
-               AND (i.status='waiting' OR r.item_id IS NULL)""",
+               AND (i.status='waiting' OR COALESCE(r.item_id,0)=0)""",
             [round_num, loopay_id, today]
         ).fetchone()['c']
         buy_count = buy_count + _loopay_buy_cnt
@@ -2525,7 +2525,7 @@ def admin_matching_status():
                LEFT JOIN items i ON r.item_id=i.id
                WHERE r.match_round=? AND r.status='pending' AND r.user_id=?
                AND r.reserve_date>=?
-               AND (i.status='waiting' OR r.item_id IS NULL)
+               AND (i.status='waiting' OR COALESCE(r.item_id,0)=0)
                GROUP BY r.bar_type""",
             [round_num, loopay_id, today]
         ).fetchall()
