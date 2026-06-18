@@ -1393,7 +1393,7 @@ async function loadMatchingStatus(){
     var _barOrder = {bronze:0, silver:1, gold:2};
     function sortByBarType(data){
       if(!data) return data;
-      return data.slice().sort(function(a,b){ return (_barOrder[a.bar_type]||9) - (_barOrder[b.bar_type]||9); });
+      return data.slice().sort(function(a,b){ var oa=(_barOrder[a.bar_type]!=null?_barOrder[a.bar_type]:9); var ob=(_barOrder[b.bar_type]!=null?_barOrder[b.bar_type]:9); return oa-ob; });
     }
     function mkTypeTable(data){
       if(!data||!data.length) return '<div style="padding:16px;color:#888;text-align:center">데이터 없음</div>';
