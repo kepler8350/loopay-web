@@ -2549,8 +2549,9 @@ def admin_matching_status():
             """SELECT COUNT(*) as c FROM reservations r
                INNER JOIN items i ON r.item_id=i.id
                WHERE r.match_round=? AND r.status IN ('pending','unmatched')
-               AND r.reserve_date>=?
+               AND r.reserve_date<=?
                AND COALESCE(r.confirmed,0)=1
+               AND r.item_id IS NOT NULL AND r.item_id != 0
                AND i.status IN ('reservable','waiting')""",
             (round_num, today)
         ).fetchone()['c']
@@ -3171,7 +3172,8 @@ def admin_reservation_status():
                    INNER JOIN items i ON r.item_id = i.id
                    WHERE r.bar_type=? AND r.status='pending'
                    AND r.match_round=1
-                   AND r.item_id IS NOT NULL
+                   AND r.item_id IS NOT NULL AND r.item_id != 0
+                   AND COALESCE(r.confirmed,0)=1
                    AND r.reserve_date=?
                    AND r.user_id != ?""",
                 (bar_type, today, loopay_id)
