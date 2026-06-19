@@ -442,6 +442,7 @@ async function deleteAllItems(){
 var _systemItems = [];
 var _serverHour = 0;
 var _serverMin = 0;
+var _systemItemsLoadedAt = null; // 시스템아이템 마지막 로드 시각
 var _unpaidClickedAt = {}; // matchId → 마지막 클릭 시각(ms)
 async function saveRound2Auto(val){
   try{
@@ -661,6 +662,7 @@ async function loadSystemItems(){
     var tok=localStorage.getItem('admin_token');
     var ct=await fetch('/api/current-time',{headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
     _serverHour=ct.hour||0; _serverMin=ct.minute||0;
+    _systemItemsLoadedAt = new Date(); // 로드 시각 기록
   }catch(e){}
   try{
     var d = await apiAdmin('/admin/loopay-items');
@@ -745,9 +747,13 @@ function renderSystemItems(){
         + (item.match_round===2 ? '<span style="padding:2px 5px;border-radius:8px;font-size:10px;background:#7b1fa233;color:#ce93d8;font-weight:700;margin-left:4px">2차</span>'
                                 : '<span style="padding:2px 5px;border-radius:8px;font-size:10px;background:#1565c033;color:#90caf9;font-weight:700;margin-left:4px">1차</span>')
       : '<span style="color:#555;font-size:11px">-</span>';
-        // 서버 시간 기반 버튼 활성화 제어
+        // 버튼 활성화: 항상 최신 서버 시간 기준 (stale 방지)
     var _h = _serverHour||0; var _m = _serverMin||0;
-    var _totalMin = _h*60+_m;
+    // 로컬 시계로 경과 시간 보정 (loadSystemItems 이후 경과분 반영)
+    var _localNow = new Date();
+    var _loadedAt = _systemItemsLoadedAt || _localNow;
+    var _elapsedMin = Math.floor((_localNow - _loadedAt) / 60000);
+    var _totalMin = _h*60+_m + _elapsedMin;
     // 1차: 12:30~13:00(750~780), 2차: 18:30~19:00(1110~1140)
     var _inWarnWindow = (_matchRound === 2)
       ? (_totalMin >= 1110 && _totalMin < 1140)
@@ -2168,13 +2174,20 @@ async function sendAdminNotif(){
 // ── 매칭 버튼 시간 활성화 (매분 갱신) ──
 setInterval(updateMatchingBtn, 60000);
 
-// 시스템아이템현황: 매분 버튼 상태 자동 갱신 (쿨타임 재활성화 반영)
-setInterval(function(){
+// 시스템아이템현황: 30초마다 버튼 상태 자동 갱신 (12:30 시간대 즉시 반영)
+setInterval(async function(){
   var page = document.getElementById('page-system-items');
   if(page && page.classList.contains('active')){
+    // 서버 시간만 먼저 업데이트 후 버튼 재렌더
+    try{
+      var tok=localStorage.getItem('admin_token');
+      var ct=await fetch('/api/current-time',{headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
+      _serverHour=ct.hour||0; _serverMin=ct.minute||0;
+    }catch(e){}
+    // 30초 주기로 전체 재로드 (버튼 상태 + 데이터)
     loadSystemItems();
   }
-}, 60000);
+}, 30000);
 
 // ── 행운구매 ──────────────────────────────────────────
 var _luckyPairsData = {}; // 미리보기 결과 저장
