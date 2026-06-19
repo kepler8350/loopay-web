@@ -748,6 +748,8 @@ function renderSystemItems(){
                                 : '<span style="padding:2px 5px;border-radius:8px;font-size:10px;background:#1565c033;color:#90caf9;font-weight:700;margin-left:4px">1차</span>')
       : '<span style="color:#555;font-size:11px">-</span>';
         // 버튼 활성화: 항상 최신 서버 시간 기준 (stale 방지)
+    // ── 시간/버튼 조건 계산 ──
+    var _matchRound = item.match_round || 1;  // 먼저 선언
     var _h = _serverHour||0; var _m = _serverMin||0;
     // 로컬 시계로 경과 시간 보정 (loadSystemItems 이후 경과분 반영)
     var _localNow = new Date();
@@ -762,20 +764,17 @@ function renderSystemItems(){
     var _inConfirmWindow = (_matchRound === 2)
       ? (_totalMin >= 1140 && _totalMin < 1200)
       : (_totalMin >= 780 && _totalMin < 840);
-    // 미입금 알림 버튼 쿨타임 체크 (10분=600000ms)
-    // 쿨타임 체크: 서버 시간(분) 기준으로 9분 경과 여부
-    var _lastClickMin = _unpaidClickedAt[item.match_id] || 0;
-    var _curMin = _serverHour*60 + _serverMin;
-    var _coolOk = (_lastClickMin === 0) || ((_curMin - _lastClickMin) >= 9);
-    // 입금확인 완료 여부 / 송금완료 여부
-    var _isConfirmed = (ms === 'confirmed');
-    var _isPaid = (ms === 'paid');
-    // 05:00~13:00 (300~780분)
     // 1차: 05:00~13:00 (300~780분), 2차: 15:00~19:00 (900~1140분)
-    var _matchRound = item.match_round || 1;
     var _inPayWindow = (_matchRound === 2)
       ? (_totalMin >= 900 && _totalMin < 1140)
       : (_totalMin >= 300 && _totalMin < 780);
+    // 입금확인 완료 여부 / 송금완료 여부
+    var _isConfirmed = (ms === 'confirmed');
+    var _isPaid = (ms === 'paid');
+    // 쿨타임 체크: 서버 시간(분) + 경과분 기준으로 9분 경과 여부
+    var _lastClickMin = _unpaidClickedAt[item.match_id] || 0;
+    var _curMin = _totalMin;  // 경과 시간 보정된 값 사용
+    var _coolOk = (_lastClickMin === 0) || ((_curMin - _lastClickMin) >= 9);
 
     // ── 3개 버튼: 시간 조건에 따라 활성/비활성 ──
     var actionBtns = '';
