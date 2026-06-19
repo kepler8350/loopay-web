@@ -2641,8 +2641,14 @@ def admin_matching_status():
     except Exception as _e2:
         import traceback; traceback.print_exc()
         return jsonify(error='r2_error: '+str(_e2)), 500
-    # 2차 탭에 표시할 구매예약 수 = 1차 미매칭 (1차 buy - 1차 sell)
-    r1_unmatched_buy = max(0, r1_data['buy_count'] - r1_data['sell_count'])
+    # 2차 탭에 표시할 구매예약 수 = 1차 미매칭
+    # 1차 매칭 실행 전: buy - sell / 1차 매칭 실행 후: r2 buy_count (match_round=2 전환된 수)
+    if r1_data['buy_count'] > 0 or r1_data['sell_count'] > 0:
+        # 1차 매칭 실행 전 - 예상 미매칭 수
+        r1_unmatched_buy = max(0, r1_data['buy_count'] - r1_data['sell_count'])
+    else:
+        # 1차 매칭 실행 후 - 실제 2차 구매예약 수
+        r1_unmatched_buy = r2_data['buy_count']
 
     result = {
         'round1': r1_data,
