@@ -22,13 +22,23 @@ import datetime, sqlite3, os, threading
 # ── 테스트용 시간 조작 ──────────────────────────────────
 
 def _get_mock_time_from_db():
-    """DB의 system_settings에서 mock_time 읽기"""
+    """DB의 system_settings에서 mock_time 읽기 + 경과 시간 반영 (시간이 흐르도록)"""
     db = None
     try:
         db = get_db()
         row = db.execute("SELECT value FROM system_settings WHERE key='mock_time'").fetchone()
+        set_at_row = db.execute("SELECT value FROM system_settings WHERE key='mock_time_set_at'").fetchone()
         if row and row['value']:
-            return datetime.datetime.strptime(row['value'], '%Y-%m-%d %H:%M:%S')
+            mock_start = datetime.datetime.strptime(row['value'], '%Y-%m-%d %H:%M:%S')
+            if set_at_row and set_at_row['value']:
+                # 설정 당시 실제 시각
+                set_at = datetime.datetime.strptime(set_at_row['value'], '%Y-%m-%d %H:%M:%S')
+                # 현재 실제 시각 (KST)
+                real_now = datetime.datetime.utcnow() + datetime.timedelta(hours=9)
+                # 경과 시간만큼 mock 시간도 진행
+                elapsed = real_now - set_at
+                return mock_start + elapsed
+            return mock_start
     except Exception:
         pass
     finally:
@@ -38,14 +48,18 @@ def _get_mock_time_from_db():
     return None
 
 def _set_mock_time_to_db(dt):
-    """DB의 system_settings에 mock_time 저장 (None이면 삭제)"""
+    """DB의 system_settings에 mock_time 저장 (None이면 삭제), 설정 당시 실제 시각도 저장"""
     try:
         db = get_db()
         if dt:
             val = dt.strftime('%Y-%m-%d %H:%M:%S')
+            # 설정 당시 실제 KST 시각 기록
+            real_now = (datetime.datetime.utcnow() + datetime.timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
             db.execute("INSERT OR REPLACE INTO system_settings(key,value) VALUES('mock_time',?)", (val,))
+            db.execute("INSERT OR REPLACE INTO system_settings(key,value) VALUES('mock_time_set_at',?)", (real_now,))
         else:
             db.execute("DELETE FROM system_settings WHERE key='mock_time'")
+            db.execute("DELETE FROM system_settings WHERE key='mock_time_set_at'")
         db.commit()
         db.close()
     except Exception:
