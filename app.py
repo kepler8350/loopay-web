@@ -3733,6 +3733,11 @@ def match_confirm_payment():
     db = get_db()
     try:
         # 관리자는 seller_id 체크 없이, 일반 사용자는 seller_id 체크
+        # 시간 체크: 1차 05:00~13:00, 2차 15:00~19:00 (관리자 제외)
+        if not is_admin:
+            _now = get_now()
+            _h, _mn = _now.hour, _now.minute
+            _total = _h*60+_mn
         if is_admin:
             # 관리자는 pending/paid 모두 입금확인 가능 (직접 확인)
             m = db.execute(
@@ -3746,6 +3751,16 @@ def match_confirm_payment():
             ).fetchone()
         if not m:
             return jsonify(error='처리 불가'), 400
+        # 시간 창 체크 (관리자 제외): 1차 05:00~13:00, 2차 15:00~19:00
+        if not is_admin:
+            _now = get_now()
+            _h, _mn = _now.hour, _now.minute
+            _total = _h*60+_mn
+            _mround = m['match_round'] or 1
+            if _mround == 1 and not (300 <= _total < 780):
+                return jsonify(error='입금확인은 05:00~13:00 사이에만 가능합니다'), 400
+            if _mround == 2 and not (900 <= _total < 1140):
+                return jsonify(error='입금확인은 15:00~19:00 사이에만 가능합니다'), 400
 
         bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
         bar_name = bar_names.get(m['bar_type'], m['bar_type'])
@@ -3948,6 +3963,16 @@ def match_report_unpaid():
             ).fetchone()
         if not m:
             return jsonify(error='처리 불가'), 400
+        # 시간 체크: 1차 12:30~13:00, 2차 18:30~19:00
+        _now = get_now()
+        _h, _min = _now.hour, _now.minute
+        _total = _h*60+_min
+        _mround = m['match_round'] or 1
+        if not is_admin:
+            if _mround == 1 and not (750 <= _total < 780):
+                return jsonify(error='입금요청은 12:30~13:00 사이에만 가능합니다'), 400
+            if _mround == 2 and not (1110 <= _total < 1140):
+                return jsonify(error='입금요청은 18:30~19:00 사이에만 가능합니다'), 400
         bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
         bar_name = bar_names.get(m['bar_type'], m['bar_type'])
         # 입금요청: status 변경 없이 알림만 발송
@@ -4002,6 +4027,15 @@ def user_confirm_unpaid():
         ).fetchone()
         if not m:
             return jsonify(error='처리 불가 (매칭 없음 또는 상태 오류)'), 400
+        # 시간 체크: 1차 13:00~14:00, 2차 19:00~20:00
+        _now = get_now()
+        _h, _mn = _now.hour, _now.minute
+        _total = _h*60+_mn
+        _mround = m['match_round'] or 1
+        if _mround == 1 and not (780 <= _total < 840):
+            return jsonify(error='미입금 확인은 13:00~14:00 사이에만 가능합니다'), 400
+        if _mround == 2 and not (1140 <= _total < 1200):
+            return jsonify(error='미입금 확인은 19:00~20:00 사이에만 가능합니다'), 400
         # 판매자 본인이거나 loopay 계정만 허용
         seller_id = m['seller_id'] if 'seller_id' in m.keys() else None
         if uid != loopay_id and uid != seller_id:
