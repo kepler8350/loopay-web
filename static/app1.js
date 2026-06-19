@@ -1085,9 +1085,6 @@ async function toggleDetail(type){
   var card=document.getElementById('card-'+type);
   var masterPanel=document.getElementById('bar-detail-panel');
   var isOpen=panel&&panel.style.display!=='none';
-  // 다른 타입으로 전환 시 _sellSelected 초기화
-  var prevType = window._currentBarType || null;
-  if(prevType && prevType !== type) _sellSelected = {};
   window._currentBarType = type;
   ['bronze','silver','gold'].forEach(function(t){
     var p2=document.getElementById('detail-'+t);
