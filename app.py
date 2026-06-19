@@ -2388,10 +2388,21 @@ def update_settings():
     db = get_db()
     try:
         for key, value in data.items():
-            db.execute(
-                "INSERT OR REPLACE INTO system_settings(key,value,updated_at) VALUES(?,?,CURRENT_TIMESTAMP)",
-                (key, str(value))
-            )
+            if key == 'mock_time':
+                # mock_time: None이면 삭제, 값이면 set_at도 함께 저장
+                if value is None or value == 'null' or str(value).strip() == '':
+                    db.execute("DELETE FROM system_settings WHERE key='mock_time'")
+                    db.execute("DELETE FROM system_settings WHERE key='mock_time_set_at'")
+                else:
+                    import datetime as _dt
+                    real_now = (_dt.datetime.utcnow() + _dt.timedelta(hours=9)).strftime('%Y-%m-%d %H:%M:%S')
+                    db.execute("INSERT OR REPLACE INTO system_settings(key,value,updated_at) VALUES('mock_time',?,CURRENT_TIMESTAMP)", (str(value),))
+                    db.execute("INSERT OR REPLACE INTO system_settings(key,value,updated_at) VALUES('mock_time_set_at',?,CURRENT_TIMESTAMP)", (real_now,))
+            else:
+                db.execute(
+                    "INSERT OR REPLACE INTO system_settings(key,value,updated_at) VALUES(?,?,CURRENT_TIMESTAMP)",
+                    (key, str(value))
+                )
         db.commit()
         return jsonify(success=True, message='설정이 저장되었습니다')
     except Exception as e:
