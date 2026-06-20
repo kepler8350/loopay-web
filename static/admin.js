@@ -1599,7 +1599,33 @@ if(_origShowPage){
   };
 }
 
-async function loadCurrentTime(){var el=document.getElementById('current-sys-time');function getKST(){var n=new Date();var k=new Date(n.getTime()+9*60*60*1000);return k.getUTCFullYear()+'-'+String(k.getUTCMonth()+1).padStart(2,'0')+'-'+String(k.getUTCDate()).padStart(2,'0')+' '+String(k.getUTCHours()).padStart(2,'0')+':'+String(k.getUTCMinutes()).padStart(2,'0')+':'+String(k.getUTCSeconds()).padStart(2,'0');}if(el)el.textContent=getKST();setInterval(function(){if(el)el.textContent=getKST();},1000);}
+async function loadCurrentTime(){
+  var el=document.getElementById('current-sys-time');
+  if(!el) return;
+  // 서버에서 현재 시간(mock 포함) 가져오기
+  var _mockBase=null, _localBase=null;
+  async function fetchServerTime(){
+    try{
+      var tok=localStorage.getItem('admin_token');
+      var t=await fetch('/api/current-time',{headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
+      _mockBase=new Date(t.time.replace(' ','T'));
+      _localBase=new Date();
+      el.textContent=t.time;
+    }catch(e){}
+  }
+  await fetchServerTime();
+  // 1초마다 로컬에서 경과 시간 보정 (API 호출 없이 부드럽게 흐름)
+  setInterval(function(){
+    if(_mockBase&&_localBase){
+      var elapsed=new Date()-_localBase;
+      var cur=new Date(_mockBase.getTime()+elapsed);
+      var fmt=cur.getFullYear()+'-'+String(cur.getMonth()+1).padStart(2,'0')+'-'+String(cur.getDate()).padStart(2,'0')+' '+String(cur.getHours()).padStart(2,'0')+':'+String(cur.getMinutes()).padStart(2,'0')+':'+String(cur.getSeconds()).padStart(2,'0');
+      el.textContent=fmt;
+    }
+  },1000);
+  // 30초마다 서버 재동기화
+  setInterval(fetchServerTime,30000);
+}
 async function setMockTime(){
   var inp=document.getElementById('mock-datetime-input');
   var res=document.getElementById('time-result');
