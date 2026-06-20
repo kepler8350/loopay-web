@@ -65,6 +65,77 @@ def _set_mock_time_to_db(dt):
     except Exception:
         pass
 
+
+def _do_confirm_transfer(db, m):
+    """매칭 확인 완료 후 아이템 이전 처리 (판매자→sold, 구매자→새 아이템)"""
+    try:
+        _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        loopay_id = _loopay_row['id'] if _loopay_row else None
+        seller_item = None
+        if dict(m).get('seller_item_id'):
+            seller_item = db.execute(
+                "SELECT id, bar_type, stage FROM items WHERE id=? AND status IN ('matched','reservable','sold')",
+                (m['seller_item_id'],)
+            ).fetchone()
+        if not seller_item:
+            seller_res = db.execute(
+                """SELECT r.item_id FROM reservations r
+                   WHERE r.user_id=? AND r.bar_type=? AND r.item_id IS NOT NULL
+                     AND r.status IN ('matched','sold','confirmed','pending')
+                   ORDER BY r.id DESC LIMIT 1""",
+                (m['seller_id'], m['bar_type'])
+            ).fetchone()
+            if seller_res and seller_res['item_id']:
+                seller_item = db.execute(
+                    "SELECT id, bar_type, stage FROM items WHERE id=?",
+                    (seller_res['item_id'],)
+                ).fetchone()
+        if not seller_item:
+            _loopay_check = db.execute(
+                "SELECT id FROM users WHERE username='loopay' AND id=?", (m['seller_id'],)
+            ).fetchone()
+            if _loopay_check:
+                seller_item = db.execute(
+                    """SELECT i.id, i.bar_type, i.stage FROM items i
+                       WHERE i.user_id=? AND i.bar_type=? AND i.stage=?
+                         AND i.status IN ('matched','reservable')
+                       ORDER BY i.id ASC LIMIT 1""",
+                    (m['seller_id'], m['bar_type'], m['stage'] or 1)
+                ).fetchone()
+        if seller_item:
+            db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
+            _stage = int(seller_item['stage'] or m['stage'] or 1) + 1
+            _buyer_is_loopay = (m['buyer_id'] == loopay_id)
+            _today = get_today().isoformat()
+            if _buyer_is_loopay:
+                _lr = db.execute(
+                    "SELECT item_id FROM reservations WHERE id=?", (m['reservation_id'],)
+                ).fetchone()
+                if _lr and _lr['item_id']:
+                    db.execute(
+                        "UPDATE items SET stage=?, status='reservable', purchase_date=? WHERE id=? AND user_id=?",
+                        (_stage, _today, _lr['item_id'], loopay_id)
+                    )
+            else:
+                _inserted = False
+                for _item_status in ('reservable', 'active', 'waiting'):
+                    try:
+                        db.execute(
+                            "INSERT INTO items(user_id, bar_type, stage, purchase_date, status) VALUES(?,?,?,?,?)",
+                            (m['buyer_id'], seller_item['bar_type'], _stage, _today, _item_status)
+                        )
+                        _inserted = True
+                        break
+                    except Exception:
+                        continue
+                if not _inserted:
+                    db.execute(
+                        "INSERT INTO items(user_id, bar_type, stage, purchase_date) VALUES(?,?,?,?)",
+                        (m['buyer_id'], seller_item['bar_type'], _stage, _today)
+                    )
+    except Exception as _te:
+        pass  # 아이템 이전 실패해도 status 변경은 유지
+
 def get_now():
     """현재 시간 반환 - 매번 DB에서 읽어 멀티워커 동기화 (KST 기준)"""
     mt = _get_mock_time_from_db()
@@ -127,14 +198,13 @@ def _auto_round2_scheduler():
                 db = get_db()
                 try:
                     paid_1301 = db.execute(
-                        """SELECT id, seller_item_id FROM matches
+                        """SELECT id, seller_item_id, buyer_id, seller_id, bar_type, stage, reservation_id FROM matches
                            WHERE match_round=1 AND status='paid' AND match_date<=?""",
                         (today,)
                     ).fetchall()
                     for m_row in paid_1301:
-                        db.execute("UPDATE matches SET status='confirmed' WHERE id=?", (m_row['id'],))
-                        if m_row['seller_item_id']:
-                            db.execute("UPDATE items SET status='sold' WHERE id=?", (m_row['seller_item_id'],))
+                        db.execute("UPDATE matches SET status='confirmed', confirmed_at=CURRENT_TIMESTAMP WHERE id=?", (m_row['id'],))
+                        _do_confirm_transfer(db, m_row)
                     if paid_1301:
                         db.commit()
                 except Exception:
@@ -205,14 +275,13 @@ def _auto_round2_scheduler():
                 db = get_db()
                 try:
                     paid_1901 = db.execute(
-                        """SELECT id, seller_item_id FROM matches
+                        """SELECT id, seller_item_id, buyer_id, seller_id, bar_type, stage, reservation_id FROM matches
                            WHERE match_round=2 AND status='paid' AND match_date<=?""",
                         (today,)
                     ).fetchall()
                     for m_row in paid_1901:
-                        db.execute("UPDATE matches SET status='confirmed' WHERE id=?", (m_row['id'],))
-                        if m_row['seller_item_id']:
-                            db.execute("UPDATE items SET status='sold' WHERE id=?", (m_row['seller_item_id'],))
+                        db.execute("UPDATE matches SET status='confirmed', confirmed_at=CURRENT_TIMESTAMP WHERE id=?", (m_row['id'],))
+                        _do_confirm_transfer(db, m_row)
                     if paid_1901:
                         db.commit()
                 except Exception:
