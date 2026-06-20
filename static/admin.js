@@ -823,9 +823,9 @@ function renderSystemItems(){
       // loopay 구매예약중: 삭제 버튼
       + (item.is_buy_reservation ? '<button onclick="deleteLoopayBuyItem('+item.id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">🗑️ 삭제</button>' : '')
       // loopay 구매매칭완료: 입금확인 + 취소 버튼
-      + (false && item.match_id  /* loopay_matched → matched로 통합됨 */ ? '<button onclick="adminConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>' : '')
-      // loopay reservable(매칭 후 보유): 판매예약 버튼 / 판매예약중 배지
-      + (isSellReserved ? '<span style="padding:3px 8px;border-radius:8px;font-size:11px;background:#f9a82522;color:#f9a825;font-weight:700">📋 판매예약중</span>' : '')
+
+
+
       + (!isSellReserved && item.status==='reservable' && !item.match_id && !item.sell_reservation_id ? '<button onclick="loopayItemSellReserve('+item.id+')" style="padding:3px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 판매예약</button>' : '')
       + actionBtns+'</td>'
       +'</tr>';
