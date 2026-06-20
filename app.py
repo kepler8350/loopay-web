@@ -222,8 +222,8 @@ def _auto_round2_scheduler():
                     db.close()
 
             # ── 14:01 자동 입금확인 + 미송금 2차이전 + 2차매칭 ──
-            if h == 14 and m < 5 and today != _last_run_date:
-                _last_run_date = today
+            if h == 14 and m < 5 and (today + '_14') != _last_run_date:
+                _last_run_date = today + '_14'
                 db = get_db()
                 try:
                     # 1) 송금완료(paid) → 자동 입금확인(confirmed)
@@ -247,7 +247,7 @@ def _auto_round2_scheduler():
                     pending_matches = db.execute(
                         """SELECT id, buyer_id, seller_id, bar_type, stage, seller_item_id, reservation_id
                            FROM matches
-                           WHERE match_round=1 AND status='pending' AND match_date=?""",
+                           WHERE match_round=1 AND status='pending' AND match_date<=?""",
                         (today,)
                     ).fetchall()
                     for m_row in pending_matches:
@@ -372,7 +372,7 @@ def _auto_round2_scheduler():
                     # 2) 2차 미송금(pending) → failed + 패널티
                     pending2 = db.execute(
                         """SELECT id, buyer_id, seller_item_id FROM matches
-                           WHERE match_round=2 AND status='pending' AND match_date=?""",
+                           WHERE match_round=2 AND status='pending' AND match_date<=?""",
                         (today,)
                     ).fetchall()
                     for m_row in pending2:
