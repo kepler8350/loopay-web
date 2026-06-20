@@ -71,6 +71,15 @@ def _do_confirm_transfer(db, m):
     try:
         _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
         loopay_id = _loopay_row['id'] if _loopay_row else None
+        # 중복 방지: buyer에게 이미 이 매치로 생성된 아이템이 있으면 스킵
+        _today = get_today().isoformat()
+        _existing = db.execute(
+            """SELECT id FROM items WHERE user_id=? AND bar_type=? AND purchase_date=?
+               AND stage=? AND status IN ('reservable','active','waiting')""",
+            (m['buyer_id'], m['bar_type'], _today, (m['stage'] or 1)+1)
+        ).fetchone()
+        if _existing:
+            return  # 이미 아이템이 있으면 중복 생성 방지
         seller_item = None
         if dict(m).get('seller_item_id'):
             seller_item = db.execute(
@@ -5770,6 +5779,29 @@ def testtools_create_item():
         return jsonify(error=str(e)), 500
     finally:
         db.close()
+
+@app.route('/api/admin/testtools/delete-item', methods=['POST'])
+def testtools_delete_item():
+    tok = request.headers.get('Authorization','').replace('Bearer ','')
+    try:
+        from flask_jwt_extended import decode_token
+        ident = decode_token(tok).get('sub','')
+        if not str(ident).startswith('admin:'): return jsonify(error='권한 없음'), 403
+    except: return jsonify(error='인증 오류'), 401
+    data = request.json or {}
+    item_id = data.get('item_id')
+    if not item_id: return jsonify(error='item_id 필요'), 400
+    db = get_db()
+    try:
+        db.execute("PRAGMA foreign_keys=OFF")
+        db.execute("DELETE FROM reservations WHERE item_id=?", (item_id,))
+        result = db.execute("DELETE FROM items WHERE id=?", (item_id,))
+        db.execute("PRAGMA foreign_keys=ON")
+        db.commit()
+        return jsonify(success=True, deleted=result.rowcount)
+    except Exception as e:
+        db.rollback(); return jsonify(error=str(e)), 500
+    finally: db.close()
 
 @app.route('/api/admin/testtools/create-buy-reservation', methods=['POST'])
 def testtools_create_buy_reservation():
