@@ -826,7 +826,7 @@ function renderSystemItems(){
 
 
 
-      + (!isSellReserved && item.status==='reservable' && !item.match_id && !item.sell_reservation_id ? '<button onclick="loopayItemSellReserve('+item.id+')" style="padding:3px 8px;background:#2e7d32;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 판매예약</button>' : '')
+
       + actionBtns+'</td>'
       +'</tr>';
   }).join('');
