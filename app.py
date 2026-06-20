@@ -165,9 +165,8 @@ def _auto_round2_scheduler():
     _last_run_date_1901 = None  # 19:00 자동 입금확인 실행일 (2차)
     while True:
         try:
-            # 스케줄러는 항상 실제 서버 시간(UTC+9) 기준으로 동작 (mock 시간 무시)
-            import datetime as _dt_sched
-            now = _dt_sched.datetime.utcnow() + _dt_sched.timedelta(hours=9)
+            # get_now()로 시간 계산 (mock 시간 반영)
+            now = get_now()
             h, m = now.hour, now.minute
             today = now.strftime('%Y-%m-%d')
             now_str = now.strftime('%Y-%m-%d %H:%M:%S')
