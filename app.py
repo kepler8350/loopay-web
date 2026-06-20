@@ -2392,7 +2392,7 @@ def admin_run_matching():
                 _u = db.execute("SELECT maintain_points, charge_points FROM users WHERE id=?", (_bid,)).fetchone()
                 _mn = int(_u['maintain_points'] or 0) if _u else 0
                 _ch = int(_u['charge_points'] or 0) if _u else 0
-                _consume = 40  # 매칭 1건당 40P 고정 차감
+                _consume = 40 * _bcnt  # 매칭 건당 40P × 건수
                 if _consume <= 0:
                     continue
                 if _mn >= _consume:
