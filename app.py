@@ -2357,6 +2357,9 @@ def admin_run_matching():
                     'seller':dict(seller),'buyer':dict(buyer),
                     's_phone':s_phone3,'s_bank':s_bank3,'s_acct':s_acct3,'s_acct_name':s_acct_name3,
                 })
+                # 포인트 차감용 카운트 업데이트 (랜덤 매칭)
+                _b_id_rand = int(buyer['buyer_id'])
+                _matched_cnt_map[_b_id_rand] = _matched_cnt_map.get(_b_id_rand, 0) + 1
                 total_matched += 1
 
         # ── 포인트 정산: 오늘 buy_rows의 모든 buyer 대상 ──
@@ -2389,7 +2392,7 @@ def admin_run_matching():
                 _u = db.execute("SELECT maintain_points, charge_points FROM users WHERE id=?", (_bid,)).fetchone()
                 _mn = int(_u['maintain_points'] or 0) if _u else 0
                 _ch = int(_u['charge_points'] or 0) if _u else 0
-                _consume = int(_buy_sum)
+                _consume = int(_buy_sum) // 120  # 원화 → 포인트 (1P = 120원)
                 if _consume <= 0:
                     continue
                 if _mn >= _consume:
