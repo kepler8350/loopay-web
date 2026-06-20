@@ -245,25 +245,55 @@ def _auto_round2_scheduler():
 
                     # 2) 미송금(pending) 1차 매칭 → 자동 failed(미입금) 처리
                     pending_matches = db.execute(
-                        """SELECT id, seller_id, bar_type, stage, seller_item_id
+                        """SELECT id, buyer_id, seller_id, bar_type, stage, seller_item_id, reservation_id
                            FROM matches
                            WHERE match_round=1 AND status='pending' AND match_date=?""",
                         (today,)
                     ).fetchall()
                     for m_row in pending_matches:
-                        db.execute("UPDATE matches SET status='failed' WHERE id=?", (m_row['id'],))
+                        m_id = m_row['id']
+                        buyer_id = m_row['buyer_id']
+                        db.execute("UPDATE matches SET status='failed' WHERE id=?", (m_id,))
                         # 판매 아이템 복원 (reservable로)
                         if m_row['seller_item_id']:
                             db.execute(
                                 "UPDATE items SET status='reservable' WHERE id=?",
                                 (m_row['seller_item_id'],)
                             )
-                        # 판매예약 복원 (unmatched → pending)
+                        # 판매예약 복원 (unmatched)
                         db.execute(
                             """UPDATE reservations SET status='unmatched'
                                WHERE id=(SELECT reservation_id FROM matches WHERE id=?)""",
-                            (m_row['id'],)
+                            (m_id,)
                         )
+                        # ── 구매자 패널티 + 거래정지 처리 ──
+                        try:
+                            from datetime import timedelta as _td
+                            buyer_row = db.execute(
+                                "SELECT unpaid_count FROM users WHERE id=?", (buyer_id,)
+                            ).fetchone()
+                            _cur = int(buyer_row['unpaid_count'] or 0) + 1 if buyer_row else 1
+                            _pen = next((p for p in PENALTY_TABLE if p[0] == _cur), PENALTY_TABLE[-1])
+                            _sus_days, _rel_pts = _pen[1], _pen[2]
+                            _now_str = get_now().strftime('%Y-%m-%d %H:%M:%S')
+                            _rel_dt = get_now() + _td(days=_sus_days)
+                            _rel_str = _rel_dt.strftime('%Y-%m-%d %H:%M:%S')
+                            db.execute(
+                                "UPDATE users SET unpaid_count=?, suspended_until=? WHERE id=?",
+                                (_cur, _rel_str, buyer_id)
+                            )
+                            db.execute(
+                                """INSERT INTO penalties(user_id,unpaid_count,suspend_days,release_points,is_released,created_at,match_id,match_round)
+                                   VALUES(?,?,?,?,0,?,?,1)""",
+                                (buyer_id, _cur, _sus_days, _rel_pts, _now_str, m_id)
+                            )
+                            # 미입금 구매자 2차 예약 제외
+                            db.execute(
+                                "UPDATE reservations SET status='unmatched' WHERE user_id=? AND match_round=2 AND status='pending'",
+                                (buyer_id,)
+                            )
+                        except Exception:
+                            pass
                     if pending_matches:
                         db.commit()
 
@@ -316,16 +346,31 @@ def _auto_round2_scheduler():
                                WHERE id=(SELECT seller_item_id FROM matches WHERE id=?)""",
                             (m_row['id'],)
                         )
-                    # 2) 2차 미송금(pending) → failed
+                    # 2) 2차 미송금(pending) → failed + 패널티
                     pending2 = db.execute(
-                        """SELECT id, seller_item_id FROM matches
+                        """SELECT id, buyer_id, seller_item_id FROM matches
                            WHERE match_round=2 AND status='pending' AND match_date=?""",
                         (today,)
                     ).fetchall()
                     for m_row in pending2:
-                        db.execute("UPDATE matches SET status='failed' WHERE id=?", (m_row['id'],))
+                        m_id2 = m_row['id']
+                        buyer_id2 = m_row['buyer_id']
+                        db.execute("UPDATE matches SET status='failed' WHERE id=?", (m_id2,))
                         if m_row['seller_item_id']:
                             db.execute("UPDATE items SET status='reservable' WHERE id=?", (m_row['seller_item_id'],))
+                        # 패널티
+                        try:
+                            from datetime import timedelta as _td2
+                            _br2 = db.execute("SELECT unpaid_count FROM users WHERE id=?", (buyer_id2,)).fetchone()
+                            _cur2 = int(_br2['unpaid_count'] or 0) + 1 if _br2 else 1
+                            _pen2 = next((p for p in PENALTY_TABLE if p[0] == _cur2), PENALTY_TABLE[-1])
+                            _now2 = get_now().strftime('%Y-%m-%d %H:%M:%S')
+                            _rel2 = (get_now() + _td2(days=_pen2[1])).strftime('%Y-%m-%d %H:%M:%S')
+                            db.execute("UPDATE users SET unpaid_count=?, suspended_until=? WHERE id=?", (_cur2, _rel2, buyer_id2))
+                            db.execute("""INSERT INTO penalties(user_id,unpaid_count,suspend_days,release_points,is_released,created_at,match_id,match_round)
+                                   VALUES(?,?,?,?,0,?,?,2)""", (buyer_id2, _cur2, _pen2[1], _pen2[2], _now2, m_id2))
+                        except Exception:
+                            pass
                         db.execute(
                             """UPDATE reservations SET status='unmatched'
                                WHERE id=(SELECT reservation_id FROM matches WHERE id=?)""",
