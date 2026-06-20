@@ -1041,6 +1041,21 @@ function toggleResStage(kind){
     stageEl.max = maxStage;
     if(parseInt(stageEl.value) > maxStage) stageEl.value = maxStage;
   }
+  // 2차매칭 참가신청 체크박스: 구매예약일 때만 활성화
+  var chk = document.getElementById('admin-join-round2');
+  if(chk){
+    var lbl = chk.closest('label');
+    if(kind === 'buy'){
+      chk.disabled = false;
+      chk.style.cursor = 'pointer';
+      if(lbl){ lbl.style.color = '#90caf9'; lbl.style.opacity = '1'; }
+    } else {
+      chk.disabled = true;
+      chk.checked = false;
+      chk.style.cursor = 'not-allowed';
+      if(lbl){ lbl.style.color = '#555'; lbl.style.opacity = '0.5'; }
+    }
+  }
 }
 
 function mrResetFilter(){
@@ -1204,6 +1219,9 @@ async function addReservation(){
 }
 
 async function loadExtraReservations(){
+  // 초기 드롭다운 값으로 체크박스 상태 초기화
+  var kindEl = document.getElementById('add-res-kind');
+  if(kindEl) toggleResStage(kindEl.value);
   var tbody = document.getElementById('extra-res-tbody');
   var countEl = document.getElementById('extra-res-count');
   if(!tbody) return;
