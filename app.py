@@ -297,6 +297,29 @@ def _auto_round2_scheduler():
                     if pending_matches:
                         db.commit()
 
+                    # 4) 미입금 매칭의 판매예약 → 2차 대기 전환 (loopay 판매아이템만)
+                    try:
+                        # loopay 판매예약: match_round=1 → 2로 전환
+                        db.execute(
+                            """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
+                               WHERE user_id=(SELECT id FROM users WHERE username='loopay')
+                               AND match_round=1 AND status='unmatched'
+                               AND item_id IS NOT NULL AND item_id > 0""",
+                            (today,)
+                        )
+                        # 일반 사용자 판매예약 unmatched → 2차 전환
+                        db.execute(
+                            """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
+                               WHERE match_round=1 AND status='unmatched'
+                               AND item_id IS NOT NULL AND item_id > 0
+                               AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
+                            (today,)
+                        )
+                        db.commit()
+                    except Exception:
+                        try: db.rollback()
+                        except: pass
+
                     # 3) round2_auto 설정이면 자동 2차매칭 실행
                     row = db.execute("SELECT value FROM system_settings WHERE key='round2_auto'").fetchone()
                     if row and row['value'] == 'true':
@@ -2355,28 +2378,33 @@ def admin_run_matching():
 
         # 포인트 정산: _matched_cnt_map(매칭된 buyer) + buy_rows(미매칭 buyer) 모두 처리
         try:
-            # 매칭된 buyer 처리
+            # 매칭된 buyer 처리: buy_price만큼 즉시 차감
             for _bid, _bcnt in _matched_cnt_map.items():
+                # 해당 buyer의 오늘 매칭된 총 buy_price 합산
+                _buy_sum = db.execute(
+                    """SELECT COALESCE(SUM(buy_price),0) as total FROM matches
+                       WHERE buyer_id=? AND match_date=? AND match_round=? AND status='pending'""",
+                    (_bid, today, round_num)
+                ).fetchone()['total']
                 _u = db.execute("SELECT maintain_points, charge_points FROM users WHERE id=?", (_bid,)).fetchone()
                 _mn = int(_u['maintain_points'] or 0) if _u else 0
                 _ch = int(_u['charge_points'] or 0) if _u else 0
-                _consume = _bcnt * 40
+                _consume = int(_buy_sum)
+                if _consume <= 0:
+                    continue
                 if _mn >= _consume:
-                    # maintain에서 차감 후 나머지 환원
                     _refund = _mn - _consume
                     db.execute(
                         "UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?",
                         (_refund, _bid)
                     )
                 elif _mn > 0:
-                    # maintain 일부 + charge에서 나머지 차감
                     _remain = _consume - _mn
                     db.execute(
                         "UPDATE users SET maintain_points=0, charge_points=charge_points-? WHERE id=?",
                         (_remain, _bid)
                     )
                 else:
-                    # maintain=0: charge에서 직접 차감
                     db.execute(
                         "UPDATE users SET charge_points=charge_points-? WHERE id=?",
                         (_consume, _bid)
@@ -2394,6 +2422,13 @@ def admin_run_matching():
                         "UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?",
                         (_mn2, _bid2)
                     )
+            # 포인트 차감된 매치 → points_deducted=1 표시
+            for _bid3 in _matched_cnt_map:
+                db.execute(
+                    """UPDATE matches SET points_deducted=1
+                       WHERE buyer_id=? AND match_date=? AND match_round=? AND points_deducted=0""",
+                    (_bid3, today, round_num)
+                )
             db.commit()
         except Exception as _pts_err:
             import sys
