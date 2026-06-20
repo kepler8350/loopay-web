@@ -222,24 +222,20 @@ def _auto_round2_scheduler():
                     db.close()
 
             # ── 14:01 자동 입금확인 + 미송금 2차이전 + 2차매칭 ──
-            if h == 14 and m < 30 and (today + '_14') != _last_run_date:
-                _last_run_date = today + '_14'
-                # DB에 실행 기록 확인 (서버 재시작 후 중복 실행 방지)
-                _skip_1401 = False
+            if h == 14 and m < 30:
+                # DB로 오늘 실행 여부 확인 (메모리 변수 없이 확실하게)
+                _should_run_1401 = False
                 try:
-                    _dbc = get_db()
-                    _r1401 = _dbc.execute("SELECT value FROM system_settings WHERE key='auto_run_1401'").fetchone()
-                    if _r1401 and _r1401['value'] == today:
-                        _skip_1401 = True
-                    else:
-                        _dbc.execute("INSERT OR REPLACE INTO system_settings(key,value,updated_at) VALUES('auto_run_1401',?,CURRENT_TIMESTAMP)", (today,))
-                        _dbc.commit()
-                    _dbc.close()
+                    _dbc2 = get_db()
+                    _r1401 = _dbc2.execute("SELECT value FROM system_settings WHERE key='auto_run_1401'").fetchone()
+                    if not (_r1401 and _r1401['value'] == today):
+                        _should_run_1401 = True
+                        _dbc2.execute("INSERT OR REPLACE INTO system_settings(key,value,updated_at) VALUES('auto_run_1401',?,CURRENT_TIMESTAMP)", (today,))
+                        _dbc2.commit()
+                    _dbc2.close()
                 except Exception:
-                    pass
-                if _skip_1401:
-                    pass
-                else:
+                    _should_run_1401 = True  # DB 오류 시 실행
+                if _should_run_1401:
                  db = get_db()
                  try:
                     # 1) 송금완료(paid) → 자동 입금확인(confirmed)
