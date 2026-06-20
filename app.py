@@ -222,10 +222,26 @@ def _auto_round2_scheduler():
                     db.close()
 
             # ── 14:01 자동 입금확인 + 미송금 2차이전 + 2차매칭 ──
-            if h == 14 and m < 5 and (today + '_14') != _last_run_date:
+            if h == 14 and m < 30 and (today + '_14') != _last_run_date:
                 _last_run_date = today + '_14'
-                db = get_db()
+                # DB에 실행 기록 확인 (서버 재시작 후 중복 실행 방지)
+                _skip_1401 = False
                 try:
+                    _dbc = get_db()
+                    _r1401 = _dbc.execute("SELECT value FROM system_settings WHERE key='auto_run_1401'").fetchone()
+                    if _r1401 and _r1401['value'] == today:
+                        _skip_1401 = True
+                    else:
+                        _dbc.execute("INSERT OR REPLACE INTO system_settings(key,value,updated_at) VALUES('auto_run_1401',?,CURRENT_TIMESTAMP)", (today,))
+                        _dbc.commit()
+                    _dbc.close()
+                except Exception:
+                    pass
+                if _skip_1401:
+                    pass
+                else:
+                 db = get_db()
+                 try:
                     # 1) 송금완료(paid) → 자동 입금확인(confirmed)
                     paid_matches = db.execute(
                         """SELECT id FROM matches
@@ -324,11 +340,12 @@ def _auto_round2_scheduler():
                     row = db.execute("SELECT value FROM system_settings WHERE key='round2_auto'").fetchone()
                     if row and row['value'] == 'true':
                         _run_matching_internal(db, 2, today)
-                except Exception:
+                 except Exception:
                     try: db.rollback()
                     except: pass
-                finally:
-                    db.close()
+                 finally:
+                    try: db.close()
+                    except: pass
 
             # ── 19:00 2차 자동 입금확인: 2차 paid → confirmed ──
             if h == 19 and m < 5 and today != _last_run_date_1901:
