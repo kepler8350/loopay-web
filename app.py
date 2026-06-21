@@ -267,17 +267,36 @@ def _auto_round2_scheduler():
                         buyer_id = m_row['buyer_id']
                         db.execute("UPDATE matches SET status='failed' WHERE id=?", (m_id,))
                         # 판매 아이템 복원 (reservable로)
+                        _restored_item_id = None
                         if m_row['seller_item_id']:
                             db.execute(
                                 "UPDATE items SET status='reservable' WHERE id=?",
                                 (m_row['seller_item_id'],)
                             )
-                        # 판매예약 복원 (unmatched)
-                        db.execute(
+                            _restored_item_id = m_row['seller_item_id']
+                        else:
+                            # seller_item_id 없으면 seller_id + bar_type으로 matched 아이템 찾아 복원
+                            _si = db.execute(
+                                """SELECT id FROM items WHERE user_id=? AND bar_type=?
+                                   AND status='matched' ORDER BY id DESC LIMIT 1""",
+                                (m_row['seller_id'], m_row['bar_type'])
+                            ).fetchone()
+                            if _si:
+                                db.execute("UPDATE items SET status='reservable' WHERE id=?", (_si['id'],))
+                                _restored_item_id = _si['id']
+                        # 판매예약 복원 (unmatched) 또는 신규 생성
+                        _res_updated = db.execute(
                             """UPDATE reservations SET status='unmatched'
                                WHERE id=(SELECT reservation_id FROM matches WHERE id=?)""",
                             (m_id,)
-                        )
+                        ).rowcount
+                        # 판매예약이 없으면 새로 생성 (2차 전환용)
+                        if _res_updated == 0 and _restored_item_id and m_row['seller_id']:
+                            db.execute(
+                                """INSERT INTO reservations(user_id, item_id, bar_type, match_round, reserve_date, status, stage, confirmed)
+                                   VALUES(?,?,?,1,?,'unmatched',?,1)""",
+                                (m_row['seller_id'], _restored_item_id, m_row['bar_type'], today, m_row['stage'] or 1)
+                            )
                         # ── 구매자 패널티 + 거래정지 처리 ──
                         try:
                             from datetime import timedelta as _td
@@ -312,19 +331,11 @@ def _auto_round2_scheduler():
                     # 4) 미입금 매칭의 판매예약 → 2차 대기 전환 (loopay 판매아이템만)
                     try:
                         # loopay 판매예약: match_round=1 → 2로 전환
+                        # loopay + 일반 사용자 판매예약 unmatched → 2차 전환 + confirmed=1
                         db.execute(
-                            """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
-                               WHERE user_id=(SELECT id FROM users WHERE username='loopay')
-                               AND match_round=1 AND status='unmatched'
-                               AND item_id IS NOT NULL AND item_id > 0""",
-                            (today,)
-                        )
-                        # 일반 사용자 판매예약 unmatched → 2차 전환
-                        db.execute(
-                            """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
+                            """UPDATE reservations SET status='pending', match_round=2, reserve_date=?, confirmed=1
                                WHERE match_round=1 AND status='unmatched'
-                               AND item_id IS NOT NULL AND item_id > 0
-                               AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
+                               AND item_id IS NOT NULL AND item_id > 0""",
                             (today,)
                         )
                         db.commit()
