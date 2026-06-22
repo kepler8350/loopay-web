@@ -517,6 +517,11 @@ def _run_matching_internal(db, round_num, today):
             key = (r['bar_type'], r['stage'])
             sell_by.setdefault(key, []).append(dict(r))
 
+        # ── 판매 랜덤 셔플 ──
+        import random as _rand2
+        for _k in sell_by:
+            _rand2.shuffle(sell_by[_k])
+
         # 구매예약: stage=0이면 단계 미지정 (랜덤 매칭), 아니면 단계별 매칭
         buy_staged = []   # stage > 0: 단계 지정 구매
         buy_random = []   # stage = 0: 단계 미지정 구매 (bar_type 랜덤 매칭)
@@ -530,6 +535,18 @@ def _run_matching_internal(db, round_num, today):
         for r in buy_staged:
             key = (r['bar_type'], r['stage'])
             buy_by.setdefault(key, []).append(dict(r))
+
+        # 구매 셔플 + loopay 우선
+        for _k2 in buy_by:
+            _lp = [b for b in buy_by[_k2] if b.get('buyer_username') == 'loopay']
+            _nm = [b for b in buy_by[_k2] if b.get('buyer_username') != 'loopay']
+            _rand2.shuffle(_nm)
+            buy_by[_k2] = _lp + _nm
+        # 랜덤 구매도 loopay 우선 + 셔플
+        _lp_rnd = [b for b in buy_random if b.get('buyer_username') == 'loopay']
+        _nm_rnd = [b for b in buy_random if b.get('buyer_username') != 'loopay']
+        _rand2.shuffle(_nm_rnd)
+        buy_random = _lp_rnd + _nm_rnd
 
         matched_s = set(); matched_b = set()
         _cnt_map = {}
@@ -2182,6 +2199,24 @@ def admin_run_matching():
         _matched_cnt_map = {}  # buyer_id(int) → 매칭건수
 
         # stage별 매칭 (정확한 매칭)
+        # ── 랜덤 셔플: 판매/구매 모두 랜덤 순서로 ──
+        import random as _rand
+        for key in sell_by_type_stage:
+            _rand.shuffle(sell_by_type_stage[key])
+        for key in buy_by_type_stage:
+            _lst = buy_by_type_stage[key]
+            # loopay 구매 우선: loopay buyer를 맨 앞으로
+            _loopay_buyers = [b for b in _lst if b.get('buyer_username') == 'loopay']
+            _normal_buyers = [b for b in _lst if b.get('buyer_username') != 'loopay']
+            _rand.shuffle(_normal_buyers)
+            buy_by_type_stage[key] = _loopay_buyers + _normal_buyers
+        for bt in buy_any_stage:
+            _lst2 = buy_any_stage[bt]
+            _loopay_any = [b for b in _lst2 if b.get('buyer_username') == 'loopay']
+            _normal_any = [b for b in _lst2 if b.get('buyer_username') != 'loopay']
+            _rand.shuffle(_normal_any)
+            buy_any_stage[bt] = _loopay_any + _normal_any
+
         all_keys = sorted(set(list(sell_by_type_stage.keys()) + list(buy_by_type_stage.keys())))
         matched_seller_ids = set()
         matched_buyer_ids = set()
