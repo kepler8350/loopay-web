@@ -4919,7 +4919,7 @@ def admin_loopay_sell_reserve():
         # 아이템 상태 변경 + 판매예약 생성
         db.execute("UPDATE items SET status='reservable' WHERE id=?", (item_id,))
         db.execute(
-            "INSERT INTO reservations(user_id, item_id, bar_type, match_round, reserve_date, status, stage) VALUES(?,?,?,?,?,'pending',?)",
+            "INSERT INTO reservations(user_id, item_id, bar_type, match_round, reserve_date, status, stage, confirmed) VALUES(?,?,?,?,?,'pending',?,1)",
             (lid, item_id, item['bar_type'], match_round, today, item['stage'] or 1)
         )
         db.commit()
