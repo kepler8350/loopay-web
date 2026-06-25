@@ -1465,11 +1465,14 @@ async function loadMatchingStatus(){
     // 2차 탭 구매예약 수 = 1차 미매칭(1차 buy - 1차 sell) 표시
     var _r1UnmatchedBuy = (d.r1_unmatched_buy!=null) ? d.r1_unmatched_buy : (r2.buy_count!=null?r2.buy_count:'-');
     set('r2-buy', _r1UnmatchedBuy);
-    set('r2-sell', r2.sell_count!=null?r2.sell_count:'-');
+    // 미입금 판매아이템: failed 매치에서 별도 집계된 r2_sell_by_type 사용
+    var _r2SellCount = (d.r2_sell_count!=null) ? d.r2_sell_count : (r2.sell_count!=null?r2.sell_count:'-');
+    var _r2SellByType = (d.r2_sell_by_type && d.r2_sell_by_type.length) ? d.r2_sell_by_type : r2.by_type;
+    set('r2-sell', _r2SellCount);
     var rateEl2=document.getElementById('r2-rate');
     if(rateEl2){ rateEl2.textContent=mr2+'%'; rateEl2.style.color=mrc(mr2); }
-    var bt2=document.getElementById('r2-by-type'); if(bt2) bt2.innerHTML=mkTypeTable(r2.by_type);
-    var bbt2=document.getElementById('r2-buy-by-type'); if(bbt2) bbt2.innerHTML=mkTypeTable(r2.buy_by_type);
+    var bt2=document.getElementById('r2-by-type'); if(bt2) bt2.innerHTML=mkTypeTable(_r2SellByType);
+    var bbt2=document.getElementById('r2-buy-by-type'); if(bbt2) bbt2.innerHTML=mkTypeTable(sortByBarType(r2.buy_by_type));
 
     // 미입금 현황 렌더링
     var barNames={bronze:'수정',silver:'루비',gold:'다이아'};

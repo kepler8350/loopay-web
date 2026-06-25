@@ -2779,8 +2779,8 @@ def admin_matching_status():
             if _r['bar_type']:  # null bar_type 제외
                 _bbt_dict[_r['bar_type']] = _bbt_dict.get(_r['bar_type'], 0) + _r['cnt']
         buy_by_type = [{'bar_type': k, 'cnt': v} for k, v in _bbt_dict.items() if k and v > 0]
-
-
+        # buy_count를 buy_by_type SUM으로 재산출 (카드=테이블 일치)
+        buy_count = sum(r['cnt'] for r in buy_by_type) if buy_by_type else buy_count
 
         # ── 판매예약: loopay + 일반 사용자 모두 집계 ──
         # 구매예약(buy)은 user_id != loopay_id, 판매예약(sell)은 item_id 있음
@@ -2813,20 +2813,26 @@ def admin_matching_status():
         ).fetchone()['c']
         sell_count = max(_confirmed_sell, _loopay_sell)
 
+        # by_type: loopay + 일반 사용자 판매예약 아이템별 집계 (항상 실행 - sell_count 재산출용)
+        by_type_rows = db.execute(
+            """SELECT r.bar_type, COUNT(*) as cnt FROM reservations r
+               INNER JOIN items i ON r.item_id=i.id
+               WHERE r.match_round=? AND r.status IN ('pending','unmatched')
+               AND r.reserve_date>=?
+               AND COALESCE(r.confirmed,0)=1
+               AND i.status IN ('reservable','waiting')
+               GROUP BY r.bar_type""",
+            (round_num, today)
+        ).fetchall()
+        # sell_count를 by_type_rows 합계로 재계산 (카드 수치 = 테이블 수치 일치)
+        sell_count = sum(r['cnt'] for r in by_type_rows) if by_type_rows else sell_count
+
         rate = round(min(buy_count, sell_count) / buy_count * 100, 1) if buy_count > 0 else 0.0
 
-        # by_type: loopay + 일반 사용자 판매예약 아이템별 집계
-        if sell_count > 0:
-            by_type_rows = db.execute(
-                """SELECT r.bar_type, COUNT(*) as cnt FROM reservations r
-                   INNER JOIN items i ON r.item_id=i.id
-                   WHERE r.match_round=? AND r.status IN ('pending','unmatched')
-                   AND r.reserve_date>=?
-                   AND COALESCE(r.confirmed,0)=1
-                   AND i.status IN ('reservable','waiting')
-                   GROUP BY r.bar_type""",
-                (round_num, today)
-            ).fetchall()
+        if True:
+            pass  # by_type_rows 이미 위에서 계산됨
+            if sell_count > 0:
+                dummy_unused = None
             by_stage_rows = db.execute(
                 """SELECT r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1)) as stage, COUNT(*) as c
                    FROM reservations r
@@ -2834,7 +2840,7 @@ def admin_matching_status():
                    WHERE r.match_round=? AND r.status IN ('pending','unmatched')
                    AND r.reserve_date>=?
                    AND COALESCE(r.confirmed,0)=1
-                   AND i.status='reservable'
+                   AND i.status IN ('reservable','waiting')
                    GROUP BY r.bar_type, COALESCE(r.stage, COALESCE(i.stage,1))
                    ORDER BY r.bar_type, stage""",
                 (round_num, today)
@@ -2870,6 +2876,32 @@ def admin_matching_status():
            ORDER BY m.bar_type, m.stage""",
         (today, _yesterday)
     ).fetchall()
+
+    # 미입금 판매아이템 집계 (r2_sell_by_type: failed 매치의 loopay 아이템)
+    _loopay_row2 = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+    _loopay_id2 = _loopay_row2['id'] if _loopay_row2 else -1
+    _failed_sell_rows = db.execute(
+        """SELECT m.bar_type, COUNT(*) as cnt
+           FROM matches m
+           WHERE m.match_round=1 AND m.status='failed' AND m.match_date IN (?,?)
+           AND m.seller_id=?
+           GROUP BY m.bar_type""",
+        (today, _yesterday, _loopay_id2)
+    ).fetchall()
+    # seller_item_id 없는 경우 fallback: loopay 아이템 직접 조회
+    if not _failed_sell_rows:
+        _failed_sell_rows = db.execute(
+            """SELECT i.bar_type, COUNT(*) as cnt
+               FROM items i
+               INNER JOIN reservations r ON r.item_id=i.id
+               WHERE i.user_id=? AND i.status='reservable'
+               AND r.match_round=2 AND r.status='pending' AND r.reserve_date>=?
+               GROUP BY i.bar_type""",
+            (_loopay_id2, today)
+        ).fetchall()
+    r2_sell_by_type = [{'bar_type': r['bar_type'], 'cnt': r['cnt']} for r in _failed_sell_rows if r['bar_type']]
+    r2_sell_count_from_failed = sum(r['cnt'] for r in r2_sell_by_type)
+
     failed_details = [{'username': r['username'], 'nickname': r['nickname'],
                         'bar_type': r['bar_type'], 'stage': r['stage'],
                         'match_id': r['match_id']} for r in failed_list]
@@ -2901,7 +2933,9 @@ def admin_matching_status():
         'date': today,
         'failed_count': failed_count,
         'failed_details': failed_details,
-        'r1_unmatched_buy': r1_unmatched_buy
+        'r1_unmatched_buy': r1_unmatched_buy,
+        'r2_sell_by_type': r2_sell_by_type,
+        'r2_sell_count': r2_sell_count_from_failed
     }
     db.close()
     return jsonify(result)
