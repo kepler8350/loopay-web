@@ -2148,7 +2148,7 @@ def admin_run_matching():
                AND r.reserve_date>=?
                AND u.username = 'loopay'
                AND (r.confirmed=1 OR COALESCE(r.confirmed,0)=0)
-               AND (i.status='waiting' OR r.item_id IS NULL)""",
+               AND (i.status='waiting' OR COALESCE(r.item_id,0)=0)""",
             (round_num, today)
         ).fetchall()
         buy_rows = list(_normal_buy_rows) + list(_loopay_buy_rows)
