@@ -2144,8 +2144,8 @@ def admin_run_matching():
                 ).fetchone()['c']
                 if sell_count_2 == 0:
                     # 마지막 수단: failed 매치를 직접 2차 판매예약으로 변환 (아이템 없이도)
-                    # failed 매치에서 seller 정보 조회 (seller_phone JOIN으로 user_id 확보)
-                _failed2_bare = db.execute(
+                    # seller_phone JOIN으로 user_id 확보
+                    _failed2_bare = db.execute(
                         """SELECT DISTINCT m.bar_type, COALESCE(m.stage,1) as stage,
                                   COALESCE(m.seller_id, u_s.id) as eff_seller_id,
                                   m.seller_item_id as eff_item_id
