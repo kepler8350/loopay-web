@@ -441,13 +441,22 @@ def _auto_round2_scheduler():
                             # loopay 구매 매치 신규 생성 (송금 버튼 활성화)
                             _bp2, _sp2 = get_price(bar2, stage2)
                             _sid2 = m_row['eff_seller_id']
+                            # seller_item_id로 reservation_id 조회 (FK 제약)
+                            _res_row2 = db.execute(
+                                "SELECT id FROM reservations WHERE item_id=? AND match_round=2 ORDER BY id DESC LIMIT 1",
+                                (item_id2,)).fetchone()
+                            _res_id3 = _res_row2['id'] if _res_row2 else None
+                            if not _res_id3:
+                                _res_id3 = db.execute(
+                                    "INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,stage,confirmed) VALUES(?,?,?,2,?,'matched',?,1)",
+                                    (_loopay_id2, item_id2, bar2, today, stage2)).lastrowid
                             db.execute(
                                 """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
                                       buy_price, sell_price, match_round, match_date, status,
                                       seller_phone, seller_bank, seller_account, seller_account_name,
                                       seller_item_id)
-                                   VALUES(0, ?, ?, ?, ?, ?, ?, 2, ?, 'pending', ?, ?, ?, ?, ?)""",
-                                (_loopay_id2, _sid2 or 0, bar2, stage2,
+                                   VALUES(?, ?, ?, ?, ?, ?, ?, 2, ?, 'pending', ?, ?, ?, ?, ?)""",
+                                (_res_id3, _loopay_id2, _sid2 or 0, bar2, stage2,
                                  _bp2, _sp2, today,
                                  m_row['seller_phone'], m_row['seller_bank'],
                                  m_row['seller_account'], m_row['seller_account_name'],
@@ -6143,12 +6152,21 @@ def testtools_run_round2_auto():
                 db.execute("UPDATE items SET status='matched', user_id=? WHERE id=?", (_loopay_id2, item_id2))
                 _bp2, _sp2 = get_price(bar2, stage2)
                 _sid2 = m_row['eff_seller_id']
+                # reservation_id FK 처리
+                _res_row2 = db.execute(
+                    "SELECT id FROM reservations WHERE item_id=? AND match_round=2 ORDER BY id DESC LIMIT 1",
+                    (item_id2,)).fetchone()
+                _res_id3 = _res_row2['id'] if _res_row2 else None
+                if not _res_id3:
+                    _res_id3 = db.execute(
+                        "INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,stage,confirmed) VALUES(?,?,?,2,?,'matched',?,1)",
+                        (_loopay_id2, item_id2, bar2, today, stage2)).lastrowid
                 db.execute(
                     """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
                           buy_price, sell_price, match_round, match_date, status,
                           seller_phone, seller_bank, seller_account, seller_account_name, seller_item_id)
-                       VALUES(0, ?, ?, ?, ?, ?, ?, 2, ?, 'pending', ?, ?, ?, ?, ?)""",
-                    (_loopay_id2, _sid2 or 0, bar2, stage2, _bp2, _sp2, today,
+                       VALUES(?, ?, ?, ?, ?, ?, ?, 2, ?, 'pending', ?, ?, ?, ?, ?)""",
+                    (_res_id3, _loopay_id2, _sid2 or 0, bar2, stage2, _bp2, _sp2, today,
                      m_row['seller_phone'], m_row['seller_bank'],
                      m_row['seller_account'], m_row['seller_account_name'], item_id2)
                 )
