@@ -228,10 +228,19 @@ def _auto_round2_scheduler():
                 try:
                     _dbc2 = get_db()
                     _r1401 = _dbc2.execute("SELECT value FROM system_settings WHERE key='auto_run_1401'").fetchone()
-                    if not (_r1401 and _r1401['value'] == today):
+                    _already_ran_today = (_r1401 and _r1401['value'] == today)
+                    if not _already_ran_today:
                         _should_run_1401 = True
                         _dbc2.execute("INSERT OR REPLACE INTO system_settings(key,value,updated_at) VALUES('auto_run_1401',?,CURRENT_TIMESTAMP)", (today,))
                         _dbc2.commit()
+                    else:
+                        # 오늘 이미 실행됐어도 미처리 pending이 있으면 재실행
+                        _pending_left = _dbc2.execute(
+                            "SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND status='pending' AND match_date<=?",
+                            (today,)
+                        ).fetchone()['c']
+                        if _pending_left > 0:
+                            _should_run_1401 = True
                     _dbc2.close()
                 except Exception:
                     _should_run_1401 = True  # DB 오류 시 실행
@@ -2891,19 +2900,22 @@ def admin_matching_status():
     # 오늘 1차 미입금 확정(failed) 수량
     import datetime as _dt2
     _yesterday = (_dt2.date.fromisoformat(today) - _dt2.timedelta(days=1)).isoformat()
+    # 최근 3일 이내 미입금 집계 (오늘+어제+그제)
+    import datetime as _dt3
+    _day2 = (_dt3.date.fromisoformat(today) - _dt3.timedelta(days=2)).isoformat()
     failed_count = db.execute(
-        "SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND status='failed' AND match_date IN (?,?)",
-        (today, _yesterday)
+        "SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND status='failed' AND match_date>=?",
+        (_day2,)
     ).fetchone()['c']
 
-    # 미입금 상세: 아이디, 아이템 종류, 단계 (오늘+어제)
+    # 미입금 상세: 최근 3일
     failed_list = db.execute(
         """SELECT u.username, u.nickname, m.bar_type, m.stage, m.id as match_id
            FROM matches m
            LEFT JOIN users u ON m.buyer_id = u.id
-           WHERE m.match_round=1 AND m.status='failed' AND m.match_date IN (?,?)
+           WHERE m.match_round=1 AND m.status='failed' AND m.match_date>=?
            ORDER BY m.bar_type, m.stage""",
-        (today, _yesterday)
+        (_day2,)
     ).fetchall()
 
     # 미입금 판매아이템 집계 (r2_sell_by_type: failed 매치의 loopay 아이템)
