@@ -2375,12 +2375,27 @@ async function userWarnUnpaid(matchId){
 }
 
 // 판매탭: 미입금확인 처리
-async function userConfirmUnpaid(matchId){
-  // 함수 진입 즉시 모든 미입금확인 버튼 비활성화 (confirm 전에 먼저)
+// 미입금확인 팝업 열기/닫기
+var _pendingUnpaidMatchId = null;
+function userConfirmUnpaid(matchId){
+  _pendingUnpaidMatchId = matchId;
+  // 팝업 열기
+  var ov = document.getElementById('unpaid-confirm-overlay');
+  if(ov){ if(ov.parentElement!==document.body) document.body.appendChild(ov); ov.classList.add('show'); }
+}
+function closeUnpaidConfirm(){
+  var ov = document.getElementById('unpaid-confirm-overlay');
+  if(ov) ov.classList.remove('show');
+  _pendingUnpaidMatchId = null;
+}
+async function doConfirmUnpaid(){
+  var matchId = _pendingUnpaidMatchId;
+  if(!matchId) return;
+  // 팝업 닫기 + 버튼 비활성화
+  closeUnpaidConfirm();
   document.querySelectorAll('button').forEach(function(b){
     if(b.textContent.includes('미입금확인')){ b.disabled=true; b.style.opacity='0.5'; b.style.cursor='not-allowed'; }
   });
-  if(!confirm('미입금 처리하시겠습니까?')){ loadSellTab(); return; }
   try {
     var r = await api('/user/confirm-unpaid', {method:'POST', body:JSON.stringify({match_id:matchId})});
     if(r.success){ _confirmedUnpaidMatchIds[matchId]=true; toast('미입금 처리 완료', 'success'); loadSellTab(); }
