@@ -630,8 +630,8 @@ function showBarPrice(type,btn){
 function showTab(id,btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+id).classList.add('active');
-  btn.classList.add('active');
+  var tabEl = document.getElementById('tab-'+id); if(tabEl) tabEl.classList.add('active');
+  if(btn) btn.classList.add('active');
 
   if(id === 'combine') setTimeout(loadCombineItems, 100);
   if(id === 'matching') loadMatchingTab();
