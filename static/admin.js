@@ -245,11 +245,14 @@ async function updateMatchingBtn(){
       notice.style.color = isActive1 ? '#66bb6a' : '#f9a825';
     }
 
-    // 2차 매칭: 미입금(failed) > 0 AND 14:00~15:00 에만 활성화
+    // 2차 매칭: 미입금(failed) > 0 AND 14:00~14:59 에만 활성화
+    // 단, 이미 2차 매칭이 실행된 경우(r2 pending 있음)는 비활성화
     var r2BuyCount = (matchData.round2||{}).buy_count || 0;
+    var _r2PendingCount = (matchData.r2_pending_count || 0);
     var _h2 = ct.hour || 0; var _m2 = ct.minute || 0;
-    var _inR2Window = (_h2 === 14) || (_h2 === 15 && _m2 === 0); // 14:00~14:59
-    var isActive2 = (failedCount > 0 || r2BuyCount > 0) && _inR2Window;
+    var _inR2Window = (_h2 === 14); // 14:00~14:59
+    var _r2AlreadyRun = (_r2PendingCount > 0);
+    var isActive2 = (failedCount > 0 || r2BuyCount > 0) && _inR2Window && !_r2AlreadyRun;
     var btn2 = document.getElementById('btn-run-matching-2');
     var notice2 = document.getElementById('matching-time-notice-2');
     if(btn2){ btn2.disabled=!isActive2; btn2.style.opacity=isActive2?'1':'0.45'; btn2.style.cursor=isActive2?'pointer':'not-allowed'; }
@@ -269,12 +272,12 @@ async function updateMatchingBtn(){
       }
     }
     if(notice2){
-      var msg2 = isActive2
-        ? '✅ 2차 매칭 가능 — 미입금 '+failedCount+'건 — 서버시간 '+ct.time.slice(11,16)
-        : (r2BuyCount > 0 ? '⚠️ 미입금 없음 — 2차 참가신청 '+r2BuyCount+'건 ('+ct.time.slice(11,16)+')' : '⚠️ 미입금 없음 — 2차 매칭 불필요 ('+ct.time.slice(11,16)+')');
-      notice2.textContent = msg2;
-      notice2.style.color = isActive2 ? '#66bb6a' : '#888';
-    }
+     if(notice2){
+       var msg2 = _r2AlreadyRun ? '✅ 2차 매칭 완료 — '+_r2PendingCount+'건 매칭됨 — 서버시간 '+ct.time.slice(11,16)
+         : isActive2 ? '✅ 2차 매칭 가능 — 미입금 '+failedCount+'건 — 서버시간 '+ct.time.slice(11,16)
+         : (r2BuyCount > 0 ? '⚠️ 미입금 없음 — 2차 참가신청 '+r2BuyCount+'건 ('+ct.time.slice(11,16)+')' : '⚠️ 미입금 없음 — 2차 매칭 불필요 ('+ct.time.slice(11,16)+')' );
+       notice2.textContent = msg2;
+       notice2.style.color = _r2AlreadyRun ? '#42a5f5' : (isActive2 ? '#66bb6a' : '#888');
   }catch(e){
     var btn = document.getElementById('btn-run-matching-1');
     if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }

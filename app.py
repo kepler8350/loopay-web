@@ -3068,6 +3068,12 @@ def admin_matching_status():
         # 1차 매칭 실행 후 - 실제 2차 참가 신청자 수
         r1_unmatched_buy = r2_data['buy_count']
 
+    # 2차 매칭 실행 여부 (pending 2차 매치 수)
+    r2_pending_count = db.execute(
+        "SELECT COUNT(*) as c FROM matches WHERE match_round=2 AND status='pending' AND match_date=?",
+        (today,)
+    ).fetchone()['c']
+
     result = {
         'round1': r1_data,
         'round2': r2_data,
@@ -3076,7 +3082,8 @@ def admin_matching_status():
         'failed_details': failed_details,
         'r1_unmatched_buy': r1_unmatched_buy,
         'r2_sell_by_type': r2_sell_by_type,
-        'r2_sell_count': r2_sell_count_from_failed
+        'r2_sell_count': r2_sell_count_from_failed,
+        'r2_pending_count': r2_pending_count
     }
     db.close()
     return jsonify(result)
