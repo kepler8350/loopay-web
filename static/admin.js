@@ -249,7 +249,7 @@ async function updateMatchingBtn(){
     var r2BuyCount = (matchData.round2||{}).buy_count || 0;
     var _h2 = ct.hour || 0; var _m2 = ct.minute || 0;
     var _inR2Window = (_h2 === 14) || (_h2 === 15 && _m2 === 0); // 14:00~14:59
-    var isActive2 = (failedCount > 0) && _inR2Window;
+    var isActive2 = (failedCount > 0 || r2BuyCount > 0) && _inR2Window;
     var btn2 = document.getElementById('btn-run-matching-2');
     var notice2 = document.getElementById('matching-time-notice-2');
     if(btn2){ btn2.disabled=!isActive2; btn2.style.opacity=isActive2?'1':'0.45'; btn2.style.cursor=isActive2?'pointer':'not-allowed'; }
@@ -271,7 +271,7 @@ async function updateMatchingBtn(){
     if(notice2){
       var msg2 = isActive2
         ? '✅ 2차 매칭 가능 — 미입금 '+failedCount+'건 — 서버시간 '+ct.time.slice(11,16)
-        : '⚠️ 미입금 없음 — 2차 매칭 불필요 ('+ct.time.slice(11,16)+')';
+        : (r2BuyCount > 0 ? '⚠️ 미입금 없음 — 2차 참가신청 '+r2BuyCount+'건 ('+ct.time.slice(11,16)+')' : '⚠️ 미입금 없음 — 2차 매칭 불필요 ('+ct.time.slice(11,16)+')');
       notice2.textContent = msg2;
       notice2.style.color = isActive2 ? '#66bb6a' : '#888';
     }
