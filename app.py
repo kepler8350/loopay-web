@@ -411,18 +411,49 @@ def _auto_round2_scheduler():
                                WHERE id=(SELECT seller_item_id FROM matches WHERE id=?)""",
                             (m_row['id'],)
                         )
-                    # 2) 2차 미송금(pending) → failed + 패널티
+                    # 2) 2차 미송금(pending) → failed + 패널티 + loopay 구매아이템으로 이전
+                    _loopay2 = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+                    _loopay_id2 = _loopay2['id'] if _loopay2 else None
                     pending2 = db.execute(
-                        """SELECT id, buyer_id, seller_item_id FROM matches
-                           WHERE match_round=2 AND status='pending' AND match_date<=?""",
+                        """SELECT m.id, m.buyer_id, m.seller_item_id, m.bar_type,
+                              COALESCE(m.stage,1) as stage, m.sell_price,
+                              u_s.account_name as seller_account_name,
+                              u_s.account_no as seller_account,
+                              u_s.bank as seller_bank,
+                              u_s.phone as seller_phone,
+                              COALESCE(m.seller_id, u_s2.id) as eff_seller_id
+                           FROM matches m
+                           LEFT JOIN users u_s ON u_s.id = m.seller_id
+                           LEFT JOIN users u_s2 ON u_s2.phone = m.seller_phone
+                           WHERE m.match_round=2 AND m.status='pending' AND m.match_date<=?""",
                         (today,)
                     ).fetchall()
                     for m_row in pending2:
                         m_id2 = m_row['id']
                         buyer_id2 = m_row['buyer_id']
+                        item_id2 = m_row['seller_item_id']
+                        bar2 = m_row['bar_type']
+                        stage2 = m_row['stage']
                         db.execute("UPDATE matches SET status='failed' WHERE id=?", (m_id2,))
-                        if m_row['seller_item_id']:
-                            db.execute("UPDATE items SET status='reservable' WHERE id=?", (m_row['seller_item_id'],))
+                        # 아이템을 loopay 구매아이템으로 이전 (status='matched', user_id=loopay)
+                        if item_id2 and _loopay_id2:
+                            db.execute("UPDATE items SET status='matched', user_id=? WHERE id=?",
+                                       (_loopay_id2, item_id2))
+                            # loopay 구매 매치 신규 생성 (송금 버튼 활성화)
+                            _bp2, _sp2 = get_price(bar2, stage2)
+                            _sid2 = m_row['eff_seller_id']
+                            db.execute(
+                                """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
+                                      buy_price, sell_price, match_round, match_date, status,
+                                      seller_phone, seller_bank, seller_account, seller_account_name,
+                                      seller_item_id)
+                                   VALUES(0, ?, ?, ?, ?, ?, ?, 2, ?, 'pending', ?, ?, ?, ?, ?)""",
+                                (_loopay_id2, _sid2 or 0, bar2, stage2,
+                                 _bp2, _sp2, today,
+                                 m_row['seller_phone'], m_row['seller_bank'],
+                                 m_row['seller_account'], m_row['seller_account_name'],
+                                 item_id2)
+                            )
                         # 패널티
                         try:
                             from datetime import timedelta as _td2
