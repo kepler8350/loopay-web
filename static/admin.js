@@ -271,13 +271,13 @@ async function updateMatchingBtn(){
         tabBtn2.title = '미입금 수량이 없어 2차 매칭 불가';
       }
     }
-    if(notice2){
      if(notice2){
        var msg2 = _r2AlreadyRun ? '✅ 2차 매칭 완료 — '+_r2PendingCount+'건 매칭됨 — 서버시간 '+ct.time.slice(11,16)
          : isActive2 ? '✅ 2차 매칭 가능 — 미입금 '+failedCount+'건 — 서버시간 '+ct.time.slice(11,16)
-         : (r2BuyCount > 0 ? '⚠️ 미입금 없음 — 2차 참가신청 '+r2BuyCount+'건 ('+ct.time.slice(11,16)+')' : '⚠️ 미입금 없음 — 2차 매칭 불필요 ('+ct.time.slice(11,16)+')' );
+         : (r2BuyCount > 0 ? '⚠️ 미입금 없음 — 2차 참가신청 '+r2BuyCount+'건 ('+ct.time.slice(11,16)+')' : '⚠️ 미입금 없음 — 2차 매칭 불필요 ('+ct.time.slice(11,16)+')');
        notice2.textContent = msg2;
        notice2.style.color = _r2AlreadyRun ? '#42a5f5' : (isActive2 ? '#66bb6a' : '#888');
+     }
   }catch(e){
     var btn = document.getElementById('btn-run-matching-1');
     if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
