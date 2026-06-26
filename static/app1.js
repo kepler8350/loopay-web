@@ -2202,7 +2202,8 @@ async function doReleasePenalty(){
 var _myItems = [];
 var _sellServerHour = 0;
 var _sellServerMin  = 0;
-var _sellUnpaidClickedAt = {}; // matchId → 마지막 클릭 시각(분)
+var _sellUnpaidClickedAt = {};
+var _confirmedUnpaidMatchIds = {}; // 미입금확인 완료된 match_id 세트 // matchId → 마지막 클릭 시각(분)
 
 async function loadSellTab(){
   try {
@@ -2309,7 +2310,8 @@ function renderSellTab(){
       else { actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">✅ 입금확인</button>'; }
       if(!_isPaid && !_isConf && _inWarnWin && _coolOk){ actionBtns += '<button onclick="userWarnUnpaid('+item.match_id+')" style="padding:3px 8px;background:#f57c00;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📨 입금요청</button>'; }
       else { actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">📨 입금요청</button>'; }
-      if(!_isConf && _inConfWin){ actionBtns += '<button onclick="userConfirmUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🚫 미입금확인</button>'; }
+      var _alreadyConfirmedUnpaid = !!_confirmedUnpaidMatchIds[item.match_id];
+      if(!_isConf && !_alreadyConfirmedUnpaid && _inConfWin){ actionBtns += '<button onclick="userConfirmUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🚫 미입금확인</button>'; }
       else { actionBtns += '<button disabled style="padding:3px 8px;background:rgba(0,0,0,0.2);color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed">🚫 미입금확인</button>'; }
       if(ms==='matched'){ actionBtns += '<span style="font-size:11px;color:#f9a825;margin-left:4px">⏳ 송금 대기</span>'; }
     }
@@ -2373,7 +2375,7 @@ async function userConfirmUnpaid(matchId){
   if(!confirm('미입금 처리하시겠습니까?')){ loadSellTab(); return; }
   try {
     var r = await api('/user/confirm-unpaid', {method:'POST', body:JSON.stringify({match_id:matchId})});
-    if(r.success){ toast('미입금 처리 완료', 'success'); loadSellTab(); }
+    if(r.success){ _confirmedUnpaidMatchIds[matchId]=true; toast('미입금 처리 완료', 'success'); loadSellTab(); }
     else { toast(r.error||'처리 실패','error'); loadSellTab(); }
   } catch(e){ toast('오류: '+e.message,'error'); loadSellTab(); }
 }
