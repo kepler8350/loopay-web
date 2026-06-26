@@ -830,11 +830,22 @@ function renderSystemItems(){
     } else {
       // match_id 없는 아이템: reservable 상태면 판매예약 버튼 표시
       if(item.status === 'reservable' && !item.sell_reservation_id){
-        // 구매일 다음날 이후인지 확인
-        var _purchaseDate = item.purchase_date ? new Date(item.purchase_date) : null;
-        var _today = new Date(); _today.setHours(0,0,0,0);
-        var _nextDay = _purchaseDate ? new Date(_purchaseDate.getTime() + 86400000) : null;
-        var _canSell = !_nextDay || (_today >= _nextDay);
+        // 구매일 다음날 이후인지 확인 (서버 날짜 기준)
+        var _purchaseDate = item.purchase_date || null;
+        var _canSell = true;
+        if(_purchaseDate){
+          // 서버 시간에서 오늘 날짜 계산
+          var _srvNow = new Date();
+          // _serverHour/Min 을 서버 로컬 시간으로 보정
+          var _srvDate = new Date(_srvNow);
+          _srvDate.setHours(_serverHour||0, _serverMin||0, 0, 0);
+          // 서버 날짜 문자열 (YYYY-MM-DD)
+          var _y = _srvDate.getFullYear();
+          var _mo = String(_srvDate.getMonth()+1).padStart(2,'0');
+          var _d = String(_srvDate.getDate()).padStart(2,'0');
+          var _todayStr = _y+'-'+_mo+'-'+_d;
+          _canSell = _todayStr > _purchaseDate; // 다음날 이후
+        }
         if(_canSell){
           actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',1)" style="padding:3px 8px;background:#7b1fa2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 1차 판매예약</button>';
           actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',2)" style="padding:3px 8px;background:#4a148c;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">📋 2차 판매예약</button>';
