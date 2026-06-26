@@ -425,8 +425,7 @@ def _auto_round2_scheduler():
                            FROM matches m
                            LEFT JOIN users u_s ON u_s.id = m.seller_id
                            LEFT JOIN users u_s2 ON u_s2.phone = m.seller_phone
-                           WHERE m.match_round=2 AND m.status='pending' AND m.match_date<=?""",
-                        (today,)
+                           WHERE m.match_round=2 AND m.status='pending'""",
                     ).fetchall()
                     for m_row in pending2:
                         m_id2 = m_row['id']
@@ -6131,8 +6130,7 @@ def testtools_run_round2_auto():
                FROM matches m
                LEFT JOIN users u_s ON u_s.id = m.seller_id
                LEFT JOIN users u_s2 ON u_s2.phone = m.seller_phone
-               WHERE m.match_round=2 AND m.status='pending' AND m.match_date<=?""",
-            (today,)
+               WHERE m.match_round=2 AND m.status='pending'"""
         ).fetchall()
         processed = 0
         for m_row in pending2:
