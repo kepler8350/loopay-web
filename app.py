@@ -6109,6 +6109,61 @@ def admin_auto_confirm_paid():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/run-round2-auto', methods=['POST'])
+@jwt_required()
+def testtools_run_round2_auto():
+    """테스트용: 20:00 2차 자동처리 수동 실행"""
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
+    db = get_db()
+    try:
+        today = get_today().isoformat()
+        _loopay2 = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        _loopay_id2 = _loopay2['id'] if _loopay2 else None
+        pending2 = db.execute(
+            """SELECT m.id, m.buyer_id, m.seller_item_id, m.bar_type,
+                  COALESCE(m.stage,1) as stage, m.sell_price,
+                  u_s.account_name as seller_account_name,
+                  u_s.account_no as seller_account,
+                  u_s.bank as seller_bank,
+                  u_s.phone as seller_phone,
+                  COALESCE(m.seller_id, u_s2.id) as eff_seller_id
+               FROM matches m
+               LEFT JOIN users u_s ON u_s.id = m.seller_id
+               LEFT JOIN users u_s2 ON u_s2.phone = m.seller_phone
+               WHERE m.match_round=2 AND m.status='pending' AND m.match_date<=?""",
+            (today,)
+        ).fetchall()
+        processed = 0
+        for m_row in pending2:
+            m_id2 = m_row['id']
+            item_id2 = m_row['seller_item_id']
+            bar2 = m_row['bar_type']
+            stage2 = m_row['stage']
+            db.execute("UPDATE matches SET status='failed' WHERE id=?", (m_id2,))
+            if item_id2 and _loopay_id2:
+                db.execute("UPDATE items SET status='matched', user_id=? WHERE id=?", (_loopay_id2, item_id2))
+                _bp2, _sp2 = get_price(bar2, stage2)
+                _sid2 = m_row['eff_seller_id']
+                db.execute(
+                    """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
+                          buy_price, sell_price, match_round, match_date, status,
+                          seller_phone, seller_bank, seller_account, seller_account_name, seller_item_id)
+                       VALUES(0, ?, ?, ?, ?, ?, ?, 2, ?, 'pending', ?, ?, ?, ?, ?)""",
+                    (_loopay_id2, _sid2 or 0, bar2, stage2, _bp2, _sp2, today,
+                     m_row['seller_phone'], m_row['seller_bank'],
+                     m_row['seller_account'], m_row['seller_account_name'], item_id2)
+                )
+                processed += 1
+        db.commit()
+        return jsonify(success=True, processed=processed)
+    except Exception as e:
+        try: db.rollback()
+        except: pass
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/create-item', methods=['POST'])
 def testtools_create_item():
     """테스트용 아이템 생성"""
