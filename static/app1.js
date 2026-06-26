@@ -2300,7 +2300,7 @@ function renderSellTab(){
       var _inWarnWin = (_mRound===2)?(_totalMin>=1110&&_totalMin<1140):(_totalMin>=750&&_totalMin<780);
       var _inConfWin = (_mRound===2)?(_totalMin>=1140&&_totalMin<1200):(_totalMin>=780&&_totalMin<840);
       var _isPaid = (ms==='paid');
-      var _isConf = (ms==='confirmed' || ms==='failed' || ms==='unpaid');
+      var _isConf = (ms==='confirmed' || ms==='failed' || ms==='unpaid') || !!_confirmedUnpaidMatchIds[item.match_id];
       var _lastMin = (_sellUnpaidClickedAt[item.match_id]||0);
       var _coolOk = (_lastMin===0)||((_totalMin-_lastMin)>=9);
       if(item.receipt_url){
