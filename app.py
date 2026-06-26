@@ -2053,16 +2053,45 @@ def admin_run_matching():
                     )
             db.commit()
 
-            # 2차 판매예약 수 확인 - 없으면 차단
+            # 2차 판매예약 수 확인 - 없으면 failed 매치에서 자동 생성 시도
             sell_count_2 = db.execute(
                 """SELECT COUNT(*) as c FROM reservations
-                   WHERE match_round=2 AND status='pending' AND reserve_date=?
+                   WHERE match_round=2 AND status='pending' AND reserve_date<=?
                    AND COALESCE(confirmed,0)=1 AND item_id IS NOT NULL""",
                 (today,)
             ).fetchone()['c']
             if sell_count_2 == 0:
-                db.close()
-                return jsonify(error='2차 매칭 판매수량이 없습니다. 미입금확정 후 진행하세요.', sell_count=0), 400
+                # failed 매치에서 loopay 아이템 기반으로 2차 판매예약 자동 생성
+                _loopay_id2 = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+                _loopay_id2 = _loopay_id2['id'] if _loopay_id2 else -1
+                _failed2 = db.execute(
+                    """SELECT DISTINCT m.bar_type, COALESCE(m.stage,1) as stage
+                       FROM matches m WHERE m.match_round=1 AND m.status='failed'
+                       AND m.seller_id=? AND m.match_date<=?""",
+                    (_loopay_id2, today)
+                ).fetchall()
+                for _fm2 in _failed2:
+                    _item2 = db.execute(
+                        """SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='reservable'
+                           ORDER BY id LIMIT 1""",
+                        (_loopay_id2, _fm2['bar_type'])
+                    ).fetchone()
+                    if _item2:
+                        db.execute(
+                            """INSERT OR IGNORE INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,stage,confirmed)
+                               VALUES(?,?,?,2,?,'pending',?,1)""",
+                            (_loopay_id2, _item2['id'], _fm2['bar_type'], today, _fm2['stage'])
+                        )
+                db.commit()
+                sell_count_2 = db.execute(
+                    """SELECT COUNT(*) as c FROM reservations
+                       WHERE match_round=2 AND status='pending' AND reserve_date<=?
+                       AND COALESCE(confirmed,0)=1 AND item_id IS NOT NULL""",
+                    (today,)
+                ).fetchone()['c']
+                if sell_count_2 == 0:
+                    db.close()
+                    return jsonify(error='2차 매칭 판매수량이 없습니다. 미입금확정 후 진행하세요.', sell_count=0), 400
 
         import random
 
@@ -2097,7 +2126,7 @@ def admin_run_matching():
                LEFT JOIN users u ON r.user_id = u.id
                INNER JOIN items i ON r.item_id = i.id
                WHERE r.status IN ('pending','unmatched') AND r.match_round=?
-               AND r.reserve_date=?
+               AND r.reserve_date<=?
                AND COALESCE(r.confirmed,0)=1
                AND i.status IN ('reservable','waiting')""",
             (round_num, today)
