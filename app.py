@@ -2082,58 +2082,68 @@ def admin_run_matching():
                 # failed 매치에서 모든 seller 아이템 기반으로 2차 판매예약 자동 생성
                 # seller_id 없는 경우 reservation_id → items 역추적
                 _failed2 = db.execute(
-                    """SELECT m.seller_id, m.bar_type, COALESCE(m.stage,1) as stage,
-                              m.seller_item_id,
+                    """SELECT m.id as match_id, m.seller_id, m.bar_type,
+                              COALESCE(m.stage,1) as stage, m.seller_item_id,
                               COALESCE(m.seller_id, u_s2.id) as eff_sid
                        FROM matches m
                        LEFT JOIN users u_s2 ON u_s2.phone = m.seller_phone
-                       WHERE m.match_round=1 AND m.status='failed'"""
+                       WHERE m.match_round=1 AND m.status='failed'
+                       ORDER BY m.id"""
                 ).fetchall()
+                _used_item_ids = set()
                 for _fm2 in _failed2:
                     _bar2 = _fm2['bar_type']
                     _stg2 = _fm2['stage']
                     _sid2 = _fm2['eff_sid']
                     if not _sid2:
                         continue
-                    # 이미 2차 판매예약 있으면 스킵
-                    _exists = db.execute(
-                        """SELECT id FROM reservations WHERE user_id=? AND bar_type=?
-                           AND match_round=2 AND status='pending'""",
-                        (_sid2, _bar2)
-                    ).fetchone()
-                    if _exists:
-                        continue
-                    # seller_item_id: m.seller_item_id > reservation.item_id > items 조회 순으로 fallback
-                    _item2_id = _fm2['seller_item_id'] or _fm2['res_item_id']
+                    # seller_item_id 우선 사용
+                    _item2_id = _fm2['seller_item_id']
                     _item2_status = None
                     if _item2_id:
-                        _itrow = db.execute("SELECT id, status FROM items WHERE id=?", (_item2_id,)).fetchone()
-                        if _itrow: _item2_status = _itrow['status']
-                        else: _item2_id = None  # 아이템 없으면 초기화
+                        if _item2_id in _used_item_ids:
+                            _item2_id = None  # 이미 사용된 아이템
+                        else:
+                            _itrow = db.execute("SELECT id, status FROM items WHERE id=?", (_item2_id,)).fetchone()
+                            if _itrow:
+                                _item2_status = _itrow['status']
+                            else:
+                                _item2_id = None
+                    # seller_item_id 없으면 미사용 아이템 조회
                     if not _item2_id:
+                        _excl = ','.join(str(x) for x in _used_item_ids) if _used_item_ids else '0'
                         _itrow = db.execute(
-                            """SELECT id, status FROM items WHERE user_id=? AND bar_type=?
-                               AND status IN ('reservable','matched','sold','active')
-                               ORDER BY CASE status WHEN 'reservable' THEN 0 WHEN 'matched' THEN 1 ELSE 2 END, id LIMIT 1""",
+                            f"""SELECT id, status FROM items WHERE user_id=? AND bar_type=?
+                               AND status IN ('reservable','matched')
+                               AND id NOT IN ({_excl})
+                               ORDER BY CASE status WHEN 'reservable' THEN 0 ELSE 1 END, id LIMIT 1""",
                             (_sid2, _bar2)
                         ).fetchone()
-                        if _itrow: _item2_id, _item2_status = _itrow['id'], _itrow['status']
-                    # 아이템이 없으면 가상 아이템 생성 (판매자 정보만 있는 경우)
-                    if not _item2_id and _sid2:
+                        if _itrow:
+                            _item2_id, _item2_status = _itrow['id'], _itrow['status']
+                    # 아이템 없으면 신규 생성
+                    if not _item2_id:
                         _item2_id = db.execute(
-                            """INSERT INTO items(user_id,bar_type,stage,purchase_date,status)
-                               VALUES(?,?,?,?,'reservable')""",
+                            "INSERT INTO items(user_id,bar_type,stage,purchase_date,status) VALUES(?,?,?,?,'reservable')",
                             (_sid2, _bar2, _stg2, today)
                         ).lastrowid
                         _item2_status = 'reservable'
-                    if _item2_id:
-                        if _item2_status == 'matched':
-                            db.execute("UPDATE items SET status='reservable' WHERE id=?", (_item2_id,))
-                        db.execute(
-                            """INSERT OR IGNORE INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,stage,confirmed)
-                               VALUES(?,?,?,2,?,'pending',?,1)""",
-                            (_sid2, _item2_id, _bar2, today, _stg2)
-                        )
+                    # 이미 이 아이템으로 판매예약 있으면 스킵
+                    _exr = db.execute(
+                        "SELECT id FROM reservations WHERE item_id=? AND match_round=2 AND status='pending'",
+                        (_item2_id,)
+                    ).fetchone()
+                    if _exr:
+                        _used_item_ids.add(_item2_id)
+                        continue
+                    if _item2_status == 'matched':
+                        db.execute("UPDATE items SET status='reservable' WHERE id=?", (_item2_id,))
+                    db.execute(
+                        """INSERT OR IGNORE INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,stage,confirmed)
+                           VALUES(?,?,?,2,?,'pending',?,1)""",
+                        (_sid2, _item2_id, _bar2, today, _stg2)
+                    )
+                    _used_item_ids.add(_item2_id)
                 db.commit()
                 sell_count_2 = db.execute(
                     """SELECT COUNT(*) as c FROM reservations
