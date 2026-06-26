@@ -2342,11 +2342,14 @@ function renderSellTab(){
 
 // 판매탭: 입금확인
 async function userConfirmPayment(matchId){
+  // 즉시 버튼 비활성화
+  var clickedEl = event && event.target;
+  if(clickedEl){ clickedEl.disabled=true; clickedEl.style.opacity='0.5'; clickedEl.style.cursor='not-allowed'; }
   try {
     var r = await api('/match/confirm-payment', {method:'POST', body:JSON.stringify({match_id:matchId})});
     if(r.success) { toast('입금확인 완료!','success'); loadSellTab(); }
-    else toast(r.error||'처리 실패','error');
-  } catch(e){ toast('오류: '+e.message,'error'); }
+    else { toast(r.error||'처리 실패','error'); loadSellTab(); }
+  } catch(e){ toast('오류: '+e.message,'error'); loadSellTab(); }
 }
 
 // 판매탭: 입금요청 (9분 쿨타임)
@@ -2364,9 +2367,13 @@ async function userWarnUnpaid(matchId){
 // 판매탭: 미입금확인 처리
 async function userConfirmUnpaid(matchId){
   if(!confirm('미입금 처리하시겠습니까?')) return;
+  // 즉시 모든 미입금확인 버튼 비활성화 (중복 클릭 방지)
+  document.querySelectorAll('button').forEach(function(b){
+    if(b.textContent.includes('미입금확인')){ b.disabled=true; b.style.opacity='0.5'; b.style.cursor='not-allowed'; }
+  });
   try {
     var r = await api('/user/confirm-unpaid', {method:'POST', body:JSON.stringify({match_id:matchId})});
     if(r.success){ toast('미입금 처리 완료', 'success'); loadSellTab(); }
-    else toast(r.error||'처리 실패','error');
-  } catch(e){ toast('오류: '+e.message,'error'); }
+    else { toast(r.error||'처리 실패','error'); loadSellTab(); }
+  } catch(e){ toast('오류: '+e.message,'error'); loadSellTab(); }
 }
