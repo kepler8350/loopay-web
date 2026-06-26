@@ -1466,11 +1466,17 @@ async function loadMatchingStatus(){
     var _r1UnmatchedBuy = (d.r1_unmatched_buy!=null) ? d.r1_unmatched_buy : (r2.buy_count!=null?r2.buy_count:'-');
     set('r2-buy', _r1UnmatchedBuy);
     // 미입금 판매아이템: failed 매치에서 별도 집계된 r2_sell_by_type 사용
-    var _r2SellCount = (d.r2_sell_count!=null) ? d.r2_sell_count : (r2.sell_count!=null?r2.sell_count:'-');
-    var _r2SellByType = (d.r2_sell_by_type && d.r2_sell_by_type.length) ? d.r2_sell_by_type : r2.by_type;
+    var _r2SellCount = (d.r2_sell_count!=null) ? d.r2_sell_count : (r2.sell_count!=null?r2.sell_count:0);
+    // cnt → count 필드명 정규화
+    var _r2SellByType = (d.r2_sell_by_type && d.r2_sell_by_type.length)
+      ? d.r2_sell_by_type.map(function(r){return {bar_type:r.bar_type, count:r.cnt||r.count||0};})
+      : r2.by_type;
+    // 매칭율 재계산 (r2_sell_count 기준)
+    var _r2Buy = r2.buy_count || 0;
+    var _r2Rate = (_r2Buy>0 && _r2SellCount>0) ? Math.round(Math.min(_r2Buy,_r2SellCount)/_r2Buy*100) : mr2;
     set('r2-sell', _r2SellCount);
     var rateEl2=document.getElementById('r2-rate');
-    if(rateEl2){ rateEl2.textContent=mr2+'%'; rateEl2.style.color=mrc(mr2); }
+    if(rateEl2){ rateEl2.textContent=_r2Rate+'%'; rateEl2.style.color=mrc(_r2Rate); }
     var bt2=document.getElementById('r2-by-type'); if(bt2) bt2.innerHTML=mkTypeTable(_r2SellByType);
     var bbt2=document.getElementById('r2-buy-by-type'); if(bbt2) bbt2.innerHTML=mkTypeTable(sortByBarType(r2.buy_by_type));
 
