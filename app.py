@@ -2098,7 +2098,7 @@ def admin_run_matching():
                     # 이미 2차 판매예약 있으면 스킵
                     _exists = db.execute(
                         """SELECT id FROM reservations WHERE user_id=? AND bar_type=?
-                           AND match_round=2 AND status IN ('pending','matched')""",
+                           AND match_round=2 AND status='pending'""",
                         (_sid2, _bar2)
                     ).fetchone()
                     if _exists:
@@ -2163,7 +2163,7 @@ def admin_run_matching():
                             if _ir: _eb = _ir['user_id']
                         if not _eb: continue
                         _exb = db.execute(
-                            "SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND match_round=2 AND status IN ('pending','matched')",
+                            "SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND match_round=2 AND status='pending'",
                             (_eb, _barb)
                         ).fetchone()
                         if _exb: continue
