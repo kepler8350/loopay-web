@@ -2083,17 +2083,16 @@ def admin_run_matching():
                 # seller_id 없는 경우 reservation_id → items 역추적
                 _failed2 = db.execute(
                     """SELECT m.seller_id, m.bar_type, COALESCE(m.stage,1) as stage,
-                              m.seller_item_id, m.reservation_id,
-                              r.user_id as res_user_id, r.item_id as res_item_id
+                              m.seller_item_id,
+                              COALESCE(m.seller_id, u_s2.id) as eff_sid
                        FROM matches m
-                       LEFT JOIN reservations r ON r.id = m.reservation_id
-                       WHERE m.match_round=1 AND m.status='failed'""",
+                       LEFT JOIN users u_s2 ON u_s2.phone = m.seller_phone
+                       WHERE m.match_round=1 AND m.status='failed'"""
                 ).fetchall()
                 for _fm2 in _failed2:
                     _bar2 = _fm2['bar_type']
                     _stg2 = _fm2['stage']
-                    # seller_id: m.seller_id > reservation.user_id 순으로 fallback
-                    _sid2 = _fm2['seller_id'] or _fm2['res_user_id']
+                    _sid2 = _fm2['eff_sid']
                     if not _sid2:
                         continue
                     # 이미 2차 판매예약 있으면 스킵
@@ -4045,7 +4044,7 @@ def admin_get_matches():
 
         rows = db.execute(
             'SELECT m.id, m.match_date, m.bar_type, m.stage, m.match_round,'
-            ' m.buy_price, m.sell_price, m.status,'
+            ' m.buy_price, m.sell_price, m.status, m.seller_id, m.seller_item_id,'
             ' b.username as buyer_username, b.nickname as buyer_nickname, b.phone as buyer_phone,'
             ' b.account_no as buyer_account, b.account_name as buyer_account_name,'
             ' s.username as seller_username, s.nickname as seller_nickname, s.phone as seller_phone,'
