@@ -2900,22 +2900,29 @@ def admin_matching_status():
     # 오늘 1차 미입금 확정(failed) 수량
     import datetime as _dt2
     _yesterday = (_dt2.date.fromisoformat(today) - _dt2.timedelta(days=1)).isoformat()
-    # 최근 3일 이내 미입금 집계 (오늘+어제+그제)
+    # 오늘 미입금 집계 (오늘 없으면 어제 포함)
     import datetime as _dt3
-    _day2 = (_dt3.date.fromisoformat(today) - _dt3.timedelta(days=2)).isoformat()
-    failed_count = db.execute(
-        "SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND status='failed' AND match_date>=?",
-        (_day2,)
+    _yesterday2 = (_dt3.date.fromisoformat(today) - _dt3.timedelta(days=1)).isoformat()
+    failed_today_count = db.execute(
+        "SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND status='failed' AND match_date=?",
+        (today,)
+    ).fetchone()['c']
+    # 오늘 미입금이 있으면 오늘만, 없으면 어제 포함
+    _failed_date_cond = (today,) if failed_today_count > 0 else (today, _yesterday2)
+    _failed_sql_cond = "match_date=?" if failed_today_count > 0 else "match_date IN (?,?)"
+    failed_count = failed_today_count if failed_today_count > 0 else db.execute(
+        f"SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND status='failed' AND {_failed_sql_cond}",
+        _failed_date_cond
     ).fetchone()['c']
 
-    # 미입금 상세: 최근 3일
+    # 미입금 상세
     failed_list = db.execute(
-        """SELECT u.username, u.nickname, m.bar_type, m.stage, m.id as match_id
+        f"""SELECT u.username, u.nickname, m.bar_type, m.stage, m.id as match_id
            FROM matches m
            LEFT JOIN users u ON m.buyer_id = u.id
-           WHERE m.match_round=1 AND m.status='failed' AND m.match_date>=?
+           WHERE m.match_round=1 AND m.status='failed' AND {_failed_sql_cond}
            ORDER BY m.bar_type, m.stage""",
-        (_day2,)
+        _failed_date_cond
     ).fetchall()
 
     # 미입금 판매아이템 집계 (r2_sell_by_type: failed 매치의 loopay 아이템)
