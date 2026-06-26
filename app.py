@@ -285,11 +285,20 @@ def _auto_round2_scheduler():
                             _restored_item_id = m_row['seller_item_id']
                         else:
                             # seller_item_id 없으면 seller_id + bar_type으로 matched 아이템 찾아 복원
-                            _si = db.execute(
-                                """SELECT id FROM items WHERE user_id=? AND bar_type=?
-                                   AND status='matched' ORDER BY id DESC LIMIT 1""",
-                                (m_row['seller_id'], m_row['bar_type'])
-                            ).fetchone()
+                            _si = None
+                            if m_row['seller_id']:
+                                _si = db.execute(
+                                    """SELECT id FROM items WHERE user_id=? AND bar_type=?
+                                       AND status='matched' ORDER BY id DESC LIMIT 1""",
+                                    (m_row['seller_id'], m_row['bar_type'])
+                                ).fetchone()
+                            # seller_id도 없으면 bar_type 기준으로 가장 최근 matched 아이템
+                            if not _si:
+                                _si = db.execute(
+                                    """SELECT id FROM items WHERE bar_type=?
+                                       AND status='matched' ORDER BY id DESC LIMIT 1""",
+                                    (m_row['bar_type'],)
+                                ).fetchone()
                             if _si:
                                 db.execute("UPDATE items SET status='reservable' WHERE id=?", (_si['id'],))
                                 _restored_item_id = _si['id']
@@ -4491,15 +4500,21 @@ def admin_confirm_unpaid():
             db.execute("""UPDATE reservations SET status='pending', match_round=2
                          WHERE id=?""", (m['reservation_id'],))
 
-        # 3. loopay 판매 아이템 → reservable + 2차 sell 예약 생성
-        # seller_id가 null일 수 있으므로 loopay_id 직접 사용
-        _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
-        _seller_uid = (_loopay_row['id'] if _loopay_row else None) or (m['seller_id'] if 'seller_id' in m.keys() else None)
-        seller_item = db.execute(
-            """SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='matched'
-               ORDER BY id DESC LIMIT 1""",
-            (_seller_uid, m['bar_type'])
-        ).fetchone() if _seller_uid else None
+        # 3. 판매 아이템 → reservable + 2차 sell 예약 생성 (모든 seller)
+        _seller_uid = m['seller_id'] if 'seller_id' in m.keys() and m['seller_id'] else None
+        # seller_id가 없으면 seller_item_id로 user_id 역추적
+        if not _seller_uid and 'seller_item_id' in m.keys() and m['seller_item_id']:
+            _si_row = db.execute("SELECT user_id FROM items WHERE id=?", (m['seller_item_id'],)).fetchone()
+            if _si_row: _seller_uid = _si_row['user_id']
+        seller_item = None
+        if 'seller_item_id' in m.keys() and m['seller_item_id']:
+            seller_item = db.execute("SELECT id FROM items WHERE id=?", (m['seller_item_id'],)).fetchone()
+        if not seller_item and _seller_uid:
+            seller_item = db.execute(
+                """SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='matched'
+                   ORDER BY id DESC LIMIT 1""",
+                (_seller_uid, m['bar_type'])
+            ).fetchone()
         if seller_item:
             db.execute("UPDATE items SET status='reservable' WHERE id=?", (seller_item['id'],))
             # 2차 sell 예약 즉시 생성
