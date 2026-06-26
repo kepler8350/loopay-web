@@ -4101,6 +4101,8 @@ def admin_get_matches():
             'bar_type': r['bar_type'], 'bar_name': names.get(r['bar_type'], r['bar_type']),
             'stage': r['stage'], 'match_round': r['match_round'],
             'buy_price': r['buy_price'], 'sell_price': r['sell_price'], 'status': r['status'],
+            'seller_id': r['seller_id'] if 'seller_id' in r.keys() else None,
+            'seller_item_id': r['seller_item_id'] if 'seller_item_id' in r.keys() else None,
             'buyer': _build_buyer(r),
             'seller': build_seller(r),
         } for r in rows])
