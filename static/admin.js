@@ -1352,7 +1352,7 @@ async function loadReservationStatus(){
   function renderSummaryRow(bt,s){
     var mr=s.match_rate||0;
     return '<tr>'
-      +'<td style="color:'+colors[bt]+';font-weight:700;font-size:13px;white-space:nowrap;border-right:3px solid #888">'+names[bt]+'</td>'
+      +'<td style="color:'+colors[bt]+';font-weight:700;font-size:13px;white-space:nowrap;border-right:3px solid #888;text-align:center">'+names[bt]+'</td>'
       +'<td style="'+C+'">'+(s.user_buy||0)+'</td>'
       +'<td style="'+C+'">'+(s.extra_buy||0)+'</td>'
       +'<td style="'+CB+'">'+(s.buy_count||0)+'</td>'
@@ -1365,7 +1365,7 @@ async function loadReservationStatus(){
   function renderPriceRow(bt,s){
     var pb=s.price_bands||{}; var mr=s.match_rate||0;
     return '<tr>'
-      +'<td style="color:'+colors[bt]+';font-weight:700;white-space:nowrap">'+names[bt]+'</td>'
+      +'<td style="color:'+colors[bt]+';font-weight:700;white-space:nowrap;text-align:center">'+names[bt]+'</td>'
       +'<td style="'+C+'">'+(pb.band1||0)+'</td>'
       +'<td style="'+C+'">'+(pb.band2||0)+'</td>'
       +'<td style="'+C+'">'+(pb.band3||0)+'</td>'
