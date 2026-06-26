@@ -369,34 +369,48 @@ var SPLIT_INFO = {
 };
 var BAR_NAMES = {bronze:'수정', silver:'루비', gold:'다이아'};
 
-async function doItemSplit(itemId, barType){
+function doItemSplit(itemId, barType){
   var info = SPLIT_INFO[barType] || {};
   var barName = BAR_NAMES[barType] || barType;
-  if(!confirm(barName+' '+info.max_stage+'단계 아이템을 분할합니다.\n\n분할 결과: '+info.pieces+'\n\n원본 아이템은 사라지고 분할된 아이템이 보유 아이템으로 추가됩니다.\n계속하시겠습니까?')) return;
-  try{
-    var d = await api('/item/split',{method:'POST',body:JSON.stringify({item_id:itemId})});
-    if(d.success){
-      toast('✅ 분할 완료! '+info.pieces+' 생성됨','success');
-      await loadUserData();
-      var tabEl = document.getElementById('detail-'+barType);
-      if(tabEl && tabEl.style.display!=='none') loadItemDetail(barType);
-    } else toast(d.error||'분할 실패','error');
-  }catch(e){toast('오류: '+e.message,'error');}
+  showConfirm({
+    title: '✂️ 아이템 분할',
+    message: '<b>'+barName+' '+info.max_stage+'단계</b> 아이템을 분할합니다.<br><br>분할 결과: '+info.pieces+'<br><br><span style="color:#ef5350;font-size:12px">원본 아이템은 사라지고 분할된 아이템이 추가됩니다.</span>',
+    okText: '분할하기',
+    okColor: '#6a1b9a',
+    onOk: async function(){
+      try{
+        var d = await api('/item/split',{method:'POST',body:JSON.stringify({item_id:itemId})});
+        if(d.success){
+          toast('✅ 분할 완료! '+info.pieces+' 생성됨','success');
+          await loadUserData();
+          var tabEl = document.getElementById('detail-'+barType);
+          if(tabEl && tabEl.style.display!=='none') loadItemDetail(barType);
+        } else toast(d.error||'분할 실패','error');
+      }catch(e){toast('오류: '+e.message,'error');}
+    }
+  });
 }
 
-async function doItemConvert(itemId, sellPrice, barType, stage){
+function doItemConvert(itemId, sellPrice, barType, stage){
   var convertPts = Math.floor(sellPrice/120);
   var barName = BAR_NAMES[barType] || barType;
-  if(!confirm(barName+' '+stage+'단계 아이템을 포인트로 전환합니다.\n\n판매가격: '+sellPrice.toLocaleString()+'원\n전환 포인트: '+convertPts.toLocaleString()+'P (전환포인트)\n\n아이템은 삭제됩니다. 계속하시겠습니까?')) return;
-  try{
-    var d = await api('/item/convert-points',{method:'POST',body:JSON.stringify({item_id:itemId})});
-    if(d.success){
-      toast('✅ '+d.convert_points.toLocaleString()+'P 전환포인트 지급 완료','success');
-      await loadUserData();
-      var tabEl = document.getElementById('detail-'+barType);
-      if(tabEl && tabEl.style.display!=='none') loadItemDetail(barType);
-    } else toast(d.error||'전환 실패','error');
-  }catch(e){toast('오류: '+e.message,'error');}
+  showConfirm({
+    title: '🔄 포인트 전환',
+    message: '<b>'+barName+' '+stage+'단계</b> 아이템을 포인트로 전환합니다.<br><br>판매가격: <b>'+sellPrice.toLocaleString()+'원</b><br>전환 포인트: <b>'+convertPts.toLocaleString()+'P</b><br><br><span style="color:#ef5350;font-size:12px">아이템은 삭제됩니다.</span>',
+    okText: '전환하기',
+    okColor: '#1565c0',
+    onOk: async function(){
+      try{
+        var d = await api('/item/convert-points',{method:'POST',body:JSON.stringify({item_id:itemId})});
+        if(d.success){
+          toast('✅ '+d.convert_points.toLocaleString()+'P 전환포인트 지급 완료','success');
+          await loadUserData();
+          var tabEl = document.getElementById('detail-'+barType);
+          if(tabEl && tabEl.style.display!=='none') loadItemDetail(barType);
+        } else toast(d.error||'전환 실패','error');
+      }catch(e){toast('오류: '+e.message,'error');}
+    }
+  });
 }
 
 function cancelEditProfile(){
@@ -404,17 +418,23 @@ function cancelEditProfile(){
   document.getElementById('profile-edit-mode').style.display='none';
 }
 async function payLevelPoints(){
-  if(!confirm('레벨 거래유지 포인트를 결제하시겠습니까?')) return;
-  try{
-    var d = await api('/user/pay-level',{method:'POST'});
-    if(d.success){
-      toast('✅ 포인트 결제 완료! '+d.expire_at+'까지 거래 활성화','success');
-      await loadUserData();
-      await loadProfileForm();
-      // 예약 버튼 활성화
-      updateReserveByLevel();
-    } else toast(d.error||'결제 실패','error');
-  }catch(e){toast('오류: '+e.message,'error');}
+  showConfirm({
+    title: '💎 거래유지 포인트 결제',
+    message: '레벨 거래유지 포인트를 결제하시겠습니까?',
+    okText: '결제하기',
+    onOk: async function(){
+      try{
+        var d = await api('/user/pay-level',{method:'POST'});
+        if(d.success){
+          toast('✅ 포인트 결제 완료! '+d.expire_at+'까지 거래 활성화','success');
+          await loadUserData();
+          await loadProfileForm();
+          // 예약 버튼 활성화
+          updateReserveByLevel();
+        } else toast(d.error||'결제 실패','error');
+      }catch(e){toast('오류: '+e.message,'error');}
+    }
+  });
 }
 async function doUpdateProfile(){
   var data={

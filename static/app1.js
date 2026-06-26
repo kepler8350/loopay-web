@@ -1,3 +1,25 @@
+// ── 공통 커스텀 confirm 팝업 ──
+function showConfirm(opts){
+  var ov = document.getElementById('common-confirm-overlay');
+  if(!ov){ if(opts.onOk && confirm((opts.title||'확인')+'\n'+(opts.message||''))) opts.onOk(); else if(opts.onCancel) opts.onCancel(); return; }
+  document.getElementById('common-confirm-title').innerHTML = opts.title||'확인';
+  document.getElementById('common-confirm-body').innerHTML = opts.message||'';
+  var okBtn = document.getElementById('common-confirm-ok-btn');
+  var cancelBtn = document.getElementById('common-confirm-cancel-btn');
+  okBtn.textContent = opts.okText||'확인';
+  okBtn.style.background = opts.okColor||'';
+  var newOk = okBtn.cloneNode(true); var newCancel = cancelBtn.cloneNode(true);
+  okBtn.parentNode.replaceChild(newOk, okBtn); cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+  newOk.onclick = function(){ _closeCommonConfirm(); if(opts.onOk) opts.onOk(); };
+  newCancel.onclick = function(){ _closeCommonConfirm(); if(opts.onCancel) opts.onCancel(); };
+  if(ov.parentElement!==document.body) document.body.appendChild(ov);
+  ov.classList.add('show');
+}
+function _closeCommonConfirm(){
+  var ov = document.getElementById('common-confirm-overlay');
+  if(ov) ov.classList.remove('show');
+}
+
 // 판매탭 전역 변수 - 최상단 선언
 var _sellUnpaidClickedAt = typeof _sellUnpaidClickedAt !== 'undefined' ? _sellUnpaidClickedAt : {};
 var _sellServerHour = typeof _sellServerHour !== 'undefined' ? _sellServerHour : 0;
@@ -200,28 +222,26 @@ async function requestCharge(){
   var won=pts*120;
   if(pts<1){toast('충전 포인트를 입력해주세요.');return;}
 
-  // ── 확인 다이얼로그 ──
-  var ok=confirm(
-    '충전 신청 확인\n\n'
-    +'충전 포인트: '+pts.toLocaleString()+'P\n'
-    +'입금 금액: '+won.toLocaleString()+'원\n\n'
-    +'📌 입금 계좌번호는 신청 후 알림에서 확인하세요.\n\n'
-    +'신청하시겠습니까?'
-  );
-  if(!ok) return;
-
-  try{
-    var d=await api('/charge/request',{method:'POST',body:JSON.stringify({amount:won})});
-    if(d.message){
-      toast(d.message);
-      document.getElementById('charge-amount').value='';
-      document.getElementById('charge-result').textContent='';
-    } else {
-      toast('충전 신청 완료! '+pts.toLocaleString()+'P ('+won.toLocaleString()+'원)');
+  // ── 확인 팝업 ──
+  showConfirm({
+    title: '💳 충전 신청 확인',
+    message: '충전 포인트: <b>'+pts.toLocaleString()+'P</b><br>입금 금액: <b>'+won.toLocaleString()+'원</b><br><br><span style="font-size:12px">📌 입금 계좌번호는 신청 후 알림에서 확인하세요.</span>',
+    okText: '신청하기',
+    onOk: async function(){
+      try{
+        var d=await api('/charge/request',{method:'POST',body:JSON.stringify({amount:won})});
+        if(d.message){
+          toast(d.message);
+          document.getElementById('charge-amount').value='';
+          document.getElementById('charge-result').textContent='';
+        } else {
+          toast('충전 신청 완료! '+pts.toLocaleString()+'P ('+won.toLocaleString()+'원)');
+        }
+      }catch(e){
+        toast('신청 실패: '+e.message);
+      }
     }
-  }catch(e){
-    toast('신청 실패: '+e.message);
-  }
+  });
 }
 
 
@@ -1249,12 +1269,18 @@ function toggleSellSelect(itemId, barType){
 }
 
 async function doSellReservation(itemId, barType){
-  if(!confirm('이 아이템을 판매예약하시겠습니까?')) return;
-  try{
-    var d=await api('/reservation/sell',{method:'POST',body:JSON.stringify({item_id:itemId})});
-    toast('판매예약 완료! 판매가: '+d.sell_price.toLocaleString()+'원');
-    await loadItemDetail(barType);
-  }catch(e){ toast('판매예약 실패: '+e.message); }
+  showConfirm({
+    title: '🏷️ 판매예약 확인',
+    message: '이 아이템을 판매예약하시겠습니까?',
+    okText: '예약하기',
+    onOk: async function(){
+      try{
+        var d=await api('/reservation/sell',{method:'POST',body:JSON.stringify({item_id:itemId})});
+        toast('판매예약 완료! 판매가: '+d.sell_price.toLocaleString()+'원');
+        await loadItemDetail(barType);
+      }catch(e){ toast('판매예약 실패: '+e.message); }
+    }
+  });
 }
 
 // ── 매칭 탭 로드 ──
@@ -1520,22 +1546,35 @@ async function submitPayment(){
   }
 }
 
-async function doConfirmPayment(matchId){
-  if(!confirm('입금을 확인하시겠습니까?')) return;
-  try{
-    await api('/match/confirm-payment', {method:'POST', body:JSON.stringify({match_id:matchId})});
-    if(typeof toast==='function') toast('입금 확인 완료!','success');
-    loadMatchingTab();
-  }catch(e){ if(typeof toast==='function') toast('오류: '+e.message,'error'); }
+function doConfirmPayment(matchId){
+  showConfirm({
+    title: '✅ 입금 확인',
+    message: '구매자의 입금을 확인하시겠습니까?',
+    okText: '입금확인',
+    onOk: async function(){
+      try{
+        await api('/match/confirm-payment', {method:'POST', body:JSON.stringify({match_id:matchId})});
+        if(typeof toast==='function') toast('입금 확인 완료!','success');
+        loadMatchingTab();
+      }catch(e){ if(typeof toast==='function') toast('오류: '+e.message,'error'); }
+    }
+  });
 }
 
-async function doReportUnpaid(matchId){
-  if(!confirm('미입금 신고하시겠습니까?')) return;
-  try{
-    await api('/match/report-unpaid', {method:'POST', body:JSON.stringify({match_id:matchId})});
-    if(typeof toast==='function') toast('미입금 신고 완료','info');
-    loadMatchingTab();
-  }catch(e){ if(typeof toast==='function') toast('오류: '+e.message,'error'); }
+function doReportUnpaid(matchId){
+  showConfirm({
+    title: '📨 미입금 신고',
+    message: '구매자의 미입금을 신고하시겠습니까?<br><span style="color:#e65100;font-size:12px">구매자에게 패널티가 부여됩니다.</span>',
+    okText: '신고하기',
+    okColor: '#e65100',
+    onOk: async function(){
+      try{
+        await api('/match/report-unpaid', {method:'POST', body:JSON.stringify({match_id:matchId})});
+        if(typeof toast==='function') toast('미입금 신고 완료','info');
+        loadMatchingTab();
+      }catch(e){ if(typeof toast==='function') toast('오류: '+e.message,'error'); }
+    }
+  });
 }
 
 function doPaymentComplete(resId){ openPaymentModal(resId); }
