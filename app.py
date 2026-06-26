@@ -2143,8 +2143,46 @@ def admin_run_matching():
                     (today,)
                 ).fetchone()['c']
                 if sell_count_2 == 0:
-                    db.close()
-                    return jsonify(error='2차 매칭 판매수량이 없습니다. 미입금확정 후 진행하세요.', sell_count=0), 400
+                    # 마지막 수단: failed 매치를 직접 2차 판매예약으로 변환 (아이템 없이도)
+                    _failed2_bare = db.execute(
+                        """SELECT DISTINCT m.bar_type, COALESCE(m.stage,1) as stage,
+                                  COALESCE(m.seller_id, r.user_id) as eff_seller_id,
+                                  COALESCE(m.seller_item_id, r.item_id) as eff_item_id
+                           FROM matches m
+                           LEFT JOIN reservations r ON r.id = m.reservation_id
+                           WHERE m.match_round=1 AND m.status='failed'"""
+                    ).fetchall()
+                    for _fb in _failed2_bare:
+                        _eb = _fb['eff_seller_id']
+                        _barb = _fb['bar_type']
+                        _stgb = _fb['stage']
+                        _eidb = _fb['eff_item_id']
+                        if not _eb: continue
+                        _exb = db.execute(
+                            "SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND match_round=2 AND status IN ('pending','matched')",
+                            (_eb, _barb)
+                        ).fetchone()
+                        if _exb: continue
+                        # 아이템이 없으면 신규 생성
+                        if not _eidb:
+                            _eidb = db.execute(
+                                "INSERT INTO items(user_id,bar_type,stage,purchase_date,status) VALUES(?,?,?,?,'reservable')",
+                                (_eb, _barb, _stgb, today)
+                            ).lastrowid
+                        else:
+                            db.execute("UPDATE items SET status='reservable' WHERE id=? AND status IN ('matched','sold')", (_eidb,))
+                        db.execute(
+                            "INSERT OR IGNORE INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,stage,confirmed) VALUES(?,?,?,2,?,'pending',?,1)",
+                            (_eb, _eidb, _barb, today, _stgb)
+                        )
+                    db.commit()
+                    sell_count_2 = db.execute(
+                        "SELECT COUNT(*) as c FROM reservations WHERE match_round=2 AND status='pending' AND reserve_date<=? AND COALESCE(confirmed,0)=1 AND item_id IS NOT NULL",
+                        (today,)
+                    ).fetchone()['c']
+                    if sell_count_2 == 0:
+                        db.close()
+                        return jsonify(error='2차 매칭 판매수량이 없습니다. 미입금확정 후 진행하세요.', sell_count=0), 400
 
         import random
 
