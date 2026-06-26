@@ -582,6 +582,26 @@ async function adminReleasePenalty(penaltyId){
 }
 
 
+// ── 루페이 판매아이템 직접 판매예약 ──
+async function adminLoopayDirectSell(itemId, matchRound){
+  var roundLabel = matchRound===1 ? '1차' : '2차';
+  if(!confirm(roundLabel+'로 판매예약하시겠습니까?')) return;
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var r = await fetch('/api/admin/loopay-sell-reserve',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify({item_id:itemId, match_round:matchRound})
+    }).then(r=>r.json());
+    if(r.success||r.message){
+      toast(roundLabel+' 판매예약 완료','success');
+      loadSystemItems();
+    } else {
+      toast(r.error||'판매예약 실패','error');
+    }
+  }catch(e){toast('오류: '+e.message,'error');}
+}
+
 // ── 루페이 구매아이템 송금 모달 (사용자 화면 openPaymentModal과 동일 구조) ──
 var _adminRemitMatchId = null;
 function adminLoopayRemit(matchId, sellerAccName, sellerAcc, sellerBank){
@@ -806,6 +826,21 @@ function renderSystemItems(){
         actionBtns += '<button onclick="adminConfirmUnpaid('+item.match_id+')" style="padding:3px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🚫 미입금확인</button>';
       } else {
         actionBtns += '<button disabled style="padding:3px 8px;background:#2a2a3a;color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed">🚫 미입금확인</button>';
+      }
+    } else {
+      // match_id 없는 아이템: reservable 상태면 판매예약 버튼 표시
+      if(item.status === 'reservable' && !item.sell_reservation_id){
+        // 구매일 다음날 이후인지 확인
+        var _purchaseDate = item.purchase_date ? new Date(item.purchase_date) : null;
+        var _today = new Date(); _today.setHours(0,0,0,0);
+        var _nextDay = _purchaseDate ? new Date(_purchaseDate.getTime() + 86400000) : null;
+        var _canSell = !_nextDay || (_today >= _nextDay);
+        if(_canSell){
+          actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',1)" style="padding:3px 8px;background:#7b1fa2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 1차 판매예약</button>';
+          actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',2)" style="padding:3px 8px;background:#4a148c;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">📋 2차 판매예약</button>';
+        } else {
+          actionBtns += '<span style="color:#555;font-size:11px">구매일 다음날부터 판매가능</span>';
+        }
       }
     }
     return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
