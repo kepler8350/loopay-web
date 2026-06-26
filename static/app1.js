@@ -2299,7 +2299,7 @@ function renderSellTab(){
       var _inWarnWin = (_mRound===2)?(_totalMin>=1110&&_totalMin<1140):(_totalMin>=750&&_totalMin<780);
       var _inConfWin = (_mRound===2)?(_totalMin>=1140&&_totalMin<1200):(_totalMin>=780&&_totalMin<840);
       var _isPaid = (ms==='paid');
-      var _isConf = (ms==='confirmed');
+      var _isConf = (ms==='confirmed' || ms==='failed' || ms==='unpaid');
       var _lastMin = (_sellUnpaidClickedAt[item.match_id]||0);
       var _coolOk = (_lastMin===0)||((_totalMin-_lastMin)>=9);
       if(item.receipt_url){
@@ -2366,11 +2366,11 @@ async function userWarnUnpaid(matchId){
 
 // 판매탭: 미입금확인 처리
 async function userConfirmUnpaid(matchId){
-  if(!confirm('미입금 처리하시겠습니까?')) return;
-  // 즉시 모든 미입금확인 버튼 비활성화 (중복 클릭 방지)
+  // 함수 진입 즉시 모든 미입금확인 버튼 비활성화 (confirm 전에 먼저)
   document.querySelectorAll('button').forEach(function(b){
     if(b.textContent.includes('미입금확인')){ b.disabled=true; b.style.opacity='0.5'; b.style.cursor='not-allowed'; }
   });
+  if(!confirm('미입금 처리하시겠습니까?')){ loadSellTab(); return; }
   try {
     var r = await api('/user/confirm-unpaid', {method:'POST', body:JSON.stringify({match_id:matchId})});
     if(r.success){ toast('미입금 처리 완료', 'success'); loadSellTab(); }
