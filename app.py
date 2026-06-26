@@ -2087,9 +2087,7 @@ def admin_run_matching():
                               r.user_id as res_user_id, r.item_id as res_item_id
                        FROM matches m
                        LEFT JOIN reservations r ON r.id = m.reservation_id
-                       WHERE m.match_round=1 AND m.status='failed'
-                       AND m.match_date<=?""",
-                    (today,)
+                       WHERE m.match_round=1 AND m.status='failed'""",
                 ).fetchall()
                 for _fm2 in _failed2:
                     _bar2 = _fm2['bar_type']
