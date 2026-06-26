@@ -2074,19 +2074,19 @@ def admin_run_matching():
                 # seller_id 없는 경우 reservation_id → items 역추적
                 _failed2 = db.execute(
                     """SELECT m.seller_id, m.bar_type, COALESCE(m.stage,1) as stage,
-                              m.seller_item_id, m.reservation_id
-                       FROM matches m WHERE m.match_round=1 AND m.status='failed'
+                              m.seller_item_id, m.reservation_id,
+                              r.user_id as res_user_id, r.item_id as res_item_id
+                       FROM matches m
+                       LEFT JOIN reservations r ON r.id = m.reservation_id
+                       WHERE m.match_round=1 AND m.status='failed'
                        AND m.match_date<=?""",
                     (today,)
                 ).fetchall()
                 for _fm2 in _failed2:
-                    _sid2 = _fm2['seller_id']
                     _bar2 = _fm2['bar_type']
                     _stg2 = _fm2['stage']
-                    # seller_id가 없으면 reservation_id로 역추적
-                    if not _sid2 and _fm2['reservation_id']:
-                        _rv2 = db.execute("SELECT user_id FROM reservations WHERE id=?", (_fm2['reservation_id'],)).fetchone()
-                        if _rv2: _sid2 = _rv2['user_id']
+                    # seller_id: m.seller_id > reservation.user_id 순으로 fallback
+                    _sid2 = _fm2['seller_id'] or _fm2['res_user_id']
                     if not _sid2:
                         continue
                     # 이미 2차 판매예약 있으면 스킵
@@ -2097,17 +2097,18 @@ def admin_run_matching():
                     ).fetchone()
                     if _exists:
                         continue
-                    # seller_item_id 있으면 직접 사용, 없으면 items에서 조회
-                    _item2_id = _fm2['seller_item_id']
+                    # seller_item_id: m.seller_item_id > reservation.item_id > items 조회 순으로 fallback
+                    _item2_id = _fm2['seller_item_id'] or _fm2['res_item_id']
                     _item2_status = None
                     if _item2_id:
                         _itrow = db.execute("SELECT id, status FROM items WHERE id=?", (_item2_id,)).fetchone()
                         if _itrow: _item2_status = _itrow['status']
-                    else:
+                        else: _item2_id = None  # 아이템 없으면 초기화
+                    if not _item2_id:
                         _itrow = db.execute(
                             """SELECT id, status FROM items WHERE user_id=? AND bar_type=?
-                               AND status IN ('reservable','matched')
-                               ORDER BY CASE status WHEN 'reservable' THEN 0 ELSE 1 END, id LIMIT 1""",
+                               AND status IN ('reservable','matched','sold','active')
+                               ORDER BY CASE status WHEN 'reservable' THEN 0 WHEN 'matched' THEN 1 ELSE 2 END, id LIMIT 1""",
                             (_sid2, _bar2)
                         ).fetchone()
                         if _itrow: _item2_id, _item2_status = _itrow['id'], _itrow['status']
