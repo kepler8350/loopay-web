@@ -2121,6 +2121,14 @@ def admin_run_matching():
                             (_sid2, _bar2)
                         ).fetchone()
                         if _itrow: _item2_id, _item2_status = _itrow['id'], _itrow['status']
+                    # 아이템이 없으면 가상 아이템 생성 (판매자 정보만 있는 경우)
+                    if not _item2_id and _sid2:
+                        _item2_id = db.execute(
+                            """INSERT INTO items(user_id,bar_type,stage,purchase_date,status)
+                               VALUES(?,?,?,?,'reservable')""",
+                            (_sid2, _bar2, _stg2, today)
+                        ).lastrowid
+                        _item2_status = 'reservable'
                     if _item2_id:
                         if _item2_status == 'matched':
                             db.execute("UPDATE items SET status='reservable' WHERE id=?", (_item2_id,))
