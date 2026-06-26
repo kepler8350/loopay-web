@@ -2071,36 +2071,53 @@ def admin_run_matching():
             ).fetchone()['c']
             if sell_count_2 == 0:
                 # failed 매치에서 모든 seller 아이템 기반으로 2차 판매예약 자동 생성
+                # seller_id 없는 경우 reservation_id → items 역추적
                 _failed2 = db.execute(
-                    """SELECT DISTINCT m.seller_id, m.bar_type, COALESCE(m.stage,1) as stage
+                    """SELECT m.seller_id, m.bar_type, COALESCE(m.stage,1) as stage,
+                              m.seller_item_id, m.reservation_id
                        FROM matches m WHERE m.match_round=1 AND m.status='failed'
                        AND m.match_date<=?""",
                     (today,)
                 ).fetchall()
                 for _fm2 in _failed2:
+                    _sid2 = _fm2['seller_id']
+                    _bar2 = _fm2['bar_type']
+                    _stg2 = _fm2['stage']
+                    # seller_id가 없으면 reservation_id로 역추적
+                    if not _sid2 and _fm2['reservation_id']:
+                        _rv2 = db.execute("SELECT user_id FROM reservations WHERE id=?", (_fm2['reservation_id'],)).fetchone()
+                        if _rv2: _sid2 = _rv2['user_id']
+                    if not _sid2:
+                        continue
                     # 이미 2차 판매예약 있으면 스킵
                     _exists = db.execute(
                         """SELECT id FROM reservations WHERE user_id=? AND bar_type=?
-                           AND match_round=2 AND status='pending'""",
-                        (_fm2['seller_id'], _fm2['bar_type'])
+                           AND match_round=2 AND status IN ('pending','matched')""",
+                        (_sid2, _bar2)
                     ).fetchone()
                     if _exists:
                         continue
-                    # reservable 또는 matched 상태 아이템 조회
-                    _item2 = db.execute(
-                        """SELECT id, status FROM items WHERE user_id=? AND bar_type=?
-                           AND status IN ('reservable','matched')
-                           ORDER BY CASE status WHEN 'reservable' THEN 0 ELSE 1 END, id LIMIT 1""",
-                        (_fm2['seller_id'], _fm2['bar_type'])
-                    ).fetchone()
-                    if _item2:
-                        # matched 상태면 reservable로 복원
-                        if _item2['status'] == 'matched':
-                            db.execute("UPDATE items SET status='reservable' WHERE id=?", (_item2['id'],))
+                    # seller_item_id 있으면 직접 사용, 없으면 items에서 조회
+                    _item2_id = _fm2['seller_item_id']
+                    _item2_status = None
+                    if _item2_id:
+                        _itrow = db.execute("SELECT id, status FROM items WHERE id=?", (_item2_id,)).fetchone()
+                        if _itrow: _item2_status = _itrow['status']
+                    else:
+                        _itrow = db.execute(
+                            """SELECT id, status FROM items WHERE user_id=? AND bar_type=?
+                               AND status IN ('reservable','matched')
+                               ORDER BY CASE status WHEN 'reservable' THEN 0 ELSE 1 END, id LIMIT 1""",
+                            (_sid2, _bar2)
+                        ).fetchone()
+                        if _itrow: _item2_id, _item2_status = _itrow['id'], _itrow['status']
+                    if _item2_id:
+                        if _item2_status == 'matched':
+                            db.execute("UPDATE items SET status='reservable' WHERE id=?", (_item2_id,))
                         db.execute(
                             """INSERT OR IGNORE INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,stage,confirmed)
                                VALUES(?,?,?,2,?,'pending',?,1)""",
-                            (_fm2['seller_id'], _item2['id'], _fm2['bar_type'], today, _fm2['stage'])
+                            (_sid2, _item2_id, _bar2, today, _stg2)
                         )
                 db.commit()
                 sell_count_2 = db.execute(
