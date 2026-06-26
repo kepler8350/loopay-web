@@ -2086,12 +2086,17 @@ def admin_run_matching():
                     ).fetchone()
                     if _exists:
                         continue
+                    # reservable 또는 matched 상태 아이템 조회
                     _item2 = db.execute(
-                        """SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='reservable'
-                           ORDER BY id LIMIT 1""",
+                        """SELECT id, status FROM items WHERE user_id=? AND bar_type=?
+                           AND status IN ('reservable','matched')
+                           ORDER BY CASE status WHEN 'reservable' THEN 0 ELSE 1 END, id LIMIT 1""",
                         (_fm2['seller_id'], _fm2['bar_type'])
                     ).fetchone()
                     if _item2:
+                        # matched 상태면 reservable로 복원
+                        if _item2['status'] == 'matched':
+                            db.execute("UPDATE items SET status='reservable' WHERE id=?", (_item2['id'],))
                         db.execute(
                             """INSERT OR IGNORE INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,stage,confirmed)
                                VALUES(?,?,?,2,?,'pending',?,1)""",
@@ -2143,7 +2148,7 @@ def admin_run_matching():
                WHERE r.status IN ('pending','unmatched') AND r.match_round=?
                AND r.reserve_date<=?
                AND COALESCE(r.confirmed,0)=1
-               AND i.status IN ('reservable','waiting')""",
+               AND i.status IN ('reservable','waiting','matched')""",
             (round_num, today)
         ).fetchall()
 
