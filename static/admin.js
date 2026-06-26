@@ -1358,7 +1358,6 @@ async function loadReservationStatus(){
       +'<td style="'+CB+'">'+(s.buy_count||0)+'</td>'
       +'<td style="'+C+SEP+'">'+(s.sell_under32||0)+'</td>'
       +'<td style="'+C+SEP+'">'+(s.extra_sell_under32||0)+'</td>'
-      +'<td style="'+C+'">'+(s.extra_sell_new||0)+'</td>'
       +'<td style="'+CB+SEP+'">'+(s.sell_count||0)+'</td>'
       +'<td style="'+C+'font-weight:700;color:'+mrc(mr)+'">'+mr+'%</td>'
       +'</tr>';
