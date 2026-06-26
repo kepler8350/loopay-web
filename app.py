@@ -2070,26 +2070,32 @@ def admin_run_matching():
                 (today,)
             ).fetchone()['c']
             if sell_count_2 == 0:
-                # failed 매치에서 loopay 아이템 기반으로 2차 판매예약 자동 생성
-                _loopay_id2 = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
-                _loopay_id2 = _loopay_id2['id'] if _loopay_id2 else -1
+                # failed 매치에서 모든 seller 아이템 기반으로 2차 판매예약 자동 생성
                 _failed2 = db.execute(
-                    """SELECT DISTINCT m.bar_type, COALESCE(m.stage,1) as stage
+                    """SELECT DISTINCT m.seller_id, m.bar_type, COALESCE(m.stage,1) as stage
                        FROM matches m WHERE m.match_round=1 AND m.status='failed'
-                       AND m.seller_id=? AND m.match_date<=?""",
-                    (_loopay_id2, today)
+                       AND m.match_date<=?""",
+                    (today,)
                 ).fetchall()
                 for _fm2 in _failed2:
+                    # 이미 2차 판매예약 있으면 스킵
+                    _exists = db.execute(
+                        """SELECT id FROM reservations WHERE user_id=? AND bar_type=?
+                           AND match_round=2 AND status='pending'""",
+                        (_fm2['seller_id'], _fm2['bar_type'])
+                    ).fetchone()
+                    if _exists:
+                        continue
                     _item2 = db.execute(
                         """SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='reservable'
                            ORDER BY id LIMIT 1""",
-                        (_loopay_id2, _fm2['bar_type'])
+                        (_fm2['seller_id'], _fm2['bar_type'])
                     ).fetchone()
                     if _item2:
                         db.execute(
                             """INSERT OR IGNORE INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,stage,confirmed)
                                VALUES(?,?,?,2,?,'pending',?,1)""",
-                            (_loopay_id2, _item2['id'], _fm2['bar_type'], today, _fm2['stage'])
+                            (_fm2['seller_id'], _item2['id'], _fm2['bar_type'], today, _fm2['stage'])
                         )
                 db.commit()
                 sell_count_2 = db.execute(
@@ -2925,27 +2931,24 @@ def admin_matching_status():
         _failed_date_cond
     ).fetchall()
 
-    # 미입금 판매아이템 집계 (r2_sell_by_type: failed 매치의 loopay 아이템)
-    _loopay_row2 = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
-    _loopay_id2 = _loopay_row2['id'] if _loopay_row2 else -1
+    # 미입금 판매아이템 집계 (r2_sell_by_type: failed 매치의 모든 seller 아이템)
     _failed_sell_rows = db.execute(
-        """SELECT m.bar_type, COUNT(*) as cnt
+        f"""SELECT m.bar_type, COUNT(*) as cnt
            FROM matches m
-           WHERE m.match_round=1 AND m.status='failed' AND m.match_date IN (?,?)
-           AND m.seller_id=?
+           WHERE m.match_round=1 AND m.status='failed' AND {_failed_sql_cond}
            GROUP BY m.bar_type""",
-        (today, _yesterday, _loopay_id2)
+        _failed_date_cond
     ).fetchall()
-    # seller_item_id 없는 경우 fallback: loopay 아이템 직접 조회
+    # fallback: 2차 pending 판매예약에서 집계
     if not _failed_sell_rows:
         _failed_sell_rows = db.execute(
-            """SELECT i.bar_type, COUNT(*) as cnt
-               FROM items i
-               INNER JOIN reservations r ON r.item_id=i.id
-               WHERE i.user_id=? AND i.status='reservable'
-               AND r.match_round=2 AND r.status='pending' AND r.reserve_date>=?
-               GROUP BY i.bar_type""",
-            (_loopay_id2, today)
+            """SELECT r.bar_type, COUNT(*) as cnt
+               FROM reservations r
+               INNER JOIN items i ON r.item_id=i.id
+               WHERE r.match_round=2 AND r.status='pending' AND r.reserve_date<=?
+               AND COALESCE(r.confirmed,0)=1
+               GROUP BY r.bar_type""",
+            (today,)
         ).fetchall()
     r2_sell_by_type = [{'bar_type': r['bar_type'], 'cnt': r['cnt']} for r in _failed_sell_rows if r['bar_type']]
     r2_sell_count_from_failed = sum(r['cnt'] for r in r2_sell_by_type)
