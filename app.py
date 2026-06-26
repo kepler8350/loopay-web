@@ -2146,17 +2146,25 @@ def admin_run_matching():
                     # 마지막 수단: failed 매치를 직접 2차 판매예약으로 변환 (아이템 없이도)
                     _failed2_bare = db.execute(
                         """SELECT DISTINCT m.bar_type, COALESCE(m.stage,1) as stage,
-                                  COALESCE(m.seller_id, r.user_id) as eff_seller_id,
-                                  COALESCE(m.seller_item_id, r.item_id) as eff_item_id
+                                  m.seller_id as eff_seller_id,
+                                  m.seller_item_id as eff_item_id,
+                                  m.seller_phone
                            FROM matches m
-                           LEFT JOIN reservations r ON r.id = m.reservation_id
                            WHERE m.match_round=1 AND m.status='failed'"""
                     ).fetchall()
                     for _fb in _failed2_bare:
-                        _eb = _fb['eff_seller_id']
                         _barb = _fb['bar_type']
                         _stgb = _fb['stage']
                         _eidb = _fb['eff_item_id']
+                        _eb = _fb['eff_seller_id']
+                        # seller_id 없으면 seller_phone으로 역추적
+                        if not _eb and _fb['seller_phone']:
+                            _ur = db.execute("SELECT id FROM users WHERE phone=?", (_fb['seller_phone'],)).fetchone()
+                            if _ur: _eb = _ur['id']
+                        # 여전히 없으면 seller_item_id로 역추적
+                        if not _eb and _eidb:
+                            _ir = db.execute("SELECT user_id FROM items WHERE id=?", (_eidb,)).fetchone()
+                            if _ir: _eb = _ir['user_id']
                         if not _eb: continue
                         _exb = db.execute(
                             "SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND match_round=2 AND status IN ('pending','matched')",
