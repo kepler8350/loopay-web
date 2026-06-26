@@ -226,8 +226,15 @@ function toggleItemSellSelect(itemId, barType){
 
 function showSellConfirm(){
   var names={bronze:'수정',silver:'루비',gold:'다이아'};
-  // 선택된 아이템 목록 구성
-  var selected = Object.keys(_sellSelected).filter(function(id){return _sellSelected[id];});
+  // 선택된 아이템 목록 구성 - 현재 유저 소유 아이템만 포함
+  var _validIds = new Set();
+  if(userData && userData.items){
+    var _allUD = (userData.items.bronze||[]).concat(userData.items.silver||[]).concat(userData.items.gold||[]);
+    _allUD.forEach(function(it){ _validIds.add(String(it.id)); });
+  }
+  var selected = Object.keys(_sellSelected).filter(function(id){
+    return _sellSelected[id] && (_validIds.size===0 || _validIds.has(String(id)));
+  });
   if(!selected.length){ toast('판매예약할 아이템을 선택해주세요.'); return; }
   // userData.items로 fallback 캐시 보완
   if(userData && userData.items){
@@ -245,6 +252,12 @@ function showSellConfirm(){
   var groupByType = {bronze:[], silver:[], gold:[]};
   selected.forEach(function(id){
     var info = _itemCache[id] || _itemCache[String(id)];
+    // 캐시에 없으면 userData.items 전체에서 직접 찾기
+    if(!info && userData && userData.items){
+      var allItems2 = (userData.items.bronze||[]).concat(userData.items.silver||[]).concat(userData.items.gold||[]);
+      var found = allItems2.find(function(it){ return String(it.id)===String(id); });
+      if(found) info = {bar_type: found.bar_type||found.type, stage: found.stage, sell_price: found.sell_price, profit: found.profit, buy_price: found.buy_price, purchase_date: found.purchase_date};
+    }
     if(info){
       groupByType[info.bar_type||'bronze'].push(info);
       totalPrice += info.sell_price||0;

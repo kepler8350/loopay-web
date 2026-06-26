@@ -83,6 +83,11 @@ async function loadUserData(){
   if(!window._syncInterval) await syncServerTime();
   try{
     const d=await api('/user/me');
+    // 다른 유저로 전환 시 판매예약 선택 초기화
+    if(userData && userData.id !== d.id){
+      if(typeof _sellSelected !== 'undefined') { for(var k in _sellSelected) delete _sellSelected[k]; }
+      if(typeof _itemCache !== 'undefined') { for(var k in _itemCache) delete _itemCache[k]; }
+    }
     userData=d;
     renderHeader(d);
     renderBars(d);
@@ -634,6 +639,9 @@ function doLogout() {
   userData = null;
   token = '';
   window._isSuspended = false;
+  // 판매예약 선택 상태 및 캐시 초기화
+  if(typeof _sellSelected !== 'undefined') { for(var k in _sellSelected) delete _sellSelected[k]; }
+  if(typeof _itemCache !== 'undefined') { for(var k in _itemCache) delete _itemCache[k]; }
   // ★ 거래정지로 인해 비활성화된 버튼 스타일 초기화
   ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
     var el=document.getElementById(id);
