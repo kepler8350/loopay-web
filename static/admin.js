@@ -235,11 +235,12 @@ async function updateMatchingBtn(){
     if(btn1){ 
       // 1차 매칭이 실행됐으면 버튼 비활성화 유지 (서버 기준 + 클라이언트 플래그)
       var _r1RanServer = matchData.r1_ran_today === true;
-      var _active1 = isActive1 && !_block1Hidden && !window._r1MatchingDone && !_r1RanServer;
-      btn1.disabled=!_active1; btn1.style.opacity=_active1?'1':'0.45'; btn1.style.cursor=_active1?'pointer':'not-allowed';
-      if(_r1RanServer || window._r1MatchingDone){
-        btn1.textContent='✅ 1차 매칭 완료';
-      }
+      var _r1Done = _r1RanServer || window._r1MatchingDone;
+      var _active1 = isActive1 && !_block1Hidden && !_r1Done;
+      btn1.disabled = !_active1;
+      btn1.style.opacity = _active1 ? '1' : '0.45';
+      btn1.style.cursor = _active1 ? 'pointer' : 'not-allowed';
+      btn1.textContent = _r1Done ? '✅ 1차 매칭 완료' : '⚡ 1차 매칭 실행하기';
     }
     if(notice){
       notice.textContent = isActive1
@@ -1597,27 +1598,22 @@ async function runMatching(roundNum){
     _success = true;
     toast(d.message||roundNum+'차 매칭 완료!', 'success');
     // 매칭 성공 후: 버튼 텍스트 복원 + 비활성화 유지 + 블록 숨김
-    if(btn){ btn.disabled=true; btn.style.opacity='0.45'; btn.style.cursor='not-allowed'; btn.textContent='⚡ '+roundNum+'차 매칭 실행하기'; }
+    window._matchingJustRan = true;
+    window._matchingRanRound = roundNum;
+    if(roundNum===1){ window._r1MatchingDone = true; }
+    if(roundNum===2){ window._r2MatchingDone = true; }
+    // 버튼 비활성화 - 텍스트 완료로 변경
+    if(btn){
+      btn.disabled=true; btn.style.opacity='0.45'; btn.style.cursor='not-allowed';
+      btn.textContent='✅ '+roundNum+'차 매칭 완료';
+    }
     var runBlockEl = document.getElementById('match-run-block-'+roundNum);
     if(runBlockEl) runBlockEl.style.display='none';
-    // 매칭 완료 후 구매예약 수량 즉시 0으로 표시
-    var buyEl = document.getElementById('r'+roundNum+'-buy');
-    var sellEl = document.getElementById('r'+roundNum+'-sell');
-    if(buyEl) buyEl.textContent = '0';
-    if(roundNum===1){
-      // 1차 매칭 후 구매/판매예약 카드 수량 0 표시
-      var rateEl = document.querySelector('#matching-rate-1, [id*="rate"]');
-    }
-    window._matchingJustRan = true; // loadMatchingStatus에서 블록 복원 방지
-    window._matchingRanRound = roundNum; // 어느 차수가 실행됐는지 기록
-    // 1차 매칭 실행 직후: 구매/판매예약 수 즉시 0으로 표시
-    if(roundNum===1){
-      window._r1MatchingDone = true;
-      var _rb = document.getElementById('r1-buy');
-      var _rs = document.getElementById('r1-sell');
-      if(_rb) _rb.textContent='0';
-      if(_rs) _rs.textContent='0';
-    }
+    // 구매/판매예약 수 즉시 0으로 표시
+    var _rb = document.getElementById('r'+roundNum+'-buy');
+    var _rs = document.getElementById('r'+roundNum+'-sell');
+    if(_rb) _rb.textContent='0';
+    if(_rs) _rs.textContent='0';
     loadMatchingStatus();
     if(typeof loadMatchRecords==='function') loadMatchRecords();
   }catch(e){
