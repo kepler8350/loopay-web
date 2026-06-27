@@ -583,7 +583,7 @@ async function adminReleasePenalty(penaltyId){
 
 
 // ── 루페이 판매아이템 직접 판매예약 ──
-async // 시스템아이템 판매예약 팝업
+// 시스템아이템 판매예약 팝업
 var _siSellItemId = null;
 function adminLoopayDirectSell(itemId, barType, stage){
   _siSellItemId = itemId;
