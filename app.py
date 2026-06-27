@@ -529,7 +529,17 @@ def _run_matching_internal(db, round_num, today):
                AND user_id=? AND item_id IS NOT NULL""",
             (today, loopay_id)
         ).fetchone()['c']
-        if sell_count == 0: return
+        if sell_count == 0:
+            # 2차 매칭 대상(미입금 판매예약) 없음 → 2차 구매예약 기록 삭제
+            db.execute(
+                """DELETE FROM reservations
+                   WHERE match_round=2 AND status='pending' AND reserve_date=?
+                   AND (item_id IS NULL OR item_id=0)
+                   AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
+                (today,)
+            )
+            db.commit()
+            return
 
         # 실제 매칭 실행 (run-matching 로직과 동일)
         # 일반 사용자 판매예약 (item_id 있는 것, match_round=round_num)
@@ -2256,6 +2266,27 @@ def admin_run_matching():
         )
         db.commit()
 
+        # 2차 매칭인데 판매예약(미입금 아이템)이 없으면 → 구매예약 삭제 후 종료
+        if round_num == 2:
+            _sell_cnt_final = db.execute(
+                """SELECT COUNT(*) as c FROM reservations
+                   WHERE match_round=2 AND status='pending' AND reserve_date<=?
+                   AND item_id IS NOT NULL AND item_id > 0 AND confirmed=1""",
+                (today,)
+            ).fetchone()['c']
+            if _sell_cnt_final == 0:
+                # 2차 매칭 대상 없음 → 2차 구매예약 기록만 남기고 삭제
+                db.execute(
+                    """DELETE FROM reservations
+                       WHERE match_round=2 AND status='pending' AND reserve_date=?
+                       AND (item_id IS NULL OR item_id=0)
+                       AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
+                    (today,)
+                )
+                db.commit()
+                return jsonify(success=True, matched=0,
+                               message='2차 매칭 대상(미입금 아이템) 없음 — 구매예약 삭제 완료')
+
         # 판매예약 조회: confirmed=1 + items.status='reservable' (loopay 구매예약 waiting 제외)
         sell_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
@@ -2754,12 +2785,16 @@ def admin_run_matching():
                        AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
                     (_nextday, today)
                 )
+                # 2차 매칭 완료 후 남은 미매칭 2차 구매예약 삭제
+                # join_round2=0: unmatched 기록 후 삭제
+                # join_round2=1: 다음날 1차로 복원됐으므로 나머지 처리 불필요
                 db.execute(
-                    """UPDATE reservations SET status='unmatched'
-                       WHERE match_round=? AND status='pending' AND reserve_date=?
+                    """DELETE FROM reservations
+                       WHERE match_round=2 AND status='pending' AND reserve_date=?
                        AND COALESCE(confirmed,0)=0
+                       AND COALESCE(join_round2,0)=0
                        AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
-                    (round_num, today)
+                    (today,)
                 )
             except Exception:
                 pass
