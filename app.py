@@ -2813,6 +2813,14 @@ def admin_run_matching():
                 pass
         db.commit()
 
+        # 매칭 실행 기록 저장 (오늘 실행 여부 추적용)
+        _ran_key = f'r{round_num}_ran_{today}'
+        db.execute(
+            "INSERT OR REPLACE INTO system_settings(key,value,updated_at) VALUES(?,?,CURRENT_TIMESTAMP)",
+            (_ran_key, today)
+        )
+        db.commit()
+
         return jsonify(
             success=True,
             matched=total_matched,
@@ -3192,12 +3200,12 @@ def admin_matching_status():
         'r2_sell_by_type': r2_sell_by_type,
         'r2_sell_count': r2_sell_count_from_failed,
         'r2_pending_count': r2_pending_count,
-        'r1_ran_today': db.execute(
-            "SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND match_date=?", (today,)
-        ).fetchone()['c'] > 0,
-        'r2_ran_today': db.execute(
-            "SELECT COUNT(*) as c FROM matches WHERE match_round=2 AND match_date=?", (today,)
-        ).fetchone()['c'] > 0
+        'r1_ran_today': bool(db.execute(
+            "SELECT value FROM system_settings WHERE key=?", (f'r1_ran_{today}',)
+        ).fetchone()),
+        'r2_ran_today': bool(db.execute(
+            "SELECT value FROM system_settings WHERE key=?", (f'r2_ran_{today}',)
+        ).fetchone())
     }
     db.close()
     return jsonify(result)
