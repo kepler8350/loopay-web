@@ -2308,17 +2308,16 @@ def admin_run_matching():
         _loopay_buy_rows = db.execute(
             """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
                CASE WHEN COALESCE(r.stage,0) <= 0 THEN 1 ELSE r.stage END as stage,
+               COALESCE(r.stage, 0) as raw_stage,
                r.item_id,
                u.username as buyer_username, u.nickname as buyer_nickname,
                u.phone as buyer_phone, u.account_name as buyer_account_name
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
-               LEFT JOIN items i ON r.item_id = i.id
-               WHERE r.status IN ('pending','unmatched') AND r.match_round=?
-               AND r.reserve_date>=?
+               WHERE r.status IN ('pending') AND r.match_round=?
+               AND r.reserve_date<=?
                AND u.username = 'loopay'
-               AND (r.confirmed=1 OR COALESCE(r.confirmed,0)=0)
-               AND (i.status='waiting' OR COALESCE(r.item_id,0)=0)""",
+               AND (COALESCE(r.item_id,0)=0)""",
             (round_num, today)
         ).fetchall()
         buy_rows = list(_normal_buy_rows) + list(_loopay_buy_rows)
@@ -2696,33 +2695,44 @@ def admin_run_matching():
         # 1차 매칭: 미매칭 구매예약 → 2차 대기로 자동 전환
         if round_num == 1:
             try:
+                # ① join_round2=1인 일반 구매예약 → 2차로 전환 (미입금 구매자 제외)
                 db.execute(
                     """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
                        WHERE match_round=1 AND status='pending'
                        AND (item_id IS NULL OR item_id=0)
-                       AND join_round2=1
+                       AND COALESCE(join_round2,0)=1
                        AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
                     (today,)
                 )
-                # 1차 미매칭 판매예약도 2차로 전환 (구매예약이 이미 2차로 넘어갔으므로)
-                db.execute(
-                    """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
-                       WHERE match_round=1 AND status IN ('pending','unmatched')
-                       AND item_id IS NOT NULL AND item_id > 0""",
-                    (today,)
-                )
-                # 1차 loopay 미매칭: join_round2=1 이면 2차 전환, 아니면 unmatched
-                db.execute(
-                    """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
-                       WHERE match_round=1 AND status='pending'
-                       AND join_round2=1
-                       AND user_id=(SELECT id FROM users WHERE username='loopay')""",
-                    (today,)
-                )
+                # ② join_round2=0인 미매칭 구매예약 → unmatched
                 db.execute(
                     """UPDATE reservations SET status='unmatched'
                        WHERE match_round=1 AND status='pending' AND reserve_date=?
-                       AND join_round2=0
+                       AND (item_id IS NULL OR item_id=0)
+                       AND COALESCE(join_round2,0)=0
+                       AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
+                    (today,)
+                )
+                # ③ join_round2=1인 판매예약 → 2차로 전환
+                db.execute(
+                    """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
+                       WHERE match_round=1 AND status IN ('pending','unmatched')
+                       AND item_id IS NOT NULL AND item_id > 0
+                       AND COALESCE(join_round2,0)=1""",
+                    (today,)
+                )
+                # ④ join_round2=0인 미매칭 판매예약 → unmatched
+                db.execute(
+                    """UPDATE reservations SET status='unmatched'
+                       WHERE match_round=1 AND status IN ('pending','unmatched')
+                       AND item_id IS NOT NULL AND item_id > 0
+                       AND COALESCE(join_round2,0)=0""",
+                    (today,)
+                )
+                # ⑤ 루페이 미매칭 구매예약 → 모두 unmatched (루페이는 1차에서 반드시 매칭돼야 함)
+                db.execute(
+                    """UPDATE reservations SET status='unmatched'
+                       WHERE match_round=1 AND status='pending' AND reserve_date=?
                        AND user_id=(SELECT id FROM users WHERE username='loopay')""",
                     (today,)
                 )
