@@ -704,7 +704,7 @@ async function loadSystemItems(){
   try{
     var tok=localStorage.getItem('admin_token');
     var ct=await fetch('/api/current-time',{headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
-    _serverHour=ct.hour||0; _serverMin=ct.minute||0;
+    _serverHour=ct.hour||0; _serverMin=ct.minute||0; _serverDate=ct.date||ct.time&&ct.time.split(' ')[0]||'';
     _systemItemsLoadedAt = new Date(); // 로드 시각 기록
   }catch(e){}
   try{
@@ -856,16 +856,8 @@ function renderSystemItems(){
         var _purchaseDate = item.purchase_date || null;
         var _canSell = true;
         if(_purchaseDate){
-          // 서버 시간에서 오늘 날짜 계산
-          var _srvNow = new Date();
-          // _serverHour/Min 을 서버 로컬 시간으로 보정
-          var _srvDate = new Date(_srvNow);
-          _srvDate.setHours(_serverHour||0, _serverMin||0, 0, 0);
-          // 서버 날짜 문자열 (YYYY-MM-DD)
-          var _y = _srvDate.getFullYear();
-          var _mo = String(_srvDate.getMonth()+1).padStart(2,'0');
-          var _d = String(_srvDate.getDate()).padStart(2,'0');
-          var _todayStr = _y+'-'+_mo+'-'+_d;
+          // 서버 날짜 기준으로 판매가능 여부 확인
+          var _todayStr = _serverDate || '';
           _canSell = _todayStr > _purchaseDate; // 다음날 이후
         }
         if(_canSell){
@@ -880,13 +872,7 @@ function renderSystemItems(){
       var _purchaseDate2 = item.purchase_date || null;
       var _canSell2 = true;
       if(_purchaseDate2){
-        var _srvNow2 = new Date();
-        var _srvDate2 = new Date(_srvNow2);
-        _srvDate2.setHours(_serverHour||0, _serverMin||0, 0, 0);
-        var _y2 = _srvDate2.getFullYear();
-        var _mo2 = String(_srvDate2.getMonth()+1).padStart(2,'0');
-        var _d2 = String(_srvDate2.getDate()).padStart(2,'0');
-        var _todayStr2 = _y2+'-'+_mo2+'-'+_d2;
+        var _todayStr2 = _serverDate || '';
         _canSell2 = _todayStr2 > _purchaseDate2;
       }
       if(_canSell2){
