@@ -2085,6 +2085,19 @@ def admin_run_matching():
         today = get_today().isoformat()
         loopay_id = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()['id']
 
+        # ── 이전 날짜 미처리 join_round2=1 구매예약을 오늘 날짜로 갱신 ──
+        # (전날 2차 매칭이 실행 안 됐거나 미매칭으로 남은 예약)
+        db.execute(
+            """UPDATE reservations SET reserve_date=?, match_round=1
+               WHERE res_type='buy' AND status='pending'
+               AND reserve_date<? AND reserve_date IS NOT NULL
+               AND COALESCE(join_round2,0)=1
+               AND (item_id IS NULL OR item_id=0)
+               AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
+            (today, today)
+        )
+        db.commit()
+
         # 2차 매칭: 미입금확정(failed) 매치에서 loopay 판매예약 자동 생성
         if round_num == 2:
             failed_matches = db.execute(
@@ -2322,7 +2335,7 @@ def admin_run_matching():
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                WHERE (r.status='pending' OR r.status IS NULL)
-               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date<=?))
+               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date=?))
                AND COALESCE(r.confirmed,0)=0
                AND u.username != 'loopay'
                AND r.user_id NOT IN (
@@ -2952,7 +2965,7 @@ def admin_matching_status():
         buy_count = db.execute(
             f"""SELECT COUNT(*) as c FROM reservations r
                WHERE r.status='pending' AND r.user_id!=?
-               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date<=?))
+               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date=?))
                AND COALESCE(r.confirmed,0)=0
                AND r.user_id NOT IN (
                    SELECT p.user_id FROM penalties p WHERE p.is_released=0
