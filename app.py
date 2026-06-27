@@ -5111,11 +5111,14 @@ def admin_loopay_sell_reserve():
         ).fetchone()
         if not item: return jsonify(error='판매가능 상태 아이템 없음'), 404
         today = get_today().isoformat()
+        join_round2 = int(data.get('join_round2', 0))
+        # 2차 참가 신청인 경우: 1차 예약으로 등록하고 join_round2=1
+        actual_round = 1 if join_round2 else match_round
         # 아이템 상태를 reservable로 변경 + 판매예약 생성
         db.execute("UPDATE items SET status='reservable' WHERE id=?", (item_id,))
         db.execute(
-            "INSERT INTO reservations(user_id, item_id, bar_type, match_round, reserve_date, status, stage, confirmed) VALUES(?,?,?,?,?,'pending',?,1)",
-            (lid, item_id, item['bar_type'], match_round, today, item['stage'] or 1)
+            "INSERT INTO reservations(user_id, item_id, bar_type, match_round, reserve_date, status, stage, confirmed, join_round2) VALUES(?,?,?,?,?,'pending',?,1,?)",
+            (lid, item_id, item['bar_type'], actual_round, today, item['stage'] or 1, join_round2)
         )
         db.commit()
         return jsonify(success=True, item_id=item_id, bar_type=item['bar_type'], stage=item['stage'])

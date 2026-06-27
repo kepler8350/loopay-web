@@ -584,21 +584,24 @@ async function adminReleasePenalty(penaltyId){
 
 // ── 루페이 판매아이템 직접 판매예약 ──
 async function adminLoopayDirectSell(itemId, matchRound){
-  var roundLabel = matchRound===1 ? '1차' : '2차';
-  if(!confirm(roundLabel+'로 판매예약하시겠습니까?')) return;
+  var roundLabel = matchRound===1 ? '1차 판매예약' : '2차매칭 참가';
+  if(!confirm(roundLabel+'을 신청하시겠습니까?')) return;
   (async function(){
     try{
       var tok = localStorage.getItem('admin_token');
+      var body = matchRound===2
+        ? {item_id:itemId, match_round:1, join_round2:1}   // 2차 참가: 1차로 등록 + join_round2=1
+        : {item_id:itemId, match_round:1};
       var r = await fetch('/api/admin/loopay-sell-reserve',{
         method:'POST',
         headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-        body:JSON.stringify({item_id:itemId, match_round:matchRound})
+        body:JSON.stringify(body)
       }).then(r=>r.json());
       if(r.success||r.message){
-        toast(roundLabel+' 판매예약 완료','success');
+        toast(roundLabel+' 완료','success');
         loadSystemItems();
       } else {
-        toast(r.error||'판매예약 실패','error');
+        toast(r.error||'실패','error');
       }
     }catch(e){toast('오류: '+e.message,'error');}
   })();
@@ -852,7 +855,7 @@ function renderSystemItems(){
         }
         if(_canSell){
           actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',1)" style="padding:3px 8px;background:#7b1fa2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 1차 판매예약</button>';
-          actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',2)" style="padding:3px 8px;background:#4a148c;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">📋 2차 판매예약</button>';
+          actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',2)" style="padding:3px 8px;background:#1565c0;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🔗 2차매칭 참가</button>';
         } else {
           actionBtns += '<span style="color:#555;font-size:11px">구매일 다음날부터 판매가능</span>';
         }
@@ -874,7 +877,7 @@ function renderSystemItems(){
       }
       if(_canSell2){
         actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',1)" style="padding:3px 8px;background:#7b1fa2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 1차 판매예약</button>';
-        actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',2)" style="padding:3px 8px;background:#4a148c;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">📋 2차 판매예약</button>';
+        actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',2)" style="padding:3px 8px;background:#1565c0;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🔗 2차매칭 참가</button>';
       } else {
         actionBtns += '<span style="color:#555;font-size:11px">구매일 다음날부터 판매가능</span>';
       }
