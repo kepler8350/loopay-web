@@ -1055,7 +1055,7 @@ async function loadReservationsLog(page){
             ? '<span style="padding:2px 7px;border-radius:8px;font-size:11px;background:#2e7d3222;color:#66bb6a;font-weight:700">참가</span>'
             : '<span style="padding:2px 7px;border-radius:8px;font-size:11px;background:#c6282822;color:#ef5350;font-weight:700">미참가</span>')
         : '<span style="color:#555;font-size:11px">-</span>';
-      '<tr style="border-bottom:1px solid #2a2a40">'
+      return '<tr style="border-bottom:1px solid #2a2a40">'
         +'<td style="text-align:center"><input type="checkbox" class="rl-check" data-id="'+r.id+'" onchange="rlUpdateDelBtn()" style="cursor:pointer"></td>'
         +'<td style="text-align:center;color:#888">'+rowNo+'</td>'
         +'<td style="text-align:center">'+r.reserve_date+'</td>'
