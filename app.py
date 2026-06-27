@@ -5102,6 +5102,61 @@ def admin_loopay_items():
         # confirmed/failed match는 목록에서 제외 (match_id 기준으로 제외, item 기준 아님)
         rows = [d for d in rows_with_match
                 if d.get('match_status') not in ('confirmed', 'failed')]
+
+        # ── loopay 구매 중 매치 (item_id=0 구매예약) → 구매아이템으로 표시 ──
+        # 아이템 없이 구매예약한 경우: items 테이블에 아이템이 없어서 위 rows에 안 잡힘
+        # matches 테이블에서 loopay가 buyer이고 pending/paid인 것을 별도 조회
+        _buy_matches = db.execute(
+            """SELECT m.id as match_id, m.bar_type, m.stage, m.status as match_status,
+                  m.match_round, m.sell_price, m.buy_price, m.match_date,
+                  m.seller_item_id,
+                  s.username as seller_username, s.account_name as seller_account_name,
+                  s.account_no as seller_account, s.bank as seller_bank, s.phone as seller_phone
+               FROM matches m
+               LEFT JOIN users s ON m.seller_id = s.id
+               WHERE m.buyer_id = ? AND m.status IN ('pending','paid')
+               ORDER BY m.id DESC""",
+            (lid,)
+        ).fetchall()
+        # 이미 rows에 있는 match_id 중복 제거
+        _existing_match_ids = {r.get('match_id') for r in rows if r.get('match_id')}
+        for _bm in _buy_matches:
+            if _bm['match_id'] in _existing_match_ids:
+                continue
+            _bp, _sp = get_price(_bm['bar_type'], _bm['stage'] or 1)
+            rows.append({
+                'id': _bm['seller_item_id'] or 0,  # 가상 아이템 id
+                'bar_type': _bm['bar_type'],
+                'stage': _bm['stage'] or 1,
+                'status': 'matched',
+                'purchase_date': _bm['match_date'],
+                'reserve_date': _bm['match_date'],
+                'sell_reservation_round': None,
+                'sell_reservation_date': None,
+                'sell_reservation_id': None,
+                'match_id': _bm['match_id'],
+                'match_status': _bm['match_status'],
+                'match_round': _bm['match_round'],
+                'receipt_url': None,
+                'buyer_username': 'loopay',
+                'buyer_account_name': None,
+                'buyer_account': None,
+                'buyer_bank': None,
+                'buyer_phone': None,
+                'seller_username': _bm['seller_username'],
+                'seller_account_name': _bm['seller_account_name'],
+                'seller_account': _bm['seller_account'],
+                'seller_bank': _bm['seller_bank'],
+                'seller_phone': _bm['seller_phone'],
+                'item_type': '구매매칭완료',
+                'is_buy_reservation': False,
+                'is_buy_matched': True,
+                'is_self_match': (_bm['seller_username'] == 'loopay'),
+                'buy_match_confirmed': False,
+                'buy_price': _bm['buy_price'] or _bp,
+                'sell_price': _bm['sell_price'] or _sp,
+            })
+
         return jsonify(
             items=[{
                 'id': r['id'],
