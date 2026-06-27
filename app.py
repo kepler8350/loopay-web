@@ -2089,7 +2089,7 @@ def admin_run_matching():
         # (전날 2차 매칭이 실행 안 됐거나 미매칭으로 남은 예약)
         db.execute(
             """UPDATE reservations SET reserve_date=?, match_round=1
-               WHERE res_type='buy' AND status='pending'
+               WHERE status='pending'
                AND reserve_date<? AND reserve_date IS NOT NULL
                AND COALESCE(join_round2,0)=1
                AND (item_id IS NULL OR item_id=0)
