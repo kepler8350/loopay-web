@@ -2965,7 +2965,7 @@ def admin_matching_status():
         buy_count = db.execute(
             f"""SELECT COUNT(*) as c FROM reservations r
                WHERE r.status='pending' AND r.user_id!=?
-               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date=?))
+               AND r.match_round=?
                AND COALESCE(r.confirmed,0)=0
                AND r.user_id NOT IN (
                    SELECT p.user_id FROM penalties p WHERE p.is_released=0
@@ -2975,7 +2975,7 @@ def admin_matching_status():
                    WHERE m.match_round=1 AND m.status='failed'
                    AND m.match_date=?
                )""",
-            [loopay_id, round_num, today, today]
+            [loopay_id, round_num, today]
         ).fetchone()['c']
 
         # loopay 구매예약도 포함 (waiting 아이템이 있는 pending 예약)
