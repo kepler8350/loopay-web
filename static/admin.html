@@ -933,7 +933,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 </div>
 </div></div>
 <div class="toast" id="toast"></div>
-<script src="/admin.js?v=20260627083004"></script>
+<script src="/admin.js?v=20260627084919"></script>
 
 <div id="user-detail-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;overflow-y:auto">
   <div style="background:#1e1e2e;margin:30px auto;max-width:700px;border-radius:12px;padding:24px;position:relative">
@@ -979,4 +979,19 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 })();
 </script>
+<!-- 시스템아이템 판매예약 팝업 -->
+<div id="si-sell-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#1a1d2e;border:1px solid #2a2d40;border-radius:12px;padding:24px;min-width:300px;max-width:380px;text-align:center;">
+    <h3 style="margin:0 0 12px;color:#90caf9;font-size:16px">📋 판매예약 신청</h3>
+    <p id="si-sell-item-label" style="margin:0 0 18px;color:#aaa;font-size:13px"></p>
+    <label style="display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;margin-bottom:20px;padding:10px 14px;background:#1e2240;border:1px solid #2a2d50;border-radius:8px">
+      <input type="checkbox" id="si-join-round2" style="width:16px;height:16px;cursor:pointer;accent-color:#42a5f5">
+      <span style="color:#90caf9;font-size:13px;font-weight:600">2차매칭 참가 신청</span>
+    </label>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button onclick="closeSiSellPopup()" style="padding:8px 20px;background:#37474f;color:#aaa;border:none;border-radius:6px;font-size:13px;cursor:pointer">취소</button>
+      <button onclick="doSiSellReserve()" style="padding:8px 20px;background:#7b1fa2;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">판매예약 확정</button>
+    </div>
+  </div>
+</div>
 </body></html>

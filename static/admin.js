@@ -583,28 +583,43 @@ async function adminReleasePenalty(penaltyId){
 
 
 // ── 루페이 판매아이템 직접 판매예약 ──
-async function adminLoopayDirectSell(itemId, matchRound){
-  var roundLabel = matchRound===1 ? '1차 판매예약' : '2차매칭 참가';
-  if(!confirm(roundLabel+'을 신청하시겠습니까?')) return;
-  (async function(){
-    try{
-      var tok = localStorage.getItem('admin_token');
-      var body = matchRound===2
-        ? {item_id:itemId, match_round:1, join_round2:1}   // 2차 참가: 1차로 등록 + join_round2=1
-        : {item_id:itemId, match_round:1};
-      var r = await fetch('/api/admin/loopay-sell-reserve',{
-        method:'POST',
-        headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-        body:JSON.stringify(body)
-      }).then(r=>r.json());
-      if(r.success||r.message){
-        toast(roundLabel+' 완료','success');
-        loadSystemItems();
-      } else {
-        toast(r.error||'실패','error');
-      }
-    }catch(e){toast('오류: '+e.message,'error');}
-  })();
+async // 시스템아이템 판매예약 팝업
+var _siSellItemId = null;
+function adminLoopayDirectSell(itemId, barType, stage){
+  _siSellItemId = itemId;
+  var typeNames = {bronze:'수정', silver:'루비', gold:'다이아'};
+  var label = document.getElementById('si-sell-item-label');
+  if(label) label.textContent = (typeNames[barType]||barType)+' '+(stage||'')+'단계 아이템을 판매예약합니다.';
+  var chk = document.getElementById('si-join-round2');
+  if(chk) chk.checked = false;
+  var ov = document.getElementById('si-sell-overlay');
+  if(ov){ ov.style.display='flex'; }
+}
+function closeSiSellPopup(){
+  var ov = document.getElementById('si-sell-overlay');
+  if(ov) ov.style.display='none';
+  _siSellItemId = null;
+}
+async function doSiSellReserve(){
+  var itemId = _siSellItemId;
+  if(!itemId) return;
+  var joinR2 = document.getElementById('si-join-round2')?.checked ? 1 : 0;
+  closeSiSellPopup();
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var body = {item_id:itemId, match_round:1, join_round2:joinR2};
+    var r = await fetch('/api/admin/loopay-sell-reserve',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    }).then(r=>r.json());
+    if(r.success||r.message){
+      toast('판매예약 완료'+(joinR2?' (2차매칭 참가)':''),'success');
+      loadSystemItems();
+    } else {
+      toast(r.error||'판매예약 실패','error');
+    }
+  }catch(e){toast('오류: '+e.message,'error');}
 }
 
 // ── 루페이 구매아이템 송금 모달 (사용자 화면 openPaymentModal과 동일 구조) ──
@@ -854,8 +869,7 @@ function renderSystemItems(){
           _canSell = _todayStr > _purchaseDate; // 다음날 이후
         }
         if(_canSell){
-          actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',1)" style="padding:3px 8px;background:#7b1fa2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 1차 판매예약</button>';
-          actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',2)" style="padding:3px 8px;background:#1565c0;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🔗 2차매칭 참가</button>';
+          actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',\''+item.bar_type+'\','+item.stage+')" style="padding:3px 8px;background:#7b1fa2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">📋 판매예약</button>';
         } else {
           actionBtns += '<span style="color:#555;font-size:11px">구매일 다음날부터 판매가능</span>';
         }
@@ -876,8 +890,7 @@ function renderSystemItems(){
         _canSell2 = _todayStr2 > _purchaseDate2;
       }
       if(_canSell2){
-        actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',1)" style="padding:3px 8px;background:#7b1fa2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 1차 판매예약</button>';
-        actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',2)" style="padding:3px 8px;background:#1565c0;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🔗 2차매칭 참가</button>';
+        actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',\''+item.bar_type+'\','+item.stage+')" style="padding:3px 8px;background:#7b1fa2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">📋 판매예약</button>';
       } else {
         actionBtns += '<span style="color:#555;font-size:11px">구매일 다음날부터 판매가능</span>';
       }
