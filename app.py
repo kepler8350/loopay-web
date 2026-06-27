@@ -87,29 +87,26 @@ def _do_confirm_transfer(db, m):
                 (m['seller_item_id'],)
             ).fetchone()
         if not seller_item:
-            seller_res = db.execute(
-                """SELECT r.item_id FROM reservations r
-                   WHERE r.user_id=? AND r.bar_type=? AND r.item_id IS NOT NULL
-                     AND r.status IN ('matched','sold','confirmed','pending')
-                   ORDER BY r.id DESC LIMIT 1""",
-                (m['seller_id'], m['bar_type'])
-            ).fetchone()
-            if seller_res and seller_res['item_id']:
-                seller_item = db.execute(
-                    "SELECT id, bar_type, stage FROM items WHERE id=?",
-                    (seller_res['item_id'],)
+            # match.reservation_id → reservation.item_id 경로 (정확한 매핑)
+            if dict(m).get('reservation_id'):
+                seller_res = db.execute(
+                    "SELECT item_id FROM reservations WHERE id=? AND item_id IS NOT NULL",
+                    (m['reservation_id'],)
                 ).fetchone()
+                if seller_res and seller_res['item_id']:
+                    seller_item = db.execute(
+                        "SELECT id, bar_type, stage FROM items WHERE id=?",
+                        (seller_res['item_id'],)
+                    ).fetchone()
         if not seller_item:
             _loopay_check = db.execute(
                 "SELECT id FROM users WHERE username='loopay' AND id=?", (m['seller_id'],)
             ).fetchone()
-            if _loopay_check:
+            if _loopay_check and dict(m).get('seller_item_id'):
+                # seller_item_id로 정확히 조회 (ORDER BY LIMIT 1 방식 제거 - 다른 매치 아이템 오선택 방지)
                 seller_item = db.execute(
-                    """SELECT i.id, i.bar_type, i.stage FROM items i
-                       WHERE i.user_id=? AND i.bar_type=? AND i.stage=?
-                         AND i.status IN ('matched','reservable')
-                       ORDER BY i.id ASC LIMIT 1""",
-                    (m['seller_id'], m['bar_type'], m['stage'] or 1)
+                    "SELECT id, bar_type, stage FROM items WHERE id=?",
+                    (m['seller_item_id'],)
                 ).fetchone()
         if seller_item:
             db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
@@ -4270,32 +4267,24 @@ def match_confirm_payment():
                 (m['seller_item_id'],)
             ).fetchone()
         if not seller_item:
-            # fallback: reservation → item 경로
-            seller_res = db.execute(
-                """SELECT r.item_id FROM reservations r
-                   WHERE r.user_id=? AND r.bar_type=? AND r.item_id IS NOT NULL
-                     AND r.status IN ('matched','sold','confirmed','pending')
-                   ORDER BY r.id DESC LIMIT 1""",
-                (m['seller_id'], m['bar_type'])
-            ).fetchone()
-            if seller_res and seller_res['item_id']:
-                seller_item = db.execute(
-                    "SELECT id, bar_type, stage FROM items WHERE id=? AND status='matched'",
-                    (seller_res['item_id'],)
+            # fallback: match.reservation_id → reservation.item_id 경로 (정확한 매핑)
+            if m['reservation_id']:
+                seller_res = db.execute(
+                    "SELECT item_id FROM reservations WHERE id=? AND item_id IS NOT NULL",
+                    (m['reservation_id'],)
                 ).fetchone()
+                if seller_res and seller_res['item_id']:
+                    seller_item = db.execute(
+                        "SELECT id, bar_type, stage FROM items WHERE id=?",
+                        (seller_res['item_id'],)
+                    ).fetchone()
         if not seller_item:
-            # last fallback: seller_id(loopay)의 bar_type+stage 일치하는 matched 아이템
-            # seller_id가 loopay인지 확인하여 다른 사용자 아이템이 sold되지 않도록 보호
-            _loopay_check = db.execute(
-                "SELECT id FROM users WHERE username='loopay' AND id=?", (m['seller_id'],)
-            ).fetchone()
-            if _loopay_check:
+            # last fallback: matches 테이블의 seller_item_id로 직접 조회 (status 무관)
+            # ORDER BY id ASC LIMIT 1 방식은 다른 매치의 아이템을 잘못 선택할 수 있으므로 제거
+            if dict(m).get('seller_item_id'):
                 seller_item = db.execute(
-                    """SELECT i.id, i.bar_type, i.stage FROM items i
-                       WHERE i.user_id=? AND i.bar_type=? AND i.stage=?
-                         AND i.status='matched'
-                       ORDER BY i.id ASC LIMIT 1""",
-                    (m['seller_id'], m['bar_type'], m['stage'] or 1)
+                    "SELECT id, bar_type, stage FROM items WHERE id=?",
+                    (m['seller_item_id'],)
                 ).fetchone()
         if seller_item:
             # seller 아이템 sold 처리
