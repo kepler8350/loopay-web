@@ -5106,12 +5106,12 @@ def admin_loopay_sell_reserve():
         if not loopay: return jsonify(error='loopay 계정 없음'), 404
         lid = loopay['id']
         item = db.execute(
-            "SELECT * FROM items WHERE id=? AND user_id=? AND status='reservable'",
+            "SELECT * FROM items WHERE id=? AND user_id=? AND status IN ('reservable','matched','sold')",
             (item_id, lid)
         ).fetchone()
         if not item: return jsonify(error='판매가능 상태 아이템 없음'), 404
         today = get_today().isoformat()
-        # 아이템 상태 변경 + 판매예약 생성
+        # 아이템 상태를 reservable로 변경 + 판매예약 생성
         db.execute("UPDATE items SET status='reservable' WHERE id=?", (item_id,))
         db.execute(
             "INSERT INTO reservations(user_id, item_id, bar_type, match_round, reserve_date, status, stage, confirmed) VALUES(?,?,?,?,?,'pending',?,1)",

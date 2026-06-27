@@ -586,20 +586,22 @@ async function adminReleasePenalty(penaltyId){
 async function adminLoopayDirectSell(itemId, matchRound){
   var roundLabel = matchRound===1 ? '1차' : '2차';
   if(!confirm(roundLabel+'로 판매예약하시겠습니까?')) return;
-  try{
-    var tok = localStorage.getItem('admin_token');
-    var r = await fetch('/api/admin/loopay-sell-reserve',{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-      body:JSON.stringify({item_id:itemId, match_round:matchRound})
-    }).then(r=>r.json());
-    if(r.success||r.message){
-      toast(roundLabel+' 판매예약 완료','success');
-      loadSystemItems();
-    } else {
-      toast(r.error||'판매예약 실패','error');
-    }
-  }catch(e){toast('오류: '+e.message,'error');}
+  (async function(){
+    try{
+      var tok = localStorage.getItem('admin_token');
+      var r = await fetch('/api/admin/loopay-sell-reserve',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+        body:JSON.stringify({item_id:itemId, match_round:matchRound})
+      }).then(r=>r.json());
+      if(r.success||r.message){
+        toast(roundLabel+' 판매예약 완료','success');
+        loadSystemItems();
+      } else {
+        toast(r.error||'판매예약 실패','error');
+      }
+    }catch(e){toast('오류: '+e.message,'error');}
+  })();
 }
 
 // ── 루페이 구매아이템 송금 모달 (사용자 화면 openPaymentModal과 동일 구조) ──
@@ -749,7 +751,9 @@ function renderSystemItems(){
   // 단, loopay 자기매칭(is_self_match)은 판매테이블에도 표시
   var sellItems = filtered.filter(function(i){
     if(i.is_buy_reservation) return false;
-    if(i.is_buy_matched && !i.is_self_match) return false; // 자기매칭이 아닌 구매매칭은 제외
+    // confirmed 구매아이템은 판매아이템으로 표시 (구매완료 후 판매예약 대상)
+    if(i.is_buy_matched && i.buy_match_confirmed) return true;
+    if(i.is_buy_matched && !i.is_self_match) return false; // 자기매칭이 아닌 미완료 구매매칭은 제외
     if(i.status === 'waiting') return false;
     if(i.status === 'matched' && !i.match_id && !i.sell_reservation_id) return false; // 매칭/판매예약 연결 없는 matched
     if(i.status === 'matched' && i.match_status === 'confirmed' && !i.is_self_match) return false; // 입금확인 완료(자기매칭 제외)
@@ -852,6 +856,27 @@ function renderSystemItems(){
         } else {
           actionBtns += '<span style="color:#555;font-size:11px">구매일 다음날부터 판매가능</span>';
         }
+      }
+    }
+    // ── confirmed 구매아이템: 판매예약 버튼 추가 (match_id 있어도 buy_match_confirmed면 판매예약 표시)
+    if(item.is_buy_matched && item.buy_match_confirmed && !item.sell_reservation_id){
+      var _purchaseDate2 = item.purchase_date || null;
+      var _canSell2 = true;
+      if(_purchaseDate2){
+        var _srvNow2 = new Date();
+        var _srvDate2 = new Date(_srvNow2);
+        _srvDate2.setHours(_serverHour||0, _serverMin||0, 0, 0);
+        var _y2 = _srvDate2.getFullYear();
+        var _mo2 = String(_srvDate2.getMonth()+1).padStart(2,'0');
+        var _d2 = String(_srvDate2.getDate()).padStart(2,'0');
+        var _todayStr2 = _y2+'-'+_mo2+'-'+_d2;
+        _canSell2 = _todayStr2 > _purchaseDate2;
+      }
+      if(_canSell2){
+        actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',1)" style="padding:3px 8px;background:#7b1fa2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">📋 1차 판매예약</button>';
+        actionBtns += '<button onclick="adminLoopayDirectSell('+item.id+',2)" style="padding:3px 8px;background:#4a148c;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">📋 2차 판매예약</button>';
+      } else {
+        actionBtns += '<span style="color:#555;font-size:11px">구매일 다음날부터 판매가능</span>';
       }
     }
     return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
