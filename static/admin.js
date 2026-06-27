@@ -1055,18 +1055,18 @@ async function loadReservationsLog(page){
             ? '<span style="padding:2px 7px;border-radius:8px;font-size:11px;background:#2e7d3222;color:#66bb6a;font-weight:700">참가</span>'
             : '<span style="padding:2px 7px;border-radius:8px;font-size:11px;background:#c6282822;color:#ef5350;font-weight:700">미참가</span>')
         : '<span style="color:#555;font-size:11px">-</span>';
-      return '<tr style="border-bottom:1px solid #2a2a40">'
+      '<tr style="border-bottom:1px solid #2a2a40">'
         +'<td style="text-align:center"><input type="checkbox" class="rl-check" data-id="'+r.id+'" onchange="rlUpdateDelBtn()" style="cursor:pointer"></td>'
         +'<td style="text-align:center;color:#888">'+rowNo+'</td>'
         +'<td style="text-align:center">'+r.reserve_date+'</td>'
-        +'<td style="text-align:center"><strong style="color:#4fc3f7">'+r.username+'</strong></td>'
         +'<td style="text-align:center;color:#aaa">'+(r.account_name||r.nickname||'-')+'</td>'
-        +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+typeColor+'22;color:'+typeColor+';font-weight:700">'+typeName+'</span></td>'
+        +'<td style="text-align:center"><strong style="color:#4fc3f7">'+r.username+'</strong></td>'
         +'<td style="text-align:center;font-weight:700;color:'+barColor+'">'+bar+'</td>'
         +'<td style="text-align:center;color:#aaa">'+(r.stage>0?r.stage+'단계':'-')+'</td>'
+        +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+typeColor+'22;color:'+typeColor+';font-weight:700">'+typeName+'</span></td>'
         +'<td style="text-align:center;color:#888">'+(r.match_round||'-')+'차</td>'
-        +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+statusColor+'22;color:'+statusColor+'">'+statusKo+'</span></td>'
         +'<td style="text-align:center">'+round2Badge+'</td>'
+        +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+statusColor+'22;color:'+statusColor+'">'+statusKo+'</span></td>'
         +'</tr>';
     }).join('');
 
