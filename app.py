@@ -3191,7 +3191,13 @@ def admin_matching_status():
         'r1_unmatched_buy': r1_unmatched_buy,
         'r2_sell_by_type': r2_sell_by_type,
         'r2_sell_count': r2_sell_count_from_failed,
-        'r2_pending_count': r2_pending_count
+        'r2_pending_count': r2_pending_count,
+        'r1_ran_today': db.execute(
+            "SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND match_date=?", (today,)
+        ).fetchone()['c'] > 0,
+        'r2_ran_today': db.execute(
+            "SELECT COUNT(*) as c FROM matches WHERE match_round=2 AND match_date=?", (today,)
+        ).fetchone()['c'] > 0
     }
     db.close()
     return jsonify(result)

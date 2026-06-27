@@ -53,7 +53,6 @@ function showPage(name,el){var _mn=document.querySelector('.main');if(_mn){docum
       if(mr) mr.innerHTML='';
     });
     // 매칭 페이지 진입 시 _r1MatchingDone 플래그 초기화 (새 날짜 데이터 정상 표시)
-    window._r1MatchingDone = false;
     loadMatchingStatus();updateMatchingBtn();
   }else if(name==='notifications'){var pn=document.getElementById('page-notifications');var mn=document.querySelector('.main');if(pn&&mn&&pn.parentElement!==mn)mn.appendChild(pn);}else if(name==='reservations'){loadReservationStatus();loadExtraReservations();}else if(name==='system-items'){loadSystemItems();}else if(name==='testtools')loadTesttools();else if(name==='penalties')loadAdminPenalties();else if(name==='settings')loadSettings();}
 async function loadDashboard(){try{const s=await apiAdmin('/admin/stats');document.getElementById('s-users').textContent=s.total_users||0;document.getElementById('s-items').textContent=s.total_items||0;document.getElementById('s-charges').textContent=s.pending_charges||0;document.getElementById('s-reservations').textContent=s.today_reservations||0;const charges=await apiAdmin('/admin/charges');const pending=(charges.charges||[]).filter(c=>c.status==='pending').slice(0,5);const dc=document.getElementById('dash-charges');if(pending.length){dc.innerHTML='<table><thead><tr><th>&#45769;&#45348;&#51076;</th><th>&#44552;&#50529;</th><th>&#49345;&#53468;</th></tr></thead><tbody>'+pending.map(c=>'<tr><td>'+c.nickname+'</td><td>'+(c.points||0).toLocaleString()+'P<br><small style="color:#aaa">'+(c.amount||0).toLocaleString()+'원</small></td><td><span class="badge badge-warning">&#45824;&#44592;</span></td></tr>').join('')+'</tbody></table>';}else{dc.innerHTML='<div class="empty-state"><div>&#45824;&#44592; &#51473;&#51064; &#52649;&#51204; &#50630;&#51020;</div></div>';}const users=await apiAdmin('/admin/users');document.getElementById('dash-users').innerHTML=(users.users||[]).slice(0,5).map(u=>'<tr>'
@@ -234,9 +233,13 @@ async function updateMatchingBtn(){
     var _rb1 = document.getElementById('match-run-block-1');
     var _block1Hidden = _rb1 && _rb1.style.display === 'none';
     if(btn1){ 
-      // 1차 매칭이 실행됐으면 버튼 비활성화 유지 (새로고침 전까지)
-      var _active1 = isActive1 && !_block1Hidden && !window._r1MatchingDone;
-      btn1.disabled=!_active1; btn1.style.opacity=_active1?'1':'0.45'; btn1.style.cursor=_active1?'pointer':'not-allowed'; 
+      // 1차 매칭이 실행됐으면 버튼 비활성화 유지 (서버 기준 + 클라이언트 플래그)
+      var _r1RanServer = matchData.r1_ran_today === true;
+      var _active1 = isActive1 && !_block1Hidden && !window._r1MatchingDone && !_r1RanServer;
+      btn1.disabled=!_active1; btn1.style.opacity=_active1?'1':'0.45'; btn1.style.cursor=_active1?'pointer':'not-allowed';
+      if(_r1RanServer || window._r1MatchingDone){
+        btn1.textContent='✅ 1차 매칭 완료';
+      }
     }
     if(notice){
       notice.textContent = isActive1
