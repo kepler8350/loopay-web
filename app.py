@@ -2290,7 +2290,8 @@ def admin_run_matching():
                u.phone as buyer_phone, u.account_name as buyer_account_name
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
-               WHERE (r.status='pending' OR r.status IS NULL) AND r.match_round=?
+               WHERE (r.status='pending' OR r.status IS NULL)
+               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date<=?))
                AND COALESCE(r.confirmed,0)=0
                AND u.username != 'loopay'
                AND r.user_id NOT IN (
@@ -2302,7 +2303,7 @@ def admin_run_matching():
                    AND m.match_date=?
                )
                ORDER BY RANDOM()""",
-            (round_num, today)
+            (round_num, today, today)
         ).fetchall()
         # loopay 구매예약 (confirmed=1, item.status='waiting') 별도 조회
         _loopay_buy_rows = db.execute(
@@ -2695,10 +2696,11 @@ def admin_run_matching():
         # 1차 매칭: 미매칭 구매예약 → 2차 대기로 자동 전환
         if round_num == 1:
             try:
-                # ① join_round2=1인 일반 구매예약 → 2차로 전환 (미입금 구매자 제외)
+                # ① join_round2=1인 일반 구매예약 → 당일 2차로 전환 (reserve_date 유지)
                 db.execute(
-                    """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
+                    """UPDATE reservations SET status='pending', match_round=2
                        WHERE match_round=1 AND status='pending'
+                       AND reserve_date=?
                        AND (item_id IS NULL OR item_id=0)
                        AND COALESCE(join_round2,0)=1
                        AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
@@ -2741,6 +2743,17 @@ def admin_run_matching():
         else:
             # 2차+ 미매칭은 unmatched 처리
             try:
+                # join_round2=1인 2차 미매칭 구매예약 → 다음날 1차로 복원
+                import datetime as _dt2
+                _nextday = (_dt2.date.fromisoformat(today) + _dt2.timedelta(days=1)).isoformat()
+                db.execute(
+                    """UPDATE reservations SET match_round=1, reserve_date=?
+                       WHERE match_round=2 AND status='pending' AND reserve_date=?
+                       AND COALESCE(join_round2,0)=1
+                       AND (item_id IS NULL OR item_id=0)
+                       AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
+                    (_nextday, today)
+                )
                 db.execute(
                     """UPDATE reservations SET status='unmatched'
                        WHERE match_round=? AND status='pending' AND reserve_date=?
@@ -2903,8 +2916,9 @@ def admin_matching_status():
         _date_args = [today] if round_num == 1 else []
         buy_count = db.execute(
             f"""SELECT COUNT(*) as c FROM reservations r
-               WHERE r.match_round=? AND r.status='pending' AND r.user_id!=?
-               {_date_cond} AND COALESCE(r.confirmed,0)=0
+               WHERE r.status='pending' AND r.user_id!=?
+               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date<=?))
+               AND COALESCE(r.confirmed,0)=0
                AND r.user_id NOT IN (
                    SELECT p.user_id FROM penalties p WHERE p.is_released=0
                )
@@ -2913,7 +2927,7 @@ def admin_matching_status():
                    WHERE m.match_round=1 AND m.status='failed'
                    AND m.match_date=?
                )""",
-            [round_num, loopay_id] + _date_args + [today]
+            [loopay_id, round_num, today, today]
         ).fetchone()['c']
 
         # loopay 구매예약도 포함 (waiting 아이템이 있는 pending 예약)
