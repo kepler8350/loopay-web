@@ -1168,23 +1168,21 @@ async function loadMatchRecords(useFilter){
       if(dto)   params.set('date_to', dto);
       if(uname) params.set('username', uname);
     } else {
-      // 기본: 당일 날짜로 조회
-      params.set('date', today);
+      // 기본: 날짜 조건 없이 최신순으로 가져와서 가장 최근 날짜 표시
+      // (서버 날짜와 match_date가 다를 수 있으므로 당일 고정 대신 최신 기준)
     }
 
     var qs = params.toString();
     var d = await apiAdmin('/admin/matches' + (qs ? '?' + qs : ''));
     _matchRecords = d.matches || [];
 
-    // 당일 데이터 없으면 가장 최근 날짜로 fallback (기본 조회 시만)
-    if(!useFilter && _matchRecords.length === 0){
-      var d2 = await apiAdmin('/admin/matches');
-      var allMatches = d2.matches || [];
-      if(allMatches.length > 0){
-        var latestDate = allMatches.reduce(function(acc,m){ return m.match_date > acc ? m.match_date : acc; }, '');
-        _matchRecords = allMatches.filter(function(m){ return m.match_date === latestDate; });
-        today = latestDate;
-      }
+    // 기본 조회(필터 없음): 가장 최근 match_date 기준으로 필터링
+    if(!useFilter && _matchRecords.length > 0){
+      var latestDate = _matchRecords.reduce(function(acc,m){ return m.match_date > acc ? m.match_date : acc; }, '');
+      _matchRecords = _matchRecords.filter(function(m){ return m.match_date === latestDate; });
+      today = latestDate;
+    } else if(!useFilter && _matchRecords.length === 0){
+      // 데이터 없는 경우 유지
     }
 
     _todayForMatch = today;
