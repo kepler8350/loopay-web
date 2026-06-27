@@ -4874,12 +4874,14 @@ def admin_loopay_items():
                FROM items i
                WHERE i.user_id = ? AND i.status NOT IN ('sold')
                AND (
-                 -- reservable/matched 아이템: reservation 연결된 것만 표시
-                 i.status NOT IN ('reservable','matched')
-                 OR EXISTS (
-                   SELECT 1 FROM reservations r3
-                   WHERE r3.item_id = i.id
-                 )
+                 -- reservable 아이템: 항상 표시 (판매예약 대기 포함)
+                 i.status = 'reservable'
+                 -- matched: reservation 연결된 것만 표시
+                 OR (i.status = 'matched' AND EXISTS (
+                   SELECT 1 FROM reservations r3 WHERE r3.item_id = i.id
+                 ))
+                 -- 나머지 상태: 그대로 표시
+                 OR i.status NOT IN ('reservable','matched')
                )
                ORDER BY i.id DESC""",
             (lid,)
