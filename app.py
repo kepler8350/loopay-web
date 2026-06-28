@@ -2580,7 +2580,8 @@ def admin_run_matching():
             while bi3 < len(rand_buyers) and si3 < len(avail_sellers):
                 buyer = rand_buyers[bi3]; seller = avail_sellers[si3]
                 if seller['seller_id']==buyer['buyer_id'] and seller.get('seller_username')!='loopay':
-                    si3 += 1; continue
+                    bi3 += 1; continue  # 구매자를 넘김 (판매자 유지)
+                    # 모든 구매자를 소진해도 매칭 안 되면 이 판매자는 미매칭
                 matched_seller_ids.add(seller['res_id']); matched_buyer_ids.add(buyer['res_id'])
                 bi3 += 1; si3 += 1
                 is_lp = (seller['seller_username']=='loopay')
