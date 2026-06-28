@@ -447,6 +447,13 @@ def _auto_round2_scheduler():
                                 _res_id3 = db.execute(
                                     "INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,stage,confirmed) VALUES(?,?,?,2,?,'matched',?,1)",
                                     (_loopay_id2, item_id2, bar2, today, stage2)).lastrowid
+                            # 중복 방지: 동일 seller_item_id로 loopay pending 매치가 이미 있으면 스킵
+                            _dup_check = db.execute(
+                                "SELECT id FROM matches WHERE seller_item_id=? AND buyer_id=? AND status='pending' AND match_round=2",
+                                (item_id2, _loopay_id2)
+                            ).fetchone()
+                            if _dup_check:
+                                continue
                             db.execute(
                                 """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
                                       buy_price, sell_price, match_round, match_date, status,
@@ -4163,7 +4170,7 @@ def admin_get_matches():
         per_page   = int(request.args.get('per_page', 200))
         offset     = (page - 1) * per_page
 
-        where = ['1=1']
+        where = ['m.status != \'failed\'']  # failed(미입금) 매치는 매칭기록에서 제외
         params = []
         if date_param:
             where.append('m.match_date = ?'); params.append(date_param)
@@ -5149,11 +5156,21 @@ def admin_loopay_items():
                ORDER BY m.id DESC""",
             (lid,)
         ).fetchall()
-        # 이미 rows에 있는 match_id 중복 제거
+        # 중복 제거: 이미 rows에 있는 match_id 또는 seller_item_id 제외
         _existing_match_ids = {r.get('match_id') for r in rows if r.get('match_id')}
+        _existing_item_ids = {r.get('id') for r in rows if r.get('is_buy_matched')}
+        _seen_seller_item_ids = set()
         for _bm in _buy_matches:
             if _bm['match_id'] in _existing_match_ids:
                 continue
+            # 동일 seller_item_id는 최신 match_id 1개만 표시
+            if _bm['seller_item_id'] and _bm['seller_item_id'] in _seen_seller_item_ids:
+                continue
+            # items 테이블에서 이미 잡힌 아이템(matched 상태)은 제외
+            if _bm['seller_item_id'] and _bm['seller_item_id'] in _existing_item_ids:
+                continue
+            if _bm['seller_item_id']:
+                _seen_seller_item_ids.add(_bm['seller_item_id'])
             _bp, _sp = get_price(_bm['bar_type'], _bm['stage'] or 1)
             rows.append({
                 'id': _bm['seller_item_id'] or 0,  # 가상 아이템 id
@@ -6300,11 +6317,17 @@ def testtools_run_round2_auto():
                     _res_id3 = db.execute(
                         "INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,stage,confirmed) VALUES(?,?,?,2,?,'matched',?,1)",
                         (_loopay_id2, item_id2, bar2, today, stage2)).lastrowid
-                db.execute(
-                    """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
-                          buy_price, sell_price, match_round, match_date, status,
-                          seller_phone, seller_bank, seller_account, seller_account_name, seller_item_id)
-                       VALUES(?, ?, ?, ?, ?, ?, ?, 2, ?, 'pending', ?, ?, ?, ?, ?)""",
+                # 중복 방지: 동일 seller_item_id로 loopay pending 매치가 이미 있으면 스킵
+                _dup2 = db.execute(
+                    "SELECT id FROM matches WHERE seller_item_id=? AND buyer_id=? AND status='pending' AND match_round=2",
+                    (item_id2, _loopay_id2)
+                ).fetchone()
+                if not _dup2:
+                    db.execute(
+                        """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
+                              buy_price, sell_price, match_round, match_date, status,
+                              seller_phone, seller_bank, seller_account, seller_account_name, seller_item_id)
+                           VALUES(?, ?, ?, ?, ?, ?, ?, 2, ?, 'pending', ?, ?, ?, ?, ?)""",
                     (_res_id3, _loopay_id2, _sid2 or 0, bar2, stage2, _bp2, _sp2, today,
                      m_row['seller_phone'], m_row['seller_bank'],
                      m_row['seller_account'], m_row['seller_account_name'], item_id2)
