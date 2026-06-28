@@ -1520,9 +1520,11 @@ async function loadMatchingStatus(){
     // ── 1차 매칭 ──
     var r1=d.round1||{};
     var mr1=r1.match_rate||0;
-    // 1차 매칭이 실행됐으면 구매/판매예약수 0 유지 (새로고침 전까지)
-    var _r1BuyDisplay = window._r1MatchingDone ? 0 : (r1.buy_count!=null?r1.buy_count:'-');
-    var _r1SellDisplay = window._r1MatchingDone ? 0 : (r1.sell_count!=null?r1.sell_count:'-');
+    // 1차 매칭이 실행됐으면 구매/판매예약수 0 표시 (서버 r1_ran_today 기준으로만 판단)
+    var _r1Done = (d.r1_ran_today === true);
+    if(!_r1Done) window._r1MatchingDone = false; // 서버 기준으로 클라이언트 플래그 동기화
+    var _r1BuyDisplay = _r1Done ? 0 : (r1.buy_count!=null?r1.buy_count:'-');
+    var _r1SellDisplay = _r1Done ? 0 : (r1.sell_count!=null?r1.sell_count:'-');
     set('r1-buy', _r1BuyDisplay);
     set('r1-sell', _r1SellDisplay);
     var rateEl1=document.getElementById('r1-rate');
