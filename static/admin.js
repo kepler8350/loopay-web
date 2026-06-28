@@ -1459,6 +1459,13 @@ async function loadReservationStatus(){
       var pb=document.getElementById('res-price-tbody-'+bt);
       if(pb) pb.innerHTML=renderPriceRow(bt,s);
     });
+    // 행운구매설정 버튼 활성화: price_bands.band1 데이터로 판단
+    var priceBands = {
+      bronze: (d.bronze && d.bronze.price_bands) || {},
+      silver: (d.silver && d.silver.price_bands) || {},
+      gold:   (d.gold   && d.gold.price_bands)   || {}
+    };
+    if(typeof updateLuckyBuyBtn === 'function') updateLuckyBuyBtn(priceBands);
   }catch(e){console.error('loadReservationStatus:',e);}
 }
 
