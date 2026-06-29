@@ -3495,7 +3495,9 @@ def admin_lucky_buy_setup():
                 """SELECT r.id as res_id, r.item_id, i.stage, i.id as item_id2
                    FROM reservations r
                    JOIN items i ON r.item_id = i.id
-                   WHERE r.bar_type=? AND r.match_round=2 AND r.status='pending'
+                   WHERE r.bar_type=? AND r.status='pending'
+                   AND r.item_id IS NOT NULL AND r.item_id > 0
+                   AND i.status IN ('reservable','waiting')
                    AND i.stage IN ({})
                    ORDER BY RANDOM()""".format(','.join('?' * len(lucky_stages[bar_type]))),
                 (bar_type, *lucky_stages[bar_type])
