@@ -6397,6 +6397,16 @@ def admin_auto_confirm_paid():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/item-status', methods=['GET'])
+def testtools_item_status():
+    ids_str = request.args.get('ids','')
+    if not ids_str: return jsonify(error='no ids'),400
+    ids = [int(x) for x in ids_str.split(',') if x.strip().isdigit()]
+    db = get_db()
+    rows = db.execute(f"SELECT id,user_id,bar_type,stage,status,lucky_pair_id FROM items WHERE id IN ({','.join('?'*len(ids))})", ids).fetchall()
+    db.close()
+    return jsonify(items=[dict(r) for r in rows])
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
