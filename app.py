@@ -2897,12 +2897,14 @@ def admin_run_matching():
             )
         db.commit()
 
+        # 디버그: sell_rows의 lucky_pair_id 확인
+        _debug_lp = [{'res_id': s['res_id'], 'lp': s.get('lucky_pair_id')} for s in sell_rows][:5] if sell_rows else []
         return jsonify(
             success=True,
             matched=total_matched,
             message=f'{round_num}차 매칭 완료: {total_matched}건',
-
-            pairs=matched_pairs
+            pairs=matched_pairs,
+            _debug_sell_lucky=_debug_lp
         )
     except Exception as e:
         import traceback
