@@ -3728,6 +3728,8 @@ def admin_lucky_buy_history():
                 'total_sell': r['total_sell'],
                 'new_stage': r['new_stage'],
                 'new_sell': new_sell,
+                'status': r['status'] if 'status' in r.keys() else 'confirmed',
+                'new_item_id': r['new_item_id'] if 'new_item_id' in r.keys() else None,
                 'seller_a': {
                     'username': r['seller_a_name'], 'nickname': r['seller_a_nick'],
                     'phone': r['seller_a_phone'], 'bank': r['seller_a_bank'], 'account_no': r['seller_a_acct']
