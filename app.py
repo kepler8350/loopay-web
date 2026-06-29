@@ -889,6 +889,18 @@ def index():
     path = os.path.join(STATIC_DIR, 'index.html')
     with open(path, 'r', encoding='utf-8') as f:
         content = f.read()
+    # 환경 배너 주입
+    _env = os.environ.get('ENVIRONMENT', 'production').lower()
+    if _env == 'staging':
+        _banner = (
+            '<div id="env-banner" style="position:fixed;top:0;left:0;right:0;z-index:99999;'
+            'background:#e65100;color:#fff;text-align:center;padding:6px 12px;font-size:13px;'
+            'font-weight:700;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,0.4)">'
+            '🧪 테스트 서버 — 이 서버의 데이터는 운영에 반영되지 않습니다'
+            '</div>'
+            '<style>body,#app{padding-top:36px!important}</style>'
+        )
+        content = content.replace('<body>', '<body>' + _banner, 1)
     resp = make_response(Response(content, mimetype='text/html'))
     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     resp.headers['Pragma'] = 'no-cache'
@@ -911,6 +923,18 @@ def admin():
     path = os.path.join(STATIC_DIR, 'admin.html')
     with open(path, 'r', encoding='utf-8') as f:
         content = f.read()
+    # 환경 배너 주입 (ENVIRONMENT=staging 이면 상단 배너 표시)
+    _env = os.environ.get('ENVIRONMENT', 'production').lower()
+    if _env == 'staging':
+        _banner = (
+            '<div id="env-banner" style="position:fixed;top:0;left:0;right:0;z-index:99999;'
+            'background:#e65100;color:#fff;text-align:center;padding:6px 12px;font-size:13px;'
+            'font-weight:700;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,0.4)">'
+            '🧪 테스트 서버 (STAGING) — 이 서버의 데이터는 운영에 반영되지 않습니다'
+            '</div>'
+            '<style>body{padding-top:36px!important}</style>'
+        )
+        content = content.replace('<body>', '<body>' + _banner, 1)
     resp = make_response(Response(content, mimetype='text/html'))
     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     resp.headers['Pragma'] = 'no-cache'
