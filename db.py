@@ -190,6 +190,7 @@ def init_db():
         sell_b INTEGER DEFAULT 0,
         total_sell INTEGER DEFAULT 0,
         buyer_id INTEGER DEFAULT NULL,
+        status TEXT DEFAULT 'confirmed',
         created_at DATETIME DEFAULT (datetime('now','localtime'))
     )''')
 
