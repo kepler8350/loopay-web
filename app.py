@@ -4263,7 +4263,7 @@ def admin_get_matches():
 
         rows = db.execute(
             'SELECT m.id, m.match_date, m.bar_type, m.stage, m.match_round,'
-            ' m.buy_price, m.sell_price, m.status, m.seller_id, m.seller_item_id,'
+            ' m.buy_price, m.sell_price, m.status, m.seller_id, m.seller_item_id, m.lucky_pair_id,'
             ' b.username as buyer_username, b.nickname as buyer_nickname, b.phone as buyer_phone,'
             ' b.account_no as buyer_account, b.account_name as buyer_account_name,'
             ' s.username as seller_username, s.nickname as seller_nickname, s.phone as seller_phone,'
