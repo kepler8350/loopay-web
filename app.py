@@ -6344,7 +6344,8 @@ def admin_auto_confirm_paid():
 
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
-    """DB 마이그레이션 강제 실행 (개발용)"""    import sqlite3 as _sq3_m
+    """DB 마이그레이션 강제 실행 (개발용)"""
+    import sqlite3 as _sq3_m
     db_path = _DB_PATH
     results = []
     cols = [
