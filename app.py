@@ -4562,6 +4562,51 @@ def match_confirm_payment():
             pass
         # 7. loopay buyer: step 3에서 stage+1+reservable 처리 완료
 
+        # 행운구매 처리: lucky_pair_id 있는 매치는 양쪽 모두 confirmed이면 새 아이템 생성
+        _m_dict = dict(m)
+        _lucky_pair_id = _m_dict.get('lucky_pair_id')
+        if _lucky_pair_id:
+            _lbr = db.execute(
+                "SELECT * FROM lucky_buy_results WHERE id=? AND status='confirmed'",
+                (_lucky_pair_id,)
+            ).fetchone()
+            if _lbr and not _lbr['new_item_id']:
+                _pair_matches = db.execute(
+                    "SELECT status FROM matches WHERE lucky_pair_id=?",
+                    (_lucky_pair_id,)
+                ).fetchall()
+                _all_confirmed = all(pm['status'] == 'confirmed' for pm in _pair_matches)
+                if _all_confirmed:
+                    from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
+                    _pm = {
+                        'bronze': {s:(b,sl) for s,b,sl in BRONZE_PRICES},
+                        'silver': {s:(b,sl) for s,b,sl in SILVER_PRICES},
+                        'gold':   {s:(b,sl) for s,b,sl in GOLD_PRICES},
+                    }
+                    _bt = _lbr['bar_type']
+                    _ns = _lbr['new_stage']
+                    _nb, _nsl = _pm[_bt].get(_ns, (0,0))
+                    # 구매자 ID (매치에서)
+                    _new_buyer_id = _m_dict['buyer_id']
+                    # 새 아이템 생성
+                    _new_iid = db.execute(
+                        "INSERT INTO items(user_id,bar_type,stage,status,purchase_date) VALUES(?,?,?,'reservable',?)",
+                        (_new_buyer_id, _bt, _ns, get_today().isoformat())
+                    ).lastrowid
+                    # lucky_buy_results 업데이트
+                    db.execute(
+                        "UPDATE lucky_buy_results SET new_item_id=?, buyer_id=?, status='completed' WHERE id=?",
+                        (_new_iid, _new_buyer_id, _lucky_pair_id)
+                    )
+                    # 기존 두 아이템 sold
+                    db.execute("UPDATE items SET status='sold' WHERE id=? OR id=?",
+                               (_lbr['item_a_id'], _lbr['item_b_id']))
+                    # 두 판매예약 matched 처리
+                    db.execute(
+                        "UPDATE reservations SET status='matched' WHERE lucky_pair_id=? AND status='pending'",
+                        (_lucky_pair_id,)
+                    )
+
         db.commit()
         return jsonify(success=True, message='거래 완료')
     except Exception as e:
