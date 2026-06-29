@@ -2556,7 +2556,8 @@ def admin_run_matching():
                          s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'], _seller_iid, buyer['res_id'],
                          seller.get('lucky_pair_id'))
                     )
-                except Exception:
+                except Exception as _ie:
+                    _insert_err = str(_ie)
                     db.execute(
                         """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
                            buy_price, sell_price, match_round, match_date, status,
@@ -2604,6 +2605,7 @@ def admin_run_matching():
                 matched_pairs.append({
                     'bar_type': bt, 'bar_name': names[bt],
                     'stage': st,
+                    '_insert_err': locals().get('_insert_err'),
                     'buyer': {'buyer_id': buyer['buyer_id'], 'username': buyer['buyer_username'], 'nickname': buyer['buyer_nickname'],
                               'phone': buyer['buyer_phone'], 'account_name': buyer.get('buyer_account_name')},
                     'seller': {'username': seller['seller_username'], 'nickname': seller['seller_nickname'],
