@@ -666,7 +666,7 @@ def _run_matching_internal(db, round_num, today):
             for seller, buyer in zip(sellers, buyers):
                 bt, st = key
                 matched_s.add(seller['res_id']); matched_b.add(buyer['res_id'])
-                if seller['item_id']:
+                if seller['item_id'] and not seller.get('lucky_pair_id'):
                     db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
                 db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
                 db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
@@ -2519,9 +2519,11 @@ def admin_run_matching():
                         sell_price = pr['sell_price']
                         buy_price  = pr['buy_price']
 
-                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
+                # 행운구매 판매예약은 status 유지 (입금확인 후 처리됨)
+                if not seller.get('lucky_pair_id'):
+                    db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
                 db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
-                if seller['item_id']:
+                if seller['item_id'] and not seller.get('lucky_pair_id'):
                     db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
                 # buyer(loopay) 구매아이템 상태를 'loopay_matched'로 변경 (시스템아이템현황에서 구분)
                 if buyer.get('item_id'):
@@ -2637,9 +2639,11 @@ def admin_run_matching():
                 sell_price3 = _pr3['sell_price'] if _pr3 else 0
 
                 # DB 업데이트: reservations status='matched'
-                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
+                # 행운구매 판매예약은 status 유지 (입금확인 후 처리됨)
+                if not seller.get('lucky_pair_id'):
+                    db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
                 db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
-                if seller.get('item_id'):
+                if seller.get('item_id') and not seller.get('lucky_pair_id'):
                     db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
                 if buyer.get('item_id'):
                     db.execute("UPDATE items SET status='matched' WHERE id=? AND user_id=?", (buyer['item_id'], buyer['buyer_id']))
@@ -2810,7 +2814,8 @@ def admin_run_matching():
                     """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
                        WHERE match_round=1 AND status IN ('pending','unmatched')
                        AND item_id IS NOT NULL AND item_id > 0
-                       AND COALESCE(join_round2,0)=1""",
+                       AND COALESCE(join_round2,0)=1
+                       AND lucky_pair_id IS NULL""",
                     (today,)
                 )
                 # ④ join_round2=0인 미매칭 판매예약 → unmatched
@@ -2818,7 +2823,8 @@ def admin_run_matching():
                     """UPDATE reservations SET status='unmatched'
                        WHERE match_round=1 AND status IN ('pending','unmatched')
                        AND item_id IS NOT NULL AND item_id > 0
-                       AND COALESCE(join_round2,0)=0""",
+                       AND COALESCE(join_round2,0)=0
+                       AND lucky_pair_id IS NULL""",
                     (today,)
                 )
                 # ⑤ 루페이 미매칭 구매예약 → 모두 unmatched (루페이는 1차에서 반드시 매칭돼야 함)
