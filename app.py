@@ -2556,8 +2556,7 @@ def admin_run_matching():
                          s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'], _seller_iid, buyer['res_id'],
                          seller.get('lucky_pair_id'))
                     )
-                except Exception as _ie:
-                    _insert_err = str(_ie)
+                except Exception:
                     db.execute(
                         """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
                            buy_price, sell_price, match_round, match_date, status,
@@ -2605,7 +2604,6 @@ def admin_run_matching():
                 matched_pairs.append({
                     'bar_type': bt, 'bar_name': names[bt],
                     'stage': st,
-                    '_insert_err': locals().get('_insert_err'),
                     'buyer': {'buyer_id': buyer['buyer_id'], 'username': buyer['buyer_username'], 'nickname': buyer['buyer_nickname'],
                               'phone': buyer['buyer_phone'], 'account_name': buyer.get('buyer_account_name')},
                     'seller': {'username': seller['seller_username'], 'nickname': seller['seller_nickname'],
@@ -2661,12 +2659,13 @@ def admin_run_matching():
                     db.execute(
                         """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
                            buy_price, sell_price, match_round, match_date, status,
-                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id)
-                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?)""",
+                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id, lucky_pair_id)
+                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?)""",
                         (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
                          bt, st3, buy_price3, sell_price3, round_num, today,
                          s_phone3, s_bank3, s_acct3, s_acct_name3,
-                         buyer.get('buyer_phone',''), _siid3)
+                         buyer.get('buyer_phone',''), _siid3,
+                         seller.get('lucky_pair_id'))
                     )
                     # buyer_res_id 컬럼이 있으면 업데이트
                     try:
