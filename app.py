@@ -6342,6 +6342,31 @@ def admin_auto_confirm_paid():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
+def testtools_run_db_migration():
+    """DB 마이그레이션 강제 실행 (개발용)"""    import sqlite3 as _sq3_m
+    db_path = _DB_PATH
+    results = []
+    cols = [
+        "ALTER TABLE items ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
+        "ALTER TABLE reservations ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
+        "ALTER TABLE lucky_buy_results ADD COLUMN status TEXT DEFAULT 'confirmed'",
+        "ALTER TABLE matches ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
+    ]
+    try:
+        _c = _sq3_m.connect(db_path, timeout=10)
+        for sql in cols:
+            try:
+                _c.execute(sql)
+                results.append({'sql': sql, 'ok': True})
+            except Exception as e:
+                results.append({'sql': sql, 'ok': False, 'err': str(e)})
+        _c.commit()
+        _c.close()
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+    return jsonify(success=True, results=results)
+
 @app.route('/api/admin/testtools/run-round2-auto', methods=['POST'])
 @jwt_required()
 def testtools_run_round2_auto():
