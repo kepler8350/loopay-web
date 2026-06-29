@@ -6409,7 +6409,8 @@ def testtools_item_status():
 
 @app.route('/api/admin/testtools/reset-lucky-test', methods=['POST'])
 def testtools_reset_lucky_test():
-    """행운구매 테스트 데이터 리셋"""    data = request.json or {}
+    """행운구매 테스트 데이터 리셋"""
+    data = request.json or {}
     item_ids = data.get('item_ids', [])
     lucky_id = data.get('lucky_id')
     db = get_db()
