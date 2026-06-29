@@ -6407,6 +6407,27 @@ def testtools_item_status():
     db.close()
     return jsonify(items=[dict(r) for r in rows])
 
+@app.route('/api/admin/testtools/reset-lucky-test', methods=['POST'])
+def testtools_reset_lucky_test():
+    """행운구매 테스트 데이터 리셋"""    data = request.json or {}
+    item_ids = data.get('item_ids', [])
+    lucky_id = data.get('lucky_id')
+    db = get_db()
+    try:
+        for iid in item_ids:
+            db.execute("UPDATE items SET status='reservable' WHERE id=?", (iid,))
+        if lucky_id:
+            db.execute("UPDATE lucky_buy_results SET status='confirmed', new_item_id=NULL, buyer_id=NULL WHERE id=?", (lucky_id,))
+            # 판매예약도 pending으로 복원
+            db.execute("UPDATE reservations SET status='pending' WHERE lucky_pair_id=?", (lucky_id,))
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
