@@ -2560,11 +2560,12 @@ def admin_run_matching():
                     db.execute(
                         """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
                            buy_price, sell_price, match_round, match_date, status,
-                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone)
-                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?)""",
+                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, lucky_pair_id)
+                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?)""",
                         (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
                          bt, st, buy_price, sell_price, round_num, today,
-                         s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'])
+                         s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'],
+                         seller.get('lucky_pair_id'))
                     )
 
                 # 구매자 알림: 매칭 정보 상세 카드 (다음날 05:00 발송)
@@ -2897,14 +2898,11 @@ def admin_run_matching():
             )
         db.commit()
 
-        # 디버그: sell_rows의 lucky_pair_id 확인
-        _debug_lp = [{'res_id': dict(s)['res_id'], 'lp': dict(s).get('lucky_pair_id'), 'keys': list(dict(s).keys())} for s in sell_rows][:2] if sell_rows else []
         return jsonify(
             success=True,
             matched=total_matched,
             message=f'{round_num}차 매칭 완료: {total_matched}건',
-            pairs=matched_pairs,
-            _debug_sell_lucky=_debug_lp
+            pairs=matched_pairs
         )
     except Exception as e:
         import traceback
