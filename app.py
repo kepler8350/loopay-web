@@ -2898,7 +2898,7 @@ def admin_run_matching():
         db.commit()
 
         # 디버그: sell_rows의 lucky_pair_id 확인
-        _debug_lp = [{'res_id': s['res_id'], 'lp': s.get('lucky_pair_id')} for s in sell_rows][:5] if sell_rows else []
+        _debug_lp = [{'res_id': dict(s)['res_id'], 'lp': dict(s).get('lucky_pair_id'), 'keys': list(dict(s).keys())} for s in sell_rows][:2] if sell_rows else []
         return jsonify(
             success=True,
             matched=total_matched,
