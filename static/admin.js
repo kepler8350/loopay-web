@@ -1001,6 +1001,54 @@ async function deleteSelectedReservations(){
   }catch(e){ toast(e.message||'삭제 실패','error'); }
 }
 
+
+async function loadLuckyBuyHistory(){
+  var tbody = document.getElementById('lucky-history-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:12px;color:#888">로딩 중...</td></tr>';
+  try{
+    var tok = localStorage.getItem('admin_token');
+    var d = await fetch('/api/admin/lucky-buy/history',{headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
+    var list = d.history || [];
+    var names = {bronze:'수정',silver:'루비',gold:'다이아'};
+    var colors = {bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
+    var statusLabel = {confirmed:'확정',completed:'완료'};
+    if(!list.length){
+      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:16px;color:#888">행운구매 이력 없음</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(function(r,i){
+      var bg = i%2===0?'#12121f':'#1a1a2e';
+      var bar = names[r.bar_type]||r.bar_type;
+      var col = colors[r.bar_type]||'#aaa';
+      var stA = (r.item_a?.stage||'-')+'단계';
+      var stB = (r.item_b?.stage||'-')+'단계';
+      var stNew = r.new_stage+'단계';
+      var sA = r.seller_a?.username||'-';
+      var sB = r.seller_b?.username||'-';
+      var buyer = r.buyer?.username||'-';
+      var total = (r.total_sell||0).toLocaleString()+'원';
+      var newSell = (r.new_sell||0).toLocaleString()+'원';
+      var stat = statusLabel[r.status]||r.status||'-';
+      var statCol = r.status==='completed'?'#66bb6a':'#f9a825';
+      var dt = (r.created_at||'').slice(0,16);
+      return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
+        +'<td style="padding:6px;text-align:center;color:#888">'+(i+1)+'</td>'
+        +'<td style="padding:6px;text-align:center;font-weight:700;color:'+col+'">🍀 '+bar+'</td>'
+        +'<td style="padding:6px;text-align:center">'+stA+'</td>'
+        +'<td style="padding:6px;text-align:center">'+stB+'</td>'
+        +'<td style="padding:6px;text-align:center;color:#66bb6a;font-weight:700">'+stNew+' ('+newSell+')</td>'
+        +'<td style="padding:6px;text-align:center;color:#f9a825">'+total+'</td>'
+        +'<td style="padding:6px;text-align:center;color:#4fc3f7">'+sA+'</td>'
+        +'<td style="padding:6px;text-align:center;color:#4fc3f7">'+sB+'</td>'
+        +'<td style="padding:6px;text-align:center;color:#81c784">'+buyer+'</td>'
+        +'<td style="padding:6px;text-align:center;color:'+statCol+'">'+stat+'</td>'
+        +'<td style="padding:6px;text-align:center;color:#888;font-size:11px">'+dt+'</td>'
+        +'</tr>';
+    }).join('');
+  }catch(e){ tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:12px;color:#ef5350">오류: '+e.message+'</td></tr>'; }
+}
+
 async function loadReservationsLog(page){
   _rlPage = page || 1;
   var tbody = document.getElementById('rl-tbody');

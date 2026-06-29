@@ -139,6 +139,42 @@ def _do_confirm_transfer(db, m):
                         "INSERT INTO items(user_id, bar_type, stage, purchase_date) VALUES(?,?,?,?)",
                         (m['buyer_id'], seller_item['bar_type'], _stage, _today)
                     )
+        # 행운구매 처리: lucky_pair_id가 있는 매치인 경우
+        _lucky_pair_id = dict(m).get('lucky_pair_id')
+        if _lucky_pair_id:
+            _lbr = db.execute(
+                """SELECT * FROM lucky_buy_results WHERE id=? AND status='confirmed'""",
+                (_lucky_pair_id,)
+            ).fetchone()
+            if _lbr and not _lbr['new_item_id']:
+                # 행운구매 쌍의 모든 매치가 입금확인 됐는지 체크
+                _pair_matches = db.execute(
+                    """SELECT m2.status FROM matches m2 WHERE m2.lucky_pair_id=?""",
+                    (_lucky_pair_id,)
+                ).fetchall()
+                _all_confirmed = all(pm['status'] == 'confirmed' for pm in _pair_matches)
+                if _all_confirmed:
+                    # 두 아이템으로 새 아이템 생성
+                    _new_stage = _lbr['new_stage']
+                    _new_buyer_id = m['buyer_id']
+                    _new_item = db.execute(
+                        "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
+                        (_new_buyer_id, _lbr['bar_type'], _new_stage, get_today().isoformat())
+                    ).lastrowid
+                    # lucky_buy_results에 new_item_id, buyer_id, status 업데이트
+                    db.execute(
+                        "UPDATE lucky_buy_results SET new_item_id=?, buyer_id=?, status='completed' WHERE id=?",
+                        (_new_item, _new_buyer_id, _lucky_pair_id)
+                    )
+                    # 기존 두 아이템 삭제 (sold 처리)
+                    db.execute("UPDATE items SET status='sold' WHERE id=? OR id=?",
+                               (_lbr['item_a_id'], _lbr['item_b_id']))
+                    # 두 판매예약도 matched 처리
+                    db.execute(
+                        """UPDATE reservations SET status='matched' WHERE lucky_pair_id=? AND status='pending'""",
+                        (_lucky_pair_id,)
+                    )
+
     except Exception as _te:
         pass  # 아이템 이전 실패해도 status 변경은 유지
 
@@ -2313,7 +2349,8 @@ def admin_run_matching():
                u.username as seller_username, u.nickname as seller_nickname,
                u.phone as seller_phone, u.bank as seller_bank,
                u.account_no as seller_account, u.account_name as seller_account_name,
-               CASE WHEN COALESCE(r.stage,0) <= 0 THEN 1 ELSE r.stage END as stage
+               CASE WHEN COALESCE(r.stage,0) <= 0 THEN 1 ELSE r.stage END as stage,
+               COALESCE(r.lucky_pair_id, i.lucky_pair_id) as lucky_pair_id
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                INNER JOIN items i ON r.item_id = i.id
@@ -2510,11 +2547,12 @@ def admin_run_matching():
                     db.execute(
                         """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
                            buy_price, sell_price, match_round, match_date, status,
-                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id, buyer_res_id)
-                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?)""",
+                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id, buyer_res_id, lucky_pair_id)
+                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,?)""",
                         (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
                          bt, st, buy_price, sell_price, round_num, today,
-                         s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'], _seller_iid, buyer['res_id'])
+                         s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'], _seller_iid, buyer['res_id'],
+                         seller.get('lucky_pair_id'))
                     )
                 except Exception:
                     db.execute(
@@ -2829,6 +2867,29 @@ def admin_run_matching():
                 (_ran_key, today)
             )
             db.commit()
+
+        # 행운구매 동일 구매자 통일: 같은 lucky_pair_id를 가진 매치는 첫 번째 매치의 구매자로 통일
+        _lucky_pairs = db.execute(
+            """SELECT lucky_pair_id, MIN(id) as first_id, MIN(buyer_id) as first_buyer_id
+               FROM matches
+               WHERE lucky_pair_id IS NOT NULL AND match_date=? AND match_round=?
+               AND status='pending'
+               GROUP BY lucky_pair_id
+               HAVING COUNT(*) > 1""",
+            (today, round_num)
+        ).fetchall()
+        for _lp in _lucky_pairs:
+            db.execute(
+                """UPDATE matches SET buyer_id=(SELECT buyer_id FROM matches WHERE id=?)
+                   WHERE lucky_pair_id=? AND match_date=? AND match_round=? AND status='pending'""",
+                (_lp['first_id'], _lp['lucky_pair_id'], today, round_num)
+            )
+            # lucky_buy_results의 buyer_id 업데이트
+            db.execute(
+                "UPDATE lucky_buy_results SET buyer_id=? WHERE id=?",
+                (_lp['first_buyer_id'], _lp['lucky_pair_id'])
+            )
+        db.commit()
 
         return jsonify(
             success=True,
@@ -3230,7 +3291,11 @@ with app.app_context():
         for _col_sql in [
             "ALTER TABLE matches ADD COLUMN seller_item_id INTEGER",
             "ALTER TABLE matches ADD COLUMN points_deducted INTEGER DEFAULT 0",
+            "ALTER TABLE matches ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
             "ALTER TABLE users ADD COLUMN maintain_points INTEGER DEFAULT 0",
+            "ALTER TABLE items ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
+            "ALTER TABLE reservations ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
+            "ALTER TABLE lucky_buy_results ADD COLUMN status TEXT DEFAULT 'confirmed'",
             "ALTER TABLE users ADD COLUMN suspended_until DATETIME",
             "ALTER TABLE users ADD COLUMN unpaid_count INTEGER DEFAULT 0",
             "ALTER TABLE users ADD COLUMN level_paid_at DATE DEFAULT NULL",
@@ -3571,35 +3636,36 @@ def admin_lucky_buy_confirm():
                 ia = pair['item_a']
                 ib = pair['item_b']
                 new_stage = int(pair['new_stage'])
-                
-                # 1. 예약 완료 처리
-                conn.execute("UPDATE reservations SET status='matched' WHERE id=? OR id=?",
-                             (ia['res_id'], ib['res_id']))
-                # 2. 기존 아이템 상태 → sold
-                conn.execute("UPDATE items SET status='sold' WHERE id=? OR id=?",
-                             (ia['item_id'], ib['item_id']))
-                # 3. 새 행운 아이템 생성 (loopay 계정 소유)
-                loopay = conn.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
-                loopay_id = loopay['id'] if loopay else 1
-                new_buy, new_sell = price_map[bar_type].get(new_stage, (0, 0))
-                new_item_cur = conn.execute(
-                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
-                    (loopay_id, bar_type, new_stage, today)
-                )
-                new_item_id = new_item_cur.lastrowid
+
+                # 1. 판매예약은 그대로 유지 (status 변경 없음)
+                #    단, items에 lucky_pair_id 기록을 위해 lucky_buy_results 먼저 삽입
                 res_a = conn.execute('SELECT user_id FROM reservations WHERE id=?', (ia['res_id'],)).fetchone()
                 res_b = conn.execute('SELECT user_id FROM reservations WHERE id=?', (ib['res_id'],)).fetchone()
                 seller_a_id = res_a['user_id'] if res_a else None
                 seller_b_id = res_b['user_id'] if res_b else None
-                lbq = ('INSERT INTO lucky_buy_results(bar_type,item_a_id,item_b_id,seller_a_id,seller_b_id,new_item_id,new_stage,sell_a,sell_b,total_sell)'
-                       ' VALUES(?,?,?,?,?,?,?,?,?,?)')
-                conn.execute(lbq, (bar_type, ia['item_id'], ib['item_id'], seller_a_id, seller_b_id,
-                    new_item_id, new_stage, ia.get('sell',0), ib.get('sell',0), ia.get('sell',0)+ib.get('sell',0)))
+                new_buy, new_sell = price_map[bar_type].get(new_stage, (0, 0))
+
+                # 2. lucky_buy_results에 미리 등록 (new_item_id는 입금확인 시 생성)
+                lbq = ('INSERT INTO lucky_buy_results(bar_type,item_a_id,item_b_id,seller_a_id,seller_b_id,new_item_id,new_stage,sell_a,sell_b,total_sell,status)'
+                       ' VALUES(?,?,?,?,?,NULL,?,?,?,?,\'confirmed\')')
+                cur = conn.execute(lbq, (bar_type, ia['item_id'], ib['item_id'], seller_a_id, seller_b_id,
+                    new_stage, ia.get('sell',0), ib.get('sell',0), ia.get('sell',0)+ib.get('sell',0)))
+                lucky_id = cur.lastrowid
+
+                # 3. 두 아이템에 lucky_pair_id 기록 (매칭 시 동일 구매자로 묶기 위해)
+                conn.execute('UPDATE items SET lucky_pair_id=? WHERE id=? OR id=?',
+                             (lucky_id, ia['item_id'], ib['item_id']))
+
+                # 4. 두 판매예약에도 lucky_pair_id 기록
+                conn.execute('UPDATE reservations SET lucky_pair_id=? WHERE id=? OR id=?',
+                             (lucky_id, ia['res_id'], ib['res_id']))
+
                 results.append({
                     'bar_type': bar_type,
                     'old_stages': [ia['stage'], ib['stage']],
                     'new_stage': new_stage,
                     'new_sell': new_sell,
+                    'lucky_id': lucky_id,
                 })
         
         conn.commit()
@@ -3906,6 +3972,7 @@ def admin_reservations_list():
             f'''SELECT r.id, r.bar_type, r.match_round, r.status,
                        r.reserve_date, r.created_at, r.item_id, r.confirmed,
                        r.stage, COALESCE(r.join_round2, 0) as join_round2,
+                       r.lucky_pair_id,
                        u.username, u.nickname, u.account_name,
                        CASE WHEN r.item_id > 0 AND COALESCE(r.confirmed,0)=1 AND i_type.status IN ('reservable','waiting','matched','sold') THEN 'sell' ELSE 'buy' END as res_type
                 FROM reservations r
