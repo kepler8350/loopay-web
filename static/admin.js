@@ -103,11 +103,11 @@ async function loadUsers(){
       <td>${i+1}</td>
       <td>${u.username||'-'}</td>
       <td>${u.real_name||u.nickname||'-'}</td>
-      <td><span class="badge badge-info">${u.level||1}L</span></td>
+      <td id="level-cell-${u.id}" style="text-align:center;cursor:pointer" onclick="editUserField(${u.id},'level',${u.level||1})" title="클릭하여 수정"><span class="badge badge-info" style="cursor:pointer">${u.level||1}L ✏️</span></td>
       <td>${(u.charge_points||0).toLocaleString()}P</td>
       <td>${((u.total_charged_amount||0)||(u.charge_points||0)*120).toLocaleString()}원</td>
       <td>${(u.exchange_points||0).toLocaleString()}</td>
-      <td>${u.total_reservations||0}</td>
+      <td id="cumcount-cell-${u.id}" style="text-align:center;cursor:pointer" onclick="editUserField(${u.id},'cumulative_count',${u.cumulative_count||0})" title="클릭하여 수정"><span style="cursor:pointer">${u.cumulative_count||0} ✏️</span></td>
       <td style="white-space:nowrap">
         <button onclick="showUserDetail(${u.id})" class="btn-primary btn-sm" style="margin-right:4px">상세</button>
         <button onclick="withdrawUser(${u.id})" style="background:#e53935;color:#fff;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px">탈퇴</button>
@@ -135,6 +135,37 @@ async function loadUsers(){
 
 
 
+
+
+async function editUserField(uid, field, currentVal) {
+  var fieldLabel = field === 'level' ? '레벨 (1~10)' : '누적예약횟수';
+  var newVal = prompt(fieldLabel + ' 수정:', currentVal);
+  if (newVal === null) return; // 취소
+  var parsed = parseInt(newVal);
+  if (isNaN(parsed)) { toast('숫자를 입력해주세요', 'error'); return; }
+  if (field === 'level' && (parsed < 1 || parsed > 10)) { toast('레벨은 1~10 사이여야 합니다', 'error'); return; }
+  if (field === 'cumulative_count' && parsed < 0) { toast('누적예약횟수는 0 이상이어야 합니다', 'error'); return; }
+  try {
+    var tok = localStorage.getItem('admin_token');
+    var body = {};
+    body[field] = parsed;
+    var d = await fetch('/api/admin/users/'+uid+'/update', {
+      method: 'POST',
+      headers: {'Authorization': 'Bearer '+tok, 'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    }).then(r=>r.json());
+    if (!d.success) { toast(d.error || '수정 실패', 'error'); return; }
+    // 셀 즉시 업데이트
+    if (field === 'level') {
+      var cell = document.getElementById('level-cell-'+uid);
+      if (cell) cell.innerHTML = '<span class="badge badge-info" style="cursor:pointer">' + parsed + 'L ✏️</span>';
+    } else {
+      var cell = document.getElementById('cumcount-cell-'+uid);
+      if (cell) cell.innerHTML = '<span style="cursor:pointer">' + parsed + ' ✏️</span>';
+    }
+    toast('✅ 수정 완료', 'success');
+  } catch(e) { toast(e.message || '오류 발생', 'error'); }
+}
 
 async function grantPoints(){
   var username = (document.getElementById('grant-username')?.value||'').trim();

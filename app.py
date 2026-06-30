@@ -4224,6 +4224,39 @@ def admin_send_notify():
 
 
 # ── 회원 일괄 삭제 ──────────────────────────────────────
+@app.route('/api/admin/users/<int:uid>/update', methods=['POST'])
+@jwt_required()
+def admin_update_user(uid):
+    """회원 레벨 / 누적예약횟수 수정"""
+    identity = get_jwt_identity()
+    if not identity.startswith('admin:'):
+        return jsonify(error='Forbidden'), 403
+    data = request.json or {}
+    updates = {}
+    if 'level' in data:
+        v = int(data['level'])
+        if v < 1 or v > 10:
+            return jsonify(error='레벨은 1~10 사이여야 합니다'), 400
+        updates['level'] = v
+    if 'cumulative_count' in data:
+        v = int(data['cumulative_count'])
+        if v < 0:
+            return jsonify(error='누적예약횟수는 0 이상이어야 합니다'), 400
+        updates['cumulative_count'] = v
+    if not updates:
+        return jsonify(error='수정할 항목이 없습니다'), 400
+    db = get_db()
+    try:
+        set_clause = ', '.join(f'{k}=?' for k in updates)
+        db.execute(f'UPDATE users SET {set_clause} WHERE id=?', list(updates.values()) + [uid])
+        db.commit()
+        row = db.execute('SELECT id, username, level, cumulative_count FROM users WHERE id=?', (uid,)).fetchone()
+        if not row:
+            return jsonify(error='회원을 찾을 수 없습니다'), 404
+        return jsonify(success=True, user=dict(row))
+    finally:
+        db.close()
+
 @app.route('/api/admin/delete-users', methods=['POST'])
 @jwt_required()
 def admin_delete_users():
