@@ -1192,11 +1192,15 @@ async function loadItemDetail(barType){
       } else {
         _sellBadge = _cardSelected
           ? '<span class="badge" style="background:#7b1fa2;color:#fff">✓ 판매선택</span>'
-          : (it.status_label==='판매예약중'
+          : (it.status_label==='🍀 행운매칭완료'
+            ? '<span class="badge" style="background:#7b1fa2;color:#fff">🍀 행운매칭완료</span>'
+            : (it.status_label==='🍀 행운예약중'
+            ? '<span class="badge" style="background:#9c27b0;color:#fff">🍀 행운예약중</span>'
+            : (it.status_label==='판매예약중'
             ? '<span class="badge badge-pending">판매예약중</span>'
             : (_cardCanSell
               ? '<span class="badge" style="background:var(--bg2);border:1.5px solid #7b1fa2;color:#7b1fa2">☐ 판매선택</span>'
-              : statusBadge));
+              : statusBadge)))));
       }
       var _maxStageBtns = (_isMaxStage && it.status_label === '판매가능')
         ? '<div style="display:flex;gap:6px;margin-top:8px">'
@@ -2319,7 +2323,7 @@ function renderSellTab(){
     {key:'보유중',   label:'보유중',     color:'#64b5f6', filter:function(x){ return x.status_label==='보유중'; }},
     {key:'판매가능', label:'판매가능',   color:'#66bb6a', filter:function(x){ return x.status_label==='판매가능'; }},
     {key:'판매예약중',label:'판매예약중', color:'#ab47bc', filter:function(x){ return x.status_label==='판매예약중'; }},
-    {key:'행운예약중',label:'🍀 행운예약중', color:'#7b1fa2', filter:function(x){ return x.status==='lucky_waiting'||x.status==='lucky_matched'; }},
+    {key:'행운예약중',label:'🍀 행운예약중', color:'#7b1fa2', filter:function(x){ return x.status==='lucky_waiting'||x.status==='lucky_matched'||x.status_label==='🍀 행운예약중'||x.status_label==='🍀 행운매칭완료'; }},
     {key:'진행중',   label:'매칭/거래중', color:'#f9a825', filter:function(x){
       var sl = x.status_label;
       return sl==='매칭완료'||sl==='매칭중'||x.match_status==='paid'||x.match_status==='matched'||(x._role==='buyer'&&x.match_status&&x.match_status!=='confirmed');

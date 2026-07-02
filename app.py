@@ -1179,18 +1179,41 @@ def get_me():
     # 판매예약중인 아이템 확인 (reservations.status='pending'인 것)
     _item_ids = [i['id'] for i in items]
     _pending_sell_set = set()
+    _lucky_matched_set = set()   # 행운구매 매칭 완료된 아이템
+    _lucky_waiting_set = set()   # 행운구매 매칭 대기 중인 아이템
     if _item_ids:
         _ph = ','.join('?'*len(_item_ids))
         _pending_rows = db.execute(
-            f"SELECT item_id FROM reservations WHERE item_id IN ({_ph}) AND status='pending' AND confirmed=1",
+            f"SELECT r.item_id, r.lucky_pair_id FROM reservations r WHERE r.item_id IN ({_ph}) AND r.status='pending' AND r.confirmed=1",
             _item_ids
         ).fetchall()
-        _pending_sell_set = {r['item_id'] for r in _pending_rows}
+        for _r in _pending_rows:
+            _iid = _r['item_id']
+            _lp = _r['lucky_pair_id']
+            if _lp:
+                # 이 lucky_pair_id로 매치가 있으면 lucky_matched, 없으면 lucky_waiting
+                _mc = db.execute(
+                    "SELECT COUNT(*) as c FROM matches WHERE lucky_pair_id=? AND status IN ('pending','paid')",
+                    (_lp,)
+                ).fetchone()['c']
+                if _mc > 0:
+                    _lucky_matched_set.add(_iid)
+                else:
+                    _lucky_waiting_set.add(_iid)
+            else:
+                _pending_sell_set.add(_iid)
     def fmt_item(it):
         buy, sell = get_price(it['bar_type'], it['stage'])
         d = days_since(it['purchase_date'])
         # 판매예약중인 아이템은 status_label 오버라이드
-        s_label = '판매예약중' if it['id'] in _pending_sell_set else item_status_label(it['status'], it['purchase_date'])
+        if it['id'] in _lucky_matched_set:
+            s_label = '🍀 행운매칭완료'
+        elif it['id'] in _lucky_waiting_set:
+            s_label = '🍀 행운예약중'
+        elif it['id'] in _pending_sell_set:
+            s_label = '판매예약중'
+        else:
+            s_label = item_status_label(it['status'], it['purchase_date'])
         return {'id':it['id'],'bar_type':it['bar_type'],'stage':it['stage'],'purchase_date':it['purchase_date'],'days':d,'status_label':s_label,'buy_price':buy,'sell_price':sell,'profit':sell-buy}
     bronze = [fmt_item(i) for i in items if i['bar_type']=='bronze']
     silver = [fmt_item(i) for i in items if i['bar_type']=='silver']
@@ -1358,19 +1381,35 @@ def get_items():
         # pending reservation 한번에 조회 (아이템별 예약중 여부)
         item_ids = [it['id'] for it in rows]
         pending_set = set()
+        lucky_matched_set2 = set()
+        lucky_waiting_set2 = set()
         if item_ids:
             placeholders = ','.join('?' * len(item_ids))
             pending_rows = db.execute(
-                f"SELECT item_id FROM reservations WHERE item_id IN ({placeholders}) AND status='pending'",
+                f"SELECT r.item_id, r.lucky_pair_id FROM reservations r WHERE r.item_id IN ({placeholders}) AND r.status='pending'",
                 item_ids
             ).fetchall()
-            pending_set = {r['item_id'] for r in pending_rows}
+            for _r2 in pending_rows:
+                _iid2, _lp2 = _r2['item_id'], _r2['lucky_pair_id']
+                if _lp2:
+                    _mc2 = db.execute(
+                        "SELECT COUNT(*) as c FROM matches WHERE lucky_pair_id=? AND status IN ('pending','paid')",
+                        (_lp2,)
+                    ).fetchone()['c']
+                    if _mc2 > 0: lucky_matched_set2.add(_iid2)
+                    else: lucky_waiting_set2.add(_iid2)
+                else:
+                    pending_set.add(_iid2)
 
         result = []
         for it in rows:
             buy, sell = get_price(it['bar_type'], it['stage'])
-            # 판매예약중인 아이템은 status_label을 '판매예약중'으로 오버라이드
-            if it['id'] in pending_set:
+            # 판매예약중인 아이템은 status_label을 오버라이드
+            if it['id'] in lucky_matched_set2:
+                s_label = '🍀 행운매칭완료'
+            elif it['id'] in lucky_waiting_set2:
+                s_label = '🍀 행운예약중'
+            elif it['id'] in pending_set:
                 s_label = '판매예약중'
             else:
                 s_label = item_status_label(it['status'], it['purchase_date'])
