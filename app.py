@@ -1207,9 +1207,9 @@ def get_me():
         d = days_since(it['purchase_date'])
         # 판매예약중인 아이템은 status_label 오버라이드
         if it['id'] in _lucky_matched_set:
-            s_label = '🍀 행운매칭완료'
+            s_label = '판매예약중'   # 판매자에게는 기존과 동일하게 표시
         elif it['id'] in _lucky_waiting_set:
-            s_label = '🍀 행운예약중'
+            s_label = '판매예약중'
         elif it['id'] in _pending_sell_set:
             s_label = '판매예약중'
         else:
@@ -5032,7 +5032,7 @@ def user_my_items():
             # match 조회: seller_item_id 우선, 없으면 seller_id+bar_type+stage
             # status='matched'/'sold' 아이템만 (reservable은 연결 안 함)
             m = None
-            if row['status'] in ('matched', 'sold', 'pending'):
+            if row['status'] in ('matched', 'sold', 'pending', 'reservable') or item_status in ('lucky_matched','lucky_waiting'):
                 try:
                     # 1순위: seller_item_id=item.id (정확한 1:1 연결)
                     m = db.execute(
@@ -5094,13 +5094,12 @@ def user_my_items():
                         ).fetchone()['c']
                         item_status = 'lucky_matched' if _mc_cnt > 0 else 'lucky_waiting'
 
-            _lucky_label_map = {'lucky_matched': '🍀 행운매칭완료', 'lucky_waiting': '🍀 행운예약중'}
             result.append({
                 'id': row['id'],
                 'bar_type': row['bar_type'],
                 'stage': row['stage'] or 1,
                 'status': item_status,
-                'status_label': _lucky_label_map.get(item_status, '판매예약중') if item_status in ('pending','lucky_matched','lucky_waiting') else item_status_label(row['status'], row['purchase_date']),
+                'status_label': '판매예약중' if item_status in ('pending','lucky_matched','lucky_waiting') else item_status_label(row['status'], row['purchase_date']),
                 'days': days_since(row['purchase_date']),
                 'purchase_date': row['purchase_date'],
                 'reserve_date': row.get('reserve_date'),
