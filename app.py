@@ -3729,9 +3729,12 @@ def admin_lucky_buy_confirm():
                 conn.execute('UPDATE items SET lucky_pair_id=? WHERE id=? OR id=?',
                              (lucky_id, ia['item_id'], ib['item_id']))
 
-                # 4. 두 판매예약에도 lucky_pair_id 기록
-                conn.execute('UPDATE reservations SET lucky_pair_id=? WHERE id=? OR id=?',
+                # 4. 두 판매예약에도 lucky_pair_id 기록 (res_id와 item_id 두 방식으로 보장)
+                conn.execute('UPDATE reservations SET lucky_pair_id=? WHERE (id=? OR id=?) AND lucky_pair_id IS NULL',
                              (lucky_id, ia['res_id'], ib['res_id']))
+                # item_id 기준으로도 업데이트 (res_id 누락 방지)
+                conn.execute('UPDATE reservations SET lucky_pair_id=? WHERE item_id IN (?,?) AND status=\'pending\' AND lucky_pair_id IS NULL',
+                             (lucky_id, ia['item_id'], ib['item_id']))
 
                 results.append({
                     'bar_type': bar_type,
