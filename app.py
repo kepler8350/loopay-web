@@ -3635,6 +3635,7 @@ def admin_lucky_buy_setup():
                    WHERE r.bar_type=? AND r.status='pending'
                    AND r.item_id IS NOT NULL AND r.item_id > 0
                    AND i.status IN ('reservable','waiting')
+                   AND r.lucky_pair_id IS NULL
                    AND i.stage IN ({})
                    ORDER BY RANDOM()""".format(','.join('?' * len(lucky_stages[bar_type]))),
                 (bar_type, *lucky_stages[bar_type])
