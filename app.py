@@ -3774,8 +3774,8 @@ def admin_lucky_buy_history():
                uc.username as buyer_name, uc.nickname as buyer_nick, uc.phone as buyer_phone,
                ia.stage as stage_a, ib.stage as stage_b, ni.stage as new_item_stage
                FROM lucky_buy_results lb
-               LEFT JOIN users ua ON lb.seller_a_id = ua.id
-               LEFT JOIN users ub ON lb.seller_b_id = ub.id
+               INNER JOIN users ua ON lb.seller_a_id = ua.id
+               INNER JOIN users ub ON lb.seller_b_id = ub.id
                LEFT JOIN users uc ON lb.buyer_id = uc.id
                LEFT JOIN items ia ON lb.item_a_id = ia.id
                LEFT JOIN items ib ON lb.item_b_id = ib.id

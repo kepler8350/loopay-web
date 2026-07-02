@@ -1075,9 +1075,21 @@ async function loadLuckyBuyHistory(){
         +'<td style="padding:6px;text-align:center;color:#81c784">'+buyer+'</td>'
         +'<td style="padding:6px;text-align:center;color:'+statCol+'">'+stat+'</td>'
         +'<td style="padding:6px;text-align:center;color:#888;font-size:11px">'+dt+'</td>'
+        +'<td style="padding:6px;text-align:center"><button onclick="deleteLuckyHistory('+r.id+')" style="padding:2px 8px;background:#c62828;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">삭제</button></td>'
         +'</tr>';
     }).join('');
   }catch(e){ tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:12px;color:#ef5350">오류: '+e.message+'</td></tr>'; }
+}
+
+
+async function deleteLuckyHistory(id){
+  if(!confirm('이 행운구매 이력을 삭제하시겠습니까?')) return;
+  try{
+    const tok = localStorage.getItem('admin_token');
+    const r = await fetch('/api/admin/lucky-buy/history/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
+    if(r.success){ toast('삭제 완료','success'); loadLuckyBuyHistory(); }
+    else toast(r.error||'삭제 실패','error');
+  }catch(e){ toast(e.message,'error'); }
 }
 
 async function loadReservationsLog(page){
