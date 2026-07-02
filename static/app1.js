@@ -1200,7 +1200,7 @@ async function loadItemDetail(barType){
             ? '<span class="badge badge-pending">판매예약중</span>'
             : (_cardCanSell
               ? '<span class="badge" style="background:var(--bg2);border:1.5px solid #7b1fa2;color:#7b1fa2">☐ 판매선택</span>'
-              : statusBadge)))));
+              : statusBadge))));
       }
       var _maxStageBtns = (_isMaxStage && it.status_label === '판매가능')
         ? '<div style="display:flex;gap:6px;margin-top:8px">'
