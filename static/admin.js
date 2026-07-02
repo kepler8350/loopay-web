@@ -1081,17 +1081,6 @@ async function loadLuckyBuyHistory(){
   }catch(e){ tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:12px;color:#ef5350">오류: '+e.message+'</td></tr>'; }
 }
 
-
-async function deleteLuckyHistory(id){
-  if(!confirm('이 행운구매 이력을 삭제하시겠습니까?')) return;
-  try{
-    const tok = localStorage.getItem('admin_token');
-    const r = await fetch('/api/admin/lucky-buy/history/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
-    if(r.success){ toast('삭제 완료','success'); loadLuckyBuyHistory(); }
-    else toast(r.error||'삭제 실패','error');
-  }catch(e){ toast(e.message,'error'); }
-}
-
 async function loadReservationsLog(page){
   _rlPage = page || 1;
   var tbody = document.getElementById('rl-tbody');
