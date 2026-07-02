@@ -1299,9 +1299,17 @@ async function loadMatchingTab(){
     var _ch = _ct.hour||0;
     var _isMatchingTime = (_ch >= 20 || _ch < 5);
     if(_isMatchingTime){
-      if(buyEl) buyEl.innerHTML = '<div style="text-align:center;color:#f9a825;padding:20px;font-size:13px">⏳ 매칭 진행 중 (20:00~05:00)<br><span style="font-size:11px;color:#aaa">매칭 결과는 오전 5시 이후 확인 가능합니다</span></div>';
-      if(sellEl) sellEl.innerHTML = '';
-      return;
+      // paid/confirmed 상태 매치는 시간 무관하게 표시 (송금 완료 후 입금확인 필요)
+      var _d = null;
+      try { _d = await api('/user/matching'); } catch(e2) {}
+      var _hasPaid = _d && ((_d.buy||[]).some(function(m){ return m.status==='paid'||m.status==='confirmed'; }) ||
+                            (_d.sell||[]).some(function(m){ return m.status==='paid'||m.status==='confirmed'; }));
+      if(!_hasPaid){
+        if(buyEl) buyEl.innerHTML = '<div style="text-align:center;color:#f9a825;padding:20px;font-size:13px">⏳ 매칭 진행 중 (20:00~05:00)<br><span style="font-size:11px;color:#aaa">매칭 결과는 오전 5시 이후 확인 가능합니다</span></div>';
+        if(sellEl) sellEl.innerHTML = '';
+        return;
+      }
+      // paid 매치가 있으면 계속 진행
     }
     var d = await api('/user/matching');
     var buys = [], sells = [];
