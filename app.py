@@ -3186,7 +3186,8 @@ def admin_matching_status():
                AND r.reserve_date<=?
                AND COALESCE(r.confirmed,0)=1
                AND r.item_id IS NOT NULL AND r.item_id != 0
-               AND i.status IN ('reservable','waiting')""",
+               AND i.status IN ('reservable','waiting')
+               AND r.lucky_pair_id IS NULL""",
             (round_num, today)
         ).fetchone()['c']
         # loopay 판매예약은 match_round 무관하게 집계 (매칭 실행 시 round로 리셋되므로)
@@ -3211,6 +3212,7 @@ def admin_matching_status():
                AND r.reserve_date>=?
                AND COALESCE(r.confirmed,0)=1
                AND i.status IN ('reservable','waiting')
+               AND r.lucky_pair_id IS NULL
                GROUP BY r.bar_type""",
             (round_num, today)
         ).fetchall()
