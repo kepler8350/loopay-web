@@ -1331,8 +1331,8 @@ function renderMatchBuyList(items){
   var _effDate = getEffectiveDate ? getEffectiveDate() : new Date();
   var h = (_effDate.getUTCHours() + 9) % 24;  // KST = UTC+9
   el.innerHTML = items.map(function(m){
-    var statusLabel = {waiting:'예약대기',pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'입금',unpaid:'미입금',failed:'미입금'}[m.status]||m.status;
-    var statusColor = {waiting:'#90caf9',pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
+    var statusLabel = {waiting:'예약대기',lucky_waiting:'🍀 행운예약중',lucky_matched:'🍀 행운매칭완료',pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'입금',unpaid:'미입금',failed:'미입금'}[m.status]||m.status;
+    var statusColor = {waiting:'#90caf9',lucky_waiting:'#7b1fa2',lucky_matched:'#7b1fa2',pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
     var hasMatchInfo = !!(m.seller_phone || m.seller_bank || m.seller_account);
     var dateTxt = m.source==='reservation'?m.reserve_date:(m.match_date||'');
     var isLucky = !!(m.lucky_pair_id);
@@ -1397,10 +1397,12 @@ function renderMatchSellList(items){
   }
   var h = getEffectiveDate ? getEffectiveDate().getHours() : new Date().getHours();
   el.innerHTML = items.map(function(m){
-    var statusLabel = {waiting:'예약대기',pending:'입금대기',paid:'입금확인중',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
-    var statusColor = {waiting:'#90caf9',pending:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
-    var buyerInfo = m.status==='waiting'
-      ? '<div style="font-size:12px;color:#90caf9;margin:6px 0">⏳ 매칭 대기 중...</div>'
+    var statusLabel = {waiting:'예약대기',lucky_waiting:'🍀 행운예약중',lucky_matched:'🍀 행운매칭완료',pending:'입금대기',paid:'입금확인중',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
+    var statusColor = {waiting:'#90caf9',lucky_waiting:'#7b1fa2',lucky_matched:'#7b1fa2',pending:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
+    var _luckyBadgeSell = (m.status==='lucky_waiting'||m.status==='lucky_matched')
+      ? '<span style="display:inline-block;background:#7b1fa2;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:4px">🍀 행운</span>' : '';
+    var buyerInfo = (m.status==='waiting'||m.status==='lucky_waiting')
+      ? '<div style="font-size:12px;color:#90caf9;margin:6px 0">⏳ 행운구매 매칭 대기 중...</div>'
       : '<div style="font-size:12px;color:#aaa;margin:6px 0">'
       +'<div>👤 구매자: '+(m.buyer_nickname||m.buyer_username||'-')+'</div>'
       +'<div>📞 연락처: '+(m.buyer_phone||'-')+'</div>'
@@ -1440,10 +1442,10 @@ function renderMatchSellList(items){
         +'<button onclick="doReportUnpaid('+m.id+')" style="padding:7px 14px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">❌ 미입금</button>'
         +'</div>';
     }
-    var sellSub=m.status==='waiting'?'⏳ 대기':'👤 '+(m.buyer_nickname||m.buyer_username||'-')+(m.sell_price?' · '+m.sell_price.toLocaleString()+'원':'');
+    var sellSub=(m.status==='waiting'||m.status==='lucky_waiting')?'⏳ 대기':'👤 '+(m.buyer_nickname||m.buyer_username||'-')+(m.sell_price?' · '+m.sell_price.toLocaleString()+'원':'');
     var sellDate=m.source==='reservation'?m.reserve_date:(m.match_date||'');
     return '<div style="display:flex;align-items:center;gap:6px;padding:8px 10px;margin-bottom:5px;border:1px solid var(--border);border-radius:8px;background:var(--bg)">'
-      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+';font-size:12px;white-space:nowrap">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'
+      +'<strong style="color:'+TYPE_COLOR[m.bar_type]+';font-size:12px;white-space:nowrap">'+TYPE_NAME[m.bar_type]+(m.stage?' '+m.stage+'단계':'')+'</strong>'+(_luckyBadgeSell||'')
       +'<span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+sellSub+'</span>'
       +(sellDate?'<span style="font-size:10px;color:var(--text2);white-space:nowrap">'+sellDate+'</span>':'')
       +'<span style="font-size:11px;color:'+statusColor+';font-weight:600;white-space:nowrap">'+statusLabel+'</span>'
@@ -2317,6 +2319,7 @@ function renderSellTab(){
     {key:'보유중',   label:'보유중',     color:'#64b5f6', filter:function(x){ return x.status_label==='보유중'; }},
     {key:'판매가능', label:'판매가능',   color:'#66bb6a', filter:function(x){ return x.status_label==='판매가능'; }},
     {key:'판매예약중',label:'판매예약중', color:'#ab47bc', filter:function(x){ return x.status_label==='판매예약중'; }},
+    {key:'행운예약중',label:'🍀 행운예약중', color:'#7b1fa2', filter:function(x){ return x.status==='lucky_waiting'||x.status==='lucky_matched'; }},
     {key:'진행중',   label:'매칭/거래중', color:'#f9a825', filter:function(x){
       var sl = x.status_label;
       return sl==='매칭완료'||sl==='매칭중'||x.match_status==='paid'||x.match_status==='matched'||(x._role==='buyer'&&x.match_status&&x.match_status!=='confirmed');

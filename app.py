@@ -5883,6 +5883,7 @@ def user_matching():
                       COALESCE(r.stage, COALESCE(i.stage,1)) as stage,
                       r.reserve_date,
                       r.match_round,
+                      r.lucky_pair_id,
                       'reservation' as source
                FROM reservations r
                LEFT JOIN items i ON r.item_id=i.id
@@ -5908,7 +5909,15 @@ def user_matching():
         def fmt_reservation(r):
             d = dict(r)
             d['bar_name'] = names.get(d.get('bar_type',''), d.get('bar_type',''))
-            d['status'] = 'waiting'   # 예약 대기
+            # 행운구매 판매예약 - 매치가 있으면 lucky_matched로 표시
+            if d.get('lucky_pair_id'):
+                _has_match = db.execute(
+                    "SELECT COUNT(*) as c FROM matches WHERE lucky_pair_id=? AND status IN ('pending','paid')",
+                    (d['lucky_pair_id'],)
+                ).fetchone()['c']
+                d['status'] = 'lucky_matched' if _has_match > 0 else 'lucky_waiting'
+            else:
+                d['status'] = 'waiting'   # 예약 대기
             return d
 
         def fmt_match(m, role):
