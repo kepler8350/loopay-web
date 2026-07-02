@@ -5081,18 +5081,26 @@ def user_my_items():
             item_status = row['status']
             if item_status == 'reservable':
                 pending_res = db.execute(
-                    "SELECT id FROM reservations WHERE item_id=? AND status='pending' LIMIT 1",
+                    "SELECT id, lucky_pair_id FROM reservations WHERE item_id=? AND status='pending' LIMIT 1",
                     (row['id'],)
                 ).fetchone()
                 if pending_res:
-                    item_status = 'pending'  # 판매예약 중
+                    item_status = 'pending'
+                    _lp_id = pending_res['lucky_pair_id']
+                    if _lp_id:
+                        _mc_cnt = db.execute(
+                            "SELECT COUNT(*) as c FROM matches WHERE lucky_pair_id=? AND status IN ('pending','paid')",
+                            (_lp_id,)
+                        ).fetchone()['c']
+                        item_status = 'lucky_matched' if _mc_cnt > 0 else 'lucky_waiting'
 
+            _lucky_label_map = {'lucky_matched': '🍀 행운매칭완료', 'lucky_waiting': '🍀 행운예약중'}
             result.append({
                 'id': row['id'],
                 'bar_type': row['bar_type'],
                 'stage': row['stage'] or 1,
                 'status': item_status,
-                'status_label': '판매예약중' if item_status == 'pending' else item_status_label(row['status'], row['purchase_date']),
+                'status_label': _lucky_label_map.get(item_status, '판매예약중') if item_status in ('pending','lucky_matched','lucky_waiting') else item_status_label(row['status'], row['purchase_date']),
                 'days': days_since(row['purchase_date']),
                 'purchase_date': row['purchase_date'],
                 'reserve_date': row.get('reserve_date'),
