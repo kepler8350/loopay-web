@@ -166,9 +166,38 @@ def _do_confirm_transfer(db, m):
                         "UPDATE lucky_buy_results SET new_item_id=?, buyer_id=?, status='completed' WHERE id=?",
                         (_new_item, _new_buyer_id, _lucky_pair_id)
                     )
-                    # 기존 두 아이템 삭제 (sold 처리)
+                    # 기존 두 판매자 아이템 sold 처리
                     db.execute("UPDATE items SET status='sold' WHERE id=? OR id=?",
                                (_lbr['item_a_id'], _lbr['item_b_id']))
+                    # 구매자에게 잘못 생성된 아이템 삭제
+                    try:
+                        _lm_rows = db.execute(
+                            "SELECT seller_item_id FROM matches WHERE lucky_pair_id=?",
+                            (_lucky_pair_id,)
+                        ).fetchall()
+                        for _lmr in _lm_rows:
+                            if not _lmr['seller_item_id']:
+                                continue
+                            _lsi = db.execute(
+                                "SELECT bar_type, stage FROM items WHERE id=?",
+                                (_lmr['seller_item_id'],)
+                            ).fetchone()
+                            if not _lsi:
+                                continue
+                            _ws = (_lsi['stage'] or 1) + 1
+                            _wi_rows = db.execute(
+                                """SELECT id FROM items
+                                   WHERE user_id=? AND bar_type=? AND stage=?
+                                   AND status='reservable' AND lucky_pair_id IS NULL
+                                   AND id != ? AND purchase_date=?
+                                   ORDER BY id DESC LIMIT 1""",
+                                (_new_buyer_id, _lsi['bar_type'], _ws,
+                                 _new_iid, get_today().isoformat())
+                            ).fetchall()
+                            for _wir in _wi_rows:
+                                db.execute("DELETE FROM items WHERE id=?", (_wir['id'],))
+                    except Exception:
+                        pass
                     # 두 판매예약도 matched 처리
                     db.execute(
                         """UPDATE reservations SET status='matched' WHERE lucky_pair_id=? AND status='pending'""",
@@ -4717,9 +4746,43 @@ def match_confirm_payment():
                         "UPDATE lucky_buy_results SET new_item_id=?, buyer_id=?, status='completed' WHERE id=?",
                         (_new_iid, _new_buyer_id, _lucky_pair_id)
                     )
-                    # 기존 두 아이템 sold
+                    # 기존 두 판매자 아이템 sold 처리
                     db.execute("UPDATE items SET status='sold' WHERE id=? OR id=?",
                                (_lbr['item_a_id'], _lbr['item_b_id']))
+                    # 구매자에게 잘못 생성된 아이템 삭제
+                    # (이전 버전에서 행운구매 매치도 일반 매치처럼 구매자에게 아이템을 생성했던 경우)
+                    # lucky_pair_id의 각 매치에서 seller_item stage+1 = 구매자에게 잘못 생성된 아이템
+                    try:
+                        _lucky_match_rows = db.execute(
+                            "SELECT seller_item_id FROM matches WHERE lucky_pair_id=?",
+                            (_lucky_pair_id,)
+                        ).fetchall()
+                        for _lm in _lucky_match_rows:
+                            if not _lm['seller_item_id']:
+                                continue
+                            _si = db.execute(
+                                "SELECT bar_type, stage FROM items WHERE id=?",
+                                (_lm['seller_item_id'],)
+                            ).fetchone()
+                            if not _si:
+                                continue
+                            _wrong_stage = (_si['stage'] or 1) + 1
+                            # 구매자 소유, 같은 bar_type, stage+1, reservable, lucky_pair_id 없음
+                            # 새로 생성된 new_item_id는 제외
+                            _wrong_items = db.execute(
+                                """SELECT id FROM items
+                                   WHERE user_id=? AND bar_type=? AND stage=?
+                                   AND status='reservable' AND lucky_pair_id IS NULL
+                                   AND id != ?
+                                   AND purchase_date=?
+                                   ORDER BY id DESC LIMIT 1""",
+                                (_new_buyer_id, _si['bar_type'], _wrong_stage,
+                                 _new_iid, get_today().isoformat())
+                            ).fetchall()
+                            for _wi in _wrong_items:
+                                db.execute("DELETE FROM items WHERE id=?", (_wi['id'],))
+                    except Exception:
+                        pass
                     # 두 판매예약 matched 처리
                     db.execute(
                         "UPDATE reservations SET status='matched' WHERE lucky_pair_id=? AND status='pending'",
