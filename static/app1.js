@@ -2326,14 +2326,20 @@ function renderSellTab(){
   var stages = [
     {key:'보유중',   label:'보유중',     color:'#64b5f6', filter:function(x){ return x.status_label==='보유중'; }},
     {key:'판매가능', label:'판매가능',   color:'#66bb6a', filter:function(x){ return x.status_label==='판매가능'; }},
-    {key:'판매예약중',label:'판매예약중', color:'#ab47bc', filter:function(x){ return x.status_label==='판매예약중'; }},
+    {key:'판매예약중',label:'판매예약중', color:'#ab47bc', filter:function(x){
+      if(x.status_label!=='판매예약중') return false;
+      // 매치가 이미 완료(paid 이상)된 것은 진행중 그룹으로
+      var ms = x.match_status;
+      if(ms==='paid'||ms==='confirmed'||ms==='unpaid'||ms==='failed') return false;
+      return true;
+    }},
 
     {key:'진행중',   label:'매칭/거래중', color:'#f9a825', filter:function(x){
       var ms = x.match_status;
-      // 거래 완료(confirmed) 후에만 표시 (그 전에는 아이템 현황에도 미표시)
-      // pending/matched/paid: 판매 탭 숨김
-      if(!ms || ms==='pending' || ms==='matched' || ms==='paid') return false;
-      return ms==='confirmed' || ms==='unpaid' || ms==='failed';
+      // 구매자 송금완료(paid) 이후만 표시
+      if(!ms) return false;
+      if(ms==='pending' || ms==='matched') return false;  // 매칭됐지만 송금 전 - 숨김
+      return ms==='paid' || ms==='confirmed' || ms==='unpaid' || ms==='failed';
     }}
   ];
 

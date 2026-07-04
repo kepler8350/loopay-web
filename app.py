@@ -1176,7 +1176,7 @@ def get_me():
     cfg = LEVEL_CONFIG.get(lv, {})
     next_cum = cfg.get('cum')
     pct = round(u['cumulative_count'] / next_cum * 100, 1) if next_cum else None
-    items = db.execute("SELECT * FROM items WHERE user_id=? AND status NOT IN ('sold','matched') ORDER BY bar_type, stage", (uid,)).fetchall()
+    items = db.execute("SELECT * FROM items WHERE user_id=? AND status NOT IN ('sold') ORDER BY bar_type, stage", (uid,)).fetchall()
     # 판매예약중인 아이템 확인 (reservations.status='pending'인 것)
     _item_ids = [i['id'] for i in items]
     _pending_sell_set = set()
@@ -1216,14 +1216,17 @@ def get_me():
         else:
             s_label = item_status_label(it['status'], it['purchase_date'])
         return {'id':it['id'],'bar_type':it['bar_type'],'stage':it['stage'],'purchase_date':it['purchase_date'],'days':d,'status_label':s_label,'buy_price':buy,'sell_price':sell,'profit':sell-buy}
-    bronze = [fmt_item(i) for i in items if i['bar_type']=='bronze']
-    silver = [fmt_item(i) for i in items if i['bar_type']=='silver']
-    gold   = [fmt_item(i) for i in items if i['bar_type']=='gold']
+    # 매칭/거래 중인 아이템은 현황 목록에서 제외 (판매탭 진행중 그룹에서 match_status로 표시)
+    _matched_ids = _lucky_matched_set | _lucky_waiting_set | {i['id'] for i in items if i['status']=='matched'}
+    bronze = [fmt_item(i) for i in items if i['bar_type']=='bronze' and i['id'] not in _matched_ids]
+    silver = [fmt_item(i) for i in items if i['bar_type']=='silver' and i['id'] not in _matched_ids]
+    gold   = [fmt_item(i) for i in items if i['bar_type']=='gold'   and i['id'] not in _matched_ids]
     # items DB에서 직접 보유 상태인 것 집계 (reservable, active, waiting 모두 보유수량)
     _own_statuses = ('reservable', 'active', 'waiting')
-    reservable_bz = sum(1 for i in items if i['bar_type']=='bronze' and i['status'] in _own_statuses)
-    reservable_sv = sum(1 for i in items if i['bar_type']=='silver' and i['status'] in _own_statuses)
-    reservable_gd = sum(1 for i in items if i['bar_type']=='gold'   and i['status'] in _own_statuses)
+    # 보유 수량: reservable/active/waiting이면서 매칭 중(lucky_matched/matched)이 아닌 것
+    reservable_bz = sum(1 for i in items if i['bar_type']=='bronze' and i['status'] in _own_statuses and i['id'] not in _lucky_matched_set and i['id'] not in _lucky_waiting_set)
+    reservable_sv = sum(1 for i in items if i['bar_type']=='silver' and i['status'] in _own_statuses and i['id'] not in _lucky_matched_set and i['id'] not in _lucky_waiting_set)
+    reservable_gd = sum(1 for i in items if i['bar_type']=='gold'   and i['status'] in _own_statuses and i['id'] not in _lucky_matched_set and i['id'] not in _lucky_waiting_set)
     # db stays open for today_res query below
     today = get_today().isoformat()
     try:
@@ -5029,7 +5032,7 @@ def user_my_items():
             """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date,
                (SELECT MAX(r2.reserve_date) FROM reservations r2 WHERE r2.item_id=i.id) as reserve_date
                FROM items i
-               WHERE i.user_id=? AND i.status NOT IN ('sold','matched')
+               WHERE i.user_id=? AND i.status NOT IN ('sold')
                ORDER BY i.id DESC""",
             (uid,)
         ).fetchall()
