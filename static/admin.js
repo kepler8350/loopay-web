@@ -890,11 +890,11 @@ function renderSystemItems(){
     } else {
       // match_id 없는 아이템: reservable 상태면 판매예약 버튼 표시
       if(item.status === 'reservable' && !item.sell_reservation_id){
-        // 구매일 다음날 이후인지 확인 (서버 날짜 기준)
+        // 구매일 다음날 이후인지 확인 (is_extra=1 추가판매 아이템은 즉시 가능)
         var _purchaseDate = item.purchase_date || null;
         var _canSell = true;
-        if(_purchaseDate){
-          // 서버 날짜 기준으로 판매가능 여부 확인
+        if(_purchaseDate && !item.is_extra){
+          // 서버 날짜 기준으로 판매가능 여부 확인 (추가판매 아이템 제외)
           var _todayStr = _serverDate || '';
           _canSell = _todayStr > _purchaseDate; // 다음날 이후
         }
