@@ -6775,7 +6775,8 @@ def testtools_fix_extra_items():
         if not loopay: return jsonify(success=True, updated=0)
         lid = loopay['id']
         # 루페이 소유 아이템 중 reservation이 있는 것 = 추가예약으로 생성된 것
-        result = db.execute(
+        # reservation 있는 아이템 → is_extra=1 (추가판매)
+        r1 = db.execute(
             """UPDATE items SET is_extra=1
                WHERE user_id=? AND is_extra=0
                AND id IN (
@@ -6784,7 +6785,17 @@ def testtools_fix_extra_items():
                )""",
             (lid, lid)
         )
-        updated = result.rowcount
+        # reservation 없는 아이템 → is_extra=0 (일반판매: 구매→재판매)
+        r2 = db.execute(
+            """UPDATE items SET is_extra=0
+               WHERE user_id=? AND is_extra=1
+               AND id NOT IN (
+                   SELECT r.item_id FROM reservations r
+                   WHERE r.user_id=? AND r.item_id IS NOT NULL AND r.item_id > 0
+               )""",
+            (lid, lid)
+        )
+        updated = r1.rowcount + r2.rowcount
         db.commit()
         return jsonify(success=True, updated=updated)
     except Exception as e:
