@@ -820,7 +820,9 @@ function renderSystemItems(){
   tbody.innerHTML = sellItems.map(function(item,i){
     var bg = i%2===0?'#12121f':'#1a1a2e';
     // 판매예약 중 상태 판별 (matched 상태 + sell_reservation_id 있음)
-    var isSellReserved = (item.status==='matched' && !item.match_status && item.sell_reservation_id);
+    var isSellReserved = (item.sell_reservation_id && !item.match_status) ||
+      (item.status==='matched' && !item.match_status && item.sell_reservation_id) ||
+      (item.item_type==='판매예약중');
     var ms = item.match_status;
     var sellTypeBadge = (item.sell_type==='extra')
       ? '<span style="padding:2px 7px;border-radius:8px;font-size:11px;background:#0288d133;color:#4fc3f7;font-weight:700">추가판매</span>'
