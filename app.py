@@ -3629,7 +3629,7 @@ def admin_lucky_buy_setup():
             
             # 해당 단계의 판매예약 아이템 조회
             rows = conn.execute(
-                """SELECT r.id as res_id, r.item_id, i.stage, i.id as item_id2
+                """SELECT r.id as res_id, r.item_id, i.stage, i.id as item_id2, r.user_id as seller_id
                    FROM reservations r
                    JOIN items i ON r.item_id = i.id
                    WHERE r.bar_type=? AND r.status='pending'
@@ -3649,6 +3649,9 @@ def admin_lucky_buy_setup():
                 if i + 1 >= len(row_list):
                     break
                 a, b = row_list[i], row_list[i+1]
+                # 같은 판매자의 아이템끼리는 페어링 불가
+                if a.get('seller_id') and a.get('seller_id') == b.get('seller_id'):
+                    continue
                 sa, sb = a['stage'], b['stage']
                 sell_a = price_map[bar_type].get(sa, (0, 0))[1]
                 sell_b = price_map[bar_type].get(sb, (0, 0))[1]
