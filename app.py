@@ -6695,6 +6695,58 @@ def testtools_delete_items():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/fix-lucky-buyer-items', methods=['POST'])
+def testtools_fix_lucky_buyer_items():
+    """행운구매 완료 건에서 구매자에게 잘못 생성된 아이템 삭제"""
+    db = get_db()
+    deleted_total = 0
+    try:
+        # 완료된 lucky_buy_results 전체
+        completed = db.execute(
+            "SELECT id, bar_type, new_item_id, buyer_id FROM lucky_buy_results WHERE status='completed' AND new_item_id IS NOT NULL"
+        ).fetchall()
+        for lbr in completed:
+            lucky_id = lbr['id']
+            new_iid = lbr['new_item_id']
+            buyer_id = lbr['buyer_id']
+            if not buyer_id or not new_iid:
+                continue
+            # 이 lucky_pair_id의 각 매치에서 seller_item_id 가져옴
+            match_rows = db.execute(
+                "SELECT seller_item_id FROM matches WHERE lucky_pair_id=?",
+                (lucky_id,)
+            ).fetchall()
+            for mr in match_rows:
+                if not mr['seller_item_id']:
+                    continue
+                si = db.execute(
+                    "SELECT bar_type, stage FROM items WHERE id=?",
+                    (mr['seller_item_id'],)
+                ).fetchone()
+                if not si:
+                    continue
+                wrong_stage = (si['stage'] or 1) + 1
+                # 구매자 소유, 같은 bar_type, stage+1, reservable, lucky_pair_id 없음, new_item 제외
+                wrong_items = db.execute(
+                    """SELECT id FROM items
+                       WHERE user_id=? AND bar_type=? AND stage=?
+                       AND status='reservable' AND lucky_pair_id IS NULL
+                       AND id != ?
+                       ORDER BY id ASC""",
+                    (buyer_id, si['bar_type'], wrong_stage, new_iid)
+                ).fetchall()
+                # 잘못된 아이템 수 = 매치 수만큼
+                for wi in wrong_items[:1]:  # 매치당 최대 1개
+                    db.execute("DELETE FROM items WHERE id=?", (wi['id'],))
+                    deleted_total += 1
+        db.commit()
+        return jsonify(success=True, deleted=deleted_total)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
