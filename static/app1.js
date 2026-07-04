@@ -2330,7 +2330,11 @@ function renderSellTab(){
 
     {key:'진행중',   label:'매칭/거래중', color:'#f9a825', filter:function(x){
       var sl = x.status_label;
-      return sl==='매칭완료'||sl==='매칭중'||x.match_status==='paid'||x.match_status==='matched'||(x._role==='buyer'&&x.match_status&&x.match_status!=='confirmed');
+      var ms = x.match_status;
+      // 매칭됐지만 구매자가 아직 송금하지 않은 경우(pending)는 제외
+      // 구매자 송금 완료(paid) 이후부터 판매 탭에 표시
+      if(ms==='pending'||ms==='matched') return false;
+      return sl==='매칭완료'||sl==='매칭중'||ms==='paid'||(x._role==='buyer'&&ms&&ms!=='confirmed');
     }}
   ];
 
