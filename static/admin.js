@@ -2422,6 +2422,16 @@ function updateLuckyBuyBtn(priceBands){
   btn.style.opacity = hasAny ? '1' : '0.4';
   btn.style.cursor = hasAny ? 'pointer' : 'not-allowed';
   btn.style.background = '#f57c00';
+  // 하단 버튼(상세보기/이력 전체삭제) 표시 제어
+  var histBtns = document.getElementById('lucky-history-btns');
+  if(histBtns) histBtns.style.display = hasAny ? 'flex' : 'none';
+  // 판매자 없으면 패널 닫기
+  if(!hasAny){
+    var panel = document.getElementById('lucky-buy-panel');
+    if(panel) panel.style.display = 'none';
+    var histDiv = document.getElementById('lucky-history');
+    if(histDiv) histDiv.style.display = 'none';
+  }
 }
 
 function openLuckyBuy(){
