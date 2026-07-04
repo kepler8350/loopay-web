@@ -5270,7 +5270,7 @@ def admin_loopay_items():
         lid = loopay['id']
         # 아이템 목록 먼저 가져오기
         item_rows = db.execute(
-            """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date,
+            """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date, COALESCE(i.is_extra,0) as is_extra,
                (SELECT MAX(r2.reserve_date) FROM reservations r2 WHERE r2.item_id = i.id) as reserve_date,
                (SELECT r4.match_round FROM reservations r4
                 WHERE r4.item_id = i.id AND r4.status='pending' AND r4.user_id=i.user_id
