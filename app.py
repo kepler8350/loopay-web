@@ -1176,7 +1176,7 @@ def get_me():
     cfg = LEVEL_CONFIG.get(lv, {})
     next_cum = cfg.get('cum')
     pct = round(u['cumulative_count'] / next_cum * 100, 1) if next_cum else None
-    items = db.execute("SELECT * FROM items WHERE user_id=? AND status NOT IN ('sold') ORDER BY bar_type, stage", (uid,)).fetchall()
+    items = db.execute("SELECT * FROM items WHERE user_id=? AND status NOT IN ('sold','matched') ORDER BY bar_type, stage", (uid,)).fetchall()
     # 판매예약중인 아이템 확인 (reservations.status='pending'인 것)
     _item_ids = [i['id'] for i in items]
     _pending_sell_set = set()
@@ -5029,7 +5029,7 @@ def user_my_items():
             """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date,
                (SELECT MAX(r2.reserve_date) FROM reservations r2 WHERE r2.item_id=i.id) as reserve_date
                FROM items i
-               WHERE i.user_id=?
+               WHERE i.user_id=? AND i.status NOT IN ('sold','matched')
                ORDER BY i.id DESC""",
             (uid,)
         ).fetchall()

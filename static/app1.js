@@ -2329,12 +2329,11 @@ function renderSellTab(){
     {key:'판매예약중',label:'판매예약중', color:'#ab47bc', filter:function(x){ return x.status_label==='판매예약중'; }},
 
     {key:'진행중',   label:'매칭/거래중', color:'#f9a825', filter:function(x){
-      var sl = x.status_label;
       var ms = x.match_status;
-      // 매칭됐지만 구매자가 아직 송금하지 않은 경우(pending)는 제외
-      // 구매자 송금 완료(paid) 이후부터 판매 탭에 표시
-      if(ms==='pending'||ms==='matched') return false;
-      return sl==='매칭완료'||sl==='매칭중'||ms==='paid'||(x._role==='buyer'&&ms&&ms!=='confirmed');
+      // 거래 완료(confirmed) 후에만 표시 (그 전에는 아이템 현황에도 미표시)
+      // pending/matched/paid: 판매 탭 숨김
+      if(!ms || ms==='pending' || ms==='matched' || ms==='paid') return false;
+      return ms==='confirmed' || ms==='unpaid' || ms==='failed';
     }}
   ];
 
