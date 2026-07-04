@@ -5373,7 +5373,7 @@ def admin_loopay_items():
                 d['item_type'] = STATUS_LABEL.get(d.get('status',''), d.get('status',''))
                 d['is_buy_reservation'] = False
             # 판매 구분: 추가판매(루페이가 구매 후 재판매) vs 일반판매
-            d['sell_type'] = 'extra' if d.get('is_extra') else 'normal'
+            d['sell_type'] = 'extra' if d.get('is_extra') == 1 else 'normal'
             bt = d['bar_type']
             st = d['stage'] or 1
             # 이 아이템의 status가 matched/sold인 경우만 match 찾기
