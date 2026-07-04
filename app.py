@@ -4674,13 +4674,13 @@ def match_confirm_payment():
                         _loopay_item_id = _li['id'] if _li else None
                     if _loopay_item_id:
                         db.execute(
-                            "UPDATE items SET stage=?, status='reservable', purchase_date=?, is_extra=1 WHERE id=? AND user_id=?",
+                            "UPDATE items SET stage=?, status='reservable', purchase_date=?, is_extra=0 WHERE id=? AND user_id=?",
                             (_stage, get_today().isoformat(), _loopay_item_id, loopay_id)
                         )
                     else:
                         # 아이템 새로 생성
                         db.execute(
-                            "INSERT INTO items(user_id,bar_type,stage,status,purchase_date,is_extra) VALUES(?,?,?,'reservable',?,1)",
+                            "INSERT INTO items(user_id,bar_type,stage,status,purchase_date,is_extra) VALUES(?,?,?,'reservable',?,0)",
                             (loopay_id, m['bar_type'], _stage, get_today().isoformat())
                         )
                     _inserted = True
