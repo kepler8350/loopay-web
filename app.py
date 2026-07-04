@@ -2969,6 +2969,55 @@ def admin_run_matching():
                     "UPDATE lucky_buy_results SET buyer_id=? WHERE id=?",
                     (_actual_buyer_id, _lp['lucky_pair_id'])
                 )
+        # 행운구매 buyer=seller 방지: 통일 후 buyer가 자신의 아이템 판매자인 경우
+        _same_person_pairs = db.execute(
+            """SELECT DISTINCT m.lucky_pair_id
+               FROM matches m
+               WHERE m.lucky_pair_id IS NOT NULL AND m.match_date=? AND m.match_round=?
+               AND m.status='pending'
+               AND m.buyer_id = m.seller_id""",
+            (today, round_num)
+        ).fetchall()
+        for _sp in _same_person_pairs:
+            _lpid = _sp['lucky_pair_id']
+            # 해당 lucky_pair에서 buyer=seller인 매치의 seller_id 목록
+            _seller_ids = [r['seller_id'] for r in db.execute(
+                "SELECT seller_id FROM matches WHERE lucky_pair_id=? AND status='pending'", (_lpid,)
+            ).fetchall()]
+            # 다른 buyer 찾기: 같은 bar_type, 같은 날, lucky_pair_id가 다른 구매예약자
+            _first_match = db.execute(
+                "SELECT bar_type FROM matches WHERE lucky_pair_id=? AND status='pending' LIMIT 1", (_lpid,)
+            ).fetchone()
+            _alt_buyer = None
+            if _first_match:
+                _alt_row = db.execute(
+                    """SELECT r.user_id FROM reservations r
+                       WHERE r.bar_type=? AND r.match_round=? AND r.reserve_date=?
+                       AND r.user_id NOT IN ({})
+                       AND r.item_id IS NULL AND r.status='pending'
+                       LIMIT 1""".format(','.join('?' * len(_seller_ids))),
+                    [_first_match['bar_type'], round_num, today] + _seller_ids
+                ).fetchone()
+                _alt_buyer = _alt_row['user_id'] if _alt_row else None
+            if _alt_buyer:
+                # 대체 buyer로 교체
+                db.execute(
+                    """UPDATE matches SET buyer_id=?
+                       WHERE lucky_pair_id=? AND match_date=? AND match_round=? AND status='pending'""",
+                    (_alt_buyer, _lpid, today, round_num)
+                )
+                db.execute(
+                    "UPDATE lucky_buy_results SET buyer_id=? WHERE id=?",
+                    (_alt_buyer, _lpid)
+                )
+            else:
+                # 대체 buyer 없으면 취소
+                db.execute(
+                    """UPDATE matches SET status='cancelled'
+                       WHERE lucky_pair_id=? AND match_date=? AND match_round=? AND status='pending'""",
+                    (_lpid, today, round_num)
+                )
+                total_matched -= 2
         db.commit()
 
         return jsonify(
