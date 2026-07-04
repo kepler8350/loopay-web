@@ -4323,12 +4323,14 @@ def admin_delete_users():
                 db.execute("DELETE FROM items WHERE user_id=?", (uid,))
                 db.execute("DELETE FROM charge_requests WHERE user_id=?", (uid,))
                 db.execute("DELETE FROM matches WHERE buyer_id=? OR seller_id=?", (uid, uid))
+                db.execute("DELETE FROM lucky_buy_results WHERE seller_a_id=? OR seller_b_id=? OR buyer_id=?", (uid, uid, uid))
                 db.execute("DELETE FROM users WHERE id=? AND username NOT IN ('admin','loopay')", (uid,))
         else:
             db.execute("DELETE FROM reservations WHERE user_id IN (SELECT id FROM users WHERE username NOT IN ('admin','loopay') AND approved=1)")
             db.execute("DELETE FROM items WHERE user_id IN (SELECT id FROM users WHERE username NOT IN ('admin','loopay') AND approved=1)")
             db.execute("DELETE FROM charge_requests WHERE user_id IN (SELECT id FROM users WHERE username NOT IN ('admin','loopay') AND approved=1)")
             db.execute("DELETE FROM matches")
+            db.execute("DELETE FROM lucky_buy_results")
             db.execute("DELETE FROM users WHERE username NOT IN ('admin','loopay') AND approved=1")
         db.execute("PRAGMA foreign_keys=ON")
         db.commit()
@@ -5777,6 +5779,10 @@ def admin_delete_user(uid):
         db.execute("DELETE FROM items WHERE user_id=?", (uid,))
         db.execute("DELETE FROM charge_requests WHERE user_id=?", (uid,))
         db.execute("DELETE FROM notifications WHERE user_id=?", (uid,))
+        try:
+            db.execute("DELETE FROM lucky_buy_results WHERE seller_a_id=? OR seller_b_id=? OR buyer_id=?", (uid, uid, uid))
+        except Exception:
+            pass
         # penalties, matches 등 있으면 삭제
         try:
             db.execute("DELETE FROM penalties WHERE user_id=?", (uid,))
@@ -6546,6 +6552,25 @@ def testtools_reset_lucky_test():
             db.execute("UPDATE reservations SET status='pending' WHERE lucky_pair_id=?", (lucky_id,))
         db.commit()
         return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+@app.route('/api/admin/testtools/cleanup-lucky-history', methods=['POST'])
+def testtools_cleanup_lucky_history():
+    """회원 없는 행운구매 이력 정리"""
+    db = get_db()
+    try:
+        result = db.execute(
+            """DELETE FROM lucky_buy_results
+               WHERE seller_a_id NOT IN (SELECT id FROM users)
+                  OR seller_b_id NOT IN (SELECT id FROM users)"""
+        )
+        deleted = result.rowcount
+        db.commit()
+        return jsonify(success=True, deleted=deleted)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
