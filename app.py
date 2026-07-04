@@ -4541,6 +4541,8 @@ def match_confirm_payment():
                     pass
 
         # 3. item을 buyer에게 이전 (seller 아이템은 sold, buyer에게 새 아이템 추가)
+        # 행운구매 매치는 step 3 스킵 (행운구매 완료 처리에서 새 아이템 생성)
+        _is_lucky_match = bool(dict(m).get('lucky_pair_id'))
         from datetime import date as _date
         # seller 아이템 찾기: match_id와 연결된 loopay reservation → item
         # loopay 계정 ID 조회
@@ -4577,15 +4579,16 @@ def match_confirm_payment():
                     (m['seller_item_id'],)
                 ).fetchone()
         if seller_item:
-            # seller 아이템 sold 처리
-            db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
-            # buyer에게 새 아이템 추가 (status는 DB 스키마에 따라 가능한 값 사용)
+            # seller 아이템 sold 처리 (행운구매는 행운구매 완료 처리에서 sold 처리하므로 스킵)
+            if not _is_lucky_match:
+                db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
+            # buyer에게 새 아이템 추가 (행운구매는 완료 시 별도 처리하므로 스킵)
             # buyer 아이템은 'active'(보유중) 상태로 추가
             _stage = int(seller_item['stage'] or m['stage'] or 1) + 1  # 1단계 구매 → 2단계 아이템 획득
             # loopay가 buyer인 경우 아이템 추가 스킵 (시스템 내부 구매예약이므로)
             _buyer_is_loopay = (m['buyer_id'] == loopay_id)
             # 아이템 추가: reservable 상태로 (입금확인일 = 1일차)
-            _inserted = False
+            _inserted = _is_lucky_match  # 행운구매는 추가 스킵 (완료 처리에서 생성)
             _insert_err = None
             # loopay가 buyer인 경우: 구매 reservation의 item_id 아이템 stage+1 업데이트
             if _buyer_is_loopay:
