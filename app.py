@@ -5172,7 +5172,9 @@ def user_my_items():
 
         # 판매완료 아이템은 판매탭 리스트에서 제외
         result = [i for i in result if not (i.get('status') == 'sold' or (i.get('status_label') == '판매완료' and not i.get('_role')))]
-        return jsonify(items=result, total=len(result))
+        _now_h = get_now().hour
+        _is_matching_time = _now_h >= 20 or _now_h < 5
+        return jsonify(items=result, total=len(result), is_matching_time=_is_matching_time)
     except Exception as e:
         return jsonify(error=str(e)), 500
     finally:

@@ -2274,6 +2274,16 @@ async function loadSellTab(){
     } catch(e2){}
     var d = await api('/user/my-items');
     _myItems = d.items || [];
+    // 서버에서 매칭 시간 여부를 직접 받아서 반영
+    if(typeof d.is_matching_time !== 'undefined'){
+      // is_matching_time=true이면 _sellServerHour를 22시로 강제 설정 (매칭 시간 표시용)
+      if(d.is_matching_time && !(_sellServerHour>=20||_sellServerHour<5)){
+        _sellServerHour = 22;
+      }
+      if(!d.is_matching_time && (_sellServerHour>=20||_sellServerHour<5)){
+        _sellServerHour = 10; // 매칭 시간 아님
+      }
+    }
     _renderSellSummary();
     renderSellTab();
   } catch(e) {
