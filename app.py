@@ -5370,7 +5370,11 @@ def admin_loopay_items():
                 d['is_buy_reservation'] = True
                 d['sell_type'] = 'extra'
             else:
-                d['item_type'] = STATUS_LABEL.get(d.get('status',''), d.get('status',''))
+                # 판매예약된 아이템은 '판매예약중'으로 표시
+                if d.get('sell_reservation_id'):
+                    d['item_type'] = '판매예약중'
+                else:
+                    d['item_type'] = STATUS_LABEL.get(d.get('status',''), d.get('status',''))
                 d['is_buy_reservation'] = False
             # 판매 구분: 추가판매(루페이가 구매 후 재판매) vs 일반판매
             d['sell_type'] = 'extra' if d.get('is_extra') == 1 else 'normal'
@@ -5701,6 +5705,7 @@ def admin_loopay_extra_reservations():
             LEFT JOIN items i ON r.item_id = i.id
             WHERE r.user_id = ? AND r.status = 'pending'
             AND r.reserve_date >= ?
+            AND (r.item_id = 0 OR r.item_id IS NULL OR COALESCE(i.is_extra, 0) = 1)
             ORDER BY r.id DESC
         """, (lid, get_today().isoformat())).fetchall()
         return jsonify(reservations=[dict(r) for r in rows])
