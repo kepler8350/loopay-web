@@ -4663,10 +4663,25 @@ def match_confirm_payment():
                     _lr = db.execute(
                         "SELECT item_id FROM reservations WHERE id=?", (m['reservation_id'],)
                     ).fetchone()
-                    if _lr and _lr['item_id']:
+                    _loopay_item_id = _lr['item_id'] if _lr else None
+                    if not _loopay_item_id:
+                        # reservation에 item_id 없으면 loopay 소유 waiting 아이템에서 찾기
+                        _li = db.execute(
+                            """SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='waiting'
+                               ORDER BY id ASC LIMIT 1""",
+                            (loopay_id, seller_item['bar_type'] if seller_item else m['bar_type'])
+                        ).fetchone()
+                        _loopay_item_id = _li['id'] if _li else None
+                    if _loopay_item_id:
                         db.execute(
                             "UPDATE items SET stage=?, status='reservable', purchase_date=?, is_extra=1 WHERE id=? AND user_id=?",
-                            (_stage, get_today().isoformat(), _lr['item_id'], loopay_id)
+                            (_stage, get_today().isoformat(), _loopay_item_id, loopay_id)
+                        )
+                    else:
+                        # 아이템 새로 생성
+                        db.execute(
+                            "INSERT INTO items(user_id,bar_type,stage,status,purchase_date,is_extra) VALUES(?,?,?,'reservable',?,1)",
+                            (loopay_id, m['bar_type'], _stage, get_today().isoformat())
                         )
                     _inserted = True
                 except Exception as _le:
