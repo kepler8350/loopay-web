@@ -2950,7 +2950,7 @@ def admin_run_matching():
                WHERE lucky_pair_id IS NOT NULL AND match_date=? AND match_round=?
                AND status='pending'
                GROUP BY lucky_pair_id
-               HAVING COUNT(*) > 1""",
+               HAVING COUNT(*) >= 1""",
             (today, round_num)
         ).fetchall()
         for _lp in _lucky_pairs:
@@ -3011,9 +3011,9 @@ def admin_run_matching():
                     (_alt_buyer, _lpid)
                 )
             else:
-                # 대체 buyer 없으면 취소
+                # 대체 buyer 없으면 failed 처리 (cancelled는 DB 제약 없음)
                 db.execute(
-                    """UPDATE matches SET status='cancelled'
+                    """UPDATE matches SET status='failed'
                        WHERE lucky_pair_id=? AND match_date=? AND match_round=? AND status='pending'""",
                     (_lpid, today, round_num)
                 )
