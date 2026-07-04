@@ -2463,7 +2463,7 @@ async function previewLuckyBuy(){
       if(!pairs.length) continue;
       html2+='<div style="margin-bottom:12px"><strong style="color:'+colors[bt]+'">'+names[bt]+'</strong>';
       html2+='<table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:6px">';
-      html2+='<tr style="background:#1a1a2e;color:#aaa;text-align:center"><th style="padding:4px 8px">세트</th><th style="padding:4px 8px">아이템A</th><th style="padding:4px 8px">아이템B</th><th style="padding:4px 8px">합산판매가</th><th style="padding:4px 8px">→ 새 아이템</th></tr>';
+      html2+='<tr style="background:#1a1a2e;color:#aaa"><th style="padding:4px 8px;text-align:center">세트</th><th style="padding:4px 8px;text-align:center">아이템A</th><th style="padding:4px 8px;text-align:center">아이템B</th><th style="padding:4px 8px;text-align:center">합산판매가</th><th style="padding:4px 8px;text-align:center">→ 새 아이템</th></tr>';
       pairs.forEach(function(p,i){
         html2+='<tr style="border-top:1px solid #333">';
         html2+='<td style="padding:4px 8px;text-align:center">'+(i+1)+'세트</td>';
@@ -2542,7 +2542,7 @@ async function toggleLuckyHistory(){
       html2+='<tr style="border-top:1px solid #333">';
       html2+='<td style="padding:4px 6px;color:#888;text-align:center">판매자A</td>';
       html2+='<td style="text-align:center">'+(h.item_a.stage?h.item_a.stage+'단계':'-')+' ('+h.item_a.sell.toLocaleString()+'원)</td>';
-      html2+='<td style="text-align:center">'+(sa?(sa.nickname||sa.username||'알수없음'):'회원 없음')+'</td>';
+      html2+='<td style="text-align:center">'+(sa?(sa.nickname||sa.username||'알수없음')+'<br><span style="color:#888;font-size:10px">ID: '+(sa.username||'-')+'</span>':'회원 없음')+'</td>';
       html2+='<td style="text-align:center">'+(sa?sa.phone||'-':'-')+'</td>';
       html2+='<td style="text-align:center">'+(sa&&sa.bank?sa.bank+' '+sa.account_no:'-')+'</td></tr>';
       // 아이템B 판매자
