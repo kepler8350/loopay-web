@@ -2322,23 +2322,32 @@ function renderSellTab(){
   var msKr={pending:'대기',matched:'매칭완료',paid:'송금',confirmed:'거래완료',cancelled:'취소',failed:'미입금',unpaid:'미입금'};
   var msColor={pending:'#888',matched:'#f9a825',paid:'#42a5f5',confirmed:'#66bb6a',cancelled:'#ef5350',failed:'#ef5350',unpaid:'#ef5350'};
 
+  // 매칭 시간 여부 (20:00~05:00)
+  var _sh = _sellServerHour||0;
+  var _isMatchingTime = (_sh >= 20 || _sh < 5);
+
   // 단계별 그룹 정의 (순서: 보유중 → 판매가능 → 판매예약중 → 진행중)
   var stages = [
     {key:'보유중',   label:'보유중',     color:'#64b5f6', filter:function(x){ return x.status_label==='보유중'; }},
     {key:'판매가능', label:'판매가능',   color:'#66bb6a', filter:function(x){ return x.status_label==='판매가능'; }},
     {key:'판매예약중',label:'판매예약중', color:'#ab47bc', filter:function(x){
       if(x.status_label!=='판매예약중') return false;
-      // 매치가 이미 완료(paid 이상)된 것은 진행중 그룹으로
       var ms = x.match_status;
+      // paid 이상은 진행중으로
       if(ms==='paid'||ms==='confirmed'||ms==='unpaid'||ms==='failed') return false;
+      // 매칭 시간(20~05시)에는 pending도 판매예약중으로 표시
+      // 그 외 시간에는 pending을 진행중으로 넘김 (매칭 완료 후 공개 시간)
+      if(ms==='pending'||ms==='matched') return _isMatchingTime;
       return true;
     }},
 
     {key:'진행중',   label:'매칭/거래중', color:'#f9a825', filter:function(x){
       var ms = x.match_status;
-      // 구매자 송금완료(paid) 이후만 표시
       if(!ms) return false;
-      if(ms==='pending' || ms==='matched') return false;  // 매칭됐지만 송금 전 - 숨김
+      // 매칭 시간(20~05시)에는 진행중 표시 안 함
+      if(_isMatchingTime && (ms==='pending'||ms==='matched')) return false;
+      // 05시 이후: pending/matched도 진행중으로 표시 (매칭 결과 공개)
+      if(!_isMatchingTime && (ms==='pending'||ms==='matched')) return true;
       return ms==='paid' || ms==='confirmed' || ms==='unpaid' || ms==='failed';
     }}
   ];
@@ -2354,10 +2363,11 @@ function renderSellTab(){
       _stLabel==='판매가능'?'#66bb6a':_stLabel==='보유중'?'#64b5f6':
       _stLabel==='판매예약중'?'#ab47bc':_stLabel==='매칭완료'?'#f9a825':
       _stLabel==='판매완료'?'#888':'#aaa');
-    // 상대방 정보
-    var _counterpart = _isBuyerRole
+    // 상대방 정보 (매칭 시간 20~05시에는 pending/matched는 숨김)
+    var _hidePendingInfo = _isMatchingTime && (ms==='pending'||ms==='matched');
+    var _counterpart = _hidePendingInfo ? '' : (_isBuyerRole
       ? (item.seller_username ? '판매자: '+item.seller_username+(item.seller_account_name?' ('+item.seller_account_name+')':'') : '')
-      : (item.buyer_username  ? '구매자: '+item.buyer_username+(item.buyer_account_name?' ('+item.buyer_account_name+')':'') : '');
+      : (item.buyer_username  ? '구매자: '+item.buyer_username+(item.buyer_account_name?' ('+item.buyer_account_name+')':'') : ''));
     // 액션 버튼
     var actionBtns = '';
     var _isBuyerRoleAct = _isBuyerRole;
@@ -2368,6 +2378,8 @@ function renderSellTab(){
       var _inPayWin  = (_mRound===2)?(_totalMin>=900&&_totalMin<1140):(_totalMin>=300&&_totalMin<780);
       var _inWarnWin = (_mRound===2)?(_totalMin>=1110&&_totalMin<1140):(_totalMin>=750&&_totalMin<780);
       var _inConfWin = (_mRound===2)?(_totalMin>=1140&&_totalMin<1200):(_totalMin>=780&&_totalMin<840);
+      // 매칭 시간에는 pending/matched 버튼 숨김
+      if(_hidePendingInfo){ var actionBtns=''; }
       var _isPaid = (ms==='paid');
       var _isConf = (ms==='confirmed' || ms==='failed' || ms==='unpaid') || !!_confirmedUnpaidMatchIds[item.match_id];
       var _lastMin = (_sellUnpaidClickedAt[item.match_id]||0);
