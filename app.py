@@ -6614,6 +6614,24 @@ def testtools_fix_lucky_buyer():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/delete-items', methods=['POST'])
+def testtools_delete_items():
+    """특정 아이템 직접 삭제"""
+    data = request.json or {}
+    ids = data.get('ids', [])
+    if not ids: return jsonify(error='no ids'), 400
+    db = get_db()
+    try:
+        for iid in ids:
+            db.execute('DELETE FROM items WHERE id=?', (iid,))
+        db.commit()
+        return jsonify(success=True, deleted=len(ids))
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
