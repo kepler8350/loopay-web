@@ -5564,6 +5564,8 @@ def admin_loopay_items():
                 'sell_reservation_round': r.get('sell_reservation_round'),
                 'sell_reservation_date': r.get('sell_reservation_date'),
                 'sell_reservation_id': r.get('sell_reservation_id'),
+                'is_extra': r.get('is_extra', 0),
+                'sell_type': r.get('sell_type', 'normal'),
             } for r in rows],
             total=len(rows)
         )
