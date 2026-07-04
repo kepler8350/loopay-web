@@ -2941,7 +2941,7 @@ def admin_run_matching():
 
         # 행운구매 동일 구매자 통일: 같은 lucky_pair_id를 가진 매치는 첫 번째 매치의 구매자로 통일
         _lucky_pairs = db.execute(
-            """SELECT lucky_pair_id, MIN(id) as first_id, MIN(buyer_id) as first_buyer_id
+            """SELECT lucky_pair_id, MIN(id) as first_id
                FROM matches
                WHERE lucky_pair_id IS NOT NULL AND match_date=? AND match_round=?
                AND status='pending'
@@ -2955,11 +2955,16 @@ def admin_run_matching():
                    WHERE lucky_pair_id=? AND match_date=? AND match_round=? AND status='pending'""",
                 (_lp['first_id'], _lp['lucky_pair_id'], today, round_num)
             )
-            # lucky_buy_results의 buyer_id 업데이트
-            db.execute(
-                "UPDATE lucky_buy_results SET buyer_id=? WHERE id=?",
-                (_lp['first_buyer_id'], _lp['lucky_pair_id'])
-            )
+            # lucky_buy_results의 buyer_id 업데이트 (첫 번째 매치의 실제 buyer_id 사용)
+            _first_match = db.execute(
+                "SELECT buyer_id FROM matches WHERE id=?", (_lp['first_id'],)
+            ).fetchone()
+            _actual_buyer_id = _first_match['buyer_id'] if _first_match else None
+            if _actual_buyer_id:
+                db.execute(
+                    "UPDATE lucky_buy_results SET buyer_id=? WHERE id=?",
+                    (_actual_buyer_id, _lp['lucky_pair_id'])
+                )
         db.commit()
 
         return jsonify(
@@ -6571,6 +6576,35 @@ def testtools_cleanup_lucky_history():
         deleted = result.rowcount
         db.commit()
         return jsonify(success=True, deleted=deleted)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+@app.route('/api/admin/testtools/fix-lucky-buyer', methods=['POST'])
+def testtools_fix_lucky_buyer():
+    """lucky_buy_results의 buyer_id를 실제 매치의 buyer_id로 수정"""
+    db = get_db()
+    try:
+        # matches 테이블에서 각 lucky_pair_id별 실제 buyer_id 가져와서 업데이트
+        rows = db.execute(
+            """SELECT m.lucky_pair_id, m.buyer_id
+               FROM matches m
+               WHERE m.lucky_pair_id IS NOT NULL
+               AND m.status IN ('pending','paid','confirmed')
+               GROUP BY m.lucky_pair_id"""
+        ).fetchall()
+        fixed = 0
+        for r in rows:
+            db.execute(
+                "UPDATE lucky_buy_results SET buyer_id=? WHERE id=? AND (buyer_id != ? OR buyer_id IS NULL)",
+                (r['buyer_id'], r['lucky_pair_id'], r['buyer_id'])
+            )
+            if db.execute('SELECT changes()').fetchone()[0]:
+                fixed += 1
+        db.commit()
+        return jsonify(success=True, fixed=fixed)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
