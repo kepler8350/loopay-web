@@ -4605,7 +4605,7 @@ def match_confirm_payment():
                     _inserted = True
                 except Exception as _le:
                     _insert_err = str(_le)
-            if not _buyer_is_loopay:
+            if not _buyer_is_loopay and not _is_lucky_match:
               for _item_status in ('reservable', 'active', 'waiting', 'matched'):
                 try:
                     db.execute(
