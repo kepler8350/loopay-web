@@ -2371,6 +2371,9 @@ function renderSellTab(){
     // 액션 버튼
     var actionBtns = '';
     var _isBuyerRoleAct = _isBuyerRole;
+    if(_hidePendingInfo){
+      // 매칭 시간(20~05시)에는 pending/matched 버튼 완전 숨김
+    } else
     if(item.match_id && ms && ms !== 'cancelled' && ms !== 'confirmed' && !_isBuyerRoleAct){
       var _mRound = item.match_round || 1;
       var _sh = _sellServerHour||0, _sm = _sellServerMin||0;
@@ -2378,8 +2381,6 @@ function renderSellTab(){
       var _inPayWin  = (_mRound===2)?(_totalMin>=900&&_totalMin<1140):(_totalMin>=300&&_totalMin<780);
       var _inWarnWin = (_mRound===2)?(_totalMin>=1110&&_totalMin<1140):(_totalMin>=750&&_totalMin<780);
       var _inConfWin = (_mRound===2)?(_totalMin>=1140&&_totalMin<1200):(_totalMin>=780&&_totalMin<840);
-      // 매칭 시간에는 pending/matched 버튼 숨김
-      if(_hidePendingInfo){ var actionBtns=''; }
       var _isPaid = (ms==='paid');
       var _isConf = (ms==='confirmed' || ms==='failed' || ms==='unpaid') || !!_confirmedUnpaidMatchIds[item.match_id];
       var _lastMin = (_sellUnpaidClickedAt[item.match_id]||0);
