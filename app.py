@@ -5136,20 +5136,9 @@ def user_my_items():
                 'buyer_account_name': buyer_account_name,
                 'buyer_account': buyer_account,
             })
-        # ── 구매자로 매칭된 내역 추가 ──
-        buy_matches = db.execute(
-            """SELECT m.id, m.bar_type, m.stage, m.status, m.match_round,
-                      m.match_date,
-                      u.username as seller_username,
-                      u.account_name as seller_account_name,
-                      u.account_no as seller_account,
-                      u.bank as seller_bank
-               FROM matches m
-               LEFT JOIN users u ON m.seller_id=u.id
-               WHERE m.buyer_id=? AND m.status NOT IN ('cancelled','confirmed')
-               ORDER BY m.id DESC""",
-            (uid,)
-        ).fetchall()
+        # ── 구매자 매칭 내역은 user/matching API에서 별도 표시 ──
+        # 거래완료 전(pending/paid)은 아이템 현황에 미포함, confirmed는 items에 이미 생성됨
+        buy_matches = []
 
         for bm in buy_matches:
             try:
