@@ -2261,6 +2261,7 @@ async function doReleasePenalty(){
 var _myItems = [];
 var _sellServerHour = 0;
 var _sellServerMin  = 0;
+var _isMatchingTimeServer = true;  // 기본값: 매칭 시간(안전한 방향)
 var _sellUnpaidClickedAt = {};
 var _confirmedUnpaidMatchIds = {}; // 미입금확인 완료된 match_id 세트 // matchId → 마지막 클릭 시각(분)
 
@@ -2274,15 +2275,11 @@ async function loadSellTab(){
     } catch(e2){}
     var d = await api('/user/my-items');
     _myItems = d.items || [];
-    // 서버에서 매칭 시간 여부를 직접 받아서 반영
+    // 서버에서 매칭 시간 여부를 직접 받아서 전역 변수에 저장
     if(typeof d.is_matching_time !== 'undefined'){
-      // is_matching_time=true이면 _sellServerHour를 22시로 강제 설정 (매칭 시간 표시용)
-      if(d.is_matching_time && !(_sellServerHour>=20||_sellServerHour<5)){
-        _sellServerHour = 22;
-      }
-      if(!d.is_matching_time && (_sellServerHour>=20||_sellServerHour<5)){
-        _sellServerHour = 10; // 매칭 시간 아님
-      }
+      _isMatchingTimeServer = !!d.is_matching_time;
+    } else {
+      _isMatchingTimeServer = (_sellServerHour>=20||_sellServerHour<5);
     }
     _renderSellSummary();
     renderSellTab();
@@ -2332,9 +2329,8 @@ function renderSellTab(){
   var msKr={pending:'대기',matched:'매칭완료',paid:'송금',confirmed:'거래완료',cancelled:'취소',failed:'미입금',unpaid:'미입금'};
   var msColor={pending:'#888',matched:'#f9a825',paid:'#42a5f5',confirmed:'#66bb6a',cancelled:'#ef5350',failed:'#ef5350',unpaid:'#ef5350'};
 
-  // 매칭 시간 여부 (20:00~05:00)
-  var _sh = _sellServerHour||0;
-  var _isMatchingTime = (_sh >= 20 || _sh < 5);
+  // 매칭 시간 여부: 서버에서 받은 값 사용 (더 정확)
+  var _isMatchingTime = _isMatchingTimeServer;
 
   // 단계별 그룹 정의 (순서: 보유중 → 판매가능 → 판매예약중 → 진행중)
   var stages = [
