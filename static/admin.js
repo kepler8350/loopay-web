@@ -2421,6 +2421,7 @@ function updateLuckyBuyBtn(priceBands){
   btn.disabled = !hasAny;
   btn.style.opacity = hasAny ? '1' : '0.4';
   btn.style.cursor = hasAny ? 'pointer' : 'not-allowed';
+  btn.style.background = '#f57c00';
 }
 
 function openLuckyBuy(){
@@ -2462,10 +2463,10 @@ async function previewLuckyBuy(){
       if(!pairs.length) continue;
       html2+='<div style="margin-bottom:12px"><strong style="color:'+colors[bt]+'">'+names[bt]+'</strong>';
       html2+='<table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:6px">';
-      html2+='<tr style="background:#1a1a2e;color:#aaa"><th style="padding:4px 8px;text-align:left">세트</th><th>아이템A</th><th>아이템B</th><th>합산판매가</th><th>→ 새 아이템</th></tr>';
+      html2+='<tr style="background:#1a1a2e;color:#aaa;text-align:center"><th style="padding:4px 8px">세트</th><th style="padding:4px 8px">아이템A</th><th style="padding:4px 8px">아이템B</th><th style="padding:4px 8px">합산판매가</th><th style="padding:4px 8px">→ 새 아이템</th></tr>';
       pairs.forEach(function(p,i){
         html2+='<tr style="border-top:1px solid #333">';
-        html2+='<td style="padding:4px 8px">'+(i+1)+'세트</td>';
+        html2+='<td style="padding:4px 8px;text-align:center">'+(i+1)+'세트</td>';
         html2+='<td style="text-align:center">'+p.item_a.stage+'단계 ('+p.item_a.sell.toLocaleString()+'원)</td>';
         html2+='<td style="text-align:center">'+p.item_b.stage+'단계 ('+p.item_b.sell.toLocaleString()+'원)</td>';
         html2+='<td style="text-align:center;color:#f9a825">'+p.total_sell.toLocaleString()+'원</td>';
@@ -2531,15 +2532,15 @@ async function toggleLuckyHistory(){
       // 아이템 정보
       html2+='<table style="width:100%;border-collapse:collapse;margin-bottom:8px">';
       html2+='<tr style="background:#1a1a2e;color:#aaa;font-size:11px">';
-      html2+='<th style="padding:4px 6px;text-align:left">구분</th>';
-      html2+='<th style="padding:4px 6px">단계/판매가</th>';
-      html2+='<th style="padding:4px 6px">판매자</th>';
-      html2+='<th style="padding:4px 6px">연락처</th>';
-      html2+='<th style="padding:4px 6px">정산계좌</th></tr>';
+      html2+='<th style="padding:4px 6px;text-align:center">구분</th>';
+      html2+='<th style="padding:4px 6px;text-align:center">단계/판매가</th>';
+      html2+='<th style="padding:4px 6px;text-align:center">판매자 (ID)</th>';
+      html2+='<th style="padding:4px 6px;text-align:center">연락처</th>';
+      html2+='<th style="padding:4px 6px;text-align:center">정산계좌</th></tr>';
       // 아이템A 판매자
       var sa=h.seller_a||{};
       html2+='<tr style="border-top:1px solid #333">';
-      html2+='<td style="padding:4px 6px;color:#888">판매자A</td>';
+      html2+='<td style="padding:4px 6px;color:#888;text-align:center">판매자A</td>';
       html2+='<td style="text-align:center">'+(h.item_a.stage?h.item_a.stage+'단계':'-')+' ('+h.item_a.sell.toLocaleString()+'원)</td>';
       html2+='<td style="text-align:center">'+(sa?(sa.nickname||sa.username||'알수없음'):'회원 없음')+'</td>';
       html2+='<td style="text-align:center">'+(sa?sa.phone||'-':'-')+'</td>';
@@ -2547,11 +2548,11 @@ async function toggleLuckyHistory(){
       // 아이템B 판매자
       var sb=h.seller_b||{};
       html2+='<tr style="border-top:1px solid #222">';
-      html2+='<td style="padding:4px 6px;color:#888">판매자B</td>';
+      html2+='<td style="padding:4px 6px;color:#888;text-align:center">판매자B</td>';
       html2+='<td style="text-align:center">'+(h.item_b.stage?h.item_b.stage+'단계':'-')+' ('+h.item_b.sell.toLocaleString()+'원)</td>';
-      html2+='<td style="text-align:center">'+(sb?(sb.nickname||sb.username||'알수없음'):'회원 없음')+'</td>';
+      html2+='<td style="text-align:center">'+(sb?(sb.nickname||sb.username||'알수없음')+'<br><span style="color:#888;font-size:10px">ID: '+(sb.username||'-')+'</span>':'회원 없음')+'</td>';
       html2+='<td style="text-align:center">'+(sb?sb.phone||'-':'-')+'</td>';
-      html2+='<td style="text-align:center">'+(sb&&sb.bank?sb.bank+' '+sb.account_no:'-')+'</td></tr>';
+      html2+='<td style="text-align:center">'+(sb&&sb.bank?sb.bank+'<br>'+sb.account_no:'-')+'</td></tr>';
       // 합산 → 새 아이템
       html2+='<tr style="border-top:2px solid #444;background:#111">';
       html2+='<td style="padding:4px 6px;color:#f9a825" colspan="2">합산: '+h.total_sell.toLocaleString()+'원 → ';
@@ -2560,9 +2561,9 @@ async function toggleLuckyHistory(){
       // 구매자
       var byr=h.buyer;
       html2+='<tr style="border-top:1px solid #333;background:#0d1a0d">';
-      html2+='<td style="padding:4px 6px;color:#66bb6a">구매자</td>';
+      html2+='<td style="padding:4px 6px;color:#66bb6a;text-align:center">구매자</td>';
       html2+='<td style="text-align:center">'+(byr?h.new_stage+'단계':'대기 중')+'</td>';
-      html2+='<td style="text-align:center">'+(byr?byr.nickname||byr.username:'구매 대기')+'</td>';
+      html2+='<td style="text-align:center">'+(byr?(byr.nickname||byr.username)+'<br><span style="color:#888;font-size:10px">ID: '+(byr.username||'-')+'</span>':'구매 대기')+'</td>';
       html2+='<td style="text-align:center">'+(byr?byr.phone:'-')+'</td>';
       html2+='<td style="text-align:center">'+(byr?'':'매칭 후 표시')+'</td></tr>';
       html2+='</table></div>';
