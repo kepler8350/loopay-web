@@ -822,6 +822,9 @@ function renderSystemItems(){
     // 판매예약 중 상태 판별 (matched 상태 + sell_reservation_id 있음)
     var isSellReserved = (item.status==='matched' && !item.match_status && item.sell_reservation_id);
     var ms = item.match_status;
+    var sellTypeBadge = (item.sell_type==='extra')
+      ? '<span style="padding:2px 7px;border-radius:8px;font-size:11px;background:#0288d133;color:#4fc3f7;font-weight:700">추가판매</span>'
+      : '<span style="padding:2px 7px;border-radius:8px;font-size:11px;background:#388e3c33;color:#81c784;font-weight:700">일반판매</span>';
     var matchBadge = ms
       ? '<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(matchStatusColor[ms]||'#888')+'33;color:'+(matchStatusColor[ms]||'#888')+'">'+(matchStatusKr[ms]||ms)+'</span>'
         + (item.match_round===2 ? '<span style="padding:2px 5px;border-radius:8px;font-size:10px;background:#7b1fa233;color:#ce93d8;font-weight:700;margin-left:4px">2차</span>'
@@ -921,6 +924,7 @@ function renderSystemItems(){
       +'<td style="padding:6px 8px;color:#555">'+item.id+'</td>'
       +'<td style="padding:6px 8px;text-align:center;color:'+(tC[item.bar_type]||'#fff')+'"><strong>'+(tN[item.bar_type]||item.bar_type)+'</strong></td>'
       +'<td style="padding:6px 8px;text-align:center">'+(item.stage||'-')+'단계</td>'
+      +'<td style="padding:6px 8px;text-align:center">'+sellTypeBadge+'</td>'
       +'<td style="padding:6px 8px;text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+(isSellReserved?'#f9a82522':((sC[item.status]||'#555')+'33'))+';color:'+(isSellReserved?'#f9a825':(sC[item.status]||'#aaa'))+'">'+(isSellReserved?'판매예약중':(sL[item.status]||item.status))+'</span></td>'
       +'<td style="padding:6px 8px;text-align:center">'+(isSellReserved?'<span style="padding:2px 6px;border-radius:8px;font-size:11px;background:#f9a82522;color:#f9a825">'+(item.sell_reservation_round||1)+'차</span>':matchBadge)+'</td>'
       +'<td style="padding:6px 8px;color:#888;font-size:11px">'+(item.purchase_date||'-')+'</td>'

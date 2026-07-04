@@ -4665,7 +4665,7 @@ def match_confirm_payment():
                     ).fetchone()
                     if _lr and _lr['item_id']:
                         db.execute(
-                            "UPDATE items SET stage=?, status='reservable', purchase_date=? WHERE id=? AND user_id=?",
+                            "UPDATE items SET stage=?, status='reservable', purchase_date=?, is_extra=1 WHERE id=? AND user_id=?",
                             (_stage, get_today().isoformat(), _lr['item_id'], loopay_id)
                         )
                     _inserted = True
@@ -5353,9 +5353,12 @@ def admin_loopay_items():
             if d.get('status') == 'waiting' and d['id'] in buy_res_items:
                 d['item_type'] = '구매예약중'
                 d['is_buy_reservation'] = True
+                d['sell_type'] = 'extra'
             else:
                 d['item_type'] = STATUS_LABEL.get(d.get('status',''), d.get('status',''))
                 d['is_buy_reservation'] = False
+            # 판매 구분: 추가판매(루페이가 구매 후 재판매) vs 일반판매
+            d['sell_type'] = 'extra' if d.get('is_extra') else 'normal'
             bt = d['bar_type']
             st = d['stage'] or 1
             # 이 아이템의 status가 matched/sold인 경우만 match 찾기
@@ -5892,8 +5895,9 @@ def create_sell_reservation():
             _lv = _u['level'] if _u else 1
             _cost = LEVEL_COST.get(_lv, 0)
             return jsonify(error=f'{_lv}레벨은 거래유지 포인트 {_cost}P 결제 후 예약 가능합니다.', level_pay_required=True), 403
-        # 결합아이템(waiting)은 당일 판매예약 가능, 일반아이템은 3일째부터
-        if item['status'] != 'waiting':
+        # 결합아이템(waiting) 또는 루페이 추가판매(is_extra=1)는 당일 판매예약 가능
+        _is_extra_item = bool(dict(item).get('is_extra'))
+        if item['status'] != 'waiting' and not _is_extra_item:
             days = days_since(item['purchase_date'])
             if days < 2:
                 return jsonify(error=f'구매 후 3일째부터 판매예약 가능합니다 (현재 {days+1}일차)'), 400
@@ -6756,6 +6760,7 @@ def testtools_run_db_migration():
         "ALTER TABLE reservations ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
         "ALTER TABLE lucky_buy_results ADD COLUMN status TEXT DEFAULT 'confirmed'",
         "ALTER TABLE matches ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
+        "ALTER TABLE items ADD COLUMN is_extra INTEGER DEFAULT 0",
     ]
     try:
         _c = _sq3_m.connect(db_path, timeout=10)

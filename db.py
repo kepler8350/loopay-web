@@ -58,6 +58,8 @@ def init_db():
         stage INTEGER NOT NULL,
         purchase_date DATE NOT NULL,
         status TEXT DEFAULT 'waiting' CHECK(status IN ('waiting','reservable','matched','sold')),
+        is_extra INTEGER DEFAULT 0,
+        lucky_pair_id INTEGER DEFAULT NULL,
         FOREIGN KEY(user_id) REFERENCES users(id)
     )''')
 
