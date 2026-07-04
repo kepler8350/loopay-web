@@ -6766,6 +6766,33 @@ def testtools_fix_lucky_buyer_items():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/fix-extra-items', methods=['POST'])
+def testtools_fix_extra_items():
+    """추가예약으로 생성된 루페이 아이템 is_extra=1로 업데이트"""
+    db = get_db()
+    try:
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay: return jsonify(success=True, updated=0)
+        lid = loopay['id']
+        # 루페이 소유 아이템 중 reservation이 있는 것 = 추가예약으로 생성된 것
+        result = db.execute(
+            """UPDATE items SET is_extra=1
+               WHERE user_id=? AND is_extra=0
+               AND id IN (
+                   SELECT r.item_id FROM reservations r
+                   WHERE r.user_id=? AND r.item_id IS NOT NULL AND r.item_id > 0
+               )""",
+            (lid, lid)
+        )
+        updated = result.rowcount
+        db.commit()
+        return jsonify(success=True, updated=updated)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
