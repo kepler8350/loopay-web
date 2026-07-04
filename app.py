@@ -2545,6 +2545,7 @@ def admin_run_matching():
         all_keys = sorted(set(list(sell_by_type_stage.keys()) + list(buy_by_type_stage.keys())))
         matched_seller_ids = set()
         matched_buyer_ids = set()
+        _lucky_buyer_map = {}  # lucky_pair_id → 첫 번째 매칭된 구매자 res_id
 
         for (bt, st) in all_keys:
             sellers = [s for s in sell_by_type_stage.get((bt, st), []) if s['res_id'] not in matched_seller_ids]
@@ -2558,8 +2559,21 @@ def admin_run_matching():
                 if seller['seller_id'] == buyer['buyer_id'] and seller.get('seller_username') != 'loopay':
                     bi += 1
                     continue
+                # 행운구매 판매예약: 같은 lucky_pair_id는 같은 구매자와 매칭
+                _slp = seller.get('lucky_pair_id')
+                if _slp and _slp in _lucky_buyer_map:
+                    # 이미 이 lucky_pair에 배정된 구매자가 있으면 그 구매자와만 매칭
+                    _assigned_buyer_res = _lucky_buyer_map[_slp]
+                    if buyer['res_id'] != _assigned_buyer_res:
+                        # 해당 구매자를 찾을 때까지 건너뜀
+                        bi += 1
+                        continue
                 matched_seller_ids.add(seller['res_id'])
                 matched_buyer_ids.add(buyer['res_id'])
+                # 행운구매 판매예약이면 lucky_pair_id에 구매자 매핑 저장
+                _slp2 = seller.get('lucky_pair_id')
+                if _slp2 and _slp2 not in _lucky_buyer_map:
+                    _lucky_buyer_map[_slp2] = buyer['res_id']
                 si += 1
                 bi += 1
 
