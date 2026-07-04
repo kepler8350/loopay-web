@@ -3650,7 +3650,9 @@ def admin_lucky_buy_setup():
                     break
                 a, b = row_list[i], row_list[i+1]
                 # 같은 판매자의 아이템끼리는 페어링 불가
-                if a.get('seller_id') and a.get('seller_id') == b.get('seller_id'):
+                _sid_a = dict(a).get('seller_id')
+                _sid_b = dict(b).get('seller_id')
+                if _sid_a and _sid_b and _sid_a == _sid_b:
                     continue
                 sa, sb = a['stage'], b['stage']
                 sell_a = price_map[bar_type].get(sa, (0, 0))[1]
