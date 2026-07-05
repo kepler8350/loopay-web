@@ -1268,13 +1268,13 @@ window.toggleItemSellSelect = function(itemId, barType){
   var sids = Object.keys(_sellSelected).filter(function(k){return !!_sellSelected[k];});
   var cd = ci ? ci.purchase_date : null;
   if(!_sellSelected[_id] && sids.length > 0 && cd){
-    var blocked = false;
+    var _diffDate=false;
     for(var i=0;i<sids.length;i++){
       var k=sids[i];
       var info=_itemCache[k]||_itemCache[Number(k)];
-      if(info && info.purchase_date && info.purchase_date!==cd){blocked=true;break;}
+      if(info && info.purchase_date && info.purchase_date!==cd){_diffDate=true;break;}
     }
-    if(blocked){toast('같은 구매일의 아이템만 함께 선택할 수 있습니다.','error');return;}
+    if(_diffDate){toast('같은 구매일의 아이템만 함께 선택할 수 있습니다.','error');return;}
   }
   _sellSelected[_id] = !_sellSelected[_id];
   var card=document.getElementById('icard-'+_id);
@@ -1298,13 +1298,13 @@ function toggleSellSelect(itemId, barType){
   // 선택하려는 경우(현재 미선택 → 선택으로 전환)
   var cd2 = clickedInfo ? clickedInfo.purchase_date : null;
   if(!_sellSelected[_id] && selectedIds.length > 0 && cd2){
-    var blocked2=false;
+    var _diffDate2=false;
     for(var i=0;i<selectedIds.length;i++){
       var k2=selectedIds[i];
       var info2=_itemCache[k2]||_itemCache[Number(k2)];
-      if(info2 && info2.purchase_date && info2.purchase_date!==cd2){blocked2=true;break;}
+      if(info2 && info2.purchase_date && info2.purchase_date!==cd2){_diffDate2=true;break;}
     }
-    if(blocked2){toast('같은 구매일의 아이템만 함께 선택할 수 있습니다.','error');return;}
+    if(_diffDate2){toast('같은 구매일의 아이템만 함께 선택할 수 있습니다.','error');return;}
   }
 
   _sellSelected[_id] = !_sellSelected[_id];
