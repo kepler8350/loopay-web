@@ -1183,7 +1183,7 @@ async function loadItemDetail(barType){
       var _cardCanSell = (it.status_label === '판매가능') && !_isMaxStage;
       var _cardSelected = !!_sellSelected[String(it.id)];
       var _cardStyle = 'background:'+(_cardSelected?'rgba(123,31,162,0.15)':cardBg)+';border:'+(_cardSelected?'1.5px solid #7b1fa2':'1px solid transparent')+';transition:background 0.2s';
-      var _cardOnclick = _cardCanSell ? ' onclick="toggleItemSellSelect('+it.id+',\''+(it.bar_type||barType)+'\')"' : '';
+      var _cardOnclick = _cardCanSell ? ' onclick="toggleSellSelect('+it.id+',\''+(it.bar_type||barType)+'\')"' : '';
       var _sellBadge;
       if(_isMaxStage && it.status_label === '판매가능'){
         // 최고단계: 분할 / 포인트전환 버튼
@@ -2516,30 +2516,3 @@ async function doConfirmUnpaid(){
   } catch(e){ toast('오류: '+e.message,'error'); loadSellTab(); }
 }
 
-// toggleItemSellSelect 강제 재정의 (구매일 체크 포함 - 캐시 무효화용)
-window.toggleItemSellSelect = function(itemId, barType){
-  var _id = String(itemId);
-  var ci = _itemCache[_id] || _itemCache[Number(_id)];
-  var sids = Object.keys(_sellSelected).filter(function(k){return !!_sellSelected[k];});
-  var cd = ci ? ci.purchase_date : null;
-  if(!_sellSelected[_id] && sids.length > 0 && cd){
-    var _diffDate2 = false;
-    for(var i=0;i<sids.length;i++){
-      var k=sids[i];
-      var info=_itemCache[k]||_itemCache[Number(k)];
-      if(info && info.purchase_date && info.purchase_date!==cd){_diffDate2=true;break;}
-    }
-    if(_diffDate2){toast('같은 구매일의 아이템만 함께 선택할 수 있습니다.','error');return;}
-  }
-  _sellSelected[_id] = !_sellSelected[_id];
-  var card=document.getElementById('icard-'+_id);
-  var badge=document.getElementById('badge-'+_id);
-  var sel=_sellSelected[_id];
-  if(card) card.style.background=sel?'rgba(56,142,60,0.12)':'';
-  if(badge){
-    badge.style.background=sel?'#388e3c':'#7b1fa2';
-    badge.textContent=sel?'✓ 판매예약':'판매예약가능';
-    badge.title=sel?'클릭하여 취소':'클릭하여 판매예약';
-  }
-  updateSellBoard();
-};
