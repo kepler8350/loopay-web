@@ -1282,9 +1282,9 @@ function toggleSellSelect(itemId, barType){
   }
 
   _sellSelected[_id] = !_sellSelected[_id];
-  var card = document.getElementById('icard-'+itemId);
-  var badge = document.getElementById('badge-'+itemId);
-  var selected = _sellSelected[itemId];
+  var card = document.getElementById('icard-'+_id);
+  var badge = document.getElementById('badge-'+_id);
+  var selected = !!_sellSelected[_id];
   if(card) card.style.background = selected?'rgba(56,142,60,0.12)':'';
   if(badge){
     badge.style.background = selected?'#388e3c':'#7b1fa2';
@@ -1293,7 +1293,7 @@ function toggleSellSelect(itemId, barType){
   }
   var bulkBtn = document.getElementById('bulk-sell-btn-'+barType);
   if(bulkBtn && bulkBtn._sellableIds){
-    var allSel = bulkBtn._sellableIds.every(function(id){return _sellSelected[id];});
+    var allSel = bulkBtn._sellableIds.every(function(id){return _sellSelected[String(id)];});
     bulkBtn.textContent = allSel?'전체취소':'전체판매예약';
     bulkBtn.style.background = allSel?'#546e7a':'#7b1fa2';
     bulkBtn._allSelected = allSel;
