@@ -1261,10 +1261,35 @@ async function toggleBulkSell(barType){
   updateSellBoard();
 }
 
-function toggleItemSellSelect(itemId, barType){
-  // 카드 클릭으로 판매 선택 - toggleSellSelect와 동일 로직
-  toggleSellSelect(itemId, barType);
-}
+window.toggleItemSellSelect = function(itemId, barType){
+  // 카드 클릭으로 판매 선택 - 구매일 체크 포함
+  var clickedInfo = _itemCache[itemId];
+  var selectedIds = Object.keys(_sellSelected).filter(function(id){return _sellSelected[id];});
+  if(!_sellSelected[itemId] && selectedIds.length > 0){
+    var clickedDate = clickedInfo && clickedInfo.purchase_date;
+    if(clickedDate){
+      var hasOtherDate = selectedIds.some(function(id){
+        var info = _itemCache[id];
+        return info && info.purchase_date && info.purchase_date !== clickedDate;
+      });
+      if(hasOtherDate){
+        toast('같은 구매일의 아이템만 함께 선택할 수 있습니다.', 'error');
+        return;
+      }
+    }
+  }
+  _sellSelected[itemId] = !_sellSelected[itemId];
+  var card = document.getElementById('icard-'+itemId);
+  var badge = document.getElementById('badge-'+itemId);
+  var selected = _sellSelected[itemId];
+  if(card) card.style.background = selected?'rgba(56,142,60,0.12)':'';
+  if(badge){
+    badge.style.background = selected?'#388e3c':'#7b1fa2';
+    badge.textContent = selected?'✓ 판매예약':'판매예약가능';
+    badge.title = selected?'클릭하여 취소':'클릭하여 판매예약';
+  }
+  updateSellBoard();
+};
 
 function toggleSellSelect(itemId, barType){
   // 같은날 구매한 아이템만 선택 가능
