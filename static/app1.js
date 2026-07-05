@@ -1191,11 +1191,11 @@ async function loadItemDetail(barType){
         _sellBadge = '<span class="badge" style="background:#e65100;color:#fff;font-size:10px">최고단계</span>';
       } else {
         _sellBadge = _cardSelected
-          ? '<span class="badge" style="background:#7b1fa2;color:#fff">✓ 판매선택</span>'
+          ? '<span id="badge-'+it.id+'" class="badge" style="background:#388e3c;color:#fff">✓ 판매예약</span>'
           : (it.status_label==='판매예약중'
-            ? '<span class="badge badge-pending">판매예약중</span>'
+            ? '<span id="badge-'+it.id+'" class="badge badge-pending">판매예약중</span>'
             : (_cardCanSell
-              ? '<span class="badge" style="background:var(--bg2);border:1.5px solid #7b1fa2;color:#7b1fa2">☐ 판매선택</span>'
+              ? '<span id="badge-'+it.id+'" class="badge" style="background:var(--bg2);border:1.5px solid #7b1fa2;color:#7b1fa2">☐ 판매선택</span>'
               : statusBadge));
       }
       var _maxStageBtns = (_isMaxStage && it.status_label === '판매가능')
@@ -1287,8 +1287,17 @@ function toggleSellSelect(itemId, barType){
   var selected = !!_sellSelected[_id];
   if(card) card.style.background = selected?'rgba(56,142,60,0.12)':'';
   if(badge){
-    badge.style.background = selected?'#388e3c':'#7b1fa2';
-    badge.textContent = selected?'✓ 판매예약':'판매예약가능';
+    if(selected){
+      badge.style.background = '#388e3c';
+      badge.style.border = 'none';
+      badge.style.color = '#fff';
+      badge.textContent = '✓ 판매예약';
+    } else {
+      badge.style.background = 'var(--bg2)';
+      badge.style.border = '1.5px solid #7b1fa2';
+      badge.style.color = '#7b1fa2';
+      badge.textContent = '☐ 판매선택';
+    }
     badge.title = selected?'클릭하여 취소':'클릭하여 판매예약';
   }
   var bulkBtn = document.getElementById('bulk-sell-btn-'+barType);
