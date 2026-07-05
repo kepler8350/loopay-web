@@ -1261,6 +1261,11 @@ async function toggleBulkSell(barType){
   updateSellBoard();
 }
 
+function toggleItemSellSelect(itemId, barType){
+  // 카드 클릭으로 판매 선택 - toggleSellSelect와 동일 로직
+  toggleSellSelect(itemId, barType);
+}
+
 function toggleSellSelect(itemId, barType){
   // 같은날 구매한 아이템만 선택 가능
   var clickedInfo = _itemCache[itemId];
