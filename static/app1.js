@@ -1263,13 +1263,14 @@ async function toggleBulkSell(barType){
 
 window.toggleItemSellSelect = function(itemId, barType){
   // 카드 클릭으로 판매 선택 - 구매일 체크 포함
-  var clickedInfo = _itemCache[itemId];
+  var _id = String(itemId);
+  var clickedInfo = _itemCache[_id] || _itemCache[itemId];
   var selectedIds = Object.keys(_sellSelected).filter(function(id){return _sellSelected[id];});
-  if(!_sellSelected[itemId] && selectedIds.length > 0){
+  if(!_sellSelected[_id] && selectedIds.length > 0){
     var clickedDate = clickedInfo && clickedInfo.purchase_date;
     if(clickedDate){
       var hasOtherDate = selectedIds.some(function(id){
-        var info = _itemCache[id];
+        var info = _itemCache[String(id)] || _itemCache[id];
         return info && info.purchase_date && info.purchase_date !== clickedDate;
       });
       if(hasOtherDate){
@@ -1278,10 +1279,10 @@ window.toggleItemSellSelect = function(itemId, barType){
       }
     }
   }
-  _sellSelected[itemId] = !_sellSelected[itemId];
-  var card = document.getElementById('icard-'+itemId);
-  var badge = document.getElementById('badge-'+itemId);
-  var selected = _sellSelected[itemId];
+  _sellSelected[_id] = !_sellSelected[_id];
+  var card = document.getElementById('icard-'+_id);
+  var badge = document.getElementById('badge-'+_id);
+  var selected = _sellSelected[_id];
   if(card) card.style.background = selected?'rgba(56,142,60,0.12)':'';
   if(badge){
     badge.style.background = selected?'#388e3c':'#7b1fa2';
@@ -1293,15 +1294,16 @@ window.toggleItemSellSelect = function(itemId, barType){
 
 function toggleSellSelect(itemId, barType){
   // 같은날 구매한 아이템만 선택 가능
-  var clickedInfo = _itemCache[itemId];
+  var _id = String(itemId);
+  var clickedInfo = _itemCache[_id] || _itemCache[itemId];
   var selectedIds = Object.keys(_sellSelected).filter(function(id){return _sellSelected[id];});
 
   // 선택하려는 경우(현재 미선택 → 선택으로 전환)
-  if(!_sellSelected[itemId] && selectedIds.length > 0){
+  if(!_sellSelected[_id] && selectedIds.length > 0){
     var clickedDate = clickedInfo && clickedInfo.purchase_date;
     if(clickedDate){
       var hasOtherDate = selectedIds.some(function(id){
-        var info = _itemCache[id];
+        var info = _itemCache[String(id)] || _itemCache[id];
         return info && info.purchase_date && info.purchase_date !== clickedDate;
       });
       if(hasOtherDate){
@@ -1311,7 +1313,7 @@ function toggleSellSelect(itemId, barType){
     }
   }
 
-  _sellSelected[itemId] = !_sellSelected[itemId];
+  _sellSelected[_id] = !_sellSelected[_id];
   var card = document.getElementById('icard-'+itemId);
   var badge = document.getElementById('badge-'+itemId);
   var selected = _sellSelected[itemId];
