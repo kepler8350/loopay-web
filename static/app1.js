@@ -1238,7 +1238,25 @@ async function toggleBulkSell(barType){
   if(!btn) return;
   var ids = btn._sellableIds || [];
   var allSelected = btn._allSelected;
-  ids.forEach(function(id){ _sellSelected[id] = !allSelected; });
+  if(!allSelected){
+    // 선택 시: 이미 선택된 아이템 중 가장 많은 구매일 그룹으로 통일
+    var selectedIds = ids.filter(function(id){return _sellSelected[id];});
+    var baseDate = null;
+    if(selectedIds.length > 0){
+      baseDate = _itemCache[selectedIds[0]] && _itemCache[selectedIds[0]].purchase_date;
+    } else {
+      // 첫 번째 아이템의 구매일 기준
+      baseDate = _itemCache[ids[0]] && _itemCache[ids[0]].purchase_date;
+    }
+    ids.forEach(function(id){
+      var info = _itemCache[id];
+      var d = info && info.purchase_date;
+      if(!baseDate || d === baseDate){ _sellSelected[id] = true; }
+      else { _sellSelected[id] = false; }
+    });
+  } else {
+    ids.forEach(function(id){ _sellSelected[id] = false; });
+  }
   await loadItemDetail(barType);
   updateSellBoard();
 }
@@ -1247,7 +1265,22 @@ function toggleSellSelect(itemId, barType){
   // 같은날 구매한 아이템만 선택 가능
   var clickedInfo = _itemCache[itemId];
   var selectedIds = Object.keys(_sellSelected).filter(function(id){return _sellSelected[id];});
-  
+
+  // 선택하려는 경우(현재 미선택 → 선택으로 전환)
+  if(!_sellSelected[itemId] && selectedIds.length > 0){
+    var clickedDate = clickedInfo && clickedInfo.purchase_date;
+    if(clickedDate){
+      var hasOtherDate = selectedIds.some(function(id){
+        var info = _itemCache[id];
+        return info && info.purchase_date && info.purchase_date !== clickedDate;
+      });
+      if(hasOtherDate){
+        toast('같은 구매일의 아이템만 함께 선택할 수 있습니다.', 'error');
+        return;
+      }
+    }
+  }
+
   _sellSelected[itemId] = !_sellSelected[itemId];
   var card = document.getElementById('icard-'+itemId);
   var badge = document.getElementById('badge-'+itemId);
