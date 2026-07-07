@@ -4608,6 +4608,7 @@ def admin_get_matches():
             'seller_id': r['seller_id'] if 'seller_id' in r.keys() else None,
             'seller_item_id': r['seller_item_id'] if 'seller_item_id' in r.keys() else None,
             'lucky_pair_id': r['lucky_pair_id'] if 'lucky_pair_id' in r.keys() else None,
+            'buyer_res_id': r['buyer_res_id'] if 'buyer_res_id' in r.keys() else None,
             'buyer': _build_buyer(r),
             'seller': build_seller(r),
         } for r in rows])
