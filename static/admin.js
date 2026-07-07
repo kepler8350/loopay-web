@@ -1158,8 +1158,9 @@ async function loadReservationsLog(page){
       if(r.status==='pending' && r.res_type==='buy' && r.join_round2===1 && r.r1_ran_on_date){
         statusKo = '2차대기';
       }
-      // 2차대기 + pending 매치 없음(모든 매칭 아이템 입금확인) → "완료"
-      if(statusKo==='2차대기' && _pendingMatchCount===0 && _r2FailedCount===0){
+      // 2차대기 + 실제 매칭됐고 + pending 매치 없음 → "완료"
+      // match_status가 null이면 아직 매칭 자체가 안 된 것 → 완료 불가
+      if(statusKo==='2차대기' && r.match_status && r.match_status!=='pending' && _pendingMatchCount===0 && _r2FailedCount===0){
         statusKo = '완료';
       }
       // matched + paid/confirmed → "거래완료"
