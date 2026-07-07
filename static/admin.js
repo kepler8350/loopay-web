@@ -1317,8 +1317,8 @@ async function loadMatchRecords(useFilter){
       if(dto)   params.set('date_to', dto);
       if(uname) params.set('username', uname);
     } else {
-      // 기본: 날짜 조건 없이 최신순으로 가져와서 가장 최근 날짜 표시
-      // (서버 날짜와 match_date가 다를 수 있으므로 당일 고정 대신 최신 기준)
+      // 기본: 서버 today 날짜로 필터
+      params.set('date', today);
     }
 
     var qs = params.toString();
