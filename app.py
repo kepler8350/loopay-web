@@ -2447,7 +2447,7 @@ def admin_run_matching():
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                WHERE (r.status='pending' OR r.status IS NULL)
-               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date<=?))
+               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date=?))
                AND COALESCE(r.confirmed,0)=0
                AND u.username != 'loopay'
                AND r.user_id NOT IN (
