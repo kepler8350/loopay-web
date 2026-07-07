@@ -2377,7 +2377,10 @@ function renderSellTab(){
   // 단계별 그룹 정의 (순서: 보유중 → 판매가능 → 판매예약중 → 진행중)
   var stages = [
     {key:'보유중',   label:'보유중',     color:'#64b5f6', filter:function(x){ return x.status_label==='보유중'; }},
-    {key:'판매가능', label:'판매가능',   color:'#66bb6a', filter:function(x){ return x.status_label==='판매가능'; }},
+    {key:'판매가능', label:'판매가능',   color:'#66bb6a', filter:function(x){
+      if(x.match_status && x.match_status!=='cancelled') return false;
+      return x.status_label==='판매가능';
+    }},
     {key:'판매예약중',label:'판매예약중', color:'#ab47bc', filter:function(x){
       if(x.status_label!=='판매예약중') return false;
       var ms = x.match_status;
