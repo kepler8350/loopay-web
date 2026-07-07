@@ -1164,9 +1164,9 @@ async function loadReservationsLog(page){
           statusKo = '2차대기';
         }
       }
-      // 2차대기 + 실제 매칭됐고 + pending 매치 없음 → "완료"
-      // match_status가 null이면 아직 매칭 자체가 안 된 것 → 완료 불가
-      if(statusKo==='2차대기' && r.match_status && r.match_status!=='pending' && _pendingMatchCount===0 && _r2FailedCount===0){
+      // 2차대기 + pending 매치 없음 + 미입금 없음 → "완료"
+      // (매칭 됐든 안 됐든 당일 처리 사이클이 끝난 것)
+      if(statusKo==='2차대기' && _pendingMatchCount===0 && _r2FailedCount===0){
         statusKo = '완료';
       }
       // matched + paid/confirmed → "거래완료"
