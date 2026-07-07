@@ -4163,10 +4163,15 @@ def admin_reservations_list():
                        r.lucky_pair_id,
                        u.username, u.nickname, u.account_name,
                        CASE WHEN r.item_id > 0 AND COALESCE(r.confirmed,0)=1 AND i_type.status IN ('reservable','waiting','matched','sold') THEN 'sell' ELSE 'buy' END as res_type,
-                       (SELECT m.status FROM matches m
-                        WHERE (m.seller_item_id=r.item_id OR m.buyer_id=r.user_id)
-                        AND m.match_date=r.reserve_date
-                        ORDER BY m.id DESC LIMIT 1) as match_status
+                       COALESCE(
+                         (SELECT m.status FROM matches m
+                          WHERE m.seller_item_id=r.item_id AND r.item_id>0
+                          ORDER BY m.id DESC LIMIT 1),
+                         (SELECT m.status FROM matches m
+                          WHERE m.buyer_id=r.user_id AND (r.item_id IS NULL OR r.item_id=0)
+                          AND m.match_date=r.reserve_date
+                          ORDER BY m.id DESC LIMIT 1)
+                       ) as match_status
                 FROM reservations r
                 LEFT JOIN users u ON r.user_id = u.id
                 LEFT JOIN items i_type ON r.item_id = i_type.id AND r.item_id > 0
