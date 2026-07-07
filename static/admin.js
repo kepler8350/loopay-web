@@ -2483,8 +2483,8 @@ async function previewLuckyBuy(){
       pairs.forEach(function(p,i){
         html2+='<tr style="border-top:1px solid #333">';
         html2+='<td style="padding:4px 8px;text-align:center">'+(i+1)+'세트</td>';
-        html2+='<td style="text-align:center">'+p.item_a.stage+'단계 ('+p.item_a.sell.toLocaleString()+'원)</td>';
-        html2+='<td style="text-align:center">'+p.item_b.stage+'단계 ('+p.item_b.sell.toLocaleString()+'원)</td>';
+        html2+='<td style="text-align:center">'+p.item_a.stage+'단계 ('+p.item_a.sell.toLocaleString()+'원)'+(p.item_a.seller_username?'<br><span style="font-size:10px;color:#90caf9">'+p.item_a.seller_username+'</span>':'')+'</td>';
+        html2+='<td style="text-align:center">'+p.item_b.stage+'단계 ('+p.item_b.sell.toLocaleString()+'원)'+(p.item_b.seller_username?'<br><span style="font-size:10px;color:#90caf9">'+p.item_b.seller_username+'</span>':'')+'</td>';
         html2+='<td style="text-align:center;color:#f9a825">'+p.total_sell.toLocaleString()+'원</td>';
         html2+='<td style="text-align:center;color:#66bb6a;font-weight:700">'+p.new_stage+'단계 ('+p.new_sell.toLocaleString()+'원)</td>';
         html2+='</tr>';

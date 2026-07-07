@@ -3700,9 +3700,11 @@ def admin_lucky_buy_setup():
             
             # 해당 단계의 판매예약 아이템 조회
             rows = conn.execute(
-                """SELECT r.id as res_id, r.item_id, i.stage, i.id as item_id2, r.user_id as seller_id
+                """SELECT r.id as res_id, r.item_id, i.stage, i.id as item_id2, r.user_id as seller_id,
+                          u.username as seller_username
                    FROM reservations r
                    JOIN items i ON r.item_id = i.id
+                   LEFT JOIN users u ON r.user_id = u.id
                    WHERE r.bar_type=? AND r.status='pending'
                    AND r.item_id IS NOT NULL AND r.item_id > 0
                    AND i.status IN ('reservable','waiting')
@@ -3713,18 +3715,32 @@ def admin_lucky_buy_setup():
             ).fetchall()
             
             pairs = []
-            used = set()
-            row_list = [r for r in rows if r['item_id'] not in used]
-            
-            for i in range(0, min(set_count * 2, len(row_list)), 2):
-                if i + 1 >= len(row_list):
+            used_items = set()
+            row_list = list(rows)
+
+            # 다른 판매자끼리 최대한 많이 페어링
+            for i in range(len(row_list)):
+                if len(pairs) >= set_count:
                     break
-                a, b = row_list[i], row_list[i+1]
-                # 같은 판매자의 아이템끼리는 페어링 불가
-                _sid_a = dict(a).get('seller_id')
-                _sid_b = dict(b).get('seller_id')
-                if _sid_a and _sid_b and _sid_a == _sid_b:
+                a = row_list[i]
+                if a['item_id'] in used_items:
                     continue
+                _sid_a = dict(a).get('seller_id')
+                b = None
+                for j in range(i+1, len(row_list)):
+                    cand = row_list[j]
+                    if cand['item_id'] in used_items:
+                        continue
+                    _sid_b = dict(cand).get('seller_id')
+                    if _sid_a and _sid_b and _sid_a == _sid_b:
+                        continue
+                    b = cand
+                    break
+                if b is None:
+                    continue
+                used_items.add(a['item_id'])
+                used_items.add(b['item_id'])
+                dummy = True  # 아래 pairs.append 진행
                 sa, sb = a['stage'], b['stage']
                 sell_a = price_map[bar_type].get(sa, (0, 0))[1]
                 sell_b = price_map[bar_type].get(sb, (0, 0))[1]
@@ -3747,8 +3763,8 @@ def admin_lucky_buy_setup():
                 
                 target_buy, target_sell = price_map[bar_type].get(target_stage, (0, 0))
                 pairs.append({
-                    'item_a': {'res_id': a['res_id'], 'item_id': a['item_id'], 'stage': sa, 'sell': sell_a},
-                    'item_b': {'res_id': b['res_id'], 'item_id': b['item_id'], 'stage': sb, 'sell': sell_b},
+                    'item_a': {'res_id': a['res_id'], 'item_id': a['item_id'], 'stage': sa, 'sell': sell_a, 'seller_id': dict(a).get('seller_id'), 'seller_username': dict(a).get('seller_username')},
+                    'item_b': {'res_id': b['res_id'], 'item_id': b['item_id'], 'stage': sb, 'sell': sell_b, 'seller_id': dict(b).get('seller_id'), 'seller_username': dict(b).get('seller_username')},
                     'total_sell': total,
                     'new_stage': target_stage,
                     'new_sell': target_sell,
