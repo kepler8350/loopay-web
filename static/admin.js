@@ -1164,10 +1164,16 @@ async function loadReservationsLog(page){
           statusKo = '2차대기';
         }
       }
-      // 2차대기 + pending 매치 없음 + 미입금 없음 → "완료"
-      // (매칭 됐든 안 됐든 당일 처리 사이클이 끝난 것)
-      if(statusKo==='2차대기' && _pendingMatchCount===0 && _r2FailedCount===0){
-        statusKo = '완료';
+      // 2차대기 → 완료 판단: 개별 예약 기준
+      // - match_status=confirmed: 판매자 입금확인 완료 → "완료"
+      // - match_status=null + 과거 날짜: 매칭 못 된 예약 → "완료" (미입금 없을 때)
+      if(statusKo==='2차대기'){
+        var _isPast = (r.reserve_date < _today2);
+        if(r.match_status==='confirmed'){
+          statusKo = '완료';
+        } else if(!r.match_status && _isPast && _r2FailedCount===0){
+          statusKo = '완료';
+        }
       }
       // matched + confirmed(판매자 입금확인) → "거래완료"
       if(r.status==='matched' && r.match_status==='confirmed'){
