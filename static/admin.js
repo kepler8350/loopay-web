@@ -1148,7 +1148,7 @@ async function loadReservationsLog(page){
         : (statusColors[r.status] || '#888');
       var confirmedBadge = r.confirmed ? '<span style="font-size:10px;background:#1b5e20;color:#a5d6a7;padding:1px 5px;border-radius:3px">확인</span>' : '';
       var createdAt = (r.created_at||'').slice(0,16);
-      var _today2 = new Date().toISOString().slice(0,10);
+      var _today2 = (_mstat && _mstat.date) || new Date().toISOString().slice(0,10);
       var statusKo = {reservable:'예약가능', active:'활성', waiting:'대기중', matched:'매칭완료',
         sold:'판매완료', reserved:'예약중', cancelled:'취소', confirmed:'확정',
         pending:'대기', sell_reserved:'판매예약중', unmatched:'미매칭',
