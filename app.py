@@ -4176,7 +4176,8 @@ def admin_reservations_list():
                           WHERE m.buyer_id=r.user_id AND (r.item_id IS NULL OR r.item_id=0)
                           AND m.match_date=r.reserve_date
                           ORDER BY m.id DESC LIMIT 1)
-                       ) as match_status
+                       ) as match_status,
+                       (SELECT value FROM system_settings WHERE key='r1_ran_'||r.reserve_date LIMIT 1) as r1_ran_on_date
                 FROM reservations r
                 LEFT JOIN users u ON r.user_id = u.id
                 LEFT JOIN items i_type ON r.item_id = i_type.id AND r.item_id > 0

@@ -1154,8 +1154,8 @@ async function loadReservationsLog(page){
         pending:'대기', sell_reserved:'판매예약중', unmatched:'미매칭',
         expired:'만료', rejected:'거절', complete:'완료'}[r.status] || r.status;
 
-      // 1차 미매칭 구매예약(join_round2=1) + pending → "2차대기"
-      if(r.status==='pending' && r.res_type==='buy' && r.join_round2===1){
+      // 1차 매칭이 실행된 날의 미매칭 구매예약(join_round2=1 + pending) → "2차대기"
+      if(r.status==='pending' && r.res_type==='buy' && r.join_round2===1 && r.r1_ran_on_date){
         statusKo = '2차대기';
       }
       // 2차대기 + pending 매치 없음(모든 매칭 아이템 입금확인) → "완료"
