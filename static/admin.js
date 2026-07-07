@@ -1328,8 +1328,13 @@ async function loadMatchRecords(useFilter){
       if(dto)   params.set('date_to', dto);
       if(uname) params.set('username', uname);
     } else {
-      // 기본: 서버 today 날짜로 필터
-      params.set('date', today);
+      // 기본: 가장 최근 매치 날짜로 필터 (오늘 매치 없으면 마지막 매치 날짜)
+      var _latestD = await apiAdmin('/admin/matches?limit=1');
+      var _latestDate = (_latestD.matches && _latestD.matches[0]) ? _latestD.matches[0].match_date : today;
+      params.set('date', _latestDate);
+      // mr-date input에도 반영
+      var _mrDateEl = document.getElementById('mr-date');
+      if(_mrDateEl && !_mrDateEl.value) _mrDateEl.value = _latestDate;
     }
 
     var qs = params.toString();
