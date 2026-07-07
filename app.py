@@ -3484,6 +3484,7 @@ with app.app_context():
             "ALTER TABLE matches ADD COLUMN seller_item_id INTEGER",
             "ALTER TABLE matches ADD COLUMN points_deducted INTEGER DEFAULT 0",
             "ALTER TABLE matches ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
+            "ALTER TABLE matches ADD COLUMN buyer_res_id INTEGER DEFAULT NULL",
             "ALTER TABLE users ADD COLUMN maintain_points INTEGER DEFAULT 0",
             "ALTER TABLE items ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
             "ALTER TABLE reservations ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
