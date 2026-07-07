@@ -2456,6 +2456,7 @@ def admin_run_matching():
             """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
                CASE WHEN COALESCE(r.stage,0) <= 0 THEN 1 ELSE r.stage END as stage,
                COALESCE(r.stage, 0) as raw_stage,
+               COALESCE(r.join_round2, 0) as join_round2,
                r.item_id,
                u.username as buyer_username, u.nickname as buyer_nickname,
                u.phone as buyer_phone, u.account_name as buyer_account_name
@@ -2601,6 +2602,8 @@ def admin_run_matching():
                         if _b['buyer_id'] in _avoid_seller_ids and not _is_loopay_s: continue
                         # lucky_pair: 이미 다른 pair에 배정된 구매자 제외
                         if _slp and _b['buyer_id'] in _assigned_buyer_ids: continue
+                        # lucky_pair: join_round2=1(2차신청) 구매예약은 행운구매 불가
+                        if _slp and _b.get('join_round2', 0) == 1: continue
                         # lucky_pair: 이 구매자가 남은 lucky_pair 판매예약 수만큼 예약 보유하는지 확인
                         if _slp:
                             _lp_remain = len([_s for _s in sellers
