@@ -1153,11 +1153,11 @@ async function loadReservationsLog(page){
         pending:'대기', sell_reserved:'판매예약중', unmatched:'미매칭',
         expired:'만료', rejected:'거절', complete:'완료'}[r.status] || r.status;
 
-      // 1차 미매칭 구매예약(join_round2=1 or match_round=1) + pending → "2차대기"
-      if(r.status==='pending' && r.res_type==='buy' && (r.join_round2===1 || r.match_round===1) && r.reserve_date < _today2){
+      // 1차 미매칭 구매예약(join_round2=1) + pending → "2차대기"
+      if(r.status==='pending' && r.res_type==='buy' && r.join_round2===1){
         statusKo = '2차대기';
       }
-      // 2차대기 + 예약일이 지났고 미입금 없음 → "완료"
+      // 2차대기 + 미입금 없음 → "완료"
       if(statusKo==='2차대기' && _r2FailedCount===0){
         statusKo = '완료';
       }
