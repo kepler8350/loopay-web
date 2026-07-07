@@ -4211,8 +4211,7 @@ def admin_reservations_list():
                           WHERE m.seller_item_id=r.item_id AND r.item_id>0
                           ORDER BY m.id DESC LIMIT 1),
                          (SELECT m.status FROM matches m
-                          WHERE m.buyer_id=r.user_id AND (r.item_id IS NULL OR r.item_id=0)
-                          AND m.match_date>=r.reserve_date
+                          WHERE m.reservation_id=r.id AND (r.item_id IS NULL OR r.item_id=0)
                           ORDER BY m.id DESC LIMIT 1)
                        ) as match_status,
                        CASE WHEN EXISTS(
