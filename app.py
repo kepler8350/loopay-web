@@ -2439,7 +2439,8 @@ def admin_run_matching():
                WHERE r.status IN ('pending','unmatched') AND r.match_round=?
                AND r.reserve_date<=?
                AND COALESCE(r.confirmed,0)=1
-               AND i.status IN ('reservable','waiting','matched')""",
+               AND i.status IN ('reservable','waiting','matched')
+               ORDER BY COALESCE(r.lucky_pair_id, 0), r.id""",
             (round_num, today)
         ).fetchall()
 
