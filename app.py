@@ -4743,6 +4743,24 @@ def match_confirm_payment():
                     "SELECT id, bar_type, stage FROM items WHERE id=?",
                     (m['seller_item_id'],)
                 ).fetchone()
+        # 최종 fallback: loopay 판매자인 경우 bar_type+match_date로 판매예약 아이템 찾기
+        if not seller_item and m['seller_id'] == loopay_id:
+            _loopay_sell_res = db.execute(
+                """SELECT r.item_id FROM reservations r
+                   INNER JOIN items i ON r.item_id=i.id
+                   WHERE r.user_id=? AND r.bar_type=? AND r.confirmed=1
+                   AND r.item_id IS NOT NULL AND r.item_id > 0
+                   AND r.status IN ('matched','sold','pending')
+                   AND i.status IN ('matched','reservable','waiting')
+                   ORDER BY r.id DESC LIMIT 1""",
+                (loopay_id, m['bar_type'])
+            ).fetchone()
+            if _loopay_sell_res and _loopay_sell_res['item_id']:
+                seller_item = db.execute(
+                    "SELECT id, bar_type, stage FROM items WHERE id=?",
+                    (_loopay_sell_res['item_id'],)
+                ).fetchone()
+
         if seller_item:
             # seller 아이템 sold 처리 (행운구매는 행운구매 완료 처리에서 sold 처리하므로 스킵)
             if not _is_lucky_match:
