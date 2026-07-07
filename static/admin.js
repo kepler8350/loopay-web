@@ -2467,15 +2467,27 @@ async function previewLuckyBuy(){
   try{
     var d=await apiAdmin('/admin/lucky-buy/setup',{method:'POST',body:JSON.stringify({counts:{bronze:bz,silver:sv,gold:gd}})});
     if(!d.success){result.textContent='오류: '+(d.error||'');return;}
-    _luckyPairsData=d.pairs;
+    _luckyPairsData={};
+    // 새 구조: d.pairs[bt] = {pairs:[], max_possible:N}
+    for(var _bt of ['bronze','silver','gold']){
+      if(d.pairs[_bt]){
+        _luckyPairsData[_bt]=d.pairs[_bt].pairs||d.pairs[_bt];
+        // 최대 가능 수 업데이트
+        var _maxEl=document.getElementById('lucky-'+(_bt==='bronze'?'bz':_bt==='silver'?'sv':'gd')+'-max');
+        var _cntEl=document.getElementById('lucky-'+(_bt==='bronze'?'bz':_bt==='silver'?'sv':'gd')+'-count');
+        if(_maxEl&&d.pairs[_bt].max_possible!==undefined){
+          _maxEl.textContent='(최대 '+d.pairs[_bt].max_possible+')';
+          if(_cntEl) _cntEl.max=d.pairs[_bt].max_possible;
+        }
+      }
+    }
     result.textContent='';
-    // 미리보기 렌더링
     var names={bronze:'수정',silver:'루비',gold:'다이아'};
     var colors={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
     var html2='';
     var totalSets=0;
     for(var bt of ['bronze','silver','gold']){
-      var pairs=d.pairs[bt]||[];
+      var pairs=_luckyPairsData[bt]||[];
       if(!pairs.length) continue;
       html2+='<div style="margin-bottom:12px"><strong style="color:'+colors[bt]+'">'+names[bt]+'</strong>';
       html2+='<table style="width:100%;font-size:12px;border-collapse:collapse;margin-top:6px">';

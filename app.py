@@ -3770,7 +3770,21 @@ def admin_lucky_buy_setup():
                     'new_sell': target_sell,
                     'new_buy': target_buy,
                 })
-            result[bar_type] = pairs
+            # 실제 가능한 최대 페어 수 계산 (다른 판매자 조합 기준)
+            _max_possible = 0
+            _temp_used = set()
+            for _i in range(len(row_list)):
+                _a = row_list[_i]
+                if _a['item_id'] in _temp_used: continue
+                _sid_a = dict(_a).get('seller_id')
+                for _j in range(_i+1, len(row_list)):
+                    _cand = row_list[_j]
+                    if _cand['item_id'] in _temp_used: continue
+                    _sid_b = dict(_cand).get('seller_id')
+                    if _sid_a and _sid_b and _sid_a == _sid_b: continue
+                    _temp_used.add(_a['item_id']); _temp_used.add(_cand['item_id'])
+                    _max_possible += 1; break
+            result[bar_type] = {'pairs': pairs, 'max_possible': _max_possible}
         
         return jsonify(success=True, pairs=result)
     finally:
