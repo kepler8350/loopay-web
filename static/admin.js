@@ -1154,9 +1154,15 @@ async function loadReservationsLog(page){
         pending:'대기', sell_reserved:'판매예약중', unmatched:'미매칭',
         expired:'만료', rejected:'거절', complete:'완료'}[r.status] || r.status;
 
-      // 1차 매칭이 실행된 날의 미매칭 구매예약(join_round2=1 + pending) → "2차대기"
-      if(r.status==='pending' && r.res_type==='buy' && r.join_round2===1 && r.r1_ran_on_date){
-        statusKo = '2차대기';
+      // 2차대기 조건:
+      // - 오늘 예약이면서 오늘 1차 매칭이 실행된 경우
+      // - 과거 날짜 예약(이미 그 날의 매칭 주기가 지남)
+      if(r.status==='pending' && r.res_type==='buy' && r.join_round2===1){
+        var _rDate = r.reserve_date;
+        var _isToday = (_rDate === _today2);
+        if(!_isToday || (_isToday && _r1RanToday)){
+          statusKo = '2차대기';
+        }
       }
       // 2차대기 + 실제 매칭됐고 + pending 매치 없음 → "완료"
       // match_status가 null이면 아직 매칭 자체가 안 된 것 → 완료 불가
