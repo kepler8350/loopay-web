@@ -4205,7 +4205,16 @@ def admin_reservations_list():
     where = ['1=1']
     params = []
     if single_date:
-        where.append('r.reserve_date = ?'); params.append(single_date)
+        # reserve_date 또는 match_date 기준 (매칭된 경우 match_date로도 조회)
+        where.append('''(r.reserve_date = ?
+            OR EXISTS (
+                SELECT 1 FROM matches m
+                WHERE (m.seller_item_id=r.item_id OR m.reservation_id=r.id
+                    OR (r.lucky_pair_id IS NOT NULL AND m.lucky_pair_id=r.lucky_pair_id AND m.seller_id=r.user_id))
+                AND m.match_date=?
+            ))''')
+        params.append(single_date)
+        params.append(single_date)
     else:
         if date_from:
             where.append('r.reserve_date >= ?'); params.append(date_from)
