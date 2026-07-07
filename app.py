@@ -3417,6 +3417,11 @@ def admin_matching_status():
         'r2_sell_by_type': r2_sell_by_type,
         'r2_sell_count': r2_sell_count_from_failed,
         'r2_pending_count': r2_pending_count,
+        'pending_match_count': db.execute(
+            """SELECT COUNT(*) as c FROM matches
+               WHERE status='pending' AND match_date=?""",
+            (today,)
+        ).fetchone()['c'],
         'r1_ran_today': (
             bool(db.execute("SELECT value FROM system_settings WHERE key=?", (f'r1_ran_{today}',)).fetchone())
             and db.execute("SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND match_date=?", (today,)).fetchone()['c'] > 0

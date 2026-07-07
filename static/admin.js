@@ -1109,12 +1109,13 @@ async function loadReservationsLog(page){
   try{
     var tok2 = localStorage.getItem('admin_token');
     // 1차/2차 매칭 실행 여부 확인
-    var _r1RanToday = false, _r2RanToday = false, _r2FailedCount = 0;
+    var _r1RanToday = false, _r2RanToday = false, _r2FailedCount = 0, _pendingMatchCount = 0;
     try{
       var _mstat = await fetch('/api/admin/matching-status',{headers:{'Authorization':'Bearer '+tok2}}).then(r=>r.json());
       _r1RanToday = !!(_mstat && _mstat.r1_ran_today);
       _r2RanToday = !!(_mstat && _mstat.r2_ran_today);
       _r2FailedCount = (_mstat && _mstat.failed_count) || 0;
+      _pendingMatchCount = (_mstat && _mstat.pending_match_count) || 0;
     }catch(e){}
     var d = await fetch('/api/admin/reservations-list?' + params.toString(),{headers:{'Authorization':'Bearer '+tok2}}).then(r=>r.json());
     _rlTotal = d.total || 0;
@@ -1157,8 +1158,8 @@ async function loadReservationsLog(page){
       if(r.status==='pending' && r.res_type==='buy' && r.join_round2===1){
         statusKo = '2차대기';
       }
-      // 2차대기 + 미입금 없음 → "완료"
-      if(statusKo==='2차대기' && _r2FailedCount===0){
+      // 2차대기 + pending 매치 없음(모든 매칭 아이템 입금확인) → "완료"
+      if(statusKo==='2차대기' && _pendingMatchCount===0 && _r2FailedCount===0){
         statusKo = '완료';
       }
       // matched + paid/confirmed → "거래완료"
