@@ -6808,6 +6808,35 @@ def testtools_fix_extra_items():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/fix-lucky-sell-reservations', methods=['POST'])
+def testtools_fix_lucky_sell_reservations():
+    """행운구매 판매예약 중 매치가 있는 것을 matched 처리"""
+    db = get_db()
+    try:
+        today = get_today().isoformat()
+        result = db.execute(
+            """UPDATE reservations SET status='matched'
+               WHERE lucky_pair_id IS NOT NULL
+               AND status='pending'
+               AND item_id > 0
+               AND reserve_date=?
+               AND item_id IN (
+                   SELECT seller_item_id FROM matches
+                   WHERE lucky_pair_id IS NOT NULL
+                   AND match_date=?
+                   AND status='pending'
+                   AND seller_item_id IS NOT NULL
+               )""",
+            (today, today)
+        )
+        db.commit()
+        return jsonify(success=True, updated=result.rowcount)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
