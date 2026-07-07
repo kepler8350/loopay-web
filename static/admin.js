@@ -1145,6 +1145,7 @@ async function loadReservationsLog(page){
         : statusKo==='거래완료' ? '#4fc3f7'
         : statusKo==='완료' ? '#66bb6a'
         : statusKo==='매칭완료' ? '#ab47bc'
+        : statusKo==='미입금' ? '#ef5350'
         : (statusColors[r.status] || '#888');
       var confirmedBadge = r.confirmed ? '<span style="font-size:10px;background:#1b5e20;color:#a5d6a7;padding:1px 5px;border-radius:3px">확인</span>' : '';
       var createdAt = (r.created_at||'').slice(0,16);
@@ -1153,9 +1154,13 @@ async function loadReservationsLog(page){
         sold:'판매완료', reserved:'예약중', cancelled:'취소', confirmed:'확정',
         pending:'대기', sell_reserved:'판매예약중', unmatched:'미매칭',
         expired:'만료', rejected:'거절', complete:'완료'}[r.status] || r.status;
-      // status=matched인데 실제 매치 없음(ms=null) → 대기로 표시
+      // status=matched + ms=null → 대기 (유령 matched 예약)
       if(r.status==='matched' && !r.match_status){
         statusKo = '대기';
+      }
+      // status=matched + ms=failed → 미입금 (매칭 실패)
+      if(r.status==='matched' && r.match_status==='failed'){
+        statusKo = '미입금';
       }
 
       // 2차대기 조건:
