@@ -2570,6 +2570,18 @@ def admin_run_matching():
             # stage=0 구매예약(랜덤)도 포함
             buyers  = [b for b in buy_by_type_stage.get((bt, st), []) if b['res_id'] not in matched_buyer_ids]
             buyers += [b for b in buy_any_stage.get(bt, []) if b['res_id'] not in matched_buyer_ids]
+
+            # 행운구매 전용 구매자: 오늘 날짜 + join_round2=0 + 2개 이상 예약한 사용자
+            _lp_buyer_count = {}
+            for _b in buyers:
+                if _b.get('reserve_date') == today and _b.get('join_round2', 1) == 0:
+                    _lp_buyer_count[_b['buyer_id']] = _lp_buyer_count.get(_b['buyer_id'], 0) + 1
+            _lp_eligible_buyer_ids = {uid for uid, cnt in _lp_buyer_count.items() if cnt >= 2}
+            lucky_buyers = [b for b in buyers
+                if b.get('reserve_date') == today
+                and b.get('join_round2', 1) == 0
+                and b['buyer_id'] in _lp_eligible_buyer_ids]
+
             si = 0  # seller 인덱스
             bi = 0  # buyer 인덱스
             while si < len(sellers):
@@ -2589,10 +2601,8 @@ def admin_run_matching():
                     if _asgn_uid in _cur_avoid:
                         # 배정된 구매자가 현재 판매자 → 이 lucky_pair 실패 처리
                         si += 1; continue
-                    for _b in buyers:
+                    for _b in lucky_buyers:
                         if _b['buyer_id'] == _asgn_uid and _b['res_id'] not in matched_buyer_ids:
-                            # 행운구매는 오늘 날짜 예약만 사용
-                            if _b.get('reserve_date', today) != today: continue
                             buyer = _b; break
                     if buyer is None:
                         si += 1; continue  # 같은 구매자 예약 소진 → 스킵
@@ -2610,19 +2620,18 @@ def admin_run_matching():
                             _avoid_seller_ids.add(seller['seller_id'])
                     # 이미 다른 lucky_pair에 배정된 buyer_id 수집
                     _assigned_buyer_ids = set(_lucky_buyer_map.values())
-                    for _b in buyers:
+                    # 행운구매는 lucky_buyers(오늘날짜+j2=0+2개이상), 일반은 buyers 전체
+                    _search_pool = lucky_buyers if _slp else buyers
+                    for _b in _search_pool:
                         if _b['res_id'] in matched_buyer_ids: continue
                         if _b['buyer_id'] in _avoid_seller_ids and not _is_loopay_s: continue
                         # lucky_pair: 이미 다른 pair에 배정된 구매자 제외
                         if _slp and _b['buyer_id'] in _assigned_buyer_ids: continue
-                        # lucky_pair: join_round2=1(2차신청) 또는 오늘 날짜 아닌 구매예약은 행운구매 불가
-                        if _slp and _b.get('join_round2', 0) == 1: continue
-                        if _slp and _b.get('reserve_date', today) != today: continue
                         # lucky_pair: 이 구매자가 남은 lucky_pair 판매예약 수만큼 예약 보유하는지 확인
                         if _slp:
                             _lp_remain = len([_s for _s in sellers
                                 if _s.get('lucky_pair_id')==_slp and _s['res_id'] not in matched_seller_ids])
-                            _b_avail = sum(1 for _bb in buyers
+                            _b_avail = sum(1 for _bb in lucky_buyers
                                 if _bb['buyer_id']==_b['buyer_id'] and _bb['res_id'] not in matched_buyer_ids)
                             if _b_avail < _lp_remain: continue
                         buyer = _b; break
