@@ -7054,6 +7054,7 @@ def testtools_run_db_migration():
         "ALTER TABLE lucky_buy_results ADD COLUMN status TEXT DEFAULT 'confirmed'",
         "ALTER TABLE matches ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
         "ALTER TABLE items ADD COLUMN is_extra INTEGER DEFAULT 0",
+        "ALTER TABLE matches ADD COLUMN buyer_res_id INTEGER DEFAULT NULL",
     ]
     try:
         _c = _sq3_m.connect(db_path, timeout=10)
