@@ -1174,8 +1174,10 @@ async function loadReservationsLog(page){
       if(statusKo==='2차대기'){
         var _isPast = (r.reserve_date < _today2);
         if(r.match_status==='confirmed'){
+          // 판매자 입금확인 완료 → "완료"
           statusKo = '완료';
-        } else if(!r.match_status && _isPast && _r2FailedCount===0){
+        } else if(!r.match_status && _isPast && r.r2_ran_on_date && _r2FailedCount===0){
+          // 매칭 못 된 예약 + 2차 매칭 실행됨 + 미입금 없음 → "완료"
           statusKo = '완료';
         }
       }

@@ -4180,7 +4180,12 @@ def admin_reservations_list():
                          SELECT 1 FROM system_settings WHERE key='r1_ran_'||r.reserve_date
                        ) AND EXISTS(
                          SELECT 1 FROM matches WHERE match_round=1 AND match_date=r.reserve_date
-                       ) THEN 1 ELSE 0 END as r1_ran_on_date
+                       ) THEN 1 ELSE 0 END as r1_ran_on_date,
+                       CASE WHEN EXISTS(
+                         SELECT 1 FROM system_settings WHERE key='r2_ran_'||r.reserve_date
+                       ) AND EXISTS(
+                         SELECT 1 FROM matches WHERE match_round=2 AND match_date=r.reserve_date
+                       ) THEN 1 ELSE 0 END as r2_ran_on_date
                 FROM reservations r
                 LEFT JOIN users u ON r.user_id = u.id
                 LEFT JOIN items i_type ON r.item_id = i_type.id AND r.item_id > 0
