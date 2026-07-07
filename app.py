@@ -2599,8 +2599,9 @@ def admin_run_matching():
                     if _slp:
                         # sell_rows 전체(처리됐든 안됐든)에서 같은 lucky_pair 판매자 수집
                         for _s in sell_rows:
-                            if _s.get('lucky_pair_id') == _slp:
-                                _avoid_seller_ids.add(_s['seller_id'])
+                            _sd = dict(_s)
+                            if _sd.get('lucky_pair_id') == _slp:
+                                _avoid_seller_ids.add(_sd['seller_id'])
                     else:
                         if not _is_loopay_s:
                             _avoid_seller_ids.add(seller['seller_id'])
