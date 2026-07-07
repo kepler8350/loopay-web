@@ -3419,7 +3419,7 @@ def admin_matching_status():
         'r2_pending_count': r2_pending_count,
         'pending_match_count': db.execute(
             """SELECT COUNT(*) as c FROM matches
-               WHERE status='pending' AND match_date=?""",
+               WHERE status IN ('pending','paid') AND match_date=?""",
             (today,)
         ).fetchone()['c'],
         'r1_ran_today': (

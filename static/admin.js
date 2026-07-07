@@ -1169,12 +1169,12 @@ async function loadReservationsLog(page){
       if(statusKo==='2차대기' && _pendingMatchCount===0 && _r2FailedCount===0){
         statusKo = '완료';
       }
-      // matched + paid/confirmed → "거래완료"
-      if(r.status==='matched' && (r.match_status==='paid' || r.match_status==='confirmed')){
+      // matched + confirmed(판매자 입금확인) → "거래완료"
+      if(r.status==='matched' && r.match_status==='confirmed'){
         statusKo = '거래완료';
       }
-      // 구매예약(res_type=buy)의 matched/sold → "거래완료"
-      if(r.res_type==='buy' && (r.status==='matched' || r.status==='sold') && r.match_status && r.match_status!=='pending' && r.match_status!=='failed'){
+      // 구매예약(res_type=buy)의 matched/sold + confirmed → "거래완료"
+      if(r.res_type==='buy' && (r.status==='matched' || r.status==='sold') && r.match_status==='confirmed'){
         statusKo = '거래완료';
       }
       // 2차 참가 배지: 구매예약만 표시
