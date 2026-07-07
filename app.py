@@ -2592,9 +2592,13 @@ def admin_run_matching():
                     else:
                         if not _is_loopay_s:
                             _avoid_seller_ids.add(seller['seller_id'])
+                    # 이미 다른 lucky_pair에 배정된 buyer_id 수집
+                    _assigned_buyer_ids = set(_lucky_buyer_map.values())
                     for _b in buyers:
                         if _b['res_id'] in matched_buyer_ids: continue
                         if _b['buyer_id'] in _avoid_seller_ids and not _is_loopay_s: continue
+                        # lucky_pair: 이미 다른 pair에 배정된 구매자 제외
+                        if _slp and _b['buyer_id'] in _assigned_buyer_ids: continue
                         # lucky_pair: 이 구매자가 남은 lucky_pair 판매예약 수만큼 예약 보유하는지 확인
                         if _slp:
                             _lp_remain = len([_s for _s in sellers
