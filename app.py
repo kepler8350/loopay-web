@@ -2580,6 +2580,14 @@ def admin_run_matching():
                 if _slp and _slp in _lucky_buyer_map:
                     # 배정된 buyer_id(user_id)의 미사용 예약 찾기
                     _asgn_uid = _lucky_buyer_map[_slp]
+                    # 현재 판매자도 피해야 함 (판매자B = 구매자 방지)
+                    _cur_avoid = set()
+                    for _s in sellers:
+                        if _s.get('lucky_pair_id') == _slp:
+                            _cur_avoid.add(_s['seller_id'])
+                    if _asgn_uid in _cur_avoid:
+                        # 배정된 구매자가 현재 판매자 → 이 lucky_pair 실패 처리
+                        si += 1; continue
                     for _b in buyers:
                         if _b['buyer_id'] == _asgn_uid and _b['res_id'] not in matched_buyer_ids:
                             buyer = _b; break
@@ -2589,7 +2597,8 @@ def admin_run_matching():
                     # lucky_pair의 모든 판매자 ID 수집 (buyer=seller 방지용)
                     _avoid_seller_ids = set()
                     if _slp:
-                        for _s in sellers:
+                        # sell_rows 전체(처리됐든 안됐든)에서 같은 lucky_pair 판매자 수집
+                        for _s in sell_rows:
                             if _s.get('lucky_pair_id') == _slp:
                                 _avoid_seller_ids.add(_s['seller_id'])
                     else:
