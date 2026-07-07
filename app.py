@@ -2197,14 +2197,15 @@ def admin_run_matching():
 
         # ── 이전 날짜 미처리 join_round2=1 구매예약을 오늘 날짜로 갱신 ──
         # (전날 2차 매칭이 실행 안 됐거나 미매칭으로 남은 예약)
+        # join_round2 구매예약은 날짜 변경 없이 match_round=1로만 업데이트
         db.execute(
-            """UPDATE reservations SET reserve_date=?, match_round=1
+            """UPDATE reservations SET match_round=1
                WHERE status='pending'
                AND reserve_date<? AND reserve_date IS NOT NULL
                AND COALESCE(join_round2,0)=1
                AND (item_id IS NULL OR item_id=0)
                AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
-            (today, today)
+            (today,)
         )
         db.commit()
 
@@ -2371,12 +2372,12 @@ def admin_run_matching():
 
         # 매칭 전 모든 loopay 판매예약(pending/unmatched 모두) → 현재 round로 리셋
         db.execute(
-            """UPDATE reservations SET status='pending', match_round=?, reserve_date=?
+            """UPDATE reservations SET status='pending', match_round=?
                WHERE status IN ('pending', 'unmatched')
                AND item_id IS NOT NULL AND item_id > 0
                AND user_id = ?
                AND confirmed=1""",
-            (round_num, today, loopay_id)
+            (round_num, loopay_id)
         )
         # 일반 사용자 판매예약도 unmatched면 현재 round로 복원
         db.execute(
@@ -2446,7 +2447,7 @@ def admin_run_matching():
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                WHERE (r.status='pending' OR r.status IS NULL)
-               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date=?))
+               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date<=?))
                AND COALESCE(r.confirmed,0)=0
                AND u.username != 'loopay'
                AND r.user_id NOT IN (
