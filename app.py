@@ -3283,8 +3283,7 @@ def admin_matching_status():
                WHERE r.match_round=? AND r.status IN ('pending','unmatched')
                AND r.reserve_date>=?
                AND COALESCE(r.confirmed,0)=1
-               AND i.status IN ('reservable','waiting')
-               AND r.lucky_pair_id IS NULL
+               AND i.status IN ('reservable','waiting','matched')
                GROUP BY r.bar_type""",
             (round_num, today)
         ).fetchall()
