@@ -2457,6 +2457,7 @@ def admin_run_matching():
                CASE WHEN COALESCE(r.stage,0) <= 0 THEN 1 ELSE r.stage END as stage,
                COALESCE(r.stage, 0) as raw_stage,
                COALESCE(r.join_round2, 0) as join_round2,
+               r.reserve_date,
                r.item_id,
                u.username as buyer_username, u.nickname as buyer_nickname,
                u.phone as buyer_phone, u.account_name as buyer_account_name
@@ -2590,6 +2591,8 @@ def admin_run_matching():
                         si += 1; continue
                     for _b in buyers:
                         if _b['buyer_id'] == _asgn_uid and _b['res_id'] not in matched_buyer_ids:
+                            # 행운구매는 오늘 날짜 예약만 사용
+                            if _b.get('reserve_date', today) != today: continue
                             buyer = _b; break
                     if buyer is None:
                         si += 1; continue  # 같은 구매자 예약 소진 → 스킵
@@ -2612,8 +2615,9 @@ def admin_run_matching():
                         if _b['buyer_id'] in _avoid_seller_ids and not _is_loopay_s: continue
                         # lucky_pair: 이미 다른 pair에 배정된 구매자 제외
                         if _slp and _b['buyer_id'] in _assigned_buyer_ids: continue
-                        # lucky_pair: join_round2=1(2차신청) 구매예약은 행운구매 불가
+                        # lucky_pair: join_round2=1(2차신청) 또는 오늘 날짜 아닌 구매예약은 행운구매 불가
                         if _slp and _b.get('join_round2', 0) == 1: continue
+                        if _slp and _b.get('reserve_date', today) != today: continue
                         # lucky_pair: 이 구매자가 남은 lucky_pair 판매예약 수만큼 예약 보유하는지 확인
                         if _slp:
                             _lp_remain = len([_s for _s in sellers
