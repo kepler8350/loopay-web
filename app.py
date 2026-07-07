@@ -2473,7 +2473,7 @@ def admin_run_matching():
                    WHERE m.match_round=1 AND m.status='failed'
                    AND m.match_date=?
                )
-               ORDER BY RANDOM()""",
+               ORDER BY r.reserve_date DESC, RANDOM()""",
             (round_num, today, today)
         ).fetchall()
         # loopay 구매예약 (confirmed=1, item.status='waiting') 별도 조회
