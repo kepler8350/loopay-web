@@ -6918,6 +6918,30 @@ def testtools_fix_lucky_sell_reservations():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/fix-ghost-matched', methods=['POST'])
+def testtools_fix_ghost_matched():
+    """유령 matched 구매예약 정리 (status=matched인데 실제 매치 없는 것)"""
+    db = get_db()
+    try:
+        result = db.execute(
+            """UPDATE reservations SET status='pending'
+               WHERE status='matched'
+               AND (item_id IS NULL OR item_id=0)
+               AND NOT EXISTS (
+                   SELECT 1 FROM matches m
+                   WHERE m.buyer_id=reservations.user_id
+                   AND m.match_date>=reservations.reserve_date
+                   AND m.status IN ('pending','paid','confirmed')
+               )"""
+        )
+        db.commit()
+        return jsonify(success=True, updated=result.rowcount)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
