@@ -3284,8 +3284,10 @@ def admin_matching_status():
                AND r.reserve_date>=?
                AND COALESCE(r.confirmed,0)=1
                AND i.status IN ('reservable','waiting','matched')
+               AND (r.status='unmatched' OR r.lucky_pair_id IS NULL
+                    OR EXISTS(SELECT 1 FROM matches m WHERE m.lucky_pair_id=r.lucky_pair_id AND m.match_date=? AND m.status='pending'))
                GROUP BY r.bar_type""",
-            (round_num, today)
+            (round_num, today, today)
         ).fetchall()
         # sell_count를 by_type_rows 합계로 재계산 (카드 수치 = 테이블 수치 일치)
         sell_count = sum(r['cnt'] for r in by_type_rows) if by_type_rows else sell_count
