@@ -4250,7 +4250,7 @@ def admin_reservations_list():
                           WHERE m.reservation_id=r.id AND (r.item_id IS NULL OR r.item_id=0)
                           ORDER BY m.id DESC LIMIT 1),
                          (SELECT m.status FROM matches m
-                          WHERE r.item_id>0 AND r.lucky_pair_id IS NOT NULL
+                          WHERE r.lucky_pair_id IS NOT NULL
                           AND m.lucky_pair_id=r.lucky_pair_id
                           AND m.seller_id=r.user_id
                           ORDER BY m.id DESC LIMIT 1)
@@ -4263,7 +4263,7 @@ def admin_reservations_list():
                           WHERE m.reservation_id=r.id AND (r.item_id IS NULL OR r.item_id=0)
                           ORDER BY m.id DESC LIMIT 1),
                          (SELECT m.match_date FROM matches m
-                          WHERE r.item_id>0 AND r.lucky_pair_id IS NOT NULL
+                          WHERE r.lucky_pair_id IS NOT NULL
                           AND m.lucky_pair_id=r.lucky_pair_id
                           AND m.seller_id=r.user_id
                           ORDER BY m.id DESC LIMIT 1)
