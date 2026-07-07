@@ -1154,13 +1154,17 @@ async function loadReservationsLog(page){
         sold:'판매완료', reserved:'예약중', cancelled:'취소', confirmed:'확정',
         pending:'대기', sell_reserved:'판매예약중', unmatched:'미매칭',
         expired:'만료', rejected:'거절', complete:'완료'}[r.status] || r.status;
-      // status=matched + ms=null → 대기 (유령 matched 예약)
+      // status=matched + ms=null → 대기 (유령 matched 예약 - 실제 매치 없음)
       if(r.status==='matched' && !r.match_status){
         statusKo = '대기';
       }
       // status=matched + ms=failed → 미입금 (매칭 실패)
       if(r.status==='matched' && r.match_status==='failed'){
         statusKo = '미입금';
+      }
+      // status=pending + ms=pending/paid → 매칭완료 (매치됐지만 reservation status 미갱신)
+      if(r.status==='pending' && (r.match_status==='pending' || r.match_status==='paid')){
+        statusKo = '매칭완료';
       }
 
       // 2차대기 조건:

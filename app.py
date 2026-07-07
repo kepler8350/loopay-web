@@ -2370,6 +2370,20 @@ def admin_run_matching():
 
         import random
 
+        # 유령 matched 구매예약 정리: status=matched인데 실제 매치 없는 구매예약 → pending으로 복원
+        db.execute(
+            """UPDATE reservations SET status='pending'
+               WHERE status='matched'
+               AND (item_id IS NULL OR item_id=0)
+               AND NOT EXISTS (
+                   SELECT 1 FROM matches m
+                   WHERE m.buyer_id=reservations.user_id
+                   AND m.match_date>=reservations.reserve_date
+                   AND m.status IN ('pending','paid','confirmed')
+               )""",
+        )
+        db.commit()
+
         # 매칭 전 모든 loopay 판매예약(pending/unmatched 모두) → 현재 round로 리셋
         db.execute(
             """UPDATE reservations SET status='pending', match_round=?
