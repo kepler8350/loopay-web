@@ -3180,13 +3180,15 @@ def admin_matching_status():
         # 오늘 또는 어제 날짜 포함 (1차 매칭이 전날 밤에 실행됐을 경우 대비)
         import datetime as _dt
         _yesterday = (_dt.date.fromisoformat(today) - _dt.timedelta(days=1)).isoformat()
-        # 2차는 reserve_date 조건 제거 (match_round=2로 전환된 예약만 조회)
+        # 2차는 match_round=2 또는 join_round2=1(오늘 날짜)인 구매예약
         _date_cond = "AND r.reserve_date=?" if round_num == 1 else ""
         _date_args = [today] if round_num == 1 else []
+        _round2_join_cond = "OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date=?)" if round_num == 2 else ""
+        _round2_join_args = [today] if round_num == 2 else []
         buy_count = db.execute(
             f"""SELECT COUNT(*) as c FROM reservations r
                WHERE r.status='pending' AND r.user_id!=?
-               AND r.match_round=?
+               AND (r.match_round=? {_round2_join_cond})
                {_date_cond}
                AND COALESCE(r.confirmed,0)=0
                AND r.user_id NOT IN (
@@ -3197,7 +3199,7 @@ def admin_matching_status():
                    WHERE m.match_round=1 AND m.status='failed'
                    AND m.match_date=?
                )""",
-            [loopay_id, round_num] + _date_args + [today]
+            [loopay_id, round_num] + _round2_join_args + _date_args + [today]
         ).fetchone()['c']
 
         # loopay 구매예약도 포함 (waiting 아이템이 있는 pending 예약)
