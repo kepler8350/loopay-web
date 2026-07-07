@@ -1207,7 +1207,7 @@ async function loadReservationsLog(page){
       return '<tr style="border-bottom:1px solid #2a2a40">'
         +'<td style="text-align:center"><input type="checkbox" class="rl-check" data-id="'+r.id+'" onchange="rlUpdateDelBtn()" style="cursor:pointer"></td>'
         +'<td style="text-align:center;color:#888">'+rowNo+'</td>'
-        +'<td style="text-align:center">'+r.reserve_date+'</td>'
+        +'<td style="text-align:center">'+(r.match_date||r.reserve_date)+'</td>'
         +'<td style="text-align:center;color:#aaa">'+(r.account_name||r.nickname||'-')+'</td>'
         +'<td style="text-align:center"><strong style="color:#4fc3f7">'+r.username+'</strong></td>'
         +'<td style="text-align:center;font-weight:700;color:'+barColor+'">'+bar+'</td>'

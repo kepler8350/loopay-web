@@ -4255,6 +4255,19 @@ def admin_reservations_list():
                           AND m.seller_id=r.user_id
                           ORDER BY m.id DESC LIMIT 1)
                        ) as match_status,
+                       COALESCE(
+                         (SELECT m.match_date FROM matches m
+                          WHERE m.seller_item_id=r.item_id AND r.item_id>0
+                          ORDER BY m.id DESC LIMIT 1),
+                         (SELECT m.match_date FROM matches m
+                          WHERE m.reservation_id=r.id AND (r.item_id IS NULL OR r.item_id=0)
+                          ORDER BY m.id DESC LIMIT 1),
+                         (SELECT m.match_date FROM matches m
+                          WHERE r.item_id>0 AND r.lucky_pair_id IS NOT NULL
+                          AND m.lucky_pair_id=r.lucky_pair_id
+                          AND m.seller_id=r.user_id
+                          ORDER BY m.id DESC LIMIT 1)
+                       ) as match_date,
                        CASE WHEN EXISTS(
                          SELECT 1 FROM system_settings WHERE key='r1_ran_'||r.reserve_date
                        ) AND EXISTS(
