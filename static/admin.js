@@ -2440,16 +2440,30 @@ function updateLuckyBuyBtn(priceBands){
   }
 }
 
-function openLuckyBuy(){
+async function openLuckyBuy(){
   document.getElementById('lucky-buy-panel').style.display='block';
   document.getElementById('lucky-preview').style.display='none';
+  document.getElementById('lucky-result').textContent='최대 조합 수 계산 중...';
+  // 실제 가능한 max_possible 조회 (크게 잡아서 setup 호출)
+  try{
+    var bigCount={bronze:99,silver:99,gold:99};
+    var d=await apiAdmin('/admin/lucky-buy/setup',{method:'POST',body:JSON.stringify({counts:bigCount})});
+    if(d.success&&d.pairs){
+      var maxBz=d.pairs.bronze?d.pairs.bronze.max_possible||0:0;
+      var maxSv=d.pairs.silver?d.pairs.silver.max_possible||0:0;
+      var maxGd=d.pairs.gold?d.pairs.gold.max_possible||0:0;
+      document.getElementById('lucky-bz-max').textContent='(최대 '+maxBz+')';
+      document.getElementById('lucky-sv-max').textContent='(최대 '+maxSv+')';
+      document.getElementById('lucky-gd-max').textContent='(최대 '+maxGd+')';
+      document.getElementById('lucky-bz-count').max=maxBz;
+      document.getElementById('lucky-sv-count').max=maxSv;
+      document.getElementById('lucky-gd-count').max=maxGd;
+      document.getElementById('lucky-bz-count').value=maxBz;
+      document.getElementById('lucky-sv-count').value=maxSv;
+      document.getElementById('lucky-gd-count').value=maxGd;
+    }
+  } catch(e){}
   document.getElementById('lucky-result').textContent='';
-  var maxBz=Math.floor(_luckyBandCounts.bronze/2);
-  var maxSv=Math.floor(_luckyBandCounts.silver/2);
-  var maxGd=Math.floor(_luckyBandCounts.gold/2);
-  document.getElementById('lucky-bz-count').value=maxBz;
-  document.getElementById('lucky-sv-count').value=maxSv;
-  document.getElementById('lucky-gd-count').value=maxGd;
 }
 
 function closeLuckyBuy(){
