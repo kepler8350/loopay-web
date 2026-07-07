@@ -1108,11 +1108,13 @@ async function loadReservationsLog(page){
 
   try{
     var tok2 = localStorage.getItem('admin_token');
-    // 1차 매칭 실행 여부 확인
-    var _r1RanToday = false;
+    // 1차/2차 매칭 실행 여부 확인
+    var _r1RanToday = false, _r2RanToday = false, _r2FailedCount = 0;
     try{
       var _mstat = await fetch('/api/admin/matching-status',{headers:{'Authorization':'Bearer '+tok2}}).then(r=>r.json());
       _r1RanToday = !!(_mstat && _mstat.r1_ran_today);
+      _r2RanToday = !!(_mstat && _mstat.r2_ran_today);
+      _r2FailedCount = (_mstat && _mstat.failed_count) || 0;
     }catch(e){}
     var d = await fetch('/api/admin/reservations-list?' + params.toString(),{headers:{'Authorization':'Bearer '+tok2}}).then(r=>r.json());
     _rlTotal = d.total || 0;
@@ -1138,7 +1140,10 @@ async function loadReservationsLog(page){
       var barColor = r.bar_type==='bronze'?'#cd7f32':r.bar_type==='silver'?'#c0c0c0':'#ffd700';
       var typeName = r.res_type==='sell'?'판매':'구매';
       var typeColor = r.res_type==='sell' ? typeColors['sell'] : typeColors['buy'];
-      var statusColor = (statusKo==='2차대기') ? '#ffa726' : (statusColors[r.status] || '#888');
+      var statusColor = statusKo==='2차대기' ? '#ffa726'
+        : statusKo==='거래완료' ? '#4fc3f7'
+        : statusKo==='완료' ? '#66bb6a'
+        : (statusColors[r.status] || '#888');
       var confirmedBadge = r.confirmed ? '<span style="font-size:10px;background:#1b5e20;color:#a5d6a7;padding:1px 5px;border-radius:3px">확인</span>' : '';
       var createdAt = (r.created_at||'').slice(0,16);
       var statusKo = {reservable:'예약가능', active:'활성', waiting:'대기중', matched:'매칭완료',
@@ -1148,6 +1153,14 @@ async function loadReservationsLog(page){
       // 1차 매칭 후 미매칭 예약 → "2차대기"
       if(_r1RanToday && r.status==='pending' && (r.match_round===1 || r.join_round2===1)){
         statusKo = '2차대기';
+      }
+      // 매칭완료 + 입금확인(paid/confirmed) → "거래완료"
+      if(r.status==='matched' && (r.match_status==='paid' || r.match_status==='confirmed')){
+        statusKo = '거래완료';
+      }
+      // 2차대기 + 미입금 아이템 없음(2차 매칭 완료) → "완료"
+      if(statusKo==='2차대기' && _r2RanToday && _r2FailedCount===0){
+        statusKo = '완료';
       }
       // 2차 참가 배지: 구매예약만 표시
       var round2Badge = r.res_type==='buy'
