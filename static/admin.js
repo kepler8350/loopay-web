@@ -1153,6 +1153,10 @@ async function loadReservationsLog(page){
         sold:'판매완료', reserved:'예약중', cancelled:'취소', confirmed:'확정',
         pending:'대기', sell_reserved:'판매예약중', unmatched:'미매칭',
         expired:'만료', rejected:'거절', complete:'완료'}[r.status] || r.status;
+      // status=matched인데 실제 매치 없음(ms=null) → 대기로 표시
+      if(r.status==='matched' && !r.match_status){
+        statusKo = '대기';
+      }
 
       // 2차대기 조건:
       // - 오늘 예약이면서 오늘 1차 매칭이 실행된 경우
