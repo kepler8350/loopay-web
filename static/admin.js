@@ -1099,6 +1099,17 @@ async function loadReservationsLog(page){
   var username = document.getElementById('rl-username')?.value || '';
   var type     = document.getElementById('rl-type')?.value || '';
 
+  // 날짜 필터 없으면 서버 today 기준
+  if(!date && !dateFrom && !dateTo){
+    try{
+      var _rlCt = await fetch('/api/current-time').then(r=>r.json());
+      date = _rlCt.time.slice(0,10);
+    }catch(e){ date = new Date().toISOString().slice(0,10); }
+    // date input에도 반영
+    var _rlDateEl = document.getElementById('rl-date');
+    if(_rlDateEl && !_rlDateEl.value) _rlDateEl.value = date;
+  }
+
   var params = new URLSearchParams({page: _rlPage, per_page: (_rlPerPage || 100)});
   if(date)     params.set('date', date);
   if(dateFrom) params.set('date_from', dateFrom);
