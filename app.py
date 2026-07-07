@@ -2567,32 +2567,30 @@ def admin_run_matching():
             buyers  = [b for b in buy_by_type_stage.get((bt, st), []) if b['res_id'] not in matched_buyer_ids]
             si = 0  # seller 인덱스
             bi = 0  # buyer 인덱스
-            while si < len(sellers) and bi < len(buyers):
+            while si < len(sellers):
                 seller = sellers[si]
-                buyer  = buyers[bi]
-                # 동일 사용자(판매자=구매자) 매칭 방지 → 단, loopay 판매↔구매는 허용
-                if seller['seller_id'] == buyer['buyer_id'] and seller.get('seller_username') != 'loopay':
-                    bi += 1
-                    continue
-                # 행운구매 판매예약: 같은 lucky_pair_id는 같은 구매자와 매칭
                 _slp = seller.get('lucky_pair_id')
+                _is_loopay_s = (seller.get('seller_username') == 'loopay')
+
+                # 이 판매예약에 맞는 구매자를 buyers 전체에서 탐색
+                buyer = None
                 if _slp and _slp in _lucky_buyer_map:
-                    # 이미 이 lucky_pair에 배정된 구매자가 있으면 그 구매자를 직접 찾기
-                    _assigned_buyer_res = _lucky_buyer_map[_slp]
-                    if buyer['res_id'] != _assigned_buyer_res:
-                        # 배정된 구매자를 buyers 리스트에서 직접 찾아 bi 조정
-                        _found_bi = None
-                        for _fi in range(len(buyers)):
-                            if buyers[_fi]['res_id'] == _assigned_buyer_res:
-                                _found_bi = _fi
-                                break
-                        if _found_bi is not None:
-                            bi = _found_bi
-                            buyer = buyers[bi]
-                        else:
-                            # 배정된 구매자가 이미 사용됐으면 이 판매예약 건너뜀
-                            si += 1
-                            continue
+                    # 이미 배정된 구매자 직접 탐색
+                    _asgn = _lucky_buyer_map[_slp]
+                    for _b in buyers:
+                        if _b['res_id'] == _asgn and _b['res_id'] not in matched_buyer_ids:
+                            buyer = _b; break
+                    if buyer is None:
+                        si += 1; continue  # 배정된 구매자 없음 → 스킵
+                else:
+                    # 일반 탐색: 미사용 + buyer≠seller
+                    for _b in buyers:
+                        if _b['res_id'] in matched_buyer_ids: continue
+                        if _b['buyer_id'] == seller['seller_id'] and not _is_loopay_s: continue
+                        buyer = _b; break
+                    if buyer is None:
+                        si += 1; continue  # 가능한 구매자 없음 → 스킵
+
                 matched_seller_ids.add(seller['res_id'])
                 matched_buyer_ids.add(buyer['res_id'])
                 # 행운구매 판매예약이면 lucky_pair_id에 구매자 매핑 저장
@@ -2600,7 +2598,6 @@ def admin_run_matching():
                 if _slp2 and _slp2 not in _lucky_buyer_map:
                     _lucky_buyer_map[_slp2] = buyer['res_id']
                 si += 1
-                bi += 1
 
                 is_loopay = (seller['seller_username'] == 'loopay')
                 def get_setting(key, fallback):
