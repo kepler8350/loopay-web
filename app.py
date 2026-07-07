@@ -2461,7 +2461,7 @@ def admin_run_matching():
                u.phone as buyer_phone, u.account_name as buyer_account_name
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
-               WHERE (r.status='pending' OR r.status IS NULL)
+               WHERE r.status='pending'
                AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date<=?))
                AND COALESCE(r.confirmed,0)=0
                AND u.username != 'loopay'
@@ -2683,12 +2683,12 @@ def admin_run_matching():
                     db.execute(
                         """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
                            buy_price, sell_price, match_round, match_date, status,
-                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, lucky_pair_id)
-                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?)""",
+                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id, buyer_res_id, lucky_pair_id)
+                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,?)""",
                         (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
                          bt, st, buy_price, sell_price, round_num, today,
                          s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'],
-                         seller.get('lucky_pair_id'))
+                         seller.get('item_id'), buyer['res_id'], seller.get('lucky_pair_id'))
                     )
 
                 # 구매자 알림: 매칭 정보 상세 카드 (다음날 05:00 발송)
