@@ -2577,10 +2577,17 @@ def admin_run_matching():
                 if _b.get('reserve_date') == today and _b.get('join_round2', 1) == 0:
                     _lp_buyer_count[_b['buyer_id']] = _lp_buyer_count.get(_b['buyer_id'], 0) + 1
             _lp_eligible_buyer_ids = {uid for uid, cnt in _lp_buyer_count.items() if cnt >= 2}
+            # 모든 lucky_pair 판매자 ID 수집 (구매자에서 제외)
+            _all_lp_seller_ids = set()
+            for _sr in sell_rows:
+                _srd = dict(_sr)
+                if _srd.get('lucky_pair_id'):
+                    _all_lp_seller_ids.add(_srd['seller_id'])
             lucky_buyers = [b for b in buyers
                 if b.get('reserve_date') == today
                 and b.get('join_round2', 1) == 0
-                and b['buyer_id'] in _lp_eligible_buyer_ids]
+                and b['buyer_id'] in _lp_eligible_buyer_ids
+                and b['buyer_id'] not in _all_lp_seller_ids]
 
             si = 0  # seller 인덱스
             bi = 0  # buyer 인덱스
