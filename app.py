@@ -2563,12 +2563,22 @@ def admin_run_matching():
                 # 행운구매 판매예약: 같은 lucky_pair_id는 같은 구매자와 매칭
                 _slp = seller.get('lucky_pair_id')
                 if _slp and _slp in _lucky_buyer_map:
-                    # 이미 이 lucky_pair에 배정된 구매자가 있으면 그 구매자와만 매칭
+                    # 이미 이 lucky_pair에 배정된 구매자가 있으면 그 구매자를 직접 찾기
                     _assigned_buyer_res = _lucky_buyer_map[_slp]
                     if buyer['res_id'] != _assigned_buyer_res:
-                        # 해당 구매자를 찾을 때까지 건너뜀
-                        bi += 1
-                        continue
+                        # 배정된 구매자를 buyers 리스트에서 직접 찾아 bi 조정
+                        _found_bi = None
+                        for _fi in range(len(buyers)):
+                            if buyers[_fi]['res_id'] == _assigned_buyer_res:
+                                _found_bi = _fi
+                                break
+                        if _found_bi is not None:
+                            bi = _found_bi
+                            buyer = buyers[bi]
+                        else:
+                            # 배정된 구매자가 이미 사용됐으면 이 판매예약 건너뜀
+                            si += 1
+                            continue
                 matched_seller_ids.add(seller['res_id'])
                 matched_buyer_ids.add(buyer['res_id'])
                 # 행운구매 판매예약이면 lucky_pair_id에 구매자 매핑 저장
