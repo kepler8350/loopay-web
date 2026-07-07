@@ -2565,7 +2565,9 @@ def admin_run_matching():
 
         for (bt, st) in all_keys:
             sellers = [s for s in sell_by_type_stage.get((bt, st), []) if s['res_id'] not in matched_seller_ids]
+            # stage=0 구매예약(랜덤)도 포함
             buyers  = [b for b in buy_by_type_stage.get((bt, st), []) if b['res_id'] not in matched_buyer_ids]
+            buyers += [b for b in buy_any_stage.get(bt, []) if b['res_id'] not in matched_buyer_ids]
             si = 0  # seller 인덱스
             bi = 0  # buyer 인덱스
             while si < len(sellers):
