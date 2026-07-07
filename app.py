@@ -6978,6 +6978,64 @@ def testtools_fix_ghost_matched():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/fix-missing-items', methods=['POST'])
+def testtools_fix_missing_items():
+    """confirmed 매치인데 구매자에게 아이템이 없는 경우 아이템 생성"""
+    db = get_db()
+    try:
+        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
+        _pm = {
+            'bronze': {s:(b,sl) for s,b,sl in BRONZE_PRICES},
+            'silver': {s:(b,sl) for s,b,sl in SILVER_PRICES},
+            'gold':   {s:(b,sl) for s,b,sl in GOLD_PRICES},
+        }
+        loopay_id = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()['id']
+        today = get_today().isoformat()
+        created = 0
+        # confirmed 매치 중 구매자에게 아이템 없는 것
+        matches = db.execute(
+            """SELECT m.id, m.buyer_id, m.bar_type, m.stage, m.seller_item_id, m.reservation_id
+               FROM matches m
+               WHERE m.status='confirmed' AND m.buyer_id != ?
+               AND NOT EXISTS (
+                   SELECT 1 FROM items i WHERE i.user_id=m.buyer_id AND i.bar_type=m.bar_type
+                   AND i.purchase_date >= m.match_date
+               )""",
+            (loopay_id,)
+        ).fetchall()
+        for m in matches:
+            m = dict(m)
+            # seller_item 찾기
+            seller_item = None
+            if m['seller_item_id']:
+                seller_item = db.execute("SELECT id,bar_type,stage FROM items WHERE id=?", (m['seller_item_id'],)).fetchone()
+            if not seller_item:
+                loopay_res = db.execute(
+                    """SELECT r.item_id FROM reservations r
+                       INNER JOIN items i ON r.item_id=i.id
+                       WHERE r.user_id=? AND r.bar_type=? AND r.confirmed=1
+                       AND r.item_id IS NOT NULL AND r.item_id > 0
+                       ORDER BY r.id DESC LIMIT 1""",
+                    (loopay_id, m['bar_type'])
+                ).fetchone()
+                if loopay_res:
+                    seller_item = db.execute("SELECT id,bar_type,stage FROM items WHERE id=?", (loopay_res['item_id'],)).fetchone()
+            if seller_item:
+                _stage = int(seller_item['stage'] or m['stage'] or 1) + 1
+                db.execute(
+                    "INSERT INTO items(user_id,bar_type,stage,purchase_date,status) VALUES(?,?,?,?,'reservable')",
+                    (m['buyer_id'], m['bar_type'], _stage, today)
+                )
+                db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
+                created += 1
+        db.commit()
+        return jsonify(success=True, created=created)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
