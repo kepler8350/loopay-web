@@ -2676,9 +2676,11 @@ def admin_run_matching():
                     )
                     matched_seller_ids.add(_seller['res_id'])
                     matched_buyer_ids.add(_buyer_res['res_id'])
-                    # 판매예약 → matched, 구매예약 → matched
+                    # 판매예약/아이템 → matched, 구매예약 → matched
                     db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_seller['res_id'],))
                     db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_buyer_res['res_id'],))
+                    if _seller_iid:
+                        db.execute("UPDATE items SET status='matched' WHERE id=?", (_seller_iid,))
                     total_matched += 1
                     matched_pairs.append({
                         'seller': _seller.get('seller_username'),
@@ -2797,9 +2799,12 @@ def admin_run_matching():
                 )
                 matched_seller_ids.add(_seller['res_id'])
                 matched_buyer_ids.add(_buyer['res_id'])
-                # 판매예약 → matched, 구매예약 → matched
+                # 판매예약/아이템 → matched, 구매예약 → matched
                 db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_seller['res_id'],))
                 db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_buyer['res_id'],))
+                _sell_item_id = _seller.get('item_id')
+                if _sell_item_id:
+                    db.execute("UPDATE items SET status='matched' WHERE id=?", (_sell_item_id,))
                 total_matched += 1
                 matched_pairs.append({
                     'seller': _seller.get('seller_username'),
@@ -7195,6 +7200,28 @@ def testtools_debug_lucky_results():
             ORDER BY lb.id DESC LIMIT 10
         """).fetchall()
         return jsonify(results=[dict(r) for r in rows])
+    finally:
+        db.close()
+
+@app.route('/api/admin/testtools/fix-matched-items-status', methods=['POST'])
+def testtools_fix_matched_items_status():
+    """매치된 판매예약의 아이템 status를 matched로 업데이트"""
+    db = get_db()
+    try:
+        fixed = db.execute(
+            """UPDATE items SET status='matched'
+               WHERE id IN (
+                   SELECT m.seller_item_id FROM matches m
+                   WHERE m.seller_item_id IS NOT NULL
+                   AND m.status IN ('pending','paid')
+               )
+               AND status IN ('reservable','active','waiting')""",
+        ).rowcount
+        db.commit()
+        return jsonify(success=True, fixed=fixed)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
     finally:
         db.close()
 
