@@ -2634,6 +2634,8 @@ def admin_run_matching():
                     _assigned_buyer_ids = set(_lucky_buyer_map.values())
                     # 행운구매는 lucky_buyers(오늘날짜+j2=0+2개이상), 일반은 buyers 전체
                     _search_pool = lucky_buyers if _slp else buyers
+                    if _slp and not _search_pool:
+                        si += 1; continue  # 행운구매 가능한 구매자 없음 → 스킵
                     for _b in _search_pool:
                         if _b['res_id'] in matched_buyer_ids: continue
                         if _b['buyer_id'] in _avoid_seller_ids and not _is_loopay_s: continue
