@@ -2519,9 +2519,9 @@ async function openLuckyBuy(){
       var maxSv=d.pairs.silver?d.pairs.silver.max_possible||0:0;
       var maxGd=d.pairs.gold?d.pairs.gold.max_possible||0:0;
       var reasons=[];
-      if(maxBz===0&&d.pairs.bronze&&d.pairs.bronze.reason) reasons.push('수정(bronze): '+d.pairs.bronze.reason);
-      if(maxSv===0&&d.pairs.silver&&d.pairs.silver.reason) reasons.push('루비(silver): '+d.pairs.silver.reason);
-      if(maxGd===0&&d.pairs.gold&&d.pairs.gold.reason) reasons.push('다이아(gold): '+d.pairs.gold.reason);
+      if(maxBz===0&&d.pairs.bronze&&d.pairs.bronze.reason) reasons.push('수정: '+d.pairs.bronze.reason);
+      if(maxSv===0&&d.pairs.silver&&d.pairs.silver.reason) reasons.push('루비: '+d.pairs.silver.reason);
+      if(maxGd===0&&d.pairs.gold&&d.pairs.gold.reason) reasons.push('다이아: '+d.pairs.gold.reason);
       if(maxBz===0&&maxSv===0&&maxGd===0){
         // 전체 불가 → 팝업
         var msg='행운구매를 만들 수 없습니다.\n\n'+( reasons.length?reasons.join('\n'):'조건을 만족하는 페어가 없습니다.');
@@ -2530,9 +2530,9 @@ async function openLuckyBuy(){
         document.getElementById('lucky-result').textContent='';
         return;
       }
-      document.getElementById('lucky-bz-max').textContent='(최대 '+maxBz+(d.pairs.bronze&&d.pairs.bronze.reason?' - '+d.pairs.bronze.reason:'')+')';
-      document.getElementById('lucky-sv-max').textContent='(최대 '+maxSv+(d.pairs.silver&&d.pairs.silver.reason?' - '+d.pairs.silver.reason:'')+')';
-      document.getElementById('lucky-gd-max').textContent='(최대 '+maxGd+(d.pairs.gold&&d.pairs.gold.reason?' - '+d.pairs.gold.reason:'')+')';
+      document.getElementById('lucky-bz-max').textContent='(최대 '+maxBz+(d.pairs.bronze&&d.pairs.bronze.reason?' ※'+d.pairs.bronze.reason:'')+')';
+      document.getElementById('lucky-sv-max').textContent='(최대 '+maxSv+(d.pairs.silver&&d.pairs.silver.reason?' ※'+d.pairs.silver.reason:'')+')';
+      document.getElementById('lucky-gd-max').textContent='(최대 '+maxGd+(d.pairs.gold&&d.pairs.gold.reason?' ※'+d.pairs.gold.reason:'')+')';
       document.getElementById('lucky-bz-count').max=maxBz;
       document.getElementById('lucky-sv-count').max=maxSv;
       document.getElementById('lucky-gd-count').max=maxGd;
