@@ -7405,6 +7405,53 @@ def testtools_fix_lucky_match_date():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/restore-old-reservations', methods=['POST'])
+def testtools_restore_old_reservations():
+    """이전 날짜 예약을 올바른 상태로 복구 (매칭 실행으로 인해 변경된 것)"""
+    db = get_db()
+    try:
+        today = get_matching_date().isoformat()
+        fixed = 0
+        # 이전 날짜 미매칭 판매예약 → unmatched 유지 (원래 미매칭이었음)
+        # 이전 날짜 pending(j2=1) 구매예약 중 confirmed 매치 있는 것 → matched로 복원
+        rows = db.execute(
+            """SELECT r.id FROM reservations r
+               WHERE r.status='pending' AND r.reserve_date < ?
+               AND (r.item_id IS NULL OR r.item_id=0)
+               AND EXISTS (
+                   SELECT 1 FROM matches m
+                   WHERE m.buyer_id=r.user_id
+                   AND m.match_date=r.reserve_date
+                   AND m.status IN ('pending','paid','confirmed','failed')
+               )""",
+            (today,)
+        ).fetchall()
+        for row in rows:
+            db.execute("UPDATE reservations SET status='matched' WHERE id=?", (row['id'],))
+            fixed += 1
+        # 이전 날짜 unmatched 판매예약 → 원래 confirmed 매치 있으면 matched로
+        sell_rows = db.execute(
+            """SELECT r.id FROM reservations r
+               WHERE r.status='unmatched' AND r.reserve_date < ?
+               AND r.item_id IS NOT NULL AND r.item_id > 0
+               AND EXISTS (
+                   SELECT 1 FROM matches m
+                   WHERE m.seller_item_id=r.item_id
+                   AND m.status IN ('pending','paid','confirmed')
+               )""",
+            (today,)
+        ).fetchall()
+        for row in sell_rows:
+            db.execute("UPDATE reservations SET status='matched' WHERE id=?", (row['id'],))
+            fixed += 1
+        db.commit()
+        return jsonify(success=True, fixed=fixed)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
