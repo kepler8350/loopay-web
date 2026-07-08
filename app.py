@@ -2372,12 +2372,14 @@ def admin_run_matching():
             """UPDATE reservations SET status='pending'
                WHERE status='matched'
                AND (item_id IS NULL OR item_id=0)
+               AND reserve_date=?
                AND NOT EXISTS (
                    SELECT 1 FROM matches m
                    WHERE m.buyer_id=reservations.user_id
-                   AND m.match_date>=reservations.reserve_date
-                   AND m.status IN ('pending','paid','confirmed')
+                   AND m.match_date=reservations.reserve_date
+                   AND m.status IN ('pending','paid','confirmed','failed')
                )""",
+            (today,)
         )
         db.commit()
 
@@ -2994,7 +2996,8 @@ def admin_run_matching():
                        WHERE match_round=1 AND status IN ('pending','unmatched')
                        AND item_id IS NOT NULL AND item_id > 0
                        AND COALESCE(join_round2,0)=0
-                       AND lucky_pair_id IS NULL""",
+                       AND lucky_pair_id IS NULL
+                       AND reserve_date=?""",
                     (today,)
                 )
                 # ⑤ 루페이 미매칭 구매예약 → 모두 unmatched (루페이는 1차에서 반드시 매칭돼야 함)
