@@ -15,6 +15,14 @@ function _updateSellBtn(isReserveTime){
     : (!window._hasSellableItem ? '판매예약 가능한 아이템이 없습니다' : '');
 }
 
+// 아이템 목록으로 _hasSellableItem 설정 후 버튼 즉시 업데이트
+function _updateSellBtnFromItems(items){
+  window._hasSellableItem = (items||[]).some(function(it){ return it.status_label==='판매가능'; });
+  var _nowH = getEffectiveDate().getHours();
+  window._isReserveTimeCached = (_nowH >= 5 && _nowH < 20);
+  _updateSellBtn(window._isReserveTimeCached);
+}
+
 
 function showConfirm(opts){
   var ov = document.getElementById('common-confirm-overlay');
@@ -2342,12 +2350,8 @@ async function loadSellTab(){
     }
     _renderSellSummary();
     renderSellTab();
-    // 판매예약하기 버튼: 판매가능 아이템 없으면 비활성화
-    window._hasSellableItem = (d.items||[]).some(function(it){ return it.status_label==='판매가능'; });
-    // 서버 기준 시간으로 계산 (getEffectiveDate = 서버 시간 오프셋 적용)
-    var _nowH = getEffectiveDate().getHours();
-    window._isReserveTimeCached = (_nowH >= 5 && _nowH < 20);
-    _updateSellBtn(window._isReserveTimeCached);
+    // 판매예약하기 버튼: 판매가능 아이템으로 즉시 업데이트
+    _updateSellBtnFromItems(d.items||[]);
   } catch(e) {
     var el = document.getElementById('sell-tab-list');
     if(el) el.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px">불러오기 실패: '+e.message+'</div>';
