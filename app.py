@@ -2564,9 +2564,10 @@ def admin_run_matching():
 
         # 행운구매 전용 구매자: 오늘 날짜 + join_round2=0 + 2개 이상 예약한 사용자 (루프 외부에서 한 번 계산)
         _all_buy_rows = [dict(r) for r in buy_rows]
+        # 행운구매 구매자: 당일 예약 2개 이상 + 판매자 아님 (join_round2 무관)
         _lp_buyer_count_global = {}
         for _b in _all_buy_rows:
-            if _b.get('reserve_date') == today and _b.get('join_round2', 1) == 0:
+            if _b.get('reserve_date') == today:
                 _lp_buyer_count_global[_b['buyer_id']] = _lp_buyer_count_global.get(_b['buyer_id'], 0) + 1
         _lp_eligible_global = {uid for uid, cnt in _lp_buyer_count_global.items() if cnt >= 2}
         _all_lp_seller_ids_global = set()
@@ -2576,7 +2577,6 @@ def admin_run_matching():
                 _all_lp_seller_ids_global.add(_srd['seller_id'])
         _lucky_buyers_all = [b for b in _all_buy_rows
             if b.get('reserve_date') == today
-            and b.get('join_round2', 1) == 0
             and b['buyer_id'] in _lp_eligible_global
             and b['buyer_id'] not in _all_lp_seller_ids_global]
 
