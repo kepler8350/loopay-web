@@ -759,6 +759,14 @@ _scheduler_thread.start()
 def get_today():
     """오늘 날짜 반환"""
     return get_now().date()
+
+def get_matching_date():
+    """매칭 기준 날짜: 05:00 미만이면 전날 (20:00~다음날05:00 매칭 가능)"""
+    now = get_now()
+    if now.hour < 5:
+        import datetime
+        return (now - datetime.timedelta(days=1)).date()
+    return now.date()
 from db import get_db, init_db, LEVEL_CONFIG, LEVEL_COST, SPLIT_CONFIG, BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES, PENALTY_TABLE, get_sv_count, get_gd_count
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
@@ -2192,7 +2200,7 @@ def admin_run_matching():
             return jsonify(error='2차 매칭은 14:00~14:59 에만 실행 가능합니다'), 400
     db = get_db()
     try:
-        today = get_today().isoformat()
+        today = get_matching_date().isoformat()
         loopay_id = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()['id']
 
         # ── 이전 매칭은 당일 예약만 참가 (이전 날짜 예약은 매칭 불참)
@@ -3217,7 +3225,7 @@ def admin_matching_status():
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    today = get_today().isoformat()
+    today = get_matching_date().isoformat()
 
     # loopay 계정 ID 조회
     loopay_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
