@@ -1689,8 +1689,8 @@ async function loadMatchingStatus(){
     set('r1-sell', _r1SellDisplay);
     var rateEl1=document.getElementById('r1-rate');
     if(rateEl1){ rateEl1.textContent=mr1+'%'; rateEl1.style.color=mrc(mr1); }
-    var bb1=document.getElementById('r1-buy-by-type'); if(bb1) bb1.innerHTML=mkTypeTable(sortByBarType(r1.buy_by_type));
-    var bt1=document.getElementById('r1-by-type'); if(bt1) bt1.innerHTML=mkTypeTable(r1.by_type);
+    var bb1=document.getElementById('r1-buy-by-type'); if(bb1) bb1.innerHTML=_r1Done ? '' : mkTypeTable(sortByBarType(r1.buy_by_type));
+    var bt1=document.getElementById('r1-by-type'); if(bt1) bt1.innerHTML=_r1Done ? '' : mkTypeTable(r1.by_type);
 
 
     // ── 2차 매칭 ──
