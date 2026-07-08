@@ -7107,25 +7107,27 @@ def testtools_fix_match_buyer_res_id():
     db = get_db()
     try:
         # buyer_id와 buyer_res_id의 user_id가 다른 매치 찾기
+        # user_id 불일치 OR reserve_date 불일치
         mismatches = db.execute(
             """SELECT m.id, m.buyer_id, m.buyer_res_id, m.bar_type, m.match_date
                FROM matches m
                JOIN reservations r ON r.id=m.buyer_res_id
-               WHERE r.user_id != m.buyer_id
-               AND m.buyer_res_id IS NOT NULL""",
+               WHERE (r.user_id != m.buyer_id OR r.reserve_date != m.match_date)
+               AND m.buyer_res_id IS NOT NULL
+               AND m.status IN ('pending','paid')""",
         ).fetchall()
         fixed = 0
         for mm in mismatches:
             mm = dict(mm)
-            # buyer_id의 오늘 날짜 구매예약 찾기
             correct_res = db.execute(
                 """SELECT id FROM reservations
                    WHERE user_id=? AND bar_type=?
                    AND status IN ('matched','pending')
                    AND (item_id IS NULL OR item_id=0)
                    AND reserve_date=?
+                   AND id NOT IN (SELECT COALESCE(buyer_res_id,0) FROM matches WHERE id!=?)
                    ORDER BY id LIMIT 1""",
-                (mm['buyer_id'], mm['bar_type'], mm['match_date'])
+                (mm['buyer_id'], mm['bar_type'], mm['match_date'], mm['id'])
             ).fetchone()
             if correct_res:
                 db.execute(
