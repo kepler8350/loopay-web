@@ -3094,14 +3094,14 @@ def admin_run_matching():
                     "UPDATE lucky_buy_results SET buyer_id=? WHERE id=?",
                     (_actual_buyer_id, _lp['lucky_pair_id'])
                 )
-        # 행운구매 buyer=seller 방지: 통일 후 buyer가 자신의 아이템 판매자인 경우
+        # 행운구매 buyer=seller 방지: buyer가 lucky_buy_results의 판매자인 경우
         _same_person_pairs = db.execute(
-            """SELECT DISTINCT m.lucky_pair_id
-               FROM matches m
-               WHERE m.lucky_pair_id IS NOT NULL AND m.match_date=? AND m.match_round=?
-               AND m.status='pending'
-               AND m.buyer_id = m.seller_id""",
-            (today, round_num)
+            """SELECT DISTINCT lb.id as lucky_pair_id
+               FROM lucky_buy_results lb
+               WHERE lb.match_date=?
+               AND lb.status='confirmed'
+               AND (lb.buyer_id = lb.seller_a_id OR lb.buyer_id = lb.seller_b_id)""",
+            (today,)
         ).fetchall()
         for _sp in _same_person_pairs:
             _lpid = _sp['lucky_pair_id']
