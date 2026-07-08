@@ -1755,24 +1755,13 @@ async function runMatching(roundNum){
     if(!d.success){ throw new Error(d.error||'매칭 실패'); }
     _success = true;
     toast(d.message||roundNum+'차 매칭 완료!', 'success');
-    // 매칭 성공 후: 버튼 텍스트 복원 + 비활성화 유지 + 블록 숨김
+    // 매칭 성공 후: 매칭실행 페이지 초기화 (showPage 호출로 모든 UI 재설정)
     window._matchingJustRan = true;
     window._matchingRanRound = roundNum;
     if(roundNum===1){ window._r1MatchingDone = true; }
     if(roundNum===2){ window._r2MatchingDone = true; }
-    // 버튼 비활성화 - 텍스트 완료로 변경
-    if(btn){
-      btn.disabled=true; btn.style.opacity='0.45'; btn.style.cursor='not-allowed';
-      btn.textContent='✅ '+roundNum+'차 매칭 완료';
-    }
-    var runBlockEl = document.getElementById('match-run-block-'+roundNum);
-    if(runBlockEl) runBlockEl.style.display='none';
-    // 구매/판매예약 수 즉시 0으로 표시
-    var _rb = document.getElementById('r'+roundNum+'-buy');
-    var _rs = document.getElementById('r'+roundNum+'-sell');
-    if(_rb) _rb.textContent='0';
-    if(_rs) _rs.textContent='0';
-    loadMatchingStatus();
+    // 매칭실행 페이지 완전 초기화
+    showPage('matching');
     if(typeof loadMatchRecords==='function') loadMatchRecords();
   }catch(e){
     toast(e.message||'오류', 'error');
