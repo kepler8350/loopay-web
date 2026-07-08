@@ -7141,6 +7141,45 @@ def testtools_fix_match_buyer_res_id():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/fix-match-buyer-res-date', methods=['POST'])
+def testtools_fix_match_buyer_res_date():
+    """매치의 buyer_res_id가 오늘 날짜가 아닌 경우 오늘 예약으로 교체"""
+    db = get_db()
+    try:
+        today = get_today().isoformat()
+        mismatches = db.execute(
+            """SELECT m.id, m.buyer_id, m.buyer_res_id, m.bar_type, m.match_date
+               FROM matches m
+               JOIN reservations r ON r.id=m.buyer_res_id
+               WHERE r.reserve_date != m.match_date
+               AND m.buyer_res_id IS NOT NULL
+               AND m.status IN ('pending','paid')""",
+        ).fetchall()
+        fixed = 0
+        for mm in mismatches:
+            mm = dict(mm)
+            correct_res = db.execute(
+                """SELECT id FROM reservations
+                   WHERE user_id=? AND bar_type=?
+                   AND status IN ('pending','matched')
+                   AND (item_id IS NULL OR item_id=0)
+                   AND reserve_date=?
+                   AND id NOT IN (SELECT buyer_res_id FROM matches WHERE buyer_res_id IS NOT NULL AND id!=?)
+                   ORDER BY id LIMIT 1""",
+                (mm['buyer_id'], mm['bar_type'], mm['match_date'], mm['id'])
+            ).fetchone()
+            if correct_res:
+                db.execute("UPDATE matches SET buyer_res_id=? WHERE id=?", (correct_res['id'], mm['id']))
+                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (correct_res['id'],))
+                fixed += 1
+        db.commit()
+        return jsonify(success=True, fixed=fixed, found=len(mismatches))
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
