@@ -1,6 +1,8 @@
 // ── 공통 커스텀 confirm 팝업 ──
 
 // ── 판매예약 버튼 상태 통합 관리 ──
+window._hasSellableItem = false;  // 초기값: 아이템 로드 전까지 false(비활성)
+window._isReserveTimeCached = false;
 function _updateSellBtn(isReserveTime){
   var btn = document.getElementById('sell-reserve-btn');
   if(!btn) return;
