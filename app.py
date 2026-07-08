@@ -2561,6 +2561,25 @@ def admin_run_matching():
             buy_any_stage[bt] = _loopay_any + _normal_any
 
         all_keys = sorted(set(list(sell_by_type_stage.keys()) + list(buy_by_type_stage.keys())))
+
+        # 행운구매 전용 구매자: 오늘 날짜 + join_round2=0 + 2개 이상 예약한 사용자 (루프 외부에서 한 번 계산)
+        _all_buy_rows = [dict(r) for r in buy_rows]
+        _lp_buyer_count_global = {}
+        for _b in _all_buy_rows:
+            if _b.get('reserve_date') == today and _b.get('join_round2', 1) == 0:
+                _lp_buyer_count_global[_b['buyer_id']] = _lp_buyer_count_global.get(_b['buyer_id'], 0) + 1
+        _lp_eligible_global = {uid for uid, cnt in _lp_buyer_count_global.items() if cnt >= 2}
+        _all_lp_seller_ids_global = set()
+        for _sr in sell_rows:
+            _srd = dict(_sr)
+            if _srd.get('lucky_pair_id'):
+                _all_lp_seller_ids_global.add(_srd['seller_id'])
+        _lucky_buyers_all = [b for b in _all_buy_rows
+            if b.get('reserve_date') == today
+            and b.get('join_round2', 1) == 0
+            and b['buyer_id'] in _lp_eligible_global
+            and b['buyer_id'] not in _all_lp_seller_ids_global]
+
         matched_seller_ids = set()
         matched_buyer_ids = set()
         _lucky_buyer_map = {}  # lucky_pair_id → 첫 번째 매칭된 구매자 res_id
@@ -2571,23 +2590,8 @@ def admin_run_matching():
             buyers  = [b for b in buy_by_type_stage.get((bt, st), []) if b['res_id'] not in matched_buyer_ids]
             buyers += [b for b in buy_any_stage.get(bt, []) if b['res_id'] not in matched_buyer_ids]
 
-            # 행운구매 전용 구매자: 오늘 날짜 + join_round2=0 + 2개 이상 예약한 사용자
-            _lp_buyer_count = {}
-            for _b in buyers:
-                if _b.get('reserve_date') == today and _b.get('join_round2', 1) == 0:
-                    _lp_buyer_count[_b['buyer_id']] = _lp_buyer_count.get(_b['buyer_id'], 0) + 1
-            _lp_eligible_buyer_ids = {uid for uid, cnt in _lp_buyer_count.items() if cnt >= 2}
-            # 모든 lucky_pair 판매자 ID 수집 (구매자에서 제외)
-            _all_lp_seller_ids = set()
-            for _sr in sell_rows:
-                _srd = dict(_sr)
-                if _srd.get('lucky_pair_id'):
-                    _all_lp_seller_ids.add(_srd['seller_id'])
-            lucky_buyers = [b for b in buyers
-                if b.get('reserve_date') == today
-                and b.get('join_round2', 1) == 0
-                and b['buyer_id'] in _lp_eligible_buyer_ids
-                and b['buyer_id'] not in _all_lp_seller_ids]
+            # 행운구매 전용 구매자: 루프 외부에서 계산된 _lucky_buyers_all에서 미사용 것만
+            lucky_buyers = [b for b in _lucky_buyers_all if b['res_id'] not in matched_buyer_ids]
 
             si = 0  # seller 인덱스
             bi = 0  # buyer 인덱스
