@@ -3150,6 +3150,9 @@ def admin_matching_status():
         "SELECT COUNT(*) as c FROM matches WHERE status='failed' AND match_date=?",
         (today,)
     ).fetchone()['c']
+    # failed_list 쿼리용 조건 변수 (오늘 날짜만)
+    _failed_date_cond = (today,)
+    _failed_sql_cond = "match_date=?"
 
     # 미입금 상세
     failed_list = db.execute(
