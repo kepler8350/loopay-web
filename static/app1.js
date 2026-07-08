@@ -1,4 +1,19 @@
 // ── 공통 커스텀 confirm 팝업 ──
+
+// ── 판매예약 버튼 상태 통합 관리 ──
+function _updateSellBtn(isReserveTime){
+  var btn = document.getElementById('sell-reserve-btn');
+  if(!btn) return;
+  var _canSell = !!isReserveTime && !!window._hasSellableItem;
+  btn.disabled = !_canSell;
+  btn.style.background = _canSell ? '#7b1fa2' : '#9e9e9e';
+  btn.style.opacity = _canSell ? '1' : '0.7';
+  btn.style.cursor = _canSell ? 'pointer' : 'not-allowed';
+  btn.title = !isReserveTime ? '구매·판매 예약은 05:00~20:00에만 가능합니다'
+    : (!window._hasSellableItem ? '판매예약 가능한 아이템이 없습니다' : '');
+}
+
+
 function showConfirm(opts){
   var ov = document.getElementById('common-confirm-overlay');
   if(!ov){ if(opts.onOk && confirm((opts.title||'확인')+'\n'+(opts.message||''))) opts.onOk(); else if(opts.onCancel) opts.onCancel(); return; }
@@ -669,8 +684,7 @@ function doLogout() {
   });
   var reserveBtn = document.getElementById('reserve-btn');
   if(reserveBtn){ reserveBtn.disabled=false; reserveBtn.style.opacity=''; reserveBtn.style.cursor=''; reserveBtn.title=''; }
-  var sellBtn = document.getElementById('sell-reserve-btn');
-  if(sellBtn){ sellBtn.disabled=false; sellBtn.style.opacity=''; sellBtn.style.cursor=''; }
+  _updateSellBtn(window._isReserveTimeCached);
   var banner = document.getElementById('suspend-banner');
   if(banner) banner.style.display='none';
   var badge = document.getElementById('suspend-badge');
@@ -939,6 +953,7 @@ function updateTimeBar(){
   }
   // ── 구매·판매 예약 버튼 시간 제어 (05:00~20:00만 활성화) ──
   var isReserveTime = (h >= 5 && h < 20);
+  window._isReserveTimeCached = isReserveTime;
 
   // 구매 예약하기 버튼 - 시간 조건만 체크
   // 포인트/수량 조건은 updateResUI에서 별도 처리
@@ -962,18 +977,7 @@ function updateTimeBar(){
     else reserveBtn.title = '';
   }
   // 판매 예약하기 버튼
-  var sellReserveBtn = document.getElementById('sell-reserve-btn');
-  if(sellReserveBtn && !sellReserveBtn.dataset.disabledByUser){
-    sellReserveBtn.disabled = !isReserveTime || !!sellReserveBtn.dataset.disabledByUser;
-    sellReserveBtn.style.opacity = (isReserveTime && !sellReserveBtn.dataset.disabledByUser) ? '1' : '0.7';
-    // disabledByUser(아이템없음)이면 회색 유지, 시간외이면 회색, 활성이면 보라
-    if(sellReserveBtn.dataset.disabledByUser){
-      sellReserveBtn.style.background = '#9e9e9e';
-    } else {
-      sellReserveBtn.style.background = isReserveTime ? '#7b1fa2' : '#9e9e9e';
-    }
-    sellReserveBtn.title = !isReserveTime ? '구매·판매 예약은 05:00~20:00에만 가능합니다' : (sellReserveBtn.dataset.disabledByUser ? '판매예약 가능한 아이템이 없습니다' : '');
-  }
+    _updateSellBtn(isReserveTime);
   // ── 날짜 변경 감지: 날짜 바뀌면 loadUserData 재호출 ──
   var _todayDate = (now.getMonth()+1)+'-'+now.getDate();
   if(typeof window._lastKnownDate === 'undefined') window._lastKnownDate = _todayDate;
@@ -2337,24 +2341,8 @@ async function loadSellTab(){
     _renderSellSummary();
     renderSellTab();
     // 판매예약하기 버튼: 판매가능 아이템 없으면 비활성화
-    (function(){
-      var _allItems = (d.items||[]);
-      var _hasSellable = _allItems.some(function(it){ return it.status_label==='판매가능'; });
-      var _sellBtn = document.getElementById('sell-reserve-btn');
-      if(_sellBtn){
-        if(!_hasSellable){
-          _sellBtn.disabled = true;
-          _sellBtn.style.opacity = '0.7';
-          _sellBtn.style.background = '#9e9e9e';
-          _sellBtn.style.cursor = 'not-allowed';
-          _sellBtn.title = '판매예약 가능한 아이템이 없습니다';
-          _sellBtn.dataset.disabledByUser = '1';
-        } else {
-          _sellBtn.style.background = '#7b1fa2';
-          delete _sellBtn.dataset.disabledByUser;
-        }
-      }
-    })();
+    window._hasSellableItem = (d.items||[]).some(function(it){ return it.status_label==='판매가능'; });
+    _updateSellBtn(window._isReserveTimeCached);
   } catch(e) {
     var el = document.getElementById('sell-tab-list');
     if(el) el.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px">불러오기 실패: '+e.message+'</div>';
