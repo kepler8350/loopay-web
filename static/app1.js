@@ -1449,8 +1449,7 @@ function renderMatchSellList(items){
   el.innerHTML = items.map(function(m){
     var statusLabel = {waiting:'예약대기',lucky_waiting:'예약대기',lucky_matched:'입금대기',pending:'입금대기',paid:'입금확인중',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
     var statusColor = {waiting:'#90caf9',lucky_waiting:'#90caf9',lucky_matched:'#f9a825',pending:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
-    var _luckyBadgeSell = (m.status==='lucky_waiting'||m.status==='lucky_matched')
-      ? '<span style="display:inline-block;background:#7b1fa2;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:4px">🍀 행운</span>' : '';
+    var _luckyBadgeSell = '';  // 판매 카드에는 행운 표시 제거
     var buyerInfo = (m.status==='waiting'||m.status==='lucky_waiting')
       ? '<div style="font-size:12px;color:#90caf9;margin:6px 0">⏳ 매칭 대기 중...</div>'
       : '<div style="font-size:12px;color:#aaa;margin:6px 0">'

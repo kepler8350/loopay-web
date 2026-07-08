@@ -204,7 +204,7 @@ def _auto_round2_scheduler():
     import time
     _last_run_date = None       # 14:01 1차 자동처리 실행일
     _last_run_date_r2 = None    # 20:01 2차 자동처리 실행일
-    _last_run_date_1301 = None  # 13:00 자동 입금확인 실행일 (1차)
+    _last_run_date_1401 = None  # 14:00 자동 입금확인 실행일 (1차)
     _last_run_date_1901 = None  # 19:00 자동 입금확인 실행일 (2차)
     while True:
         try:
@@ -234,9 +234,9 @@ def _auto_round2_scheduler():
             except Exception:
                 pass
 
-            # ── 13:00 자동 입금확인: paid 상태 → confirmed (송금했는데 판매자가 미확인) ──
-            if h == 13 and m < 5 and today != _last_run_date_1301:
-                _last_run_date_1301 = today
+            # ── 14:00 자동 입금확인: paid 상태 → confirmed (송금했는데 판매자가 미확인) ──
+            if h == 14 and m < 5 and today != _last_run_date_1401:
+                _last_run_date_1401 = today
                 db = get_db()
                 try:
                     paid_1301 = db.execute(
@@ -1355,10 +1355,9 @@ def create_reservation():
               for _ in range(cnt):
                   db.execute("INSERT INTO reservations(user_id,item_id,bar_type,match_round,reserve_date,status,confirmed,join_round2) VALUES(?,?,?,?,?,'pending',0,?)", (uid,0,bar_type,1,today,join_r2))
               db.execute("PRAGMA foreign_keys=ON")
-      # 예약 비용: charge_points/exchange_points에서 차감 후 maintain_points로 이동
-      # charge 먼저 차감, 부족하면 exchange로 보충
-      ch_use = min(u['charge_points'], cost)
-      ex_use = cost - ch_use
+      # 예약 비용: exchange_points(전환포인트) 먼저 차감, 부족하면 charge_points(충전포인트) 사용
+      ex_use = min(u['exchange_points'], cost)
+      ch_use = cost - ex_use
       # 1단계: 포인트 차감 + cumulative 업데이트
       db.execute("""UPDATE users
          SET exchange_points=exchange_points-?,
