@@ -2466,7 +2466,7 @@ def admin_run_matching():
                    AND m.match_date=?
                )
                ORDER BY r.reserve_date DESC, RANDOM()""",
-            (round_num, today)
+            (round_num, today, today)
         ).fetchall()
         # loopay 구매예약 (confirmed=1, item.status='waiting') 별도 조회
         _loopay_buy_rows = db.execute(
