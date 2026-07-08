@@ -3794,6 +3794,8 @@ def admin_lucky_buy_setup():
                 result[bar_type] = []
                 continue
             
+            today_str = get_matching_date().isoformat()
+
             # 해당 단계의 판매예약 아이템 조회
             rows = conn.execute(
                 """SELECT r.id as res_id, r.item_id, i.stage, i.id as item_id2, r.user_id as seller_id,
@@ -3805,10 +3807,25 @@ def admin_lucky_buy_setup():
                    AND r.item_id IS NOT NULL AND r.item_id > 0
                    AND i.status IN ('reservable','waiting')
                    AND r.lucky_pair_id IS NULL
+                   AND r.reserve_date=?
                    AND i.stage IN ({})
                    ORDER BY RANDOM()""".format(','.join('?' * len(lucky_stages[bar_type]))),
-                (bar_type, *lucky_stages[bar_type])
+                (bar_type, today_str, *lucky_stages[bar_type])
             ).fetchall()
+
+            # 당일 해당 bar_type 구매예약 2개 이상인 사용자 조회 (행운구매 가능 구매자)
+            buy_eligible = conn.execute(
+                """SELECT r.user_id, COUNT(*) as cnt
+                   FROM reservations r
+                   WHERE r.bar_type=? AND r.status='pending'
+                   AND (r.item_id IS NULL OR r.item_id=0)
+                   AND r.reserve_date=?
+                   AND COALESCE(r.confirmed,0)=0
+                   GROUP BY r.user_id
+                   HAVING COUNT(*) >= 2""",
+                (bar_type, today_str)
+            ).fetchall()
+            eligible_buyer_ids = {row['user_id'] for row in buy_eligible}
             
             pairs = []
             used_items = set()
@@ -3834,6 +3851,11 @@ def admin_lucky_buy_setup():
                     break
                 if b is None:
                     continue
+                # 이 페어의 판매자 2명을 제외한 구매 가능자가 있어야 함
+                _seller_ids_pair = {dict(a).get('seller_id'), dict(b).get('seller_id')}
+                _available_buyers = eligible_buyer_ids - _seller_ids_pair
+                if not _available_buyers:
+                    continue  # 구매 가능한 사용자 없음
                 used_items.add(a['item_id'])
                 used_items.add(b['item_id'])
                 dummy = True  # 아래 pairs.append 진행
@@ -3878,9 +3900,22 @@ def admin_lucky_buy_setup():
                     if _cand['item_id'] in _temp_used: continue
                     _sid_b = dict(_cand).get('seller_id')
                     if _sid_a and _sid_b and _sid_a == _sid_b: continue
+                    # 구매 가능자 확인
+                    _pair_sellers = {_sid_a, _sid_b}
+                    if not (eligible_buyer_ids - _pair_sellers): continue
                     _temp_used.add(_a['item_id']); _temp_used.add(_cand['item_id'])
                     _max_possible += 1; break
-            result[bar_type] = {'pairs': pairs, 'max_possible': _max_possible}
+            # 불가 사유 분석
+            _reason = None
+            if len(row_list) < 2:
+                _reason = f'판매예약 아이템이 부족합니다 (현재 {len(row_list)}개, 최소 2개 필요)'
+            elif _max_possible == 0:
+                if not eligible_buyer_ids:
+                    _reason = f'당일 {bar_type} 구매예약을 2개 이상 한 구매자가 없습니다'
+                else:
+                    _reason = '판매자와 다른 구매자가 충분하지 않습니다'
+            result[bar_type] = {'pairs': pairs, 'max_possible': _max_possible, 'reason': _reason,
+                                'eligible_buyers': len(eligible_buyer_ids)}
         
         return jsonify(success=True, pairs=result)
     finally:

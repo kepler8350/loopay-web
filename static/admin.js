@@ -2518,18 +2518,35 @@ async function openLuckyBuy(){
       var maxBz=d.pairs.bronze?d.pairs.bronze.max_possible||0:0;
       var maxSv=d.pairs.silver?d.pairs.silver.max_possible||0:0;
       var maxGd=d.pairs.gold?d.pairs.gold.max_possible||0:0;
-      document.getElementById('lucky-bz-max').textContent='(최대 '+maxBz+')';
-      document.getElementById('lucky-sv-max').textContent='(최대 '+maxSv+')';
-      document.getElementById('lucky-gd-max').textContent='(최대 '+maxGd+')';
+      var reasons=[];
+      if(maxBz===0&&d.pairs.bronze&&d.pairs.bronze.reason) reasons.push('수정(bronze): '+d.pairs.bronze.reason);
+      if(maxSv===0&&d.pairs.silver&&d.pairs.silver.reason) reasons.push('원석(silver): '+d.pairs.silver.reason);
+      if(maxGd===0&&d.pairs.gold&&d.pairs.gold.reason) reasons.push('골드(gold): '+d.pairs.gold.reason);
+      if(maxBz===0&&maxSv===0&&maxGd===0){
+        // 전체 불가 → 팝업
+        var msg='행운구매를 만들 수 없습니다.\n\n'+( reasons.length?reasons.join('\n'):'조건을 만족하는 페어가 없습니다.');
+        alert(msg);
+        document.getElementById('lucky-buy-panel').style.display='none';
+        document.getElementById('lucky-result').textContent='';
+        return;
+      }
+      document.getElementById('lucky-bz-max').textContent='(최대 '+maxBz+(d.pairs.bronze&&d.pairs.bronze.reason?' - '+d.pairs.bronze.reason:'')+')';
+      document.getElementById('lucky-sv-max').textContent='(최대 '+maxSv+(d.pairs.silver&&d.pairs.silver.reason?' - '+d.pairs.silver.reason:'')+')';
+      document.getElementById('lucky-gd-max').textContent='(최대 '+maxGd+(d.pairs.gold&&d.pairs.gold.reason?' - '+d.pairs.gold.reason:'')+')';
       document.getElementById('lucky-bz-count').max=maxBz;
       document.getElementById('lucky-sv-count').max=maxSv;
       document.getElementById('lucky-gd-count').max=maxGd;
       document.getElementById('lucky-bz-count').value=maxBz;
       document.getElementById('lucky-sv-count').value=maxSv;
       document.getElementById('lucky-gd-count').value=maxGd;
+      // 개별 불가 사유 표시
+      if(reasons.length){
+        document.getElementById('lucky-result').textContent=reasons.join(' | ');
+        document.getElementById('lucky-result').style.color='#ef5350';
+      }
     }
-  } catch(e){}
-  document.getElementById('lucky-result').textContent='';
+  } catch(e){ alert('행운구매 조건 조회 중 오류가 발생했습니다.'); }
+  document.getElementById('lucky-result').textContent=document.getElementById('lucky-result').textContent||'';
 }
 
 function closeLuckyBuy(){
