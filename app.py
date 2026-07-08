@@ -2655,7 +2655,7 @@ def admin_run_matching():
                     if buyer is None:
                         si += 1; continue
 
-                # 안전장치: buyer_res_id가 실제 buyer 소유인지 최종 확인 (DB 직접 검증)
+                # 안전장치: buyer_res_id 소유자를 DB로 직접 확인, 불일치면 올바른 예약으로 교체
                 if _slp:
                     if buyer.get('reserve_date') != today:
                         si += 1; continue
@@ -2663,8 +2663,24 @@ def admin_run_matching():
                         "SELECT user_id FROM reservations WHERE id=?", (buyer['res_id'],)
                     ).fetchone()
                     if not _chk or int(_chk['user_id']) != int(buyer['buyer_id']):
-                        # buyer_res_id 소유자가 buyer_id와 다름 → 스킵
-                        si += 1; continue
+                        # buyer_res_id 소유자 불일치 → buyer_id의 올바른 예약 직접 DB 조회
+                        _correct = db.execute(
+                            """SELECT id FROM reservations
+                               WHERE user_id=? AND bar_type=? AND reserve_date=?
+                               AND (item_id IS NULL OR item_id=0)
+                               AND status IN ('pending','matched')
+                               AND id NOT IN (
+                                   SELECT COALESCE(buyer_res_id,0) FROM matches
+                                   WHERE buyer_res_id IS NOT NULL
+                               )
+                               ORDER BY id LIMIT 1""",
+                            (buyer['buyer_id'], bt, today)
+                        ).fetchone()
+                        if not _correct:
+                            si += 1; continue
+                        # 올바른 예약으로 교체
+                        buyer = dict(buyer)
+                        buyer['res_id'] = _correct['id']
                 matched_seller_ids.add(seller['res_id'])
                 matched_buyer_ids.add(buyer['res_id'])
                 # lucky_pair: buyer_id(user_id)로 매핑 저장
@@ -4317,7 +4333,9 @@ def admin_reservations_list():
                           WHERE m.seller_item_id=r.item_id AND r.item_id>0
                           ORDER BY m.id DESC LIMIT 1),
                          (SELECT m.status FROM matches m
-                          WHERE m.reservation_id=r.id AND (r.item_id IS NULL OR r.item_id=0)
+                          WHERE (r.item_id IS NULL OR r.item_id=0)
+                          AND (m.reservation_id=r.id OR m.buyer_res_id=r.id)
+                          AND m.status IN ('pending','paid','confirmed','failed')
                           ORDER BY m.id DESC LIMIT 1),
                          (SELECT m.status FROM matches m
                           WHERE r.lucky_pair_id IS NOT NULL
@@ -4330,7 +4348,8 @@ def admin_reservations_list():
                           WHERE m.seller_item_id=r.item_id AND r.item_id>0
                           ORDER BY m.id DESC LIMIT 1),
                          (SELECT m.match_date FROM matches m
-                          WHERE m.reservation_id=r.id AND (r.item_id IS NULL OR r.item_id=0)
+                          WHERE (r.item_id IS NULL OR r.item_id=0)
+                          AND (m.reservation_id=r.id OR m.buyer_res_id=r.id)
                           ORDER BY m.id DESC LIMIT 1),
                          (SELECT m.match_date FROM matches m
                           WHERE r.lucky_pair_id IS NOT NULL
