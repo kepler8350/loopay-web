@@ -1187,8 +1187,8 @@ async function loadReservationsLog(page){
         if(r.match_status==='confirmed'){
           // 판매자 입금확인 완료 → "완료"
           statusKo = '완료';
-        } else if(!r.match_status && _isPast && _pendingMatchCount===0 && _r2FailedCount===0){
-          // 매칭 못 된 예약 + 모든 매치 입금확인 완료 + 미입금 없음 → "완료"
+        } else if(!r.match_status && _isPast && _r2FailedCount===0){
+          // 매칭 못 된 예약 + 과거 날짜 + 미입금 없음 → "완료" (오늘 매치 상태와 무관)
           statusKo = '완료';
         }
       }
