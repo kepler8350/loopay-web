@@ -7182,6 +7182,48 @@ def testtools_fix_match_buyer_res_date():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/fix-all-match-res-mismatch', methods=['POST'])
+def testtools_fix_all_match_res_mismatch():
+    """buyer_res_id가 buyer_id 소유가 아니거나 날짜 불일치인 매치 전부 수정"""
+    db = get_db()
+    try:
+        rows = db.execute(
+            """SELECT m.id, m.buyer_id, m.buyer_res_id, m.bar_type, m.match_date
+               FROM matches m
+               LEFT JOIN reservations r ON r.id=m.buyer_res_id
+               WHERE m.buyer_res_id IS NOT NULL
+               AND m.status IN ('pending','paid')
+               AND (r.id IS NULL OR r.user_id != m.buyer_id OR r.reserve_date != m.match_date)"""
+        ).fetchall()
+        fixed = 0
+        for row in rows:
+            row = dict(row)
+            # 이미 배정된 res_id 제외
+            used = {r['buyer_res_id'] for r in db.execute(
+                "SELECT buyer_res_id FROM matches WHERE buyer_res_id IS NOT NULL AND id!=?", (row['id'],)
+            ).fetchall()}
+            correct = db.execute(
+                """SELECT id FROM reservations
+                   WHERE user_id=? AND bar_type=?
+                   AND (item_id IS NULL OR item_id=0)
+                   AND reserve_date=?
+                   ORDER BY id""",
+                (row['buyer_id'], row['bar_type'], row['match_date'])
+            ).fetchall()
+            for c in correct:
+                if c['id'] not in used:
+                    db.execute("UPDATE matches SET buyer_res_id=? WHERE id=?", (c['id'], row['id']))
+                    db.execute("UPDATE reservations SET status='matched' WHERE id=?", (c['id'],))
+                    fixed += 1
+                    break
+        db.commit()
+        return jsonify(success=True, fixed=fixed, found=len(rows))
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
