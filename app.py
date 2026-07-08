@@ -7217,6 +7217,44 @@ def testtools_fix_all_match_res_mismatch():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/fix-match-buyer-direct', methods=['POST'])
+def testtools_fix_match_buyer_direct():
+    """매치 buyer_res_id를 match_date의 buyer 소유 예약으로 직접 수정"""
+    db = get_db()
+    try:
+        fixed = 0
+        matches = db.execute(
+            "SELECT id, buyer_id, buyer_res_id, bar_type, match_date FROM matches WHERE status IN ('pending','paid')"
+        ).fetchall()
+        for m in matches:
+            mid, bid, brid, bt, mdate = m['id'], m['buyer_id'], m['buyer_res_id'], m['bar_type'], m['match_date']
+            if not brid: continue
+            res = db.execute("SELECT user_id, reserve_date FROM reservations WHERE id=?", (brid,)).fetchone()
+            if not res: continue
+            uid, rdate = int(res['user_id']), res['reserve_date']
+            if uid == int(bid) and rdate == mdate: continue  # 정상
+            # 수정 필요 - buyer_id 소유의 match_date 예약 찾기
+            used = set()
+            for r2 in db.execute("SELECT buyer_res_id FROM matches WHERE buyer_res_id IS NOT NULL AND id!=?", (mid,)).fetchall():
+                if r2['buyer_res_id']: used.add(r2['buyer_res_id'])
+            cands = db.execute(
+                "SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND (item_id IS NULL OR item_id=0) AND reserve_date=? ORDER BY id",
+                (bid, bt, mdate)
+            ).fetchall()
+            for cand in cands:
+                if cand['id'] not in used:
+                    db.execute("UPDATE matches SET buyer_res_id=? WHERE id=?", (cand['id'], mid))
+                    db.execute("UPDATE reservations SET status='matched' WHERE id=?", (cand['id'],))
+                    fixed += 1
+                    break
+        db.commit()
+        return jsonify(success=True, fixed=fixed)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
