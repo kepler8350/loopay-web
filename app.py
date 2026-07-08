@@ -5444,11 +5444,14 @@ def user_my_items():
             item_status = row['status']
             if item_status == 'reservable':
                 pending_res = db.execute(
-                    "SELECT id, lucky_pair_id FROM reservations WHERE item_id=? AND status='pending' LIMIT 1",
+                    """SELECT id, lucky_pair_id, status FROM reservations
+                       WHERE item_id=? AND status IN ('pending','matched')
+                       ORDER BY CASE status WHEN 'matched' THEN 0 ELSE 1 END
+                       LIMIT 1""",
                     (row['id'],)
                 ).fetchone()
                 if pending_res:
-                    item_status = 'pending'
+                    item_status = 'pending' if pending_res['status']=='pending' else 'matched'
                     _lp_id = pending_res['lucky_pair_id']
                     if _lp_id:
                         _mc_cnt = db.execute(
@@ -5462,7 +5465,7 @@ def user_my_items():
                 'bar_type': row['bar_type'],
                 'stage': row['stage'] or 1,
                 'status': item_status,
-                'status_label': '판매예약중' if item_status in ('pending','lucky_matched','lucky_waiting') else item_status_label(row['status'], row['purchase_date']),
+                'status_label': '판매예약중' if item_status in ('pending','lucky_matched','lucky_waiting') else ('매칭완료' if item_status == 'matched' else item_status_label(row['status'], row['purchase_date'])),
                 'days': days_since(row['purchase_date']),
                 'purchase_date': row['purchase_date'],
                 'reserve_date': row.get('reserve_date'),

@@ -206,8 +206,7 @@ function toggleItemSellSelect(itemId, barType){
       var item = items.find(function(x){ return String(x.id)===id; });
       if(item){
         // status_label='판매가능' 또는 status가 reservable/active이고 days>=2
-        canSell = item.status_label === '판매가능'
-          || (['reservable','active'].includes(item.status) && (item.days||0) >= 2);
+        canSell = item.status_label === '판매가능';
         _itemCache[id] = {bar_type: barType, stage: item.stage, sell_price: item.sell_price, profit: item.profit, buy_price: item.buy_price};
       }
     }

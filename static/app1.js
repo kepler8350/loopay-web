@@ -1158,7 +1158,7 @@ async function loadItemDetail(barType){
       var dayNum = it.days + 1;
       // 결합아이템(waiting)은 당일부터, 일반아이템은 3일째(days>=2)부터 판매가능
       var _minDays = (it.status==='waiting') ? 0 : 2;  // 결합아이템은 당일부터 판매가능
-      var canSell = it.days>=_minDays && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료' && it.status_label!=='판매예약';
+      var canSell = it.days>=_minDays && it.status_label!=='판매중' && it.status_label!=='매칭중' && it.status_label!=='매칭완료' && it.status_label!=='판매예약' && it.status_label!=='판매예약중';
       var isSelected = !!_sellSelected[it.id];
       var rawLabel = it.status_label||'보유중';
       var displayLabel = rawLabel==='reservable'||rawLabel==='매칭예약가능' ? '판매예약가능' : rawLabel;
