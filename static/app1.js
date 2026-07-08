@@ -164,6 +164,11 @@ async function loadUserData(){
     }
     // 다음날 05:00 재활성화 타이머
     scheduleReserveReset();
+    // 판매예약 버튼 업데이트 (my-items로 직접 확인)
+    try {
+      var _sellData2 = await api('/user/my-items');
+      _updateSellBtnFromItems(_sellData2.items||[]);
+    } catch(e2) { _updateSellBtnFromItems([]); }
   }catch(e){
     // API 실패 또는 새 회원 - 빈 초기값
     userData={
