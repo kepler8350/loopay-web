@@ -7193,7 +7193,11 @@ def testtools_fix_all_match_res_mismatch():
                LEFT JOIN reservations r ON r.id=m.buyer_res_id
                WHERE m.buyer_res_id IS NOT NULL
                AND m.status IN ('pending','paid')
-               AND (r.id IS NULL OR r.user_id != m.buyer_id OR r.reserve_date != m.match_date)"""
+               AND (
+                   r.id IS NULL
+                   OR CAST(r.user_id AS TEXT) != CAST(m.buyer_id AS TEXT)
+                   OR r.reserve_date != m.match_date
+               )"""
         ).fetchall()
         fixed = 0
         for row in rows:
