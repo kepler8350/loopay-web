@@ -4524,15 +4524,22 @@ def match_confirm_payment():
                 pass
         db.execute("UPDATE matches SET status='confirmed', confirmed_at=datetime('now','localtime'), receipt_url=NULL WHERE id=?", (match_id,))
 
-        # 2. reservation → sold (DB 호환)
-        if m['reservation_id']:
+        # 2. 판매예약 → sold, 구매예약 → confirmed
+        _m = dict(m)
+        if _m.get('reservation_id'):
             try:
-                db.execute("UPDATE reservations SET status='sold' WHERE id=?", (m['reservation_id'],))
+                db.execute("UPDATE reservations SET status='sold' WHERE id=?", (_m['reservation_id'],))
             except Exception:
                 try:
-                    db.execute("UPDATE reservations SET status='confirmed' WHERE id=?", (m['reservation_id'],))
+                    db.execute("UPDATE reservations SET status='confirmed' WHERE id=?", (_m['reservation_id'],))
                 except Exception:
                     pass
+        # 구매예약(buyer_res_id) → confirmed 상태로 업데이트
+        if _m.get('buyer_res_id'):
+            try:
+                db.execute("UPDATE reservations SET status='confirmed' WHERE id=?", (_m['buyer_res_id'],))
+            except Exception:
+                pass
 
         # 3. item을 buyer에게 이전 (seller 아이템은 sold, buyer에게 새 아이템 추가)
         # 행운구매 매치는 step 3 스킵 (행운구매 완료 처리에서 새 아이템 생성)
