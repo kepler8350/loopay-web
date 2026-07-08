@@ -200,6 +200,13 @@ def init_db():
     _seed(conn)
 
     # 마이그레이션: 기존 DB에 신규 컬럼 추가
+    # lucky_buy_results에 match_date 컬럼 추가
+    try:
+        c.execute("ALTER TABLE lucky_buy_results ADD COLUMN match_date TEXT")
+        conn.commit()
+    except Exception:
+        pass
+
     for col_def in [
         ('username', 'TEXT'),
         ('password_hash', 'TEXT'),

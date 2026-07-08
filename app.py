@@ -3958,10 +3958,11 @@ def admin_lucky_buy_confirm():
                 new_buy, new_sell = price_map[bar_type].get(new_stage, (0, 0))
 
                 # 2. lucky_buy_results에 미리 등록 (new_item_id는 입금확인 시 생성)
-                lbq = ('INSERT INTO lucky_buy_results(bar_type,item_a_id,item_b_id,seller_a_id,seller_b_id,new_item_id,new_stage,sell_a,sell_b,total_sell,status)'
-                       ' VALUES(?,?,?,?,?,NULL,?,?,?,?,\'confirmed\')')
+                lbq = ('INSERT INTO lucky_buy_results(bar_type,item_a_id,item_b_id,seller_a_id,seller_b_id,new_item_id,new_stage,sell_a,sell_b,total_sell,status,match_date)'
+                       ' VALUES(?,?,?,?,?,NULL,?,?,?,?,\'confirmed\',?)')
+                _lbr_today = get_matching_date().isoformat()
                 cur = conn.execute(lbq, (bar_type, ia['item_id'], ib['item_id'], seller_a_id, seller_b_id,
-                    new_stage, ia.get('sell',0), ib.get('sell',0), ia.get('sell',0)+ib.get('sell',0)))
+                    new_stage, ia.get('sell',0), ib.get('sell',0), ia.get('sell',0)+ib.get('sell',0), _lbr_today))
                 lucky_id = cur.lastrowid
 
                 # 3. 두 아이템에 lucky_pair_id 기록 (매칭 시 동일 구매자로 묶기 위해)
@@ -4031,6 +4032,7 @@ def admin_lucky_buy_history():
                 'bar_type': bt,
                 'bar_name': names.get(bt, bt),
                 'created_at': r['created_at'],
+                'match_date': r['match_date'] if r['match_date'] else (r['created_at'] or '')[:10],
                 'item_a': {'stage': r['stage_a'], 'sell': r['sell_a']},
                 'item_b': {'stage': r['stage_b'], 'sell': r['sell_b']},
                 'total_sell': r['total_sell'],
@@ -7368,6 +7370,32 @@ def testtools_delete_match():
             db.execute("UPDATE reservations SET status='pending' WHERE id=?", (m['buyer_res_id'],))
         db.commit()
         return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+@app.route('/api/admin/testtools/fix-lucky-match-date', methods=['POST'])
+def testtools_fix_lucky_match_date():
+    """lucky_buy_results의 match_date를 매치의 match_date로 업데이트"""
+    db = get_db()
+    try:
+        # lucky_pair_id를 통해 매치의 match_date 조회
+        rows = db.execute(
+            """SELECT lb.id, m.match_date
+               FROM lucky_buy_results lb
+               LEFT JOIN matches m ON m.lucky_pair_id = lb.id
+               WHERE (lb.match_date IS NULL OR lb.match_date='')
+               AND m.match_date IS NOT NULL
+               GROUP BY lb.id""",
+        ).fetchall()
+        fixed = 0
+        for row in rows:
+            db.execute("UPDATE lucky_buy_results SET match_date=? WHERE id=?", (row['match_date'], row['id']))
+            fixed += 1
+        db.commit()
+        return jsonify(success=True, fixed=fixed)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500

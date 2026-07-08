@@ -1068,7 +1068,7 @@ async function loadLuckyBuyHistory(){
       var newSell = (r.new_sell||0).toLocaleString()+'원';
       var stat = statusLabel[r.status]||r.status||'-';
       var statCol = r.status==='completed'?'#66bb6a':'#f9a825';
-      var dt = (r.created_at||'').slice(0,16);
+      var dt = r.match_date ? r.match_date+' (매칭일)' : (r.created_at||'').slice(0,16);
       return '<tr style="border-bottom:1px solid #2a2a40;background:'+bg+'">'
         +'<td style="padding:6px;text-align:center;color:#888">'+(i+1)+'</td>'
         +'<td style="padding:6px;text-align:center;font-weight:700;color:'+col+'">🍀 '+bar+'</td>'
