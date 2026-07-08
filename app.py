@@ -7479,6 +7479,24 @@ def testtools_restore_old_reservations():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/debug-lucky-results', methods=['GET'])
+def testtools_debug_lucky_results():
+    db = get_db()
+    try:
+        rows = db.execute("""
+            SELECT lb.id, lb.seller_a_id, lb.seller_b_id, lb.buyer_id,
+                   lb.bar_type, lb.status, lb.match_date,
+                   ua.username as sa, ub.username as sb, uc.username as buyer
+            FROM lucky_buy_results lb
+            LEFT JOIN users ua ON lb.seller_a_id=ua.id
+            LEFT JOIN users ub ON lb.seller_b_id=ub.id
+            LEFT JOIN users uc ON lb.buyer_id=uc.id
+            ORDER BY lb.id DESC LIMIT 10
+        """).fetchall()
+        return jsonify(results=[dict(r) for r in rows])
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
