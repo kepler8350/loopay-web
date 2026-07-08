@@ -186,7 +186,8 @@ function updateSellBoard(){
     }
     var _disabled = total===0 || _canSellCount===0;
     btn.disabled = _disabled;
-    btn.style.opacity = _disabled ? '0.4' : '1';
+    btn.style.opacity = _disabled ? '0.7' : '1';
+    btn.style.background = _disabled ? '#9e9e9e' : '#7b1fa2';
     btn.style.cursor = _disabled ? 'not-allowed' : 'pointer';
     btn.title = total===0 ? '보유 아이템이 없습니다' : (_canSellCount===0 ? '판매예약 가능한 아이템이 없습니다' : '');
   }
