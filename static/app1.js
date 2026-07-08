@@ -2358,8 +2358,10 @@ async function loadSellTab(){
     }
     _renderSellSummary();
     renderSellTab();
-    // 판매예약하기 버튼: 판매가능 아이템으로 즉시 업데이트
-    _updateSellBtnFromItems(d.items||[]);
+    // 판매예약하기 버튼: /user/my-items로 직접 확인
+    api('/user/my-items').then(function(sellData){
+      _updateSellBtnFromItems(sellData.items||[]);
+    }).catch(function(){ _updateSellBtnFromItems([]); });
   } catch(e) {
     var el = document.getElementById('sell-tab-list');
     if(el) el.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px">불러오기 실패: '+e.message+'</div>';
