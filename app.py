@@ -1291,7 +1291,7 @@ def reservation_preview():
         return jsonify(error=f'{lv}레벨은 거래유지 포인트 {cost}P 결제 후 예약 가능합니다.', level_pay_required=True), 403
     if bz < cfg['bz_min'] or bz > cfg['bz_max']:
         db.close()
-        return jsonify(error=f'브론즈 예약수는 {cfg["bz_min"]}~{cfg["bz_max"]}개 범위여야 합니다'), 400
+        return jsonify(error=f'수정 예약수는 {cfg["bz_min"]}~{cfg["bz_max"]}개 범위여야 합니다'), 400
     sv = get_sv_count(bz) if bz >= cfg['bz_max'] else 0
     gd = get_gd_count(sv) if sv >= cfg['sv_max'] and cfg['sv_max'] > 0 else 0
     total = bz + sv + gd
@@ -3906,14 +3906,15 @@ def admin_lucky_buy_setup():
                     _temp_used.add(_a['item_id']); _temp_used.add(_cand['item_id'])
                     _max_possible += 1; break
             # 불가 사유 분석
+            _bt_name = {'bronze':'수정','silver':'루비','gold':'다이아'}.get(bar_type, bar_type)
             _reason = None
             if len(row_list) < 2:
                 _reason = f'판매예약 아이템이 부족합니다 (현재 {len(row_list)}개, 최소 2개 필요)'
             elif _max_possible == 0:
                 if not eligible_buyer_ids:
-                    _reason = f'당일 {bar_type} 구매예약을 2개 이상 한 구매자가 없습니다'
+                    _reason = f'당일 {_bt_name} 구매예약을 2개 이상 한 구매자가 없습니다'
                 else:
-                    _reason = '판매자와 다른 구매자가 충분하지 않습니다'
+                    _reason = f'{_bt_name} 판매자와 다른 구매자가 충분하지 않습니다'
             result[bar_type] = {'pairs': pairs, 'max_possible': _max_possible, 'reason': _reason,
                                 'eligible_buyers': len(eligible_buyer_ids)}
         
