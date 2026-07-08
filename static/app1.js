@@ -2344,8 +2344,8 @@ async function loadSellTab(){
     renderSellTab();
     // 판매예약하기 버튼: 판매가능 아이템 없으면 비활성화
     window._hasSellableItem = (d.items||[]).some(function(it){ return it.status_label==='판매가능'; });
-    // 실제 현재 시간으로 직접 계산 (캐시값 의존 제거)
-    var _nowH = new Date().getHours();
+    // 서버 기준 시간으로 계산 (getEffectiveDate = 서버 시간 오프셋 적용)
+    var _nowH = getEffectiveDate().getHours();
     window._isReserveTimeCached = (_nowH >= 5 && _nowH < 20);
     _updateSellBtn(window._isReserveTimeCached);
   } catch(e) {
