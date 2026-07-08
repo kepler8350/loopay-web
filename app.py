@@ -2643,8 +2643,9 @@ def admin_run_matching():
                         if _slp and _b['buyer_id'] in _assigned_buyer_ids: continue
                         # lucky_pair: 이 구매자가 남은 lucky_pair 판매예약 수만큼 예약 보유하는지 확인
                         if _slp:
-                            _lp_remain = len([_s for _s in sellers
-                                if _s.get('lucky_pair_id')==_slp and _s['res_id'] not in matched_seller_ids])
+                            # 전체 sell_rows 기준으로 이 lucky_pair의 남은 판매예약 수 계산
+                            _lp_remain = sum(1 for _s in sell_rows
+                                if dict(_s).get('lucky_pair_id')==_slp and dict(_s)['res_id'] not in matched_seller_ids)
                             _b_avail = sum(1 for _bb in lucky_buyers
                                 if _bb['buyer_id']==_b['buyer_id'] and _bb['res_id'] not in matched_buyer_ids)
                             if _b_avail < _lp_remain: continue
