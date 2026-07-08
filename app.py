@@ -2195,18 +2195,7 @@ def admin_run_matching():
         today = get_today().isoformat()
         loopay_id = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()['id']
 
-        # ── 이전 날짜 미처리 join_round2=1 구매예약을 오늘 날짜로 갱신 ──
-        # (전날 2차 매칭이 실행 안 됐거나 미매칭으로 남은 예약)
-        # join_round2 구매예약은 날짜 변경 없이 match_round=1로만 업데이트
-        db.execute(
-            """UPDATE reservations SET match_round=1
-               WHERE status='pending'
-               AND reserve_date<? AND reserve_date IS NOT NULL
-               AND COALESCE(join_round2,0)=1
-               AND (item_id IS NULL OR item_id=0)
-               AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
-            (today,)
-        )
+        # ── 이전 매칭은 당일 예약만 참가 (이전 날짜 예약은 매칭 불참)
         db.commit()
 
         # 2차 매칭: 미입금확정(failed) 매치에서 loopay 판매예약 자동 생성
@@ -2437,7 +2426,7 @@ def admin_run_matching():
                LEFT JOIN users u ON r.user_id = u.id
                INNER JOIN items i ON r.item_id = i.id
                WHERE r.status IN ('pending','unmatched') AND r.match_round=?
-               AND r.reserve_date<=?
+               AND r.reserve_date=?
                AND COALESCE(r.confirmed,0)=1
                AND i.status IN ('reservable','waiting','matched')
                ORDER BY COALESCE(r.lucky_pair_id, 0), r.id""",
@@ -2464,7 +2453,8 @@ def admin_run_matching():
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                WHERE r.status='pending'
-               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date<=?))
+               AND r.match_round=?
+               AND r.reserve_date=?
                AND COALESCE(r.confirmed,0)=0
                AND u.username != 'loopay'
                AND r.user_id NOT IN (
@@ -2476,7 +2466,7 @@ def admin_run_matching():
                    AND m.match_date=?
                )
                ORDER BY r.reserve_date DESC, RANDOM()""",
-            (round_num, today, today)
+            (round_num, today)
         ).fetchall()
         # loopay 구매예약 (confirmed=1, item.status='waiting') 별도 조회
         _loopay_buy_rows = db.execute(
