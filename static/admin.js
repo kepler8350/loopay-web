@@ -1172,7 +1172,8 @@ async function loadReservationsLog(page){
       // 2차대기 조건:
       // - 오늘 예약이면서 오늘 1차 매칭이 실행된 경우
       // - 과거 날짜 예약(이미 그 날의 매칭 주기가 지남)
-      if(r.status==='pending' && r.res_type==='buy' && r.join_round2===1){
+      if(r.status==='pending' && r.res_type==='buy' && r.join_round2===1
+         && !r.match_status){  // 매칭된 경우(ms=pending/paid)는 2차대기 아님
         var _rDate = r.reserve_date;
         var _isToday = (_rDate === _today2);
         if(!_isToday || (_isToday && _r1RanToday)){

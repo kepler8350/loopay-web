@@ -2676,6 +2676,9 @@ def admin_run_matching():
                     )
                     matched_seller_ids.add(_seller['res_id'])
                     matched_buyer_ids.add(_buyer_res['res_id'])
+                    # 판매예약 → matched, 구매예약 → matched
+                    db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_seller['res_id'],))
+                    db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_buyer_res['res_id'],))
                     total_matched += 1
                     matched_pairs.append({
                         'seller': _seller.get('seller_username'),
@@ -2794,6 +2797,9 @@ def admin_run_matching():
                 )
                 matched_seller_ids.add(_seller['res_id'])
                 matched_buyer_ids.add(_buyer['res_id'])
+                # 판매예약 → matched, 구매예약 → matched
+                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_seller['res_id'],))
+                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_buyer['res_id'],))
                 total_matched += 1
                 matched_pairs.append({
                     'seller': _seller.get('seller_username'),
