@@ -6875,7 +6875,7 @@ def testtools_fix_lucky_buyer():
             if db.execute('SELECT changes()').fetchone()[0]:
                 fixed += 1
         db.commit()
-        return jsonify(success=True, fixed=fixed)
+        return jsonify(success=True, fixed=fixed, debug=debug_info[:5])
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
@@ -7230,6 +7230,7 @@ def testtools_fix_match_buyer_direct():
     db = get_db()
     try:
         fixed = 0
+        debug_info = []
         matches = db.execute(
             "SELECT id, buyer_id, buyer_res_id, bar_type, match_date FROM matches WHERE status IN ('pending','paid')"
         ).fetchall()
@@ -7248,6 +7249,7 @@ def testtools_fix_match_buyer_direct():
                 "SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND (item_id IS NULL OR item_id=0) AND reserve_date=? ORDER BY id",
                 (bid, bt, mdate)
             ).fetchall()
+            debug_info.append({'match_id':mid,'buyer_id':bid,'bar_type':bt,'mdate':mdate,'uid':uid,'rdate':rdate,'cands':[c['id'] for c in cands],'used':list(used)})
             for cand in cands:
                 if cand['id'] not in used:
                     db.execute("UPDATE matches SET buyer_res_id=? WHERE id=?", (cand['id'], mid))
