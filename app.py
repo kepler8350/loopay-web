@@ -2596,6 +2596,7 @@ def admin_run_matching():
             si = 0  # seller 인덱스
             bi = 0  # buyer 인덱스
             while si < len(sellers):
+                buyer = None  # 매 반복 초기화
                 seller = sellers[si]
                 _slp = seller.get('lucky_pair_id')
                 _is_loopay_s = (seller.get('seller_username') == 'loopay')
