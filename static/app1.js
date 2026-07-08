@@ -964,10 +964,15 @@ function updateTimeBar(){
   // 판매 예약하기 버튼
   var sellReserveBtn = document.getElementById('sell-reserve-btn');
   if(sellReserveBtn && !sellReserveBtn.dataset.disabledByUser){
-    sellReserveBtn.disabled = !isReserveTime;
-    sellReserveBtn.style.opacity = isReserveTime ? '1' : '0.7';
-    sellReserveBtn.style.background = isReserveTime ? '#7b1fa2' : '#9e9e9e';
-    sellReserveBtn.title = isReserveTime ? '' : '구매·판매 예약은 05:00~20:00에만 가능합니다';
+    sellReserveBtn.disabled = !isReserveTime || !!sellReserveBtn.dataset.disabledByUser;
+    sellReserveBtn.style.opacity = (isReserveTime && !sellReserveBtn.dataset.disabledByUser) ? '1' : '0.7';
+    // disabledByUser(아이템없음)이면 회색 유지, 시간외이면 회색, 활성이면 보라
+    if(sellReserveBtn.dataset.disabledByUser){
+      sellReserveBtn.style.background = '#9e9e9e';
+    } else {
+      sellReserveBtn.style.background = isReserveTime ? '#7b1fa2' : '#9e9e9e';
+    }
+    sellReserveBtn.title = !isReserveTime ? '구매·판매 예약은 05:00~20:00에만 가능합니다' : (sellReserveBtn.dataset.disabledByUser ? '판매예약 가능한 아이템이 없습니다' : '');
   }
   // ── 날짜 변경 감지: 날짜 바뀌면 loadUserData 재호출 ──
   var _todayDate = (now.getMonth()+1)+'-'+now.getDate();
