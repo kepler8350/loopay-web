@@ -7351,6 +7351,29 @@ def testtools_cleanup_loopay_old_reservations():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/delete-match', methods=['POST'])
+def testtools_delete_match():
+    """잘못 생성된 매치 삭제 및 예약 상태 복원"""
+    data = request.get_json()
+    match_id = data.get('match_id')
+    db = get_db()
+    try:
+        m = db.execute("SELECT buyer_res_id, seller_item_id FROM matches WHERE id=?", (match_id,)).fetchone()
+        if not m:
+            return jsonify(error='매치 없음'), 404
+        # 매치 삭제
+        db.execute("DELETE FROM matches WHERE id=?", (match_id,))
+        # buyer_res_id 예약 pending으로 복원
+        if m['buyer_res_id']:
+            db.execute("UPDATE reservations SET status='pending' WHERE id=?", (m['buyer_res_id'],))
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
