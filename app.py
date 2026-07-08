@@ -7204,7 +7204,7 @@ def testtools_fix_all_match_res_mismatch():
                    WHERE user_id=? AND bar_type=?
                    AND (item_id IS NULL OR item_id=0)
                    AND reserve_date=?
-                   ORDER BY id""",
+                   ORDER BY CASE WHEN status='matched' THEN 0 ELSE 1 END, id""",
                 (row['buyer_id'], row['bar_type'], row['match_date'])
             ).fetchall()
             for c in correct:
