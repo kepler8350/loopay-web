@@ -7180,22 +7180,18 @@ def testtools_fix_all_match_res_mismatch():
     """buyer_res_id가 buyer_id 소유가 아니거나 날짜 불일치인 매치 전부 수정"""
     db = get_db()
     try:
-        rows = db.execute(
-            """SELECT m.id, m.buyer_id, m.buyer_res_id, m.bar_type, m.match_date
-               FROM matches m
-               LEFT JOIN reservations r ON r.id=m.buyer_res_id
-               WHERE m.buyer_res_id IS NOT NULL
-               AND m.status IN ('pending','paid')
-               AND (
-                   r.id IS NULL
-                   OR CAST(r.user_id AS TEXT) != CAST(m.buyer_id AS TEXT)
-                   OR r.reserve_date != m.match_date
-               )"""
+        # Python으로 직접 비교 (타입 불일치 방지)
+        all_matches = db.execute(
+            "SELECT id, buyer_id, buyer_res_id, bar_type, match_date FROM matches WHERE buyer_res_id IS NOT NULL AND status IN ('pending','paid')"
         ).fetchall()
+        rows = []
+        for m in all_matches:
+            m = dict(m)
+            res = db.execute("SELECT user_id, reserve_date FROM reservations WHERE id=?", (m['buyer_res_id'],)).fetchone()
+            if res is None or int(res['user_id']) != int(m['buyer_id']) or res['reserve_date'] != m['match_date']:
+                rows.append(m)
         fixed = 0
         for row in rows:
-            row = dict(row)
-            # 이미 배정된 res_id 제외
             used = {r['buyer_res_id'] for r in db.execute(
                 "SELECT buyer_res_id FROM matches WHERE buyer_res_id IS NOT NULL AND id!=?", (row['id'],)
             ).fetchall()}
