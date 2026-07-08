@@ -2581,492 +2581,229 @@ def admin_run_matching():
             and b['buyer_id'] in _lp_eligible_global
             and b['buyer_id'] not in _all_lp_seller_ids_global]
 
+        # price_map 초기화
+        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
+        price_map = {
+            'bronze': {s: (b, sl) for s, b, sl in BRONZE_PRICES},
+            'silver': {s: (b, sl) for s, b, sl in SILVER_PRICES},
+            'gold':   {s: (b, sl) for s, b, sl in GOLD_PRICES},
+        }
+
         matched_seller_ids = set()
         matched_buyer_ids = set()
-        _lucky_buyer_map = {}  # lucky_pair_id → 첫 번째 매칭된 구매자 res_id
+        matched_pairs = []
 
-        for (bt, st) in all_keys:
-            sellers = [s for s in sell_by_type_stage.get((bt, st), []) if s['res_id'] not in matched_seller_ids]
-            # stage=0 구매예약(랜덤)도 포함
-            buyers  = [b for b in buy_by_type_stage.get((bt, st), []) if b['res_id'] not in matched_buyer_ids]
-            buyers += [b for b in buy_any_stage.get(bt, []) if b['res_id'] not in matched_buyer_ids]
+        # ── 1단계: 행운구매 쌍 우선 매칭 ──────────────────────────────────
+        # lucky_pair별로 그룹화
+        lp_groups = {}
+        for _sr in sell_rows:
+            _sd = dict(_sr)
+            _lp = _sd.get('lucky_pair_id')
+            if _lp:
+                if _lp not in lp_groups:
+                    lp_groups[_lp] = []
+                lp_groups[_lp].append(_sd)
 
-            # 행운구매 전용 구매자: 루프 외부에서 계산된 _lucky_buyers_all에서 미사용 것만
-            lucky_buyers = [b for b in _lucky_buyers_all if b['res_id'] not in matched_buyer_ids]
+        # 각 lucky_pair 처리
+        for _lp_id, _lp_sellers in lp_groups.items():
+            if len(_lp_sellers) < 2:
+                continue  # 쌍이 안 되면 스킵
 
-            si = 0  # seller 인덱스
-            bi = 0  # buyer 인덱스
-            while si < len(sellers):
-                buyer = None  # 매 반복 초기화
-                seller = sellers[si]
-                _slp = seller.get('lucky_pair_id')
-                _is_loopay_s = (seller.get('seller_username') == 'loopay')
+            bt = _lp_sellers[0]['bar_type']
+            _lp_seller_ids = {s['seller_id'] for s in _lp_sellers}
 
-                buyer = None
-                if _slp and _slp in _lucky_buyer_map:
-                    # 배정된 buyer_id(user_id)의 미사용 예약 찾기
-                    _asgn_uid = _lucky_buyer_map[_slp]
-                    # 현재 판매자도 피해야 함 (판매자B = 구매자 방지)
-                    _cur_avoid = set()
-                    for _s in sellers:
-                        if _s.get('lucky_pair_id') == _slp:
-                            _cur_avoid.add(_s['seller_id'])
-                    if _asgn_uid in _cur_avoid:
-                        # 배정된 구매자가 현재 판매자 → 이 lucky_pair 실패 처리
-                        si += 1; continue
-                    for _b in lucky_buyers:
-                        if _b['buyer_id'] == _asgn_uid and _b['res_id'] not in matched_buyer_ids:
-                            buyer = _b; break
-                    if buyer is None:
-                        si += 1; continue  # 같은 구매자 예약 소진 → 스킵
-                else:
-                    # lucky_pair의 모든 판매자 ID 수집 (buyer=seller 방지용)
-                    _avoid_seller_ids = set()
-                    if _slp:
-                        # sell_rows 전체(처리됐든 안됐든)에서 같은 lucky_pair 판매자 수집
-                        for _s in sell_rows:
-                            _sd = dict(_s)
-                            if _sd.get('lucky_pair_id') == _slp:
-                                _avoid_seller_ids.add(_sd['seller_id'])
-                    else:
-                        if not _is_loopay_s:
-                            _avoid_seller_ids.add(seller['seller_id'])
-                    # 이미 다른 lucky_pair에 배정된 buyer_id 수집
-                    _assigned_buyer_ids = set(_lucky_buyer_map.values())
-                    # 행운구매는 lucky_buyers(오늘날짜+j2=0+2개이상), 일반은 buyers 전체
-                    _search_pool = lucky_buyers if _slp else buyers
-                    if _slp and not _search_pool:
-                        si += 1; continue  # 행운구매 가능한 구매자 없음 → 스킵
-                    for _b in _search_pool:
-                        if _b['res_id'] in matched_buyer_ids: continue
-                        if _b['buyer_id'] in _avoid_seller_ids and not _is_loopay_s: continue
-                        # lucky_pair: 이미 다른 pair에 배정된 구매자 제외
-                        if _slp and _b['buyer_id'] in _assigned_buyer_ids: continue
-                        # lucky_pair: 이 구매자가 남은 lucky_pair 판매예약 수만큼 예약 보유하는지 확인
-                        if _slp:
-                            # 전체 sell_rows 기준으로 이 lucky_pair의 남은 판매예약 수 계산
-                            _lp_remain = sum(1 for _s in sell_rows
-                                if dict(_s).get('lucky_pair_id')==_slp and dict(_s)['res_id'] not in matched_seller_ids)
-                            _b_avail = sum(1 for _bb in lucky_buyers
-                                if _bb['buyer_id']==_b['buyer_id'] and _bb['res_id'] not in matched_buyer_ids)
-                            if _b_avail < _lp_remain: continue
-                        buyer = _b; break
-                    if buyer is None:
-                        si += 1; continue
+            # 이 쌍의 구매자 후보: 판매자 제외 + 당일 2개 이상 구매예약한 사용자
+            _buy_pool = [b for b in _all_buy_rows
+                if b.get('reserve_date') == today
+                and b['bar_type'] == bt
+                and b['buyer_id'] not in _lp_seller_ids
+                and b['res_id'] not in matched_buyer_ids]
 
-                # 안전장치: buyer_res_id 소유자를 DB로 직접 확인, 불일치면 올바른 예약으로 교체
-                if _slp:
-                    if buyer.get('reserve_date') != today:
-                        si += 1; continue
-                    _chk = db.execute(
-                        "SELECT user_id FROM reservations WHERE id=?", (buyer['res_id'],)
-                    ).fetchone()
-                    if not _chk or int(_chk['user_id']) != int(buyer['buyer_id']):
-                        # buyer_res_id 소유자 불일치 → buyer_id의 올바른 예약 직접 DB 조회
-                        _correct = db.execute(
-                            """SELECT id FROM reservations
-                               WHERE user_id=? AND bar_type=? AND reserve_date=?
-                               AND (item_id IS NULL OR item_id=0)
-                               AND status IN ('pending','matched')
-                               AND id NOT IN (
-                                   SELECT COALESCE(buyer_res_id,0) FROM matches
-                                   WHERE buyer_res_id IS NOT NULL
-                               )
-                               ORDER BY id LIMIT 1""",
-                            (buyer['buyer_id'], bt, today)
-                        ).fetchone()
-                        if not _correct:
-                            si += 1; continue
-                        # 올바른 예약으로 교체
-                        buyer = dict(buyer)
-                        buyer['res_id'] = _correct['id']
-                matched_seller_ids.add(seller['res_id'])
-                matched_buyer_ids.add(buyer['res_id'])
-                # lucky_pair: buyer_id(user_id)로 매핑 저장
-                if _slp and _slp not in _lucky_buyer_map:
-                    _lucky_buyer_map[_slp] = buyer['buyer_id']
-                si += 1
+            # 2개 이상 구매예약한 사용자
+            _buyer_cnt = {}
+            for _b in _buy_pool:
+                _buyer_cnt[_b['buyer_id']] = _buyer_cnt.get(_b['buyer_id'], 0) + 1
+            _eligible = {uid for uid, cnt in _buyer_cnt.items() if cnt >= 2}
 
-                is_loopay = (seller['seller_username'] == 'loopay')
-                def get_setting(key, fallback):
-                    r2 = db.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
-                    return r2['value'] if r2 else fallback
-                if is_loopay:
-                    s_phone = get_setting('loopay_phone', seller['seller_phone'])
-                    s_bank  = get_setting('loopay_bank',  seller['seller_bank'])
-                    s_acct  = get_setting('loopay_account', seller['seller_account'])
-                    s_name  = get_setting('loopay_account_name', seller.get('seller_account_name'))
-                else:
-                    s_phone = seller['seller_phone']
-                    s_bank  = seller['seller_bank']
-                    s_acct  = seller['seller_account']
-                    s_name  = seller.get('seller_account_name')
+            if not _eligible:
+                continue  # 조건 만족하는 구매자 없음
 
-                sell_price, buy_price = 0, 0
-                if seller['item_id']:
-                    pr = db.execute("SELECT * FROM prices WHERE bar_type=? AND stage=?",
-                                   (bt, st)).fetchone()
-                    if pr:
-                        sell_price = pr['sell_price']
-                        buy_price  = pr['buy_price']
+            # 랜덤으로 구매자 선택 (eligible 중 하나)
+            import random
+            _chosen_uid = random.choice(list(_eligible))
+            _chosen_buys = [b for b in _buy_pool if b['buyer_id'] == _chosen_uid
+                           and b['res_id'] not in matched_buyer_ids]
 
-                # 행운구매 판매예약은 status 유지 (입금확인 후 처리됨)
-                # 행운구매 판매예약도 matched 처리
-                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
-                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
-                if seller['item_id'] and not seller.get('lucky_pair_id'):
-                    db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
-                # buyer(loopay) 구매아이템 상태를 'loopay_matched'로 변경 (시스템아이템현황에서 구분)
-                if buyer.get('item_id'):
-                    db.execute("UPDATE items SET status='matched' WHERE id=? AND user_id=?",
-                               (buyer['item_id'], buyer['buyer_id']))
-                else:
-                    # loopay 판매예약에 item_id가 없으면 자동 생성
-                    try:
-                        _new_item_id = db.execute(
-                            """INSERT INTO items(user_id, bar_type, stage, purchase_date, status)
-                               VALUES(?, ?, ?, ?, 'matched')""",
-                            (seller['seller_id'], bt, st, today)
-                        ).lastrowid
-                        db.execute("UPDATE reservations SET item_id=? WHERE id=?", (_new_item_id, seller['res_id']))
-                        seller = dict(seller)
-                        seller['item_id'] = _new_item_id
-                    except Exception as _e:
-                        pass
+            if len(_chosen_buys) < len(_lp_sellers):
+                continue  # 구매예약 수 부족
 
-                # seller_item_id 컬럼 있으면 포함, 없으면 기존 방식
-                _seller_iid = seller.get('item_id') if isinstance(seller, dict) else seller['item_id']
+            # 매칭 실행: 각 판매예약에 구매예약 1개씩 배정
+            _lp_matched = True
+            _lp_match_list = []
+            for _i, _seller in enumerate(_lp_sellers):
+                _buyer_res = _chosen_buys[_i]
+                # DB 검증: buyer_res 소유자 확인
+                _chk = db.execute("SELECT user_id FROM reservations WHERE id=?", (_buyer_res['res_id'],)).fetchone()
+                if not _chk or int(_chk['user_id']) != int(_chosen_uid):
+                    _lp_matched = False; break
+                _lp_match_list.append((_seller, _buyer_res))
+
+            if not _lp_matched:
+                continue
+
+            # 매칭 INSERT
+            for _seller, _buyer_res in _lp_match_list:
+                _st = _seller.get('stage') or 1
+                _bp = price_map.get(bt, {}).get(_st, (0, 0))[0]
+                _sp = price_map.get(bt, {}).get(_st, (0, 0))[1]
+                _seller_iid = _seller.get('item_id')
+                s_phone = _seller.get('seller_phone', '')
+                s_bank = _seller.get('seller_bank', '')
+                s_acct = _seller.get('seller_account', '')
+                s_name = _seller.get('seller_account_name', '')
                 try:
                     db.execute(
                         """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
                            buy_price, sell_price, match_round, match_date, status,
-                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id, buyer_res_id, lucky_pair_id)
+                           seller_phone, seller_bank, seller_account, seller_account_name,
+                           buyer_phone, seller_item_id, buyer_res_id, lucky_pair_id)
                            VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,?)""",
-                        (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
-                         bt, st, buy_price, sell_price, round_num, today,
-                         s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'], _seller_iid, buyer['res_id'],
-                         seller.get('lucky_pair_id'))
+                        (_buyer_res['res_id'], _chosen_uid, _seller['seller_id'],
+                         bt, _st, _bp, _sp, round_num, today,
+                         s_phone, s_bank, s_acct, s_name,
+                         _buyer_res.get('buyer_phone', ''),
+                         _seller_iid, _buyer_res['res_id'], _lp_id)
                     )
-                except Exception:
-                    db.execute(
-                        """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
-                           buy_price, sell_price, match_round, match_date, status,
-                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id, buyer_res_id, lucky_pair_id)
-                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,?)""",
-                        (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
-                         bt, st, buy_price, sell_price, round_num, today,
-                         s_phone, s_bank, s_acct, s_name, buyer['buyer_phone'],
-                         seller.get('item_id'), buyer['res_id'], seller.get('lucky_pair_id'))
-                    )
-
-                # 구매자 알림: 매칭 정보 상세 카드 (다음날 05:00 발송)
-                _match_notif_time = (get_today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d') + ' 05:00:00'
-                _bar_name = names[bt]
-                _sell_p = sell_price
-                _s_bank = seller['seller_bank'] or '기업은행'
-                _s_acct = seller['seller_account'] or '-'
-                _s_name = s_name or '루페이'
-                buyer_msg = (
-                    f"✅ {_bar_name} {st}단계 매칭이 완료되었습니다.\n"
-                    f"\n📋 매칭 정보\n"
-                    f"• 아이템: {_bar_name} {st}단계\n"
-                    f"• 입금 금액: {_sell_p:,}원\n"
-                    f"\n🏦 입금 계좌\n"
-                    f"• 은행: {_s_bank}\n"
-                    f"• 계좌번호: {_s_acct}\n"
-                    f"• 예금주: {_s_name}\n"
-                    f"\n위 계좌로 입금 후 매칭탭에서 송금완료 버튼을 눌러주세요."
-                )
-                # 알림 발송용 수집 (루프 후 buyer별 통합 1회 발송)
-                _b_id_key = buyer['buyer_id']
-                if _b_id_key not in _buyer_notif_map:
-                    _buyer_notif_map[_b_id_key] = {
-                        'items': [], 'bank': _s_bank, 'acct': _s_acct, 'acct_name': _s_name
-                    }
-                _buyer_notif_map[_b_id_key]['items'].append(
-                    f"{_bar_name} {st}단계 (입금: {_sell_p:,}원)"
-                )
-                # 매칭 건수 수집 (포인트 정산용)
-                _b_id_int = int(_b_id_key)
-                _matched_cnt_map[_b_id_int] = _matched_cnt_map.get(_b_id_int, 0) + 1
-                seller_msg = f"{names[bt]} {st}단계 매칭완료! 구매자: {buyer['buyer_nickname'] or buyer['buyer_username']}, 연락처: {buyer['buyer_phone'] or '-'}"
-                # seller(loopay) 알림 생략
-
-                matched_pairs.append({
-                    'bar_type': bt, 'bar_name': names[bt],
-                    'stage': st,
-                    'buyer': {'buyer_id': buyer['buyer_id'], 'username': buyer['buyer_username'], 'nickname': buyer['buyer_nickname'],
-                              'phone': buyer['buyer_phone'], 'account_name': buyer.get('buyer_account_name')},
-                    'seller': {'username': seller['seller_username'], 'nickname': seller['seller_nickname'],
-                               'phone': s_phone, 'bank': s_bank, 'account': s_acct, 'account_name': s_name},
-                    'sell_price': sell_price, 'buy_price': buy_price,
-                })
-                total_matched += 1
-
-        # 기존 bar_type별 루프 - stage별 매칭으로 대체됨, 아래는 제거
-
-
-        # ── buyer별 포인트 즉시 환원 ──
-        # matched_pairs에서 buyer_id별 매칭 수 집계
-
-        # stage=0 랜덤 구매예약 → bar_type 기준으로 남은 판매자와 매칭
-        for bt in list(buy_any_stage.keys()):
-            rand_buyers = [b for b in buy_any_stage[bt] if b['res_id'] not in matched_buyer_ids]
-            avail_sellers = [s for (sbt,sst),slist in sell_by_type_stage.items()
-                             if sbt==bt for s in slist if s['res_id'] not in matched_seller_ids]
-            import random as _r3; _r3.shuffle(avail_sellers)
-            bi3 = si3 = 0
-            while bi3 < len(rand_buyers) and si3 < len(avail_sellers):
-                buyer = rand_buyers[bi3]; seller = avail_sellers[si3]
-                if seller['seller_id']==buyer['buyer_id'] and seller.get('seller_username')!='loopay':
-                    bi3 += 1; continue  # 구매자를 넘김 (판매자 유지)
-                    # 모든 구매자를 소진해도 매칭 안 되면 이 판매자는 미매칭
-                matched_seller_ids.add(seller['res_id']); matched_buyer_ids.add(buyer['res_id'])
-                bi3 += 1; si3 += 1
-                is_lp = (seller['seller_username']=='loopay')
-                def _g3(k,fb): _rv=db.execute("SELECT value FROM system_settings WHERE key=?",(k,)).fetchone(); return _rv['value'] if _rv else fb
-                st3 = seller.get('stage', 1)
-                _pr3 = db.execute("SELECT buy_price, sell_price FROM prices WHERE bar_type=? AND stage=?", (bt, st3)).fetchone()
-                buy_price3  = _pr3['buy_price']  if _pr3 else 0
-                sell_price3 = _pr3['sell_price'] if _pr3 else 0
-
-                # DB 업데이트: reservations status='matched'
-                # 행운구매 판매예약은 status 유지 (입금확인 후 처리됨)
-                # 행운구매 판매예약도 matched 처리
-                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (seller['res_id'],))
-                db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer['res_id'],))
-                if seller.get('item_id') and not seller.get('lucky_pair_id'):
-                    db.execute("UPDATE items SET status='matched' WHERE id=?", (seller['item_id'],))
-                if buyer.get('item_id'):
-                    db.execute("UPDATE items SET status='matched' WHERE id=? AND user_id=?", (buyer['item_id'], buyer['buyer_id']))
-
-                s_phone3 = _g3('loopay_phone', seller.get('seller_phone','')) if is_lp else seller.get('seller_phone','')
-                s_bank3  = _g3('loopay_bank',  seller.get('seller_bank',''))  if is_lp else seller.get('seller_bank','')
-                s_acct3  = _g3('loopay_account', seller.get('seller_account','')) if is_lp else seller.get('seller_account','')
-                s_acct_name3 = _g3('loopay_account_name', seller.get('seller_account_name','')) if is_lp else seller.get('seller_account_name','')
-                # INSERT INTO matches
-                _siid3 = seller.get('item_id')
-                try:
-                    db.execute(
-                        """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
-                           buy_price, sell_price, match_round, match_date, status,
-                           seller_phone, seller_bank, seller_account, seller_account_name, buyer_phone, seller_item_id, lucky_pair_id)
-                           VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?)""",
-                        (buyer['res_id'], buyer['buyer_id'], seller['seller_id'],
-                         bt, st3, buy_price3, sell_price3, round_num, today,
-                         s_phone3, s_bank3, s_acct3, s_acct_name3,
-                         buyer.get('buyer_phone',''), _siid3,
-                         seller.get('lucky_pair_id'))
-                    )
-                    # buyer_res_id 컬럼이 있으면 업데이트
-                    try:
-                        db.execute("UPDATE matches SET buyer_res_id=? WHERE reservation_id=? AND buyer_id=?",
-                                   (buyer['res_id'], buyer['res_id'], buyer['buyer_id']))
-                    except Exception:
-                        pass
-                except Exception as _e3:
+                    matched_seller_ids.add(_seller['res_id'])
+                    matched_buyer_ids.add(_buyer_res['res_id'])
+                    total_matched += 1
+                    matched_pairs.append({
+                        'seller': _seller.get('seller_username'),
+                        'buyer': _buyer_res.get('buyer_username'),
+                        'bar_type': bt, 'stage': _st, 'lucky_pair_id': _lp_id
+                    })
+                except Exception as _e:
                     pass
 
-
-                matched_pairs.append({
-                    'bar_type':bt,'bar_name':names.get(bt,bt),'stage':st3,
-                    'seller':dict(seller),'buyer':dict(buyer),
-                    's_phone':s_phone3,'s_bank':s_bank3,'s_acct':s_acct3,'s_acct_name':s_acct_name3,
-                })
-                # 포인트 차감용 카운트 업데이트 (랜덤 매칭)
-                _b_id_rand = int(buyer['buyer_id'])
-                _matched_cnt_map[_b_id_rand] = _matched_cnt_map.get(_b_id_rand, 0) + 1
-                total_matched += 1
-
-        # ── 포인트 정산: 오늘 buy_rows의 모든 buyer 대상 ──
-        # matched_pairs에서 buyer별 매칭 수 집계
-        _buyer_match_cnt = {}
-        for _p in matched_pairs:
-            _pb_id = _p['buyer'].get('buyer_id')
-            if _pb_id:
-                _buyer_match_cnt[_pb_id] = _buyer_match_cnt.get(_pb_id, 0) + 1
-
-        # 포인트 정산: matched_pairs의 buyer + 미매칭 buyer 모두 처리
-        # 1. 매칭된 buyer: cnt만큼 consume
-        # 2. 미매칭 buyer: consume=0, maintain 전액 환원
-        _all_buyer_ids = set()
-        for _br in buy_rows:
-            _bid_int = int(_br['buyer_id']) if _br['buyer_id'] else None
-            if _bid_int:
-                _all_buyer_ids.add(_bid_int)
-
-        # 포인트 정산: _matched_cnt_map(매칭된 buyer) + buy_rows(미매칭 buyer) 모두 처리
-        try:
-            # 매칭된 buyer 처리: buy_price만큼 즉시 차감
-            for _bid, _bcnt in _matched_cnt_map.items():
-                # 해당 buyer의 오늘 매칭된 총 buy_price 합산
-                _buy_sum = db.execute(
-                    """SELECT COALESCE(SUM(buy_price),0) as total FROM matches
-                       WHERE buyer_id=? AND match_date=? AND match_round=? AND status='pending'""",
-                    (_bid, today, round_num)
-                ).fetchone()['total']
-                _u = db.execute("SELECT maintain_points, charge_points FROM users WHERE id=?", (_bid,)).fetchone()
-                _mn = int(_u['maintain_points'] or 0) if _u else 0
-                _ch = int(_u['charge_points'] or 0) if _u else 0
-                _consume = 40 * _bcnt  # 매칭 건당 40P × 건수
-                if _consume <= 0:
-                    continue
-                if _mn >= _consume:
-                    _refund = _mn - _consume
-                    db.execute(
-                        "UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?",
-                        (_refund, _bid)
-                    )
-                elif _mn > 0:
-                    _remain = _consume - _mn
-                    db.execute(
-                        "UPDATE users SET maintain_points=0, charge_points=charge_points-? WHERE id=?",
-                        (_remain, _bid)
-                    )
-                else:
-                    db.execute(
-                        "UPDATE users SET charge_points=charge_points-? WHERE id=?",
-                        (_consume, _bid)
-                    )
-            # 미매칭 buyer 처리 (buy_rows에 있지만 매칭 안된 buyer)
-            for _br in buy_rows:
-                if not _br['buyer_id']: continue
-                _bid2 = int(_br['buyer_id'])
-                if _bid2 in _matched_cnt_map: continue  # 이미 처리됨
-                _u2 = db.execute("SELECT maintain_points FROM users WHERE id=?", (_bid2,)).fetchone()
-                _mn2 = int(_u2['maintain_points'] or 0) if _u2 else 0
-                if _mn2 > 0:
-                    # 미매칭: maintain 전액 charge로 환원
-                    db.execute(
-                        "UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?",
-                        (_mn2, _bid2)
-                    )
-            # 포인트 차감된 매치 → points_deducted=1 표시
-            for _bid3 in _matched_cnt_map:
-                db.execute(
-                    """UPDATE matches SET points_deducted=1
-                       WHERE buyer_id=? AND match_date=? AND match_round=? AND points_deducted=0""",
-                    (_bid3, today, round_num)
-                )
             db.commit()
-        except Exception as _pts_err:
-            import sys
-            print(f"[POINTS ERROR] {_pts_err}", file=sys.stderr)
 
-        # ── buyer별 매칭완료 통합 알림 1회 발송 ──
-        for _bid, _bdata in _buyer_notif_map.items():
-            _item_list = _bdata['items']
-            if not _item_list:
+            # lucky_buy_results buyer_id 업데이트
+            try:
+                db.execute(
+                    "UPDATE lucky_buy_results SET buyer_id=? WHERE id=?",
+                    (_chosen_uid, _lp_id)
+                )
+                db.commit()
+            except Exception:
+                pass
+
+        # ── 2단계: 일반 매칭 (행운구매 제외 나머지) ────────────────────────
+        # bar_type+stage별로 미매칭 판매/구매 그룹화
+        sell_normal = [dict(s) for s in sell_rows
+            if s['res_id'] not in matched_seller_ids
+            and not dict(s).get('lucky_pair_id')]
+        # loopay 판매예약도 포함
+        loopay_sell = [dict(s) for s in sell_rows
+            if s['res_id'] not in matched_seller_ids
+            and dict(s).get('seller_username') == 'loopay']
+
+        all_sell_normal = sell_normal  # loopay도 sell_rows에 포함됨
+
+        # 구매예약: 미매칭된 것
+        buy_normal = [b for b in _all_buy_rows
+            if b['res_id'] not in matched_buyer_ids
+            and b.get('reserve_date') == today]
+
+        # bar_type+stage별로 묶어서 랜덤 매칭
+        import random
+        random.shuffle(all_sell_normal)
+        random.shuffle(buy_normal)
+
+        # bar_type별로 구매예약 인덱스
+        buy_by_bt = {}
+        for _b in buy_normal:
+            _bt = _b['bar_type']
+            if _bt not in buy_by_bt: buy_by_bt[_bt] = []
+            buy_by_bt[_bt].append(_b)
+
+        for _seller in all_sell_normal:
+            if _seller['res_id'] in matched_seller_ids:
                 continue
-            _round_label = f"{round_num}차 "
-            if len(_item_list) == 1:
-                _notif_title = f"{_round_label}{_item_list[0].split('(')[0].strip()} 매칭 완료"
-                _notif_body = (
-                    f"✅ {_round_label}{_item_list[0].split('(')[0].strip()} 매칭이 완료되었습니다.\n"
-                    f"\n📋 매칭 정보\n"
-                    f"• 아이템: {_item_list[0]}\n"
-                    f"\n매칭탭에서 송금완료 버튼을 눌러주세요."
-                )
-            else:
-                _notif_title = f"{_round_label}매칭 완료 ({len(_item_list)}건)"
-                _items_str = '\n'.join(f'  • {it}' for it in _item_list)
-                _notif_body = (
-                    f"✅ {len(_item_list)}건 매칭이 완료되었습니다.\n"
-                    f"\n📋 매칭 아이템\n{_items_str}\n"
-                    f"\n매칭탭에서 각 아이템 송금완료 버튼을 눌러주세요."
-                )
+            _bt = _seller['bar_type']
+            _st = _seller.get('stage') or 1
+            _is_loopay = (_seller.get('seller_username') == 'loopay')
+
+            # 구매자 선택
+            _candidates = [b for b in buy_by_bt.get(_bt, [])
+                if b['res_id'] not in matched_buyer_ids
+                and (_is_loopay or b['buyer_id'] != _seller['seller_id'])]
+
+            if not _candidates:
+                continue
+
+            _buyer = random.choice(_candidates)
+
+            # DB 검증
+            _chk = db.execute("SELECT user_id FROM reservations WHERE id=?", (_buyer['res_id'],)).fetchone()
+            if not _chk or int(_chk['user_id']) != int(_buyer['buyer_id']):
+                # 올바른 예약 찾기
+                _correct = db.execute(
+                    """SELECT id FROM reservations
+                       WHERE user_id=? AND bar_type=? AND reserve_date=?
+                       AND (item_id IS NULL OR item_id=0)
+                       AND status IN ('pending','matched')
+                       AND id NOT IN (SELECT COALESCE(buyer_res_id,0) FROM matches WHERE buyer_res_id IS NOT NULL)
+                       ORDER BY id LIMIT 1""",
+                    (_buyer['buyer_id'], _bt, today)
+                ).fetchone()
+                if not _correct:
+                    continue
+                _buyer = dict(_buyer)
+                _buyer['res_id'] = _correct['id']
+
+            _bp = price_map.get(_bt, {}).get(_st, (0, 0))[0]
+            _sp = price_map.get(_bt, {}).get(_st, (0, 0))[1]
+            _seller_iid = _seller.get('item_id')
+            s_phone = _seller.get('seller_phone', '')
+            s_bank = _seller.get('seller_bank', '')
+            s_acct = _seller.get('seller_account', '')
+            s_name = _seller.get('seller_account_name', '')
+
+            # loopay 처리
+            if _is_loopay:
+                def get_setting(key, fallback):
+                    row = db.execute("SELECT value FROM system_settings WHERE key=?", (key,)).fetchone()
+                    return row['value'] if row else fallback
+                s_phone = get_setting('loopay_phone', s_phone)
+                s_bank = get_setting('loopay_bank', s_bank)
+                s_acct = get_setting('loopay_account', s_acct)
+                s_name = get_setting('loopay_account_name', s_name)
+
             try:
-                insert_notification(db, _bid, 'match', _notif_title, _notif_body)
+                db.execute(
+                    """INSERT INTO matches(reservation_id, buyer_id, seller_id, bar_type, stage,
+                       buy_price, sell_price, match_round, match_date, status,
+                       seller_phone, seller_bank, seller_account, seller_account_name,
+                       buyer_phone, seller_item_id, buyer_res_id, lucky_pair_id)
+                       VALUES(?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,NULL)""",
+                    (_buyer['res_id'], _buyer['buyer_id'], _seller['seller_id'],
+                     _bt, _st, _bp, _sp, round_num, today,
+                     s_phone, s_bank, s_acct, s_name,
+                     _buyer.get('buyer_phone', ''),
+                     _seller_iid, _buyer['res_id'])
+                )
+                matched_seller_ids.add(_seller['res_id'])
+                matched_buyer_ids.add(_buyer['res_id'])
+                total_matched += 1
+                matched_pairs.append({
+                    'seller': _seller.get('seller_username'),
+                    'buyer': _buyer.get('buyer_username'),
+                    'bar_type': _bt, 'stage': _st
+                })
             except Exception:
                 pass
 
-        # 1차 매칭: 미매칭 구매예약 → 2차 대기로 자동 전환
-        if round_num == 1:
-            try:
-                # ① join_round2=1인 일반 구매예약 → 당일 2차로 전환 (reserve_date 유지)
-                db.execute(
-                    """UPDATE reservations SET status='pending', match_round=2
-                       WHERE match_round=1 AND status='pending'
-                       AND reserve_date=?
-                       AND (item_id IS NULL OR item_id=0)
-                       AND COALESCE(join_round2,0)=1
-                       AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
-                    (today,)
-                )
-                # ② join_round2=0인 미매칭 구매예약 → unmatched
-                db.execute(
-                    """UPDATE reservations SET status='unmatched'
-                       WHERE match_round=1 AND status='pending' AND reserve_date=?
-                       AND (item_id IS NULL OR item_id=0)
-                       AND COALESCE(join_round2,0)=0
-                       AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
-                    (today,)
-                )
-                # ③ join_round2=1인 판매예약 → 2차로 전환
-                db.execute(
-                    """UPDATE reservations SET status='pending', match_round=2, reserve_date=?
-                       WHERE match_round=1 AND status IN ('pending','unmatched')
-                       AND item_id IS NOT NULL AND item_id > 0
-                       AND COALESCE(join_round2,0)=1
-                       AND lucky_pair_id IS NULL""",
-                    (today,)
-                )
-                # ④ join_round2=0인 미매칭 판매예약 → unmatched
-                db.execute(
-                    """UPDATE reservations SET status='unmatched'
-                       WHERE match_round=1 AND status IN ('pending','unmatched')
-                       AND item_id IS NOT NULL AND item_id > 0
-                       AND COALESCE(join_round2,0)=0
-                       AND lucky_pair_id IS NULL
-                       AND reserve_date=?""",
-                    (today,)
-                )
-                # ⑤ 루페이 미매칭 구매예약 → 모두 unmatched (루페이는 1차에서 반드시 매칭돼야 함)
-                db.execute(
-                    """UPDATE reservations SET status='unmatched'
-                       WHERE match_round=1 AND status='pending' AND reserve_date=?
-                       AND user_id=(SELECT id FROM users WHERE username='loopay')""",
-                    (today,)
-                )
-            except Exception:
-                pass
-        else:
-            # 2차+ 미매칭은 unmatched 처리
-            try:
-                # join_round2=1인 2차 미매칭 구매예약 → 다음날 1차로 복원
-                import datetime as _dt2
-                _nextday = (_dt2.date.fromisoformat(today) + _dt2.timedelta(days=1)).isoformat()
-                db.execute(
-                    """UPDATE reservations SET match_round=1, reserve_date=?
-                       WHERE match_round=2 AND status='pending' AND reserve_date=?
-                       AND COALESCE(join_round2,0)=1
-                       AND (item_id IS NULL OR item_id=0)
-                       AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
-                    (_nextday, today)
-                )
-                # 2차 매칭 완료 후 남은 미매칭 2차 구매예약 삭제
-                # join_round2=0: unmatched 기록 후 삭제
-                # join_round2=1: 다음날 1차로 복원됐으므로 나머지 처리 불필요
-                db.execute(
-                    """DELETE FROM reservations
-                       WHERE match_round=2 AND status='pending' AND reserve_date=?
-                       AND COALESCE(confirmed,0)=0
-                       AND COALESCE(join_round2,0)=0
-                       AND user_id!=(SELECT id FROM users WHERE username='loopay')""",
-                    (today,)
-                )
-            except Exception:
-                pass
         db.commit()
-
-        # 매칭 실행 기록 저장 (실제 매칭이 1건 이상일 때만)
-        if total_matched > 0:
-            _ran_key = f'r{round_num}_ran_{today}'
-            db.execute(
-                "INSERT OR REPLACE INTO system_settings(key,value,updated_at) VALUES(?,?,CURRENT_TIMESTAMP)",
-                (_ran_key, today)
-            )
-            db.commit()
 
         # 행운구매 동일 구매자 통일: 같은 lucky_pair_id를 가진 매치는 첫 번째 매치의 구매자로 통일
         _lucky_pairs = db.execute(
