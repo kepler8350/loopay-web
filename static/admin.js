@@ -1160,9 +1160,13 @@ async function loadReservationsLog(page){
       if(r.status==='matched' && !r.match_status){
         statusKo = '대기';
       }
-      // status=matched + ms=failed → 미입금 (매칭 실패)
-      if(r.status==='matched' && r.match_status==='failed'){
-        statusKo = '미입금';
+      // ms=failed 처리: 구매=미입금, 판매=2차대기(재매칭 대기)
+      if(r.match_status==='failed'){
+        if(r.res_type==='buy'){
+          statusKo = '미입금';  // 구매자가 미입금한 경우
+        } else {
+          statusKo = '2차대기';  // 판매자는 재매칭 대기
+        }
       }
       // status=pending + ms=pending/paid → 매칭완료 (매치됐지만 reservation status 미갱신)
       if(r.status==='pending' && (r.match_status==='pending' || r.match_status==='paid')){
@@ -1188,8 +1192,8 @@ async function loadReservationsLog(page){
         if(r.match_status==='confirmed'){
           // 판매자 입금확인 완료 → "완료"
           statusKo = '완료';
-        } else if(!r.match_status && _isPast){
-          // 매칭 못 된 예약 + 과거 날짜 → "완료" (해당 날짜 매칭 사이클 종료)
+        } else if(!r.match_status && _isPast && _r2FailedCount===0){
+          // 매칭 못 된 예약 + 과거 날짜 + 미입금 없음 → "완료" (해당 날짜 매칭 사이클 종료)
           statusKo = '완료';
         }
       }

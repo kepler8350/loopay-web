@@ -3145,12 +3145,10 @@ def admin_matching_status():
         "SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND status='failed' AND match_date=?",
         (today,)
     ).fetchone()['c']
-    # 오늘 미입금이 있으면 오늘만, 없으면 어제 포함
-    _failed_date_cond = (today,) if failed_today_count > 0 else (today, _yesterday2)
-    _failed_sql_cond = "match_date=?" if failed_today_count > 0 else "match_date IN (?,?)"
-    failed_count = failed_today_count if failed_today_count > 0 else db.execute(
-        f"SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND status='failed' AND {_failed_sql_cond}",
-        _failed_date_cond
+    # 오늘 미입금 (1차+2차 모두, 오늘 날짜만)
+    failed_count = db.execute(
+        "SELECT COUNT(*) as c FROM matches WHERE status='failed' AND match_date=?",
+        (today,)
     ).fetchone()['c']
 
     # 미입금 상세
@@ -4888,10 +4886,17 @@ def user_confirm_unpaid():
         # 1. match status → failed
         db.execute("UPDATE matches SET status='failed' WHERE id=?", (match_id,))
 
-        # 2. 구매예약 → 2차 매칭 대기
-        if m['reservation_id']:
-            db.execute("UPDATE reservations SET status='pending', match_round=2 WHERE id=?",
-                       (m['reservation_id'],))
+        # 2. 구매예약 → 미입금 상태로 (status=matched 유지, match_status=failed로 표시됨)
+        # reservation_id와 buyer_res_id 모두 처리
+        _buy_res_ids = set()
+        if m['reservation_id']: _buy_res_ids.add(m['reservation_id'])
+        _m = dict(m)
+        if _m.get('buyer_res_id'): _buy_res_ids.add(_m['buyer_res_id'])
+        for _brid in _buy_res_ids:
+            db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_brid,))
+        # 판매예약 → 2차 매칭 대기 (items도 reservable로 복원)
+        if _m.get('seller_item_id'):
+            db.execute("UPDATE items SET status='reservable' WHERE id=?", (_m['seller_item_id'],))
 
         # 3. loopay 판매 아이템 → reservable + 2차 sell 예약 생성
         _seller_uid = loopay_id or seller_id
@@ -4976,10 +4981,17 @@ def admin_confirm_unpaid():
         # 1. match status → failed (미입금확정)
         db.execute("UPDATE matches SET status='failed' WHERE id=?", (match_id,))
 
-        # 2. 구매예약 → 2차 매칭 대기 (match_round=2, status='pending')
-        if m['reservation_id']:
-            db.execute("""UPDATE reservations SET status='pending', match_round=2
-                         WHERE id=?""", (m['reservation_id'],))
+        # 2. 구매예약 → 미입금 상태 유지 (status=matched, ms=failed로 표시)
+        # buyer_res_id도 처리
+        _buy_res_ids = set()
+        if m['reservation_id']: _buy_res_ids.add(m['reservation_id'])
+        _m2 = dict(m)
+        if _m2.get('buyer_res_id'): _buy_res_ids.add(_m2['buyer_res_id'])
+        for _brid in _buy_res_ids:
+            db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_brid,))
+        # 판매아이템 → reservable 복원
+        if _m2.get('seller_item_id'):
+            db.execute("UPDATE items SET status='reservable' WHERE id=?", (_m2['seller_item_id'],))
 
         # 3. 판매 아이템 → reservable + 2차 sell 예약 생성 (모든 seller)
         _seller_uid = m['seller_id'] if 'seller_id' in m.keys() and m['seller_id'] else None
