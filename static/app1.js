@@ -2358,10 +2358,11 @@ async function loadSellTab(){
     }
     _renderSellSummary();
     renderSellTab();
-    // 판매예약하기 버튼: /user/my-items로 직접 확인
-    api('/user/my-items').then(function(sellData){
-      _updateSellBtnFromItems(sellData.items||[]);
-    }).catch(function(){ _updateSellBtnFromItems([]); });
+    // 판매예약하기 버튼: /user/my-items로 직접 확인 (await으로 순서 보장)
+    try {
+      var _sellData = await api('/user/my-items');
+      _updateSellBtnFromItems(_sellData.items||[]);
+    } catch(e2) { _updateSellBtnFromItems([]); }
   } catch(e) {
     var el = document.getElementById('sell-tab-list');
     if(el) el.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px">불러오기 실패: '+e.message+'</div>';
