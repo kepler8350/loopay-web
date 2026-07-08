@@ -7255,6 +7255,24 @@ def testtools_fix_match_buyer_direct():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/update-match-buyer-res', methods=['POST'])
+def testtools_update_match_buyer_res():
+    """특정 매치의 buyer_res_id를 직접 수정"""
+    data = request.get_json()
+    match_id = data.get('match_id')
+    buyer_res_id = data.get('buyer_res_id')
+    db = get_db()
+    try:
+        db.execute("UPDATE matches SET buyer_res_id=? WHERE id=?", (buyer_res_id, match_id))
+        db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer_res_id,))
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
