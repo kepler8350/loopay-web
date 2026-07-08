@@ -2655,10 +2655,16 @@ def admin_run_matching():
                     if buyer is None:
                         si += 1; continue
 
-                # 안전장치: buyer_res_id가 실제 buyer 소유인지 최종 확인
-                if _slp and buyer.get('reserve_date') != today:
-                    # 행운구매인데 오늘 날짜가 아닌 예약 → 스킵
-                    si += 1; continue
+                # 안전장치: buyer_res_id가 실제 buyer 소유인지 최종 확인 (DB 직접 검증)
+                if _slp:
+                    if buyer.get('reserve_date') != today:
+                        si += 1; continue
+                    _chk = db.execute(
+                        "SELECT user_id FROM reservations WHERE id=?", (buyer['res_id'],)
+                    ).fetchone()
+                    if not _chk or int(_chk['user_id']) != int(buyer['buyer_id']):
+                        # buyer_res_id 소유자가 buyer_id와 다름 → 스킵
+                        si += 1; continue
                 matched_seller_ids.add(seller['res_id'])
                 matched_buyer_ids.add(buyer['res_id'])
                 # lucky_pair: buyer_id(user_id)로 매핑 저장
