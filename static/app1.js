@@ -22,13 +22,19 @@ function _updateSellBtnFromItems(items){
   if(Array.isArray(items)){
     _flatItems = items;
   } else if(items && typeof items === 'object'){
-    // bar_type별 딕셔너리 → 평탄화
     Object.values(items).forEach(function(arr){ if(Array.isArray(arr)) _flatItems = _flatItems.concat(arr); });
   }
   window._hasSellableItem = _flatItems.some(function(it){ return it.status_label==='판매가능'; });
-  var _nowH = getEffectiveDate().getHours();
-  window._isReserveTimeCached = (_nowH >= 5 && _nowH < 20);
-  _updateSellBtn(window._isReserveTimeCached);
+  // 서버 시간 직접 조회 (오프셋 미설정 문제 방지)
+  fetch('/api/current-time').then(function(r){return r.json();}).then(function(ct){
+    var _nowH = ct.hour != null ? ct.hour : parseInt((ct.time||'00:00').slice(11,13));
+    window._isReserveTimeCached = (_nowH >= 5 && _nowH < 20);
+    _updateSellBtn(window._isReserveTimeCached);
+  }).catch(function(){
+    var _nowH = getEffectiveDate().getHours();
+    window._isReserveTimeCached = (_nowH >= 5 && _nowH < 20);
+    _updateSellBtn(window._isReserveTimeCached);
+  });
 }
 
 
