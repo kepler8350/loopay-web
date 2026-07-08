@@ -2379,8 +2379,9 @@ def admin_run_matching():
                WHERE status IN ('pending', 'unmatched')
                AND item_id IS NOT NULL AND item_id > 0
                AND user_id = ?
-               AND confirmed=1""",
-            (round_num, loopay_id)
+               AND confirmed=1
+               AND reserve_date=?""",
+            (round_num, loopay_id, today)
         )
         # 일반 사용자 판매예약도 unmatched면 현재 round로 복원
         db.execute(
@@ -2388,8 +2389,9 @@ def admin_run_matching():
                WHERE status='unmatched'
                AND item_id IS NOT NULL AND item_id > 0
                AND user_id != ?
-               AND confirmed=1""",
-            (round_num, loopay_id)
+               AND confirmed=1
+               AND reserve_date=?""",
+            (round_num, loopay_id, today)
         )
         db.commit()
 
@@ -7267,6 +7269,28 @@ def testtools_update_match_buyer_res():
         db.execute("UPDATE reservations SET status='matched' WHERE id=?", (buyer_res_id,))
         db.commit()
         return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+@app.route('/api/admin/testtools/cleanup-loopay-old-reservations', methods=['POST'])
+def testtools_cleanup_loopay_old_reservations():
+    """loopay의 오늘 날짜가 아닌 예약 삭제 (매칭 미완료인 것만)"""
+    db = get_db()
+    try:
+        today = get_today().isoformat()
+        loopay_id = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()['id']
+        result = db.execute(
+            """DELETE FROM reservations
+               WHERE user_id=? AND reserve_date != ?
+               AND status IN ('pending','unmatched')
+               AND confirmed=1""",
+            (loopay_id, today)
+        )
+        db.commit()
+        return jsonify(success=True, deleted=result.rowcount)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
