@@ -2644,6 +2644,10 @@ def admin_run_matching():
                     if buyer is None:
                         si += 1; continue
 
+                # 안전장치: buyer_res_id가 실제 buyer 소유인지 최종 확인
+                if _slp and buyer.get('reserve_date') != today:
+                    # 행운구매인데 오늘 날짜가 아닌 예약 → 스킵
+                    si += 1; continue
                 matched_seller_ids.add(seller['res_id'])
                 matched_buyer_ids.add(buyer['res_id'])
                 # lucky_pair: buyer_id(user_id)로 매핑 저장
@@ -4274,6 +4278,7 @@ def admin_reservations_list():
                           WHERE r.lucky_pair_id IS NOT NULL
                           AND m.lucky_pair_id=r.lucky_pair_id
                           AND m.seller_id=r.user_id
+                          AND m.status IN ('pending','paid','confirmed')
                           ORDER BY m.id DESC LIMIT 1)
                        ) as match_date,
                        CASE WHEN EXISTS(
