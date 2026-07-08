@@ -16,8 +16,16 @@ function _updateSellBtn(isReserveTime){
 }
 
 // 아이템 목록으로 _hasSellableItem 설정 후 버튼 즉시 업데이트
+// items: 배열({status_label,...}[]) 또는 딕셔너리({bronze:[],silver:[],gold:[]})
 function _updateSellBtnFromItems(items){
-  window._hasSellableItem = (items||[]).some(function(it){ return it.status_label==='판매가능'; });
+  var _flatItems = [];
+  if(Array.isArray(items)){
+    _flatItems = items;
+  } else if(items && typeof items === 'object'){
+    // bar_type별 딕셔너리 → 평탄화
+    Object.values(items).forEach(function(arr){ if(Array.isArray(arr)) _flatItems = _flatItems.concat(arr); });
+  }
+  window._hasSellableItem = _flatItems.some(function(it){ return it.status_label==='판매가능'; });
   var _nowH = getEffectiveDate().getHours();
   window._isReserveTimeCached = (_nowH >= 5 && _nowH < 20);
   _updateSellBtn(window._isReserveTimeCached);
