@@ -2873,7 +2873,10 @@ def admin_run_matching():
             pairs=matched_pairs,
             debug_today=today,
             debug_buy_count=len(list(buy_rows)) if buy_rows else 0,
-            debug_sell_count=len(sell_rows) if sell_rows else 0
+            debug_sell_count=len(sell_rows) if sell_rows else 0,
+            debug_sell_normal=len(sell_normal) if 'sell_normal' in dir() else -1,
+            debug_buy_normal=len(buy_normal) if 'buy_normal' in dir() else -1,
+            debug_matched_seller=list(matched_seller_ids)
         )
     except Exception as e:
         import traceback
