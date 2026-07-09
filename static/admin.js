@@ -286,7 +286,7 @@ async function updateMatchingBtn(){
     var _r2PendingCount = (matchData.r2_pending_count || 0);
     var _h2 = ct.hour || 0; var _m2 = ct.minute || 0;
     var _inR2Window = (_h2 === 14); // 14:00~14:59
-    var _r2AlreadyRun = (_r2PendingCount > 0) || !!(matchData && matchData.r2_ran_today);
+    var _r2AlreadyRun = (_r2PendingCount > 0) || !!(matchData && matchData.r2_ran_today) || !!window._r2MatchingDone;
     var isActive2 = (failedCount > 0 || r2BuyCount > 0) && _inR2Window && !_r2AlreadyRun;
     var btn2 = document.getElementById('btn-run-matching-2');
     var notice2 = document.getElementById('matching-time-notice-2');
