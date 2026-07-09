@@ -3040,8 +3040,9 @@ def admin_matching_status():
 
         buy_by_type = db.execute(
             f"""SELECT bar_type, COUNT(*) as cnt FROM reservations r
-               WHERE r.match_round=? AND r.status='pending' AND r.user_id!=?
+               WHERE r.status='pending' AND r.user_id!=?
                AND (r.item_id IS NULL OR r.item_id=0)
+               AND (r.match_round=? {_round2_join_cond})
                {_date_cond} AND COALESCE(r.confirmed,0)=0
                AND r.user_id NOT IN (
                    SELECT p.user_id FROM penalties p WHERE p.is_released=0
@@ -3052,7 +3053,7 @@ def admin_matching_status():
                    AND m.match_date=?
                )
                GROUP BY bar_type""",
-            [round_num, loopay_id] + _date_args + [today]
+            [loopay_id, round_num] + _round2_join_args + _date_args + [today]
         ).fetchall()
 
         # loopay 구매예약 bar_type별 집계 후 buy_by_type에 합산

@@ -510,6 +510,7 @@ async function doSellReservationBulk(){
     if(panel && panel.style.display!=='none') loadItemDetail(bt);
   });
   if(btn){ btn.disabled=false; btn.textContent='판매 예약하기'; }
+  if(typeof loadSellTab==='function') await loadSellTab();
 }
 
 async function doReservation(){
