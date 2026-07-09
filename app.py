@@ -2464,7 +2464,7 @@ def admin_run_matching():
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
                WHERE r.status='pending'
-               AND r.match_round=?
+               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.match_round=1 AND ?=2))
                AND r.reserve_date=?
                AND COALESCE(r.confirmed,0)=0
                AND u.username != 'loopay'
@@ -2477,7 +2477,7 @@ def admin_run_matching():
                    AND m.match_date=?
                )
                ORDER BY r.reserve_date DESC, RANDOM()""",
-            (round_num, today, today)
+            (round_num, round_num, today, today)
         ).fetchall()
         # loopay 구매예약 (confirmed=1, item.status='waiting') 별도 조회
         _loopay_buy_rows = db.execute(
