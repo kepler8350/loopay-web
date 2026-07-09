@@ -5032,8 +5032,8 @@ def admin_confirm_unpaid():
             ).fetchone()
         if seller_item:
             db.execute("UPDATE items SET status='reservable' WHERE id=?", (seller_item['id'],))
-            # 2차 sell 예약 즉시 생성
-            _today = get_today().isoformat()
+            # 2차 sell 예약: reserve_date = 매치의 match_date 기준 (서버날짜 아님)
+            _today = m['match_date'] if m['match_date'] else get_today().isoformat()
             _stage = m['stage'] or 1
             _dup = db.execute(
                 """SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND stage=?
@@ -7327,6 +7327,31 @@ def testtools_debug_r2_buy():
             (r.get('user_id', 0),)).fetchone() and r['username'] in [f['username'] for f in fb]]
         return flask.jsonify(failed_buyers=[dict(r) for r in fb], all_candidates=included,
                            fail_buyer_ids=list(fb_ids), count=len(included))
+    finally:
+        db.close()
+
+@app.route('/api/admin/testtools/fix-r2-sell-date', methods=['POST'])
+def testtools_fix_r2_sell_date():
+    import flask
+    db = get_db()
+    try:
+        # match_round=2 sell 예약의 reserve_date를 match_date와 맞춤
+        rows = db.execute("""
+            SELECT r.id, r.reserve_date, r.user_id, r.item_id,
+                   m.match_date
+            FROM reservations r
+            JOIN items i ON r.item_id=i.id
+            JOIN matches m ON m.seller_item_id=r.item_id AND m.match_round=1 AND m.status='failed'
+            WHERE r.match_round=2 AND r.status='pending'
+            AND r.reserve_date != m.match_date
+        """).fetchall()
+        fixed = 0
+        for row in rows:
+            db.execute("UPDATE reservations SET reserve_date=? WHERE id=?",
+                      (row['match_date'], row['id']))
+            fixed += 1
+        db.commit()
+        return flask.jsonify(success=True, fixed=fixed, rows=[dict(r) for r in rows])
     finally:
         db.close()
 
