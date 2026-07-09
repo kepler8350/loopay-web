@@ -2726,7 +2726,8 @@ def admin_run_matching():
         # bar_type+stage별로 미매칭 판매/구매 그룹화
         sell_normal = [dict(s) for s in sell_rows
             if s['res_id'] not in matched_seller_ids
-            and not dict(s).get('lucky_pair_id')]
+            and (round_num == 2 or not dict(s).get('lucky_pair_id'))]
+            # 2차 매칭은 lucky_pair_id 무관하게 일반 매칭 허용
         # loopay 판매예약도 포함
         loopay_sell = [dict(s) for s in sell_rows
             if s['res_id'] not in matched_seller_ids
