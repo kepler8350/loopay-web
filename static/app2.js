@@ -173,23 +173,10 @@ function updateSellBoard(){
       info.textContent = '선택된 아이템 없음';
     }
   }
-  var btn = document.getElementById('sell-reserve-btn');
-  if(btn){
-    // 보유 아이템 없거나 판매가능 아이템 없으면 비활성화
-    var _canSellCount = 0;
-    if(userData && userData.items){
-      ['bronze','silver','gold'].forEach(function(bt){
-        (_items||[]).forEach(function(it){
-          if(it.status_label==='판매가능') _canSellCount++;
-        });
-      });
-    }
-    var _disabled = total===0 || _canSellCount===0;
-    btn.disabled = _disabled;
-    btn.style.opacity = _disabled ? '0.7' : '1';
-    btn.style.background = _disabled ? '#9e9e9e' : '#7b1fa2';
-    btn.style.cursor = _disabled ? 'not-allowed' : 'pointer';
-    btn.title = total===0 ? '보유 아이템이 없습니다' : (_canSellCount===0 ? '판매예약 가능한 아이템이 없습니다' : '');
+  // 버튼 상태는 _updateSellBtn (app1.js)에서 통합 관리
+  if(typeof _updateSellBtnFromItems === 'function' && userData && userData.items){
+    var _allItFlat = (userData.items.bronze||[]).concat(userData.items.silver||[]).concat(userData.items.gold||[]);
+    _updateSellBtnFromItems(_allItFlat);
   }
 }
 

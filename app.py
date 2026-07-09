@@ -2951,10 +2951,20 @@ def admin_matching_status():
     db = get_db()
     # 매칭 기준일: 1차 매칭이 실행된 가장 최근 날짜 우선, 없으면 get_matching_date()
     _calc_today = get_matching_date().isoformat()
-    _last_match = db.execute(
-        "SELECT match_date FROM matches WHERE match_round=1 ORDER BY match_date DESC LIMIT 1"
+    # today = 오늘 기준, 단 오늘 매칭이 없고 어제 매칭이 있으면 어제 기준 (날짜 넘어간 직후 처리)
+    _today_match = db.execute(
+        "SELECT match_date FROM matches WHERE match_round=1 AND match_date=? LIMIT 1",
+        (_calc_today,)
     ).fetchone()
-    today = _last_match['match_date'] if _last_match and _last_match['match_date'] >= _calc_today[:7] else _calc_today
+    if _today_match:
+        today = _calc_today  # 오늘 매칭 있음 → 오늘 기준
+    else:
+        _yesterday = (get_matching_date() - __import__('datetime').timedelta(days=1)).isoformat()
+        _yest_match = db.execute(
+            "SELECT match_date FROM matches WHERE match_round=1 AND match_date=? LIMIT 1",
+            (_yesterday,)
+        ).fetchone()
+        today = _yesterday if _yest_match else _calc_today  # 어제 매칭 있으면 어제, 없으면 오늘
 
     # loopay 계정 ID 조회
     loopay_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()

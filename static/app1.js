@@ -1368,6 +1368,7 @@ async function doSellReservation(itemId, barType){
         var d=await api('/reservation/sell',{method:'POST',body:JSON.stringify({item_id:itemId})});
         toast('판매예약 완료! 판매가: '+d.sell_price.toLocaleString()+'원');
         await loadItemDetail(barType);
+        if(typeof loadSellTab==='function') await loadSellTab();
       }catch(e){ toast('판매예약 실패: '+e.message); }
     }
   });
