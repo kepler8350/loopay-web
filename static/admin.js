@@ -238,7 +238,7 @@ async function deleteCharge(id){
   }catch(e){toast(e.message,'error');}
 }
 
-async async function updateMatchingBtn(){
+async function updateMatchingBtn(){
   try{
     var tok = localStorage.getItem('admin_token');
     // 시간 + failed_count를 한번에 가져오기
