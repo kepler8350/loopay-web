@@ -1209,19 +1209,20 @@ async function loadReservationsLog(page){
           statusKo = '거래완료';
         } else if(!r.match_status){
           var _isFailedBuyer = window._failedBuyerSet && window._failedBuyerSet.has(r.username);
+          // 공통 조건: 미결 매치(입금대기)가 없어야 완료 가능
+          var _noMorePending = (_pendingMatchCount === 0);
           if(_isFailedBuyer){
-            statusKo = '2차완료';  // 1차 미입금자
+            statusKo = '2차완료';  // 1차 미입금자 (무조건 완료)
+          } else if(r.reserve_date < _matchDate && _noMorePending){
+            statusKo = '2차완료';  // 이전 날짜 + 미결없음
           } else if(r.reserve_date < _matchDate){
-            statusKo = '2차완료';  // 이전 날짜 사이클 종료
-          } else if(_isPast && _r2FailedCount===0){
-            statusKo = '2차완료';  // 당일 과거 + 미입금 없음
-          } else if(_isPast && _r2FailedCount>0){
-            statusKo = '2차대기';  // 당일 과거 + 미입금 있음 → 유지
-          } else if(_isToday2 && _r2RanToday && _r2FailedCount===0){
-            statusKo = '2차완료';  // 오늘 + 2차완료 + 미입금없음
-          } else if(_isToday2 && !_r2RanToday && _r2FailedCount===0 && _pendingMatchCount===0){
-            // 오늘 + 2차미실행 + 미입금없음 + 미결매치없음(전부 입금확인) → 완료
-            statusKo = '2차완료';
+            statusKo = '2차대기';  // 이전 날짜이지만 아직 입금대기 매치 있음
+          } else if((_isPast || _isToday2) && _r2FailedCount===0 && _noMorePending){
+            statusKo = '2차완료';  // 당일/오늘 + 미입금없음 + 미결없음
+          } else if((_isPast || _isToday2) && _r2FailedCount>0){
+            statusKo = '2차대기';  // 미입금 있음 → 유지
+          } else if(_isToday2 && _r2RanToday && _r2FailedCount===0 && _noMorePending){
+            statusKo = '2차완료';  // 2차매칭 완료 + 미입금없음 + 미결없음
           }
         }
       }
