@@ -4,15 +4,32 @@
 window._hasSellableItem = false;  // 초기값: 아이템 로드 전까지 false(비활성)
 window._isReserveTimeCached = false;
 function _updateSellBtn(isReserveTime){
-  var btn = document.getElementById('sell-reserve-btn');
-  if(!btn) return;
   var _canSell = !!isReserveTime && !!window._hasSellableItem;
-  btn.disabled = !_canSell;
-  btn.style.background = _canSell ? '#7b1fa2' : '#9e9e9e';
-  btn.style.opacity = _canSell ? '1' : '0.7';
-  btn.style.cursor = _canSell ? 'pointer' : 'not-allowed';
-  btn.title = !isReserveTime ? '구매·판매 예약은 05:00~20:00에만 가능합니다'
+  var _title = !isReserveTime ? '구매·판매 예약은 05:00~20:00에만 가능합니다'
     : (!window._hasSellableItem ? '판매예약 가능한 아이템이 없습니다' : '');
+  // 판매예약하기 버튼
+  var btn = document.getElementById('sell-reserve-btn');
+  if(btn){
+    btn.disabled = !_canSell;
+    btn.style.background = _canSell ? '#7b1fa2' : '#9e9e9e';
+    btn.style.opacity = _canSell ? '1' : '0.7';
+    btn.style.cursor = _canSell ? 'pointer' : 'not-allowed';
+    btn.title = _title;
+  }
+  // 전체판매예약 버튼 (bar_type별)
+  ['bulk-sell-btn-bronze','bulk-sell-btn-silver','bulk-sell-btn-gold'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    // 해당 bar_type의 판매가능 아이템이 있는지 (없으면 비활성)
+    var _bt = id.replace('bulk-sell-btn-','');
+    var _btSellable = _canSell && el._sellableIds && el._sellableIds.length > 0;
+    el.disabled = !_btSellable;
+    el.style.background = !_btSellable ? '#9e9e9e' : (el._allSelected ? '#546e7a' : '#7b1fa2');
+    el.style.opacity = _btSellable ? '1' : '0.7';
+    el.style.cursor = _btSellable ? '' : 'not-allowed';
+    el.title = !isReserveTime ? '구매·판매 예약은 05:00~20:00에만 가능합니다'
+      : (!window._hasSellableItem ? '판매예약 가능한 아이템이 없습니다' : '');
+  });
 }
 
 // 아이템 목록으로 _hasSellableItem 설정 후 버튼 즉시 업데이트
@@ -1030,16 +1047,7 @@ function updateTimeBar(){
     var el = document.getElementById(id);
     if(el){ el.disabled = _shouldDisableButtons; el.style.opacity = _shouldDisableButtons ? '0.4' : ''; }
   });
-  // 보유내역 전체판매예약 버튼
-  ['bulk-sell-btn-bronze','bulk-sell-btn-silver','bulk-sell-btn-gold'].forEach(function(id){
-    var el = document.getElementById(id);
-    if(el){
-      el.disabled = !isReserveTime;
-      el.style.opacity = isReserveTime ? '1' : '0.4';
-      el.style.cursor = isReserveTime ? '' : 'not-allowed';
-      el.title = isReserveTime ? '' : '구매·판매 예약은 05:00~20:00에만 가능합니다';
-    }
-  });
+  // 전체판매예약 버튼은 _updateSellBtn에서 통합 처리
   // 보유내역 개별 판매예약 배지 클릭 제어
   document.querySelectorAll('[id^="badge-"]').forEach(function(badge){
     if(isReserveTime){
@@ -1266,14 +1274,9 @@ function updateBulkSellBtn(barType, items){
     return it.status_label === '판매가능';
   }).map(function(it){return it.id;});
   var allSelected = sellableIds.length>0 && sellableIds.every(function(id){return _sellSelected[id];});
-  // 판매가능 아이템 없으면 비활성화
+  // sellableIds 저장 (타입별로 - _updateSellBtn에서 참조)
   var _hasSellable = sellableIds.length > 0;
-  btn.disabled = !_hasSellable;
-  btn.style.opacity = _hasSellable ? '1' : '0.4';
-  btn.style.cursor = _hasSellable ? '' : 'not-allowed';
-  btn.title = _hasSellable ? '' : '판매예약 가능한 아이템이 없습니다';
   btn.textContent = allSelected?'전체취소':'전체판매예약';
-  btn.style.background = !_hasSellable?'#9e9e9e':(allSelected?'#546e7a':'#7b1fa2');
   btn._sellableIds = sellableIds;
   btn._allSelected = allSelected;
 }
