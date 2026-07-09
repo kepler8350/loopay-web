@@ -73,7 +73,9 @@ function updateReserveDefaults(lv){
   var todayBz=tr.bronze||0;
   bzCnt = todayBz > 0 ? Math.min(Math.max(todayBz,BZ_MIN),BZ_MAX) : BZ_MIN;
   // 루비/다이아는 항상 0으로 초기화 (매번 새로 선택)
-  svCnt = 0;
+  var SV_MIN_DEF=(cfg.sv_min!=null?cfg.sv_min:0);
+  var GD_MIN_DEF=(cfg.gd_min!=null?cfg.gd_min:0);
+  svCnt = 0;  // 루비/다이아는 bz_max 달성 후 선택 (초기 0 유지)
   gdCnt = 0;
   updateResUI(BZ_MIN, BZ_MAX);
 }
@@ -90,14 +92,16 @@ function changeRes(type,delta){
   } else if(type==='sv'){
     // 루비는 수정이 BZ_MAX 도달해야만 조작 가능
     if(bzCnt >= BZ_MAX && SV_MAX > 0){
-      svCnt=Math.max(0,Math.min(SV_MAX,svCnt+delta));
+      var SV_MIN2=(cfg.sv_min!=null?cfg.sv_min:0);
+      svCnt=Math.max(SV_MIN2,Math.min(SV_MAX,svCnt+delta));
       // 루비가 SV_MAX 미달이면 다이아 초기화
       if(svCnt < SV_MAX) gdCnt=0;
     }
   } else if(type==='gd'){
     // 다이아는 루비가 SV_MAX 도달해야만 조작 가능
     if(bzCnt >= BZ_MAX && svCnt >= SV_MAX && GD_MAX > 0){
-      gdCnt=Math.max(0,Math.min(GD_MAX,gdCnt+delta));
+      var GD_MIN2=(cfg.gd_min!=null?cfg.gd_min:0);
+      gdCnt=Math.max(GD_MIN2,Math.min(GD_MAX,gdCnt+delta));
     }
   }
   updateResUI(BZ_MIN,BZ_MAX);

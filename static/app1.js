@@ -1832,7 +1832,8 @@ function enableReserveSection(){
 function updateResUI(BZ_MIN,BZ_MAX){
   if(window._isSuspended){ checkSuspended(window.userData); return; }
   var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
-  var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
+  var SV_MIN=(cfg.sv_min!=null?cfg.sv_min:0), SV_MAX=cfg.sv_max||0;
+  var GD_MIN=(cfg.gd_min!=null?cfg.gd_min:0), GD_MAX=cfg.gd_max||0;
   // sv/gd는 전역 변수로 관리 (독립 선택)
   var sv=svCnt, gd=gdCnt;
   // ── 예약시간 외에는 모든 수량버튼 비활성화 ──
@@ -1858,7 +1859,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
   sv = svCnt;
   document.getElementById('r-sv-v').textContent = sv;
   document.getElementById('r-sv-range').textContent = svUnlocked
-    ? '최소 0 / 최대 '+SV_MAX
+    ? '최소 '+SV_MIN+' / 최대 '+SV_MAX
     : '(수정 '+BZ_MAX+'개 달성 시 선택 가능)';
   document.getElementById('r-sv-note').textContent = '수정 '+BZ_MAX+'개 예약 시 루비 선택 가능';
   document.getElementById('r-sv-wrap').className = 'r-wrap'+(svUnlocked?'':' locked');
@@ -1866,7 +1867,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
   if(svWrap2){ svWrap2.style.opacity = _byUser ? '0.5' : ''; svWrap2.style.pointerEvents = _byUser ? 'none' : ''; }
   var svMBtn = document.getElementById('r-sv-m');
   var svPBtn = document.getElementById('r-sv-p');
-  if(svMBtn) svMBtn.disabled = (_byUser || !_isRT || !svUnlocked || sv <= 0);
+  if(svMBtn) svMBtn.disabled = (_byUser || !_isRT || !svUnlocked || sv <= SV_MIN);
   if(svPBtn) svPBtn.disabled = (_byUser || !_isRT || !svUnlocked || sv >= SV_MAX);
 
   // 다이아: 루비가 SV_MAX 도달해야 선택 가능
@@ -1876,7 +1877,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
   gd = gdCnt;
   document.getElementById('r-gd-v').textContent = gd;
   document.getElementById('r-gd-range').textContent = gdUnlocked
-    ? '최소 0 / 최대 '+GD_MAX
+    ? '최소 '+GD_MIN+' / 최대 '+GD_MAX
     : '(루비 '+SV_MAX+'개 달성 시 선택 가능)';
   document.getElementById('r-gd-note').textContent = '루비 '+SV_MAX+'개 예약 시 다이아 선택 가능';
   document.getElementById('r-gd-wrap').className = 'r-wrap'+(gdUnlocked?'':' locked');
@@ -1884,7 +1885,7 @@ function updateResUI(BZ_MIN,BZ_MAX){
   if(gdWrap2){ gdWrap2.style.opacity = _byUser ? '0.5' : ''; gdWrap2.style.pointerEvents = _byUser ? 'none' : ''; }
   var gdMBtn = document.getElementById('r-gd-m');
   var gdPBtn = document.getElementById('r-gd-p');
-  if(gdMBtn) gdMBtn.disabled = (_byUser || !_isRT || !gdUnlocked || gd <= 0);
+  if(gdMBtn) gdMBtn.disabled = (_byUser || !_isRT || !gdUnlocked || gd <= GD_MIN);
   if(gdPBtn) gdPBtn.disabled = (_byUser || !_isRT || !gdUnlocked || gd >= GD_MAX);
 
   // 총계
