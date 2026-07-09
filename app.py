@@ -7291,6 +7291,33 @@ def testtools_debug_buy_count():
         db.close()
 
 
+@app.route('/api/admin/testtools/debug-r2-buy', methods=['GET'])
+def testtools_debug_r2_buy():
+    import flask
+    db = get_db()
+    try:
+        today = '2026-07-12'
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()['id']
+        # failed buyers
+        fb = db.execute("""SELECT DISTINCT m.buyer_id, u.username
+            FROM matches m JOIN users u ON m.buyer_id=u.id
+            WHERE m.match_round=1 AND m.status='failed' AND m.match_date=?""", (today,)).fetchall()
+        # r2 buy 후보
+        rows = db.execute("""SELECT r.id, u.username, r.item_id, r.match_round, r.join_round2, r.confirmed
+            FROM reservations r JOIN users u ON r.user_id=u.id
+            WHERE r.status='pending' AND r.user_id!=?
+            AND (r.item_id IS NULL OR r.item_id=0)
+            AND (r.match_round=2 OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date<=?))
+            AND COALESCE(r.confirmed,0)=0""", (loopay, today)).fetchall()
+        fb_ids = {r['buyer_id'] for r in fb}
+        included = [dict(r) for r in rows]
+        excluded_by_fail = [r for r in included if db.execute("SELECT id FROM users WHERE id=?",
+            (r.get('user_id', 0),)).fetchone() and r['username'] in [f['username'] for f in fb]]
+        return flask.jsonify(failed_buyers=[dict(r) for r in fb], all_candidates=included,
+                           fail_buyer_ids=list(fb_ids), count=len(included))
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
