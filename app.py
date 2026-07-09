@@ -7555,6 +7555,33 @@ def testtools_run_r2_match_test():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/debug-sell-normal', methods=['GET'])
+def testtools_debug_sell_normal():
+    import flask
+    db = get_db()
+    try:
+        today = '2026-07-12'
+        sell_rows = db.execute("""SELECT r.id as res_id, r.user_id as seller_id, r.item_id, r.bar_type,
+               COALESCE(r.lucky_pair_id, i.lucky_pair_id) as lucky_pair_id,
+               u.username as seller_username, r.status, r.match_round, r.reserve_date
+               FROM reservations r LEFT JOIN users u ON r.user_id=u.id INNER JOIN items i ON r.item_id=i.id
+               WHERE r.status IN ('pending','unmatched') AND r.match_round=2
+               AND r.reserve_date=? AND COALESCE(r.confirmed,0)=1
+               AND i.status IN ('reservable','waiting','matched')
+        """, (today,)).fetchall()
+        
+        # item lucky_pair_id 직접
+        items = db.execute("SELECT id, lucky_pair_id FROM items WHERE id IN (1674, 1677)").fetchall()
+        
+        sell_normal = [dict(s) for s in sell_rows if not dict(s).get('lucky_pair_id')]
+        return flask.jsonify(
+            sell_rows=[dict(r) for r in sell_rows],
+            items=[dict(i) for i in items],
+            sell_normal_count=len(sell_normal)
+        )
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
