@@ -2997,7 +2997,7 @@ def admin_matching_status():
         # 2차는 match_round=2 또는 join_round2=1(오늘 날짜)인 구매예약
         _date_cond = "AND r.reserve_date=?" if round_num == 1 else ""
         _date_args = [today] if round_num == 1 else []
-        _round2_join_cond = "OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date<=?)" if round_num == 2 else ""
+        _round2_join_cond = "OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date=?)" if round_num == 2 else ""
         _round2_join_args = [today] if round_num == 2 else []
         buy_count = db.execute(
             f"""SELECT COUNT(*) as c FROM reservations r
