@@ -491,26 +491,32 @@ async function doSellReservationBulk(){
   if(!selected.length){ toast('선택된 아이템이 없습니다.'); return; }
   var btn = document.getElementById('sell-reserve-btn');
   if(btn){ btn.disabled=true; btn.textContent='예약 중...'; }
-  var successCount = 0, failCount = 0;
-  for(var i=0; i<selected.length; i++){
-    var id = parseInt(selected[i]);
-    var info = _itemCache[id];
-    try{
-      await api('/reservation/sell',{method:'POST',body:JSON.stringify({item_id:id})});
-      _sellSelected[id] = false;
-      successCount++;
-    }catch(e){ failCount++; }
+  try{
+    var successCount = 0, failCount = 0;
+    for(var i=0; i<selected.length; i++){
+      var id = parseInt(selected[i]);
+      try{
+        await api('/reservation/sell',{method:'POST',body:JSON.stringify({item_id:id})});
+        _sellSelected[id] = false;
+        successCount++;
+      }catch(e){ failCount++; }
+    }
+    toast(successCount+'개 판매예약 완료!'+(failCount?(' ('+failCount+'개 실패)'):''));
+    _sellSelected = {};
+    updateSellBoard();
+    ['bronze','silver','gold'].forEach(function(bt){
+      var panel = document.getElementById('detail-'+bt);
+      if(panel && panel.style.display!=='none') loadItemDetail(bt);
+    });
+    if(typeof loadSellTab==='function') await loadSellTab();
+  } finally {
+    // 어떤 오류가 나도 버튼 반드시 복원
+    if(btn){ btn.disabled=false; btn.textContent='판매 예약하기'; }
+    if(typeof _updateSellBtnFromItems==='function'){
+      var _d = await api('/user/my-items').catch(function(){ return {items:[]}; });
+      _updateSellBtnFromItems(_d.items||[]);
+    }
   }
-  toast(successCount+'개 판매예약 완료!'+(failCount?(' ('+failCount+'개 실패)'):''));
-  _sellSelected = {};
-  updateSellBoard();
-  // 열린 상세보기 새로고침
-  ['bronze','silver','gold'].forEach(function(bt){
-    var panel = document.getElementById('detail-'+bt);
-    if(panel && panel.style.display!=='none') loadItemDetail(bt);
-  });
-  if(btn){ btn.disabled=false; btn.textContent='판매 예약하기'; }
-  if(typeof loadSellTab==='function') await loadSellTab();
 }
 
 async function doReservation(){
