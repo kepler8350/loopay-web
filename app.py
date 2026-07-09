@@ -2194,8 +2194,9 @@ def admin_run_matching():
     round_num = int(data.get('round', 1))
     # 2차 매칭은 14:00~14:59 에만 실행 가능
     if round_num == 2:
+        _force2 = (request.json or {}).get('force', False)
         _now2 = get_now()
-        if _now2.hour != 14:
+        if _now2.hour != 14 and not _force2:
             return jsonify(error='2차 매칭은 14:00~14:59 에만 실행 가능합니다'), 400
     db = get_db()
     try:
