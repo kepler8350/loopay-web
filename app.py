@@ -7264,38 +7264,30 @@ def testtools_debug_matches():
 
 @app.route('/api/admin/testtools/debug-buy-count', methods=['GET'])
 def testtools_debug_buy_count():
+    import flask
     db = get_db()
     try:
         today = '2026-07-12'
         loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()['id']
-        # r2 buy_count 시뮬레이션
         rows = db.execute("""
-            SELECT r.id, u.username, r.status, r.match_round, r.join_round2, r.reserve_date
+            SELECT r.id, u.username as username, r.user_id, r.status, r.match_round, r.join_round2
             FROM reservations r
             JOIN users u ON r.user_id=u.id
             WHERE r.status='pending' AND r.user_id!=?
             AND (r.match_round=2 OR (COALESCE(r.join_round2,0)=1 AND r.reserve_date<=?))
-            AND COALESCE(r.confirmed,0)=0
-            AND r.res_type='buy'
+            AND COALESCE(r.confirmed,0)=0 AND r.res_type='buy'
         """, (loopay, today)).fetchall()
-        
         failed_buyers = db.execute("""
-            SELECT DISTINCT m.buyer_id, u.username
-            FROM matches m JOIN users u ON m.buyer_id=u.id
+            SELECT DISTINCT m.buyer_id FROM matches m
             WHERE m.match_round=1 AND m.status='failed' AND m.match_date=?
         """, (today,)).fetchall()
-        
-        excluded = {r['buyer_id'] for r in failed_buyers}
-        eligible = [dict(r) for r in rows if r['user_id'] not in excluded] if False else [dict(r) for r in rows]
-        eligible_excl = [r for r in [dict(r) for r in rows] if db.execute("SELECT id FROM users WHERE id=? AND username NOT IN (SELECT u2.username FROM matches m2 JOIN users u2 ON m2.buyer_id=u2.id WHERE m2.match_round=1 AND m2.status='failed' AND m2.match_date=?)", (r['user_id'] if 'user_id' in r else 0, today)).fetchone()]
-        
-        return __import__('flask').jsonify(
-            all_rows=[dict(r) for r in rows],
-            failed_buyers=[dict(r) for r in failed_buyers],
-            total=len(rows)
-        )
+        fb_ids = {r['buyer_id'] for r in failed_buyers}
+        all_rows = [dict(r) for r in rows]
+        eligible = [r for r in all_rows if r['user_id'] not in fb_ids]
+        return flask.jsonify(all_rows=all_rows, failed_buyer_ids=list(fb_ids), eligible=eligible, total_all=len(all_rows), total_eligible=len(eligible))
     finally:
         db.close()
+
 
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
