@@ -2949,7 +2949,12 @@ def admin_matching_status():
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    today = get_matching_date().isoformat()
+    # 매칭 기준일: 1차 매칭이 실행된 가장 최근 날짜 우선, 없으면 get_matching_date()
+    _calc_today = get_matching_date().isoformat()
+    _last_match = db.execute(
+        "SELECT match_date FROM matches WHERE match_round=1 ORDER BY match_date DESC LIMIT 1"
+    ).fetchone()
+    today = _last_match['match_date'] if _last_match and _last_match['match_date'] >= _calc_today[:7] else _calc_today
 
     # loopay 계정 ID 조회
     loopay_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
