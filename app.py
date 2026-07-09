@@ -7355,6 +7355,24 @@ def testtools_fix_r2_sell_date():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/debug-items', methods=['GET'])
+def testtools_debug_items():
+    import flask
+    db = get_db()
+    try:
+        ids = flask.request.args.get('ids','').split(',')
+        rows = db.execute(
+            'SELECT id,status,bar_type,user_id FROM items WHERE id IN ({})'.format(','.join(['?']*len(ids))),
+            ids
+        ).fetchall()
+        # 2차 sell 예약 아이템도
+        sell_r2 = db.execute(
+            """SELECT r.id, r.item_id, r.status, r.confirmed, r.reserve_date, r.match_round, i.status as item_status
+               FROM reservations r JOIN items i ON r.item_id=i.id WHERE r.match_round=2""").fetchall()
+        return flask.jsonify(items=[dict(r) for r in rows], sell_r2=[dict(r) for r in sell_r2])
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
