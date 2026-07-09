@@ -7486,6 +7486,65 @@ def testtools_debug_r2_run():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/run-r2-match-test', methods=['POST'])
+def testtools_run_r2_match_test():
+    import flask, random
+    db = get_db()
+    try:
+        today = '2026-07-12'
+        round_num = 2
+        log = []
+        
+        buy_rows = db.execute(f"""SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
+               CASE WHEN COALESCE(r.stage,0)<=0 THEN 1 ELSE r.stage END as stage,
+               COALESCE(r.stage,0) as raw_stage, u.username as buyer_username
+               FROM reservations r LEFT JOIN users u ON r.user_id=u.id
+               WHERE r.status='pending'
+               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.match_round=1 AND ?=2))
+               AND r.reserve_date=? AND COALESCE(r.confirmed,0)=0
+               AND u.username != 'loopay'
+               AND r.user_id NOT IN (SELECT m.buyer_id FROM matches m WHERE m.match_round=1 AND m.status='failed' AND m.match_date=?)
+               AND r.user_id NOT IN (SELECT r2.user_id FROM reservations r2 WHERE r2.match_round=2 AND r2.status='pending' AND r2.reserve_date=? AND COALESCE(r2.item_id,0)>0)
+            """, (round_num, round_num, today, today, today)).fetchall()
+        
+        sell_rows = db.execute("""SELECT r.id as res_id, r.user_id as seller_id, r.bar_type,
+               CASE WHEN COALESCE(r.stage,0)<=0 THEN 1 ELSE r.stage END as stage,
+               u.username as seller_username, r.item_id
+               FROM reservations r LEFT JOIN users u ON r.user_id=u.id INNER JOIN items i ON r.item_id=i.id
+               WHERE r.status IN ('pending','unmatched') AND r.match_round=?
+               AND r.reserve_date=? AND COALESCE(r.confirmed,0)=1
+               AND i.status IN ('reservable','waiting','matched')
+            """, (round_num, today)).fetchall()
+        
+        log.append(f'buy_count={len(buy_rows)}, sell_count={len(sell_rows)}')
+        
+        buy_by_bt = {}
+        for b in buy_rows:
+            bt = b['bar_type']; 
+            if bt not in buy_by_bt: buy_by_bt[bt]=[]
+            buy_by_bt[bt].append(dict(b))
+        
+        matched = 0
+        for s in sell_rows:
+            sd = dict(s)
+            bt = sd['bar_type']
+            cands = [b for b in buy_by_bt.get(bt,[]) if b['buyer_id']!=sd['seller_id']]
+            log.append(f'seller={sd["seller_username"]} bt={bt} cands={[c["buyer_username"] for c in cands]}')
+            if not cands: continue
+            b = cands[0]
+            # DB 검증
+            chk = db.execute('SELECT user_id FROM reservations WHERE id=?', (b['res_id'],)).fetchone()
+            log.append(f'chk={dict(chk) if chk else None}, buyer_id={b["buyer_id"]}')
+            if chk and int(chk['user_id'])==int(b['buyer_id']):
+                matched += 1
+                log.append(f'MATCH: {b["buyer_username"]} -> {sd["seller_username"]}')
+            else:
+                log.append(f'SKIP: chk mismatch res_id={b["res_id"]}')
+        
+        return flask.jsonify(matched=matched, log=log)
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
