@@ -2876,7 +2876,9 @@ def admin_run_matching():
             debug_sell_count=len(sell_rows) if sell_rows else 0,
             debug_sell_normal=len(sell_normal) if 'sell_normal' in dir() else -1,
             debug_buy_normal=len(buy_normal) if 'buy_normal' in dir() else -1,
-            debug_matched_seller=list(matched_seller_ids)
+            debug_matched_seller=list(matched_seller_ids),
+            debug_sell_rows_lp=[dict(s).get('lucky_pair_id') for s in sell_rows],
+            debug_sell_normal_check=[{'id':dict(s)['res_id'],'lp':dict(s).get('lucky_pair_id'),'in_matched':dict(s)['res_id'] in matched_seller_ids} for s in sell_rows]
         )
     except Exception as e:
         import traceback
