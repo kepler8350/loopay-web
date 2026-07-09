@@ -3002,6 +3002,8 @@ def admin_matching_status():
         buy_count = db.execute(
             f"""SELECT COUNT(*) as c FROM reservations r
                WHERE r.status='pending' AND r.user_id!=?
+               AND r.res_type='buy'
+               AND (r.item_id IS NULL OR r.item_id=0)
                AND (r.match_round=? {_round2_join_cond})
                {_date_cond}
                AND COALESCE(r.confirmed,0)=0
@@ -3030,6 +3032,7 @@ def admin_matching_status():
         buy_by_type = db.execute(
             f"""SELECT bar_type, COUNT(*) as cnt FROM reservations r
                WHERE r.match_round=? AND r.status='pending' AND r.user_id!=?
+               AND r.res_type='buy' AND (r.item_id IS NULL OR r.item_id=0)
                {_date_cond} AND COALESCE(r.confirmed,0)=0
                AND r.user_id NOT IN (
                    SELECT p.user_id FROM penalties p WHERE p.is_released=0
