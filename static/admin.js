@@ -1118,7 +1118,7 @@ async function loadReservationsLog(page){
       _r2RanToday = !!(_mstat && _mstat.r2_ran_today);
       _r2FailedCount = (_mstat && _mstat.failed_count) || 0;
       // 미입금 유저 목록 (1차 failed 구매자)
-      window._failedBuyerSet = new Set((_mstat && _mstat.failed_list||[]).map(function(f){return f.username;}));
+      window._failedBuyerSet = new Set((_mstat && (_mstat.failed_details||_mstat.failed_list)||[]).map(function(f){return f.username;}));
       _pendingMatchCount = (_mstat && _mstat.pending_match_count) || 0;
     }catch(e){}
     var d = await fetch('/api/admin/reservations-list?' + params.toString(),{headers:{'Authorization':'Bearer '+tok2}}).then(r=>r.json());
