@@ -1193,8 +1193,8 @@ async function loadReservationsLog(page){
         if(r.match_status==='confirmed'){
           // 판매자 입금확인 완료 → "완료"
           statusKo = '완료';
-        } else if(!r.match_status && (_isPast || _isToday) && _r2FailedCount===0){
-          // 매칭 못 된 예약 + 과거 날짜 + 미입금 없음 → "완료" (해당 날짜 매칭 사이클 종료)
+        } else if(!r.match_status && (_isPast || (_isToday && _r2RanToday)) && _r2FailedCount===0){
+          // 매칭 못 된 예약 + (과거날짜 OR 오늘+2차매칭완료) + 미입금없음 → "완료"
           statusKo = '완료';
         }
       }
