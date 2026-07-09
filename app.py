@@ -7373,6 +7373,45 @@ def testtools_debug_items():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/debug-r2-matching', methods=['GET'])
+def testtools_debug_r2_matching():
+    import flask
+    db = get_db()
+    try:
+        today = '2026-07-12'
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()['id']
+        round_num = 2
+        
+        buy_rows = db.execute(
+            """SELECT r.id, u.username, r.bar_type, r.match_round, r.join_round2, r.status, r.reserve_date
+               FROM reservations r LEFT JOIN users u ON r.user_id=u.id
+               WHERE r.status='pending'
+               AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.match_round=1 AND ?=2))
+               AND r.reserve_date=?
+               AND COALESCE(r.confirmed,0)=0
+               AND u.username != 'loopay'
+               AND r.user_id NOT IN (SELECT m.buyer_id FROM matches m WHERE m.match_round=1 AND m.status='failed' AND m.match_date=?)
+            """, (round_num, round_num, today, today)
+        ).fetchall()
+        
+        sell_rows = db.execute(
+            """SELECT r.id, u.username, r.bar_type, r.match_round, r.status, r.reserve_date, i.status as item_status
+               FROM reservations r LEFT JOIN users u ON r.user_id=u.id INNER JOIN items i ON r.item_id=i.id
+               WHERE r.status IN ('pending','unmatched') AND r.match_round=?
+               AND r.reserve_date=? AND COALESCE(r.confirmed,0)=1
+               AND i.status IN ('reservable','waiting','matched')
+            """, (round_num, today)
+        ).fetchall()
+        
+        return flask.jsonify(
+            buy_count=len(buy_rows),
+            sell_count=len(sell_rows),
+            buy=[dict(r) for r in buy_rows],
+            sell=[dict(r) for r in sell_rows]
+        )
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
