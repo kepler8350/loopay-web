@@ -2831,8 +2831,10 @@ def admin_run_matching():
                     'buyer': _buyer.get('buyer_username'),
                     'bar_type': _bt, 'stage': _st
                 })
-            except Exception:
-                pass
+            except Exception as _match_err:
+                import traceback
+                _match_err_log = traceback.format_exc()
+                matched_pairs.append({'error': str(_match_err), 'trace': _match_err_log[:500]})
 
         db.commit()
 
