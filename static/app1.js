@@ -882,7 +882,8 @@ var LEVEL_CFG_JS = {
   10:{bz_min:0,bz_max:60,sv_min:28,sv_max:34,gd_min:21,gd_max:26}
 };
 function changeRes(t, delta){
-  var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
+  if(!userData) return;  // userData 로드 전엔 UI 업데이트 안 함
+  var cfg=userData.level_config||LEVEL_CFG_JS[userData.level||1]||LEVEL_CFG_JS[1];
   var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
   var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
   if(t==='bz'){
