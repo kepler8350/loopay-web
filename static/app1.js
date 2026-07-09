@@ -101,13 +101,13 @@ function _copyAcct(acct, btn){
 var _reservedToday=false; // 오늘 구매예약 완료 여부
 var svCnt=0; var gdCnt=0; // 루비/다이아 선택 수량
 var LEVEL_CFG_JS={
-  1:{bz_min:1,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1,cum:150},
-  2:{bz_min:1,bz_max:6,sv_min:0,sv_max:3,gd_min:0,gd_max:2,cum:450},
-  3:{bz_min:1,bz_max:10,sv_min:0,sv_max:5,gd_min:0,gd_max:3,cum:960},
-  4:{bz_min:1,bz_max:14,sv_min:0,sv_max:7,gd_min:0,gd_max:5,cum:1740},
-  5:{bz_min:1,bz_max:20,sv_min:0,sv_max:9,gd_min:0,gd_max:7,cum:2850},
-  6:{bz_min:1,bz_max:27,sv_min:0,sv_max:13,gd_min:0,gd_max:9,cum:4350},
-  7:{bz_min:1,bz_max:34,sv_min:0,sv_max:17,gd_min:0,gd_max:12,cum:6450},
+  1:{bz_min:2,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1,cum:150},
+  2:{bz_min:4,bz_max:6,sv_min:0,sv_max:3,gd_min:0,gd_max:2,cum:450},
+  3:{bz_min:7,bz_max:10,sv_min:0,sv_max:5,gd_min:0,gd_max:3,cum:960},
+  4:{bz_min:10,bz_max:14,sv_min:0,sv_max:7,gd_min:0,gd_max:5,cum:1740},
+  5:{bz_min:14,bz_max:20,sv_min:0,sv_max:9,gd_min:0,gd_max:7,cum:2850},
+  6:{bz_min:19,bz_max:27,sv_min:0,sv_max:13,gd_min:0,gd_max:9,cum:4350},
+  7:{bz_min:24,bz_max:34,sv_min:0,sv_max:17,gd_min:0,gd_max:12,cum:6450},
   8:{bz_min:1,bz_max:42,sv_min:0,sv_max:22,gd_min:0,gd_max:15,cum:9450},
   9:{bz_min:1,bz_max:51,sv_min:0,sv_max:27,gd_min:0,gd_max:20,cum:12450},
   10:{bz_min:1,bz_max:60,sv_min:0,sv_max:34,gd_min:0,gd_max:26,cum:null}
