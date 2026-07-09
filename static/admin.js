@@ -1154,7 +1154,10 @@ async function loadReservationsLog(page){
         : (statusColors[r.status] || '#888');
       var confirmedBadge = r.confirmed ? '<span style="font-size:10px;background:#1b5e20;color:#a5d6a7;padding:1px 5px;border-radius:3px">확인</span>' : '';
       var createdAt = (r.created_at||'').slice(0,16);
-      var _today2 = (_mstat && _mstat.date) || new Date().toISOString().slice(0,10);
+      // _today2: 실제 서버 오늘 날짜 (과거/현재 판단 기준)
+      // _matchDate: 매칭 기준 날짜 (r1_ran/r2_ran 기준)
+      var _matchDate = (_mstat && _mstat.date) || new Date().toISOString().slice(0,10);
+      var _today2 = (_mstat && _mstat.server_today) || _matchDate;
       var statusKo = {reservable:'예약가능', active:'활성', waiting:'대기중', matched:'매칭완료',
         sold:'판매완료', reserved:'예약중', cancelled:'취소', confirmed:'확정',
         pending:'대기', sell_reserved:'판매예약중', unmatched:'미매칭',
@@ -1192,7 +1195,7 @@ async function loadReservationsLog(page){
       // 2차대기 → 완료 판단
       if(statusKo==='2차대기'){
         var _isPast = (r.reserve_date < _today2);
-        var _isToday2 = (r.reserve_date === _today2);
+        var _isToday2 = (r.reserve_date === _matchDate);
         if(r.match_status==='confirmed'){
           statusKo = '완료';
         } else if(!r.match_status){

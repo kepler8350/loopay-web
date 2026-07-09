@@ -3239,6 +3239,7 @@ def admin_matching_status():
         'round1': r1_data,
         'round2': r2_data,
         'date': today,
+        'server_today': get_matching_date().isoformat(),
         'failed_count': failed_count,
         'failed_details': failed_details,
         'r1_unmatched_buy': r1_unmatched_buy,
