@@ -1841,13 +1841,13 @@ function updateResUI(BZ_MIN,BZ_MAX){
   var _isRT=(_h>=5 && _h<20);
 
   // 수정 표시
-  document.getElementById('r-bz-v').textContent=bzCnt;
-  document.getElementById('r-bz-range').textContent='최소 '+BZ_MIN+' / 최대 '+BZ_MAX;
+_bzV
+_bzRange
   var bzNote=document.getElementById('r-bz-note');
   if(bzNote) bzNote.textContent='수정 '+BZ_MAX+'개 예약시 루비 '+SV_MAX+'개 활성화 / 루비 '+SV_MAX+'개 예약시 다이아 '+GD_MAX+'개 활성화';
   var _byUser = _reservedToday;
-  document.getElementById('r-bz-m').disabled=(_byUser || !_isRT || bzCnt<=BZ_MIN);
-  document.getElementById('r-bz-p').disabled=(_byUser || !_isRT || bzCnt>=BZ_MAX);
+_bzM
+_bzP
   // 예약 완료 시 수정 wrap 전체 비활성화
   var bzWrap = document.getElementById('r-bz-wrap');
   if(bzWrap){ bzWrap.style.opacity = _byUser ? '0.5' : ''; bzWrap.style.pointerEvents = _byUser ? 'none' : ''; }
