@@ -101,17 +101,38 @@ function _copyAcct(acct, btn){
 var _reservedToday=false; // 오늘 구매예약 완료 여부
 var svCnt=0; var gdCnt=0; // 루비/다이아 선택 수량
 var LEVEL_CFG_JS={
-  1:{bz_min:2,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1,cum:150},
+  1:{bz_min:1,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1,cum:150},
   2:{bz_min:4,bz_max:6,sv_min:0,sv_max:3,gd_min:0,gd_max:2,cum:450},
   3:{bz_min:7,bz_max:10,sv_min:0,sv_max:5,gd_min:0,gd_max:3,cum:960},
-  4:{bz_min:10,bz_max:14,sv_min:0,sv_max:7,gd_min:0,gd_max:5,cum:1740},
-  5:{bz_min:14,bz_max:20,sv_min:0,sv_max:9,gd_min:0,gd_max:7,cum:2850},
-  6:{bz_min:19,bz_max:27,sv_min:0,sv_max:13,gd_min:0,gd_max:9,cum:4350},
-  7:{bz_min:24,bz_max:34,sv_min:0,sv_max:17,gd_min:0,gd_max:12,cum:6450},
+  4:{bz_min:11,bz_max:14,sv_min:0,sv_max:7,gd_min:0,gd_max:5,cum:1740},
+  5:{bz_min:15,bz_max:20,sv_min:0,sv_max:9,gd_min:0,gd_max:7,cum:2850},
+  6:{bz_min:21,bz_max:27,sv_min:0,sv_max:13,gd_min:0,gd_max:9,cum:4350},
+  7:{bz_min:28,bz_max:34,sv_min:0,sv_max:17,gd_min:0,gd_max:12,cum:6450},
   8:{bz_min:1,bz_max:42,sv_min:0,sv_max:22,gd_min:0,gd_max:15,cum:9450},
   9:{bz_min:1,bz_max:51,sv_min:0,sv_max:27,gd_min:0,gd_max:20,cum:12450},
   10:{bz_min:1,bz_max:60,sv_min:0,sv_max:34,gd_min:0,gd_max:26,cum:null}
 };
+// bz 수량 → sv 가능 수량 단계 테이블
+var BZ_TO_SV_JS={
+  1:1,2:1,3:1,
+  4:2,5:2,6:3,
+  7:4,8:4,9:4,10:5,
+  11:6,12:6,13:7,14:7,
+  15:8,16:8,17:8,18:8,19:8,20:9,
+  21:10,22:10,23:10,24:10,25:11,26:11,27:13,
+  28:14,29:14,30:14,31:14,32:15,33:15,34:17
+};
+// sv 수량 → gd 가능 수량 단계 테이블
+var SV_TO_GD_JS={
+  1:1,2:1,3:2,
+  4:2,5:3,
+  6:4,7:5,
+  8:6,9:7,
+  10:8,11:8,12:8,13:9,
+  14:10,15:11,16:11,17:12
+};
+function getSvFromBz(bz){ return BZ_TO_SV_JS[bz]||1; }
+function getGdFromSv(sv){ return SV_TO_GD_JS[sv]||1; }
 var combinePairs=[];var pendingItem=null;
 
 const API = '/api';
@@ -888,7 +909,10 @@ function changeRes(t, delta){
   var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
   if(t==='bz'){
     bzCnt = Math.min(Math.max(bzCnt+delta, BZ_MIN), BZ_MAX);
+    // bz 변경 시 sv/gd 상한 재계산
+    var _newSvMax = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
     if(bzCnt < BZ_MAX){ svCnt=0; gdCnt=0; }
+    else if(svCnt > _newSvMax){ svCnt=_newSvMax; gdCnt=0; }
   } else if(t==='sv'){
     if(bzCnt >= BZ_MAX && SV_MAX > 0){
       svCnt = Math.min(Math.max(svCnt+delta, 0), SV_MAX);
@@ -1853,14 +1877,15 @@ function updateResUI(BZ_MIN,BZ_MAX,SV_MIN,SV_MAX,GD_MIN,GD_MAX){
   var bzWrap = document.getElementById('r-bz-wrap');
   if(bzWrap){ bzWrap.style.opacity = _byUser ? '0.5' : ''; bzWrap.style.pointerEvents = _byUser ? 'none' : ''; }
 
-  // 루비: 수정이 BZ_MAX 도달해야 선택 가능
-  var svUnlocked = (bzCnt >= BZ_MAX) && SV_MAX > 0;
+  // 루비: 수정이 BZ_MAX 도달해야 선택 가능, sv_max는 bz 수량에 따라 동적 결정
+  var _dynSvMax = (bzCnt>=BZ_MAX && typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
+  var svUnlocked = (bzCnt >= BZ_MAX) && _dynSvMax > 0;
   // 수정이 BZ_MAX 미달이면 svCnt 강제 0
   if(!svUnlocked) svCnt = 0;
   sv = svCnt;
   var _svV=document.getElementById('r-sv-v'); if(_svV) _svV.textContent = sv;
   var _svRange=document.getElementById('r-sv-range'); if(_svRange) _svRange.textContent = svUnlocked
-    ? '최소 '+SV_MIN+' / 최대 '+SV_MAX
+    ? '최소 '+SV_MIN+' / 최대 '+_dynSvMax
     : '(수정 '+BZ_MAX+'개 달성 시 선택 가능)';
   var _svNote=document.getElementById('r-sv-note'); if(_svNote) _svNote.textContent = '수정 '+BZ_MAX+'개 예약 시 루비 선택 가능';
   document.getElementById('r-sv-wrap').className = 'r-wrap'+(svUnlocked?'':' locked');
@@ -1869,16 +1894,17 @@ function updateResUI(BZ_MIN,BZ_MAX,SV_MIN,SV_MAX,GD_MIN,GD_MAX){
   var svMBtn = document.getElementById('r-sv-m');
   var svPBtn = document.getElementById('r-sv-p');
   if(svMBtn) svMBtn.disabled = (_byUser || !_isRT || !svUnlocked || sv <= SV_MIN);
-  if(svPBtn) svPBtn.disabled = (_byUser || !_isRT || !svUnlocked || sv >= SV_MAX);
+  if(svPBtn) svPBtn.disabled = (_byUser || !_isRT || !svUnlocked || sv >= _dynSvMax);
 
   // 다이아: 루비가 SV_MAX 도달해야 선택 가능
-  var gdUnlocked = svUnlocked && (sv >= SV_MAX) && GD_MAX > 0;
+  var _dynGdMax = (sv>=_dynSvMax && sv>0 && typeof getGdFromSv==='function') ? getGdFromSv(sv) : GD_MAX;
+  var gdUnlocked = svUnlocked && (sv >= _dynSvMax) && _dynGdMax > 0;
   // 루비가 SV_MAX 미달이면 gdCnt 강제 0
   if(!gdUnlocked) gdCnt = 0;
   gd = gdCnt;
   var _gdV=document.getElementById('r-gd-v'); if(_gdV) _gdV.textContent = gd;
   var _gdRange=document.getElementById('r-gd-range'); if(_gdRange) _gdRange.textContent = gdUnlocked
-    ? '최소 '+GD_MIN+' / 최대 '+GD_MAX
+    ? '최소 '+GD_MIN+' / 최대 '+_dynGdMax
     : '(루비 '+SV_MAX+'개 달성 시 선택 가능)';
   var _gdNote=document.getElementById('r-gd-note'); if(_gdNote) _gdNote.textContent = '루비 '+SV_MAX+'개 예약 시 다이아 선택 가능';
   document.getElementById('r-gd-wrap').className = 'r-wrap'+(gdUnlocked?'':' locked');
@@ -1887,7 +1913,7 @@ function updateResUI(BZ_MIN,BZ_MAX,SV_MIN,SV_MAX,GD_MIN,GD_MAX){
   var gdMBtn = document.getElementById('r-gd-m');
   var gdPBtn = document.getElementById('r-gd-p');
   if(gdMBtn) gdMBtn.disabled = (_byUser || !_isRT || !gdUnlocked || gd <= GD_MIN);
-  if(gdPBtn) gdPBtn.disabled = (_byUser || !_isRT || !gdUnlocked || gd >= GD_MAX);
+  if(gdPBtn) gdPBtn.disabled = (_byUser || !_isRT || !gdUnlocked || gd >= _dynGdMax);
 
   // 총계
   var totalSv = sv;
