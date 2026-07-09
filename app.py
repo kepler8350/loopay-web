@@ -2870,7 +2870,10 @@ def admin_run_matching():
             success=True,
             matched=total_matched,
             message=f'{round_num}차 매칭 완료: {total_matched}건',
-            pairs=matched_pairs
+            pairs=matched_pairs,
+            debug_today=today,
+            debug_buy_count=len(list(buy_rows)) if buy_rows else 0,
+            debug_sell_count=len(sell_rows) if sell_rows else 0
         )
     except Exception as e:
         import traceback
