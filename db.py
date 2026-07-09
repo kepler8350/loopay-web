@@ -282,13 +282,13 @@ def _seed(conn):
     conn.commit()
 
 LEVEL_CONFIG = {
-    1:{'bz_min':0,'bz_max':3,'sv_min':0,'sv_max':1,'gd_min':0,'gd_max':1,'cum':150},
-    2:{'bz_min':0,'bz_max':6,'sv_min':0,'sv_max':3,'gd_min':0,'gd_max':2,'cum':450},
-    3:{'bz_min':0,'bz_max':10,'sv_min':0,'sv_max':5,'gd_min':0,'gd_max':3,'cum':960},
-    4:{'bz_min':0,'bz_max':14,'sv_min':0,'sv_max':7,'gd_min':0,'gd_max':5,'cum':1740},
-    5:{'bz_min':0,'bz_max':20,'sv_min':0,'sv_max':9,'gd_min':0,'gd_max':7,'cum':2850},
-    6:{'bz_min':0,'bz_max':27,'sv_min':0,'sv_max':13,'gd_min':0,'gd_max':9,'cum':4350},
-    7:{'bz_min':0,'bz_max':34,'sv_min':0,'sv_max':17,'gd_min':0,'gd_max':12,'cum':6450}
+    1:{'bz_min':1,'bz_max':3,'sv_min':0,'sv_max':1,'gd_min':0,'gd_max':1,'cum':150},
+    2:{'bz_min':1,'bz_max':6,'sv_min':0,'sv_max':3,'gd_min':0,'gd_max':2,'cum':450},
+    3:{'bz_min':1,'bz_max':10,'sv_min':0,'sv_max':5,'gd_min':0,'gd_max':3,'cum':960},
+    4:{'bz_min':1,'bz_max':14,'sv_min':0,'sv_max':7,'gd_min':0,'gd_max':5,'cum':1740},
+    5:{'bz_min':1,'bz_max':20,'sv_min':0,'sv_max':9,'gd_min':0,'gd_max':7,'cum':2850},
+    6:{'bz_min':1,'bz_max':27,'sv_min':0,'sv_max':13,'gd_min':0,'gd_max':9,'cum':4350},
+    7:{'bz_min':1,'bz_max':34,'sv_min':0,'sv_max':17,'gd_min':0,'gd_max':12,'cum':6450}
 }
 
 # 레벨별 거래유지 포인트 비용 (월 30일, 3레벨부터 유료)

@@ -101,16 +101,16 @@ function _copyAcct(acct, btn){
 var _reservedToday=false; // 오늘 구매예약 완료 여부
 var svCnt=0; var gdCnt=0; // 루비/다이아 선택 수량
 var LEVEL_CFG_JS={
-  1:{bz_min:0,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1,cum:150},
-  2:{bz_min:0,bz_max:6,sv_min:0,sv_max:3,gd_min:0,gd_max:2,cum:450},
-  3:{bz_min:0,bz_max:10,sv_min:0,sv_max:5,gd_min:0,gd_max:3,cum:960},
-  4:{bz_min:0,bz_max:14,sv_min:0,sv_max:7,gd_min:0,gd_max:5,cum:1740},
-  5:{bz_min:0,bz_max:20,sv_min:0,sv_max:9,gd_min:0,gd_max:7,cum:2850},
-  6:{bz_min:0,bz_max:27,sv_min:0,sv_max:13,gd_min:0,gd_max:9,cum:4350},
-  7:{bz_min:0,bz_max:34,sv_min:0,sv_max:17,gd_min:0,gd_max:12,cum:6450},
-  8:{bz_min:0,bz_max:42,sv_min:0,sv_max:22,gd_min:0,gd_max:15,cum:9450},
-  9:{bz_min:0,bz_max:51,sv_min:0,sv_max:27,gd_min:0,gd_max:20,cum:12450},
-  10:{bz_min:0,bz_max:60,sv_min:0,sv_max:34,gd_min:0,gd_max:26,cum:null}
+  1:{bz_min:1,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1,cum:150},
+  2:{bz_min:1,bz_max:6,sv_min:0,sv_max:3,gd_min:0,gd_max:2,cum:450},
+  3:{bz_min:1,bz_max:10,sv_min:0,sv_max:5,gd_min:0,gd_max:3,cum:960},
+  4:{bz_min:1,bz_max:14,sv_min:0,sv_max:7,gd_min:0,gd_max:5,cum:1740},
+  5:{bz_min:1,bz_max:20,sv_min:0,sv_max:9,gd_min:0,gd_max:7,cum:2850},
+  6:{bz_min:1,bz_max:27,sv_min:0,sv_max:13,gd_min:0,gd_max:9,cum:4350},
+  7:{bz_min:1,bz_max:34,sv_min:0,sv_max:17,gd_min:0,gd_max:12,cum:6450},
+  8:{bz_min:1,bz_max:42,sv_min:0,sv_max:22,gd_min:0,gd_max:15,cum:9450},
+  9:{bz_min:1,bz_max:51,sv_min:0,sv_max:27,gd_min:0,gd_max:20,cum:12450},
+  10:{bz_min:1,bz_max:60,sv_min:0,sv_max:34,gd_min:0,gd_max:26,cum:null}
 };
 var combinePairs=[];var pendingItem=null;
 
@@ -191,7 +191,7 @@ async function loadUserData(){
     userData={
       level:1,charge_points:0,exchange_points:0,total_points:0,
       cumulative_count:0,next_level_cum:150,progress_pct:0,
-      level_config:{bz_min:0,bz_max:3,sv_min:1,sv_max:2,gd_min:1,gd_max:1},
+      level_config:{bz_min:1,bz_max:3,sv_min:1,sv_max:2,gd_min:1,gd_max:1},
       items:{bronze:[],silver:[],gold:[]},
       reservable:{bronze:0,silver:0,gold:0},
       today_reservations:{bronze:0,silver:0,gold:0},
@@ -321,16 +321,16 @@ function showBarPrice(type,btn){
 
 // --- tabs -----------------------------------------------------------------
 var LEVEL_CONFIG_JS={
-  1:{bz_min:0,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1,cum:150},
-  2:{bz_min:0,bz_max:6,sv_min:2,sv_max:3,gd_min:1,gd_max:2,cum:450},
-  3:{bz_min:0,bz_max:10,sv_min:4,sv_max:5,gd_min:2,gd_max:3,cum:960},
-  4:{bz_min:0,bz_max:14,sv_min:6,sv_max:7,gd_min:4,gd_max:5,cum:1740},
-  5:{bz_min:0,bz_max:20,sv_min:8,sv_max:9,gd_min:6,gd_max:7,cum:2850},
-  6:{bz_min:0,bz_max:27,sv_min:10,sv_max:13,gd_min:8,gd_max:9,cum:4350},
-  7:{bz_min:0,bz_max:34,sv_min:14,sv_max:17,gd_min:10,gd_max:12,cum:6450},
-  8:{bz_min:0,bz_max:42,sv_min:18,sv_max:22,gd_min:13,gd_max:15,cum:9450},
-  9:{bz_min:0,bz_max:51,sv_min:23,sv_max:27,gd_min:16,gd_max:20,cum:12450},
-  10:{bz_min:0,bz_max:60,sv_min:28,sv_max:34,gd_min:21,gd_max:26,cum:99999},
+  1:{bz_min:1,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1,cum:150},
+  2:{bz_min:1,bz_max:6,sv_min:2,sv_max:3,gd_min:1,gd_max:2,cum:450},
+  3:{bz_min:1,bz_max:10,sv_min:4,sv_max:5,gd_min:2,gd_max:3,cum:960},
+  4:{bz_min:1,bz_max:14,sv_min:6,sv_max:7,gd_min:4,gd_max:5,cum:1740},
+  5:{bz_min:1,bz_max:20,sv_min:8,sv_max:9,gd_min:6,gd_max:7,cum:2850},
+  6:{bz_min:1,bz_max:27,sv_min:10,sv_max:13,gd_min:8,gd_max:9,cum:4350},
+  7:{bz_min:1,bz_max:34,sv_min:14,sv_max:17,gd_min:10,gd_max:12,cum:6450},
+  8:{bz_min:1,bz_max:42,sv_min:18,sv_max:22,gd_min:13,gd_max:15,cum:9450},
+  9:{bz_min:1,bz_max:51,sv_min:23,sv_max:27,gd_min:16,gd_max:20,cum:12450},
+  10:{bz_min:1,bz_max:60,sv_min:28,sv_max:34,gd_min:21,gd_max:26,cum:99999},
 };
 
 
@@ -870,16 +870,16 @@ function demoLogin(btn){
 
 // ── 레벨 탭: 현재 레벨 강조 + 연동규칙 표시 ──
 var LEVEL_CFG_JS = {
-  1:{bz_min:0,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1},
-  2:{bz_min:0,bz_max:6,sv_min:2,sv_max:3,gd_min:1,gd_max:2},
-  3:{bz_min:0,bz_max:10,sv_min:4,sv_max:5,gd_min:2,gd_max:3},
-  4:{bz_min:0,bz_max:14,sv_min:6,sv_max:7,gd_min:4,gd_max:5},
-  5:{bz_min:0,bz_max:20,sv_min:8,sv_max:9,gd_min:6,gd_max:7},
-  6:{bz_min:0,bz_max:27,sv_min:10,sv_max:13,gd_min:8,gd_max:9},
-  7:{bz_min:0,bz_max:34,sv_min:14,sv_max:17,gd_min:10,gd_max:12},
-  8:{bz_min:0,bz_max:42,sv_min:18,sv_max:22,gd_min:13,gd_max:15},
-  9:{bz_min:0,bz_max:51,sv_min:23,sv_max:27,gd_min:16,gd_max:20},
-  10:{bz_min:0,bz_max:60,sv_min:28,sv_max:34,gd_min:21,gd_max:26}
+  1:{bz_min:1,bz_max:3,sv_min:0,sv_max:1,gd_min:0,gd_max:1},
+  2:{bz_min:1,bz_max:6,sv_min:2,sv_max:3,gd_min:1,gd_max:2},
+  3:{bz_min:1,bz_max:10,sv_min:4,sv_max:5,gd_min:2,gd_max:3},
+  4:{bz_min:1,bz_max:14,sv_min:6,sv_max:7,gd_min:4,gd_max:5},
+  5:{bz_min:1,bz_max:20,sv_min:8,sv_max:9,gd_min:6,gd_max:7},
+  6:{bz_min:1,bz_max:27,sv_min:10,sv_max:13,gd_min:8,gd_max:9},
+  7:{bz_min:1,bz_max:34,sv_min:14,sv_max:17,gd_min:10,gd_max:12},
+  8:{bz_min:1,bz_max:42,sv_min:18,sv_max:22,gd_min:13,gd_max:15},
+  9:{bz_min:1,bz_max:51,sv_min:23,sv_max:27,gd_min:16,gd_max:20},
+  10:{bz_min:1,bz_max:60,sv_min:28,sv_max:34,gd_min:21,gd_max:26}
 };
 function changeRes(t, delta){
   if(!userData) return;  // userData 로드 전엔 UI 업데이트 안 함
