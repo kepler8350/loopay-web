@@ -4030,6 +4030,8 @@ def admin_reservations_list():
     offset      = (page - 1) * per_page
 
     where = ['1=1']
+    # 2차 판매 예약(match_round=2 + confirmed=1 + item_id>0)은 내부 처리용 → 목록 제외
+    where.append("NOT (r.match_round=2 AND COALESCE(r.confirmed,0)=1 AND COALESCE(r.item_id,0)>0)")
     params = []
     if single_date:
         # reserve_date 또는 match_date 기준 (매칭된 경우 match_date로도 조회)
@@ -4078,6 +4080,10 @@ def admin_reservations_list():
                        r.lucky_pair_id,
                        u.username, u.nickname, u.account_name,
                        CASE WHEN r.item_id > 0 AND COALESCE(r.confirmed,0)=1 AND i_type.status IN ('reservable','waiting','matched','sold') THEN 'sell' ELSE 'buy' END as res_type,
+                       COALESCE(
+                         (SELECT m.match_round FROM matches m WHERE m.seller_item_id=r.item_id AND r.item_id>0 ORDER BY m.id DESC LIMIT 1),
+                         (SELECT m.match_round FROM matches m WHERE (r.item_id IS NULL OR r.item_id=0) AND (m.reservation_id=r.id OR m.buyer_res_id=r.id) ORDER BY m.id DESC LIMIT 1)
+                       ) as matched_round,
                        COALESCE(
                          (SELECT m.status FROM matches m
                           WHERE m.seller_item_id=r.item_id AND r.item_id>0

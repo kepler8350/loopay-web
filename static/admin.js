@@ -1171,7 +1171,7 @@ async function loadReservationsLog(page){
       if(r.status==='matched' && !r.match_status){
         statusKo = '대기';
       }
-      var _is2nd = (r.match_round===2);  // 2차 매칭 관련 예약
+      var _is2nd = (r.match_round===2) || (r.matched_round===2);  // 2차 매칭 관련 예약 (예약자체가 2차이거나 2차매치와 연결된 경우)
 
       // ms=failed 처리 (1차/2차 구분)
       if(r.match_status==='failed'){
@@ -1252,7 +1252,11 @@ async function loadReservationsLog(page){
         +'<td style="text-align:center;font-weight:700;color:'+barColor+'">'+bar+'</td>'
         +'<td style="text-align:center;color:#aaa">'+(r.stage>0?r.stage+'단계':'-')+'</td>'
         +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+typeColor+'22;color:'+typeColor+';font-weight:700">'+typeName+'</span></td>'
-        +'<td style="text-align:center;color:#888">'+(r.match_round||'-')+'차</td>'
+        +(function(){
+          // 차수 결정: matched_round>1 또는 join_round2=1이면 2차
+          var _displayRound = (r.matched_round===2 || r.join_round2===1) ? 2 : (r.match_round||1);
+          return '<td style="text-align:center;color:#888">'+_displayRound+'차</td>';
+        })()
         +'<td style="text-align:center">'+round2Badge+'</td>'
         +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+statusColor+'22;color:'+statusColor+'">'+statusKo+'</span></td>'
         +'</tr>';
