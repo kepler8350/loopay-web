@@ -238,7 +238,7 @@ async function deleteCharge(id){
   }catch(e){toast(e.message,'error');}
 }
 
-async function updateMatchingBtn(){
+async async function updateMatchingBtn(){
   try{
     var tok = localStorage.getItem('admin_token');
     // 시간 + failed_count를 한번에 가져오기
@@ -1759,7 +1759,8 @@ async function runMatching(roundNum){
     if(!d.success){ throw new Error(d.error||'매칭 실패'); }
     _success = true;
     toast(d.message||roundNum+'차 매칭 완료!', 'success');
-    // 매칭 성공 후: 매칭실행 페이지 초기화 (showPage 호출로 모든 UI 재설정)
+    // 매칭 성공 후: 버튼 텍스트 즉시 복원 후 페이지 초기화
+    if(btn){ btn.textContent='✅ '+roundNum+'차 매칭 완료'; }
     window._matchingJustRan = true;
     window._matchingRanRound = roundNum;
     if(roundNum===1){ window._r1MatchingDone = true; }
