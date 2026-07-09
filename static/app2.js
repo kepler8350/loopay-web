@@ -77,7 +77,9 @@ function updateReserveDefaults(lv){
   var GD_MIN_DEF=(cfg.gd_min!=null?cfg.gd_min:0);
   svCnt = 0;  // 루비/다이아는 bz_max 달성 후 선택 (초기 0 유지)
   gdCnt = 0;
-  updateResUI(BZ_MIN, BZ_MAX);
+  var SV_MIN_D=(cfg.sv_min!=null?cfg.sv_min:0), SV_MAX_D=cfg.sv_max||0;
+  var GD_MIN_D=(cfg.gd_min!=null?cfg.gd_min:0), GD_MAX_D=cfg.gd_max||0;
+  updateResUI(BZ_MIN, BZ_MAX, SV_MIN_D, SV_MAX_D, GD_MIN_D, GD_MAX_D);
 }
 
 
@@ -104,7 +106,9 @@ function changeRes(type,delta){
       gdCnt=Math.max(GD_MIN2,Math.min(GD_MAX,gdCnt+delta));
     }
   }
-  updateResUI(BZ_MIN,BZ_MAX);
+  var SV_MIN_C=(cfg.sv_min!=null?cfg.sv_min:0), SV_MAX_C=cfg.sv_max||0;
+  var GD_MIN_C=(cfg.gd_min!=null?cfg.gd_min:0), GD_MAX_C=cfg.gd_max||0;
+  updateResUI(BZ_MIN, BZ_MAX, SV_MIN_C, SV_MAX_C, GD_MIN_C, GD_MAX_C);
 }
 
 function showReserveConfirm(){

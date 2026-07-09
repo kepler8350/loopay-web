@@ -899,7 +899,9 @@ function changeRes(t, delta){
       gdCnt = Math.min(Math.max(gdCnt+delta, 0), GD_MAX);
     }
   }
-  updateResUI(BZ_MIN, BZ_MAX);
+  var SV_MIN_R=(cfg.sv_min!=null?cfg.sv_min:0), SV_MAX_R=cfg.sv_max||0;
+  var GD_MIN_R=(cfg.gd_min!=null?cfg.gd_min:0), GD_MAX_R=cfg.gd_max||0;
+  updateResUI(BZ_MIN, BZ_MAX, SV_MIN_R, SV_MAX_R, GD_MIN_R, GD_MAX_R);
 }
 function getSv(bz){
   var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
@@ -1829,11 +1831,10 @@ function enableReserveSection(){
   if(userData) updateReserveDefaults(userData.level || 1);
 }
 
-function updateResUI(BZ_MIN,BZ_MAX){
+function updateResUI(BZ_MIN,BZ_MAX,SV_MIN,SV_MAX,GD_MIN,GD_MAX){
   if(window._isSuspended){ checkSuspended(window.userData); return; }
-  var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[1];
-  var SV_MIN=(cfg.sv_min!=null?cfg.sv_min:0), SV_MAX=cfg.sv_max||0;
-  var GD_MIN=(cfg.gd_min!=null?cfg.gd_min:0), GD_MAX=cfg.gd_max||0;
+  // 파라미터가 없으면 userData에서 읽기 (하위호환)
+  if(SV_MAX==null){ var cfg=(userData&&userData.level_config)||LEVEL_CFG_JS[(userData&&userData.level)||1]||LEVEL_CFG_JS[1]; SV_MIN=(cfg.sv_min!=null?cfg.sv_min:0); SV_MAX=cfg.sv_max||0; GD_MIN=(cfg.gd_min!=null?cfg.gd_min:0); GD_MAX=cfg.gd_max||0; }
   // sv/gd는 전역 변수로 관리 (독립 선택)
   var sv=svCnt, gd=gdCnt;
   // ── 예약시간 외에는 모든 수량버튼 비활성화 ──
@@ -1946,7 +1947,9 @@ function updateReserveDefaults(lv){
   // 루비/다이아는 항상 0으로 초기화 (매번 새로 선택)
   svCnt = 0;
   gdCnt = 0;
-  updateResUI(BZ_MIN, BZ_MAX);
+  var SV_MIN_A=(cfg.sv_min!=null?cfg.sv_min:0), SV_MAX_A=cfg.sv_max||0;
+  var GD_MIN_A=(cfg.gd_min!=null?cfg.gd_min:0), GD_MAX_A=cfg.gd_max||0;
+  updateResUI(BZ_MIN, BZ_MAX, SV_MIN_A, SV_MAX_A, GD_MIN_A, GD_MAX_A);
 }
 function renderLevelTab(){
   var lv=(userData&&userData.level)||1;
