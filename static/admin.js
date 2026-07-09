@@ -1203,9 +1203,12 @@ async function loadReservationsLog(page){
           var _isFailedBuyer = window._failedBuyerSet && window._failedBuyerSet.has(r.username);
           if(_isFailedBuyer){
             statusKo = '완료';
-          } else if(_isPast){
-            // 과거 날짜 예약: 해당 날짜 매칭 사이클 종료 → 완료
+          } else if(_isPast && _r2FailedCount===0){
+            // 과거 날짜 + 미입금 없음 → 완료
             statusKo = '완료';
+          } else if(_isPast && _r2FailedCount>0){
+            // 과거 날짜 + 미입금 있음 → 2차대기 유지 (해당 날짜 미입금자가 아닌 사람)
+            statusKo = '2차대기';
           } else if(_isToday2 && _r2RanToday && _r2FailedCount===0){
             // 오늘 날짜: 2차 매칭 완료 + 미입금 없음 → 완료
             statusKo = '완료';
