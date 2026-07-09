@@ -286,7 +286,7 @@ async function updateMatchingBtn(){
     var _r2PendingCount = (matchData.r2_pending_count || 0);
     var _h2 = ct.hour || 0; var _m2 = ct.minute || 0;
     var _inR2Window = (_h2 === 14); // 14:00~14:59
-    var _r2AlreadyRun = (_r2PendingCount > 0);
+    var _r2AlreadyRun = (_r2PendingCount > 0) || !!(matchData && matchData.r2_ran_today);
     var isActive2 = (failedCount > 0 || r2BuyCount > 0) && _inR2Window && !_r2AlreadyRun;
     var btn2 = document.getElementById('btn-run-matching-2');
     var notice2 = document.getElementById('matching-time-notice-2');
@@ -1721,7 +1721,7 @@ async function loadMatchingStatus(){
     // ── 2차 매칭 ──
     var r2=d.round2||{};
     var mr2=r2.match_rate||0;
-    var _r2Done = (d.r2_ran_today === true);
+    var _r2Done = (d.r2_ran_today === true) || !!window._r2MatchingDone;
     // 2차 탭 구매예약 수: 2차 매칭 실행 후 0 표시
     var _r1UnmatchedBuy = _r2Done ? 0 : ((d.r1_unmatched_buy!=null) ? d.r1_unmatched_buy : (r2.buy_count!=null?r2.buy_count:'-'));
     set('r2-buy', _r1UnmatchedBuy);
