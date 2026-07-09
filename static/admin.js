@@ -1117,6 +1117,8 @@ async function loadReservationsLog(page){
       _r1RanToday = !!(_mstat && _mstat.r1_ran_today);
       _r2RanToday = !!(_mstat && _mstat.r2_ran_today);
       _r2FailedCount = (_mstat && _mstat.failed_count) || 0;
+      // 미입금 유저 목록 (1차 failed 구매자)
+      window._failedBuyerSet = new Set((_mstat && _mstat.failed_list||[]).map(function(f){return f.username;}));
       _pendingMatchCount = (_mstat && _mstat.pending_match_count) || 0;
     }catch(e){}
     var d = await fetch('/api/admin/reservations-list?' + params.toString(),{headers:{'Authorization':'Bearer '+tok2}}).then(r=>r.json());
@@ -1147,6 +1149,7 @@ async function loadReservationsLog(page){
         : statusKo==='거래완료' ? '#4fc3f7'
         : statusKo==='완료' ? '#66bb6a'
         : statusKo==='매칭완료' ? '#ab47bc'
+        : statusKo==='2차매칭완료' ? '#7b1fa2'
         : statusKo==='미입금' ? '#ef5350'
         : (statusColors[r.status] || '#888');
       var confirmedBadge = r.confirmed ? '<span style="font-size:10px;background:#1b5e20;color:#a5d6a7;padding:1px 5px;border-radius:3px">확인</span>' : '';
@@ -1160,43 +1163,51 @@ async function loadReservationsLog(page){
       if(r.status==='matched' && !r.match_status){
         statusKo = '대기';
       }
-      // ms=failed 처리: 구매=미입금, 판매=2차대기(재매칭 대기)
+      // ms=failed 처리
       if(r.match_status==='failed'){
         if(r.res_type==='buy'){
-          statusKo = '미입금';  // 구매자가 미입금한 경우
+          statusKo = '미입금';  // 구매자 미입금
         } else {
-          statusKo = '2차대기';  // 판매자는 재매칭 대기
+          statusKo = '2차대기';  // 판매자 재매칭 대기
         }
       }
-      // status=pending + ms=pending/paid → 매칭완료 (매치됐지만 reservation status 미갱신)
+      // 1차 매칭완료 (ms=pending/paid)
       if(r.status==='pending' && (r.match_status==='pending' || r.match_status==='paid')){
         statusKo = '매칭완료';
       }
+      // 2차 매칭완료 (match_round=2 + ms=pending/paid)
+      if(r.match_round===2 && (r.match_status==='pending' || r.match_status==='paid')){
+        statusKo = '2차매칭완료';
+      }
 
-      // 2차대기 조건:
-      // - 오늘 예약이면서 오늘 1차 매칭이 실행된 경우
-      // - 과거 날짜 예약(이미 그 날의 매칭 주기가 지남)
-      if(r.status==='pending' && r.res_type==='buy' && r.join_round2===1
-         && !r.match_status){  // 매칭된 경우(ms=pending/paid)는 2차대기 아님
+      // 2차대기 조건: pending + join_round2=1 + ms=null + 1차매칭실행됨
+      if(r.status==='pending' && r.res_type==='buy' && r.join_round2===1 && !r.match_status){
         var _rDate = r.reserve_date;
-        var _isToday = (_rDate === _today2);
-        if(!_isToday || (_isToday && _r1RanToday)){
+        var _isToday2 = (_rDate === _today2);
+        if(!_isToday2 || (_isToday2 && _r1RanToday)){
           statusKo = '2차대기';
         }
       }
-      // 2차대기 → 완료 판단: 개별 예약 기준
-      // - match_status=confirmed: 판매자 입금확인 완료 → "완료"
-      // - match_status=null + 과거 날짜: 매칭 못 된 예약 → "완료" (미입금 없을 때)
+
+      // 2차대기 → 완료 판단
       if(statusKo==='2차대기'){
         var _isPast = (r.reserve_date < _today2);
-        var _isToday = (r.reserve_date === _today2);
+        var _isToday2 = (r.reserve_date === _today2);
         if(r.match_status==='confirmed'){
-          // 판매자 입금확인 완료 → "완료"
           statusKo = '완료';
-        } else if(!r.match_status && (_isPast || (_isToday && _r2RanToday)) && _r2FailedCount===0){
-          // 매칭 못 된 예약 + (과거날짜 OR 오늘+2차매칭완료) + 미입금없음 → "완료"
-          statusKo = '완료';
+        } else if(!r.match_status){
+          // 1차 미입금자의 2차대기 → 완료 (재매칭 불가)
+          var _isFailedBuyer = window._failedBuyerSet && window._failedBuyerSet.has(r.username);
+          if(_isFailedBuyer){
+            statusKo = '완료';
+          } else if((_isPast || (_isToday2 && _r2RanToday)) && _r2FailedCount===0){
+            statusKo = '완료';
+          }
         }
+      }
+      // 2차매칭완료 → 완료
+      if(statusKo==='2차매칭완료'){
+        if(r.match_status==='confirmed') statusKo = '완료';
       }
       // matched/sold + confirmed(판매자 입금확인) → "거래완료" (판매/구매 모두)
       if((r.status==='matched' || r.status==='sold') && r.match_status==='confirmed'){
@@ -1697,11 +1708,12 @@ async function loadMatchingStatus(){
     // ── 2차 매칭 ──
     var r2=d.round2||{};
     var mr2=r2.match_rate||0;
-    // 2차 탭 구매예약 수 = 1차 미매칭(1차 buy - 1차 sell) 표시
-    var _r1UnmatchedBuy = (d.r1_unmatched_buy!=null) ? d.r1_unmatched_buy : (r2.buy_count!=null?r2.buy_count:'-');
+    var _r2Done = (d.r2_ran_today === true);
+    // 2차 탭 구매예약 수: 2차 매칭 실행 후 0 표시
+    var _r1UnmatchedBuy = _r2Done ? 0 : ((d.r1_unmatched_buy!=null) ? d.r1_unmatched_buy : (r2.buy_count!=null?r2.buy_count:'-'));
     set('r2-buy', _r1UnmatchedBuy);
     // 미입금 판매아이템: failed 매치에서 별도 집계된 r2_sell_by_type 사용
-    var _r2SellCount = (d.r2_sell_count!=null) ? d.r2_sell_count : (r2.sell_count!=null?r2.sell_count:0);
+    var _r2SellCount = _r2Done ? 0 : ((d.r2_sell_count!=null) ? d.r2_sell_count : (r2.sell_count!=null?r2.sell_count:0));
     // cnt → count 필드명 정규화
     var _r2SellByType = (d.r2_sell_by_type && d.r2_sell_by_type.length)
       ? d.r2_sell_by_type.map(function(r){return {bar_type:r.bar_type, count:r.cnt||r.count||0};})
@@ -1713,7 +1725,7 @@ async function loadMatchingStatus(){
     var rateEl2=document.getElementById('r2-rate');
     if(rateEl2){ rateEl2.textContent=_r2Rate+'%'; rateEl2.style.color=mrc(_r2Rate); }
     var bt2=document.getElementById('r2-by-type'); if(bt2) bt2.innerHTML=mkTypeTable(_r2SellByType);
-    var bbt2=document.getElementById('r2-buy-by-type'); if(bbt2) bbt2.innerHTML=mkTypeTable(sortByBarType(r2.buy_by_type));
+    var bbt2=document.getElementById('r2-buy-by-type'); if(bbt2) bbt2.innerHTML=_r2Done?'':mkTypeTable(sortByBarType(r2.buy_by_type));
 
     // 미입금 현황 렌더링
     var barNames={bronze:'수정',silver:'루비',gold:'다이아'};
