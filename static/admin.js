@@ -1204,7 +1204,9 @@ async function loadReservationsLog(page){
         var _isPast = (r.reserve_date < _today2);
         var _isToday2 = (r.reserve_date === _matchDate);
         if(r.match_status==='confirmed'){
-          statusKo = '2차완료';
+          // 1차 판매자 재매칭대기가 입금확인된 경우 → 거래완료
+          // 미매칭 2차대기가 confirmed는 없으므로 거래완료
+          statusKo = '거래완료';
         } else if(!r.match_status){
           var _isFailedBuyer = window._failedBuyerSet && window._failedBuyerSet.has(r.username);
           if(_isFailedBuyer){
