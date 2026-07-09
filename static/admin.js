@@ -1213,16 +1213,13 @@ async function loadReservationsLog(page){
           var _noMorePending = (_pendingMatchCount === 0);
           if(_isFailedBuyer){
             statusKo = '완료';   // 1차 미입금자 (무조건 완료)
-          } else if(r.reserve_date < _matchDate && _noMorePending){
-            statusKo = '완료';   // 이전 날짜 + 미결없음
           } else if(r.reserve_date < _matchDate){
-            statusKo = '2차대기';  // 이전 날짜이지만 아직 입금대기 매치 있음
-          } else if((_isPast || _isToday2) && _r2FailedCount===0 && _noMorePending){
-            statusKo = '완료';   // 당일/오늘 + 미입금없음 + 미결없음
-          } else if((_isPast || _isToday2) && _r2FailedCount>0){
+            // 이전 날짜 사이클: 해당 날짜 기준으로 판단 (_pendingMatchCount는 오늘 기준이므로 무시)
+            statusKo = '완료';
+          } else if(_isToday2 && _r2FailedCount===0 && _noMorePending){
+            statusKo = '완료';   // 오늘 + 미입금없음 + 미결없음
+          } else if(_isToday2 && _r2FailedCount>0){
             statusKo = '2차대기';  // 미입금 있음 → 유지
-          } else if(_isToday2 && _r2RanToday && _r2FailedCount===0 && _noMorePending){
-            statusKo = '완료';   // 2차매칭 완료 + 미입금없음 + 미결없음
           }
         }
       }
