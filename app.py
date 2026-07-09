@@ -7245,6 +7245,23 @@ def testtools_fix_matched_items_status():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/debug-matches', methods=['GET'])
+def testtools_debug_matches():
+    db = get_db()
+    try:
+        rows = db.execute("""
+            SELECT m.id, m.status, m.match_date, m.match_round,
+                   b.username as buyer, s.username as seller
+            FROM matches m
+            LEFT JOIN users b ON m.buyer_id=b.id
+            LEFT JOIN users s ON m.seller_id=s.id
+            WHERE m.match_date='2026-07-12'
+            ORDER BY m.id DESC
+        """).fetchall()
+        return __import__('flask').jsonify(matches=[dict(r) for r in rows])
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
