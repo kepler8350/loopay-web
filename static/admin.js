@@ -1219,6 +1219,9 @@ async function loadReservationsLog(page){
             statusKo = '2차대기';  // 당일 과거 + 미입금 있음 → 유지
           } else if(_isToday2 && _r2RanToday && _r2FailedCount===0){
             statusKo = '2차완료';  // 오늘 + 2차완료 + 미입금없음
+          } else if(_isToday2 && !_r2RanToday && _r2FailedCount===0 && _pendingMatchCount===0){
+            // 오늘 + 2차미실행 + 미입금없음 + 미결매치없음(전부 입금확인) → 완료
+            statusKo = '2차완료';
           }
         }
       }
