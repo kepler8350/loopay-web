@@ -2199,7 +2199,22 @@ def admin_run_matching():
             return jsonify(error='2차 매칭은 14:00~14:59 에만 실행 가능합니다'), 400
     db = get_db()
     try:
-        today = get_matching_date().isoformat()
+        _calc_today = get_matching_date().isoformat()
+        # 오늘 1차 매칭 있으면 오늘, 없으면 어제 (날짜 넘어간 직후 처리)
+        _today_match = db.execute(
+            "SELECT match_date FROM matches WHERE match_round=1 AND match_date=? LIMIT 1",
+            (_calc_today,)
+        ).fetchone()
+        if _today_match:
+            today = _calc_today
+        else:
+            import datetime as _dt
+            _yesterday = (_dt.date.fromisoformat(_calc_today) - _dt.timedelta(days=1)).isoformat()
+            _yest_match = db.execute(
+                "SELECT match_date FROM matches WHERE match_round=1 AND match_date=? LIMIT 1",
+                (_yesterday,)
+            ).fetchone()
+            today = _yesterday if _yest_match else _calc_today
         loopay_id = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()['id']
 
         # ── 이전 매칭은 당일 예약만 참가 (이전 날짜 예약은 매칭 불참)
