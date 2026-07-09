@@ -2476,8 +2476,13 @@ def admin_run_matching():
                    WHERE m.match_round=1 AND m.status='failed'
                    AND m.match_date=?
                )
+               AND r.user_id NOT IN (
+                   SELECT r2.user_id FROM reservations r2
+                   WHERE r2.match_round=2 AND r2.status='pending'
+                   AND r2.reserve_date=? AND COALESCE(r2.item_id,0)>0
+               )
                ORDER BY r.reserve_date DESC, RANDOM()""",
-            (round_num, round_num, today, today)
+            (round_num, round_num, today, today, today)
         ).fetchall()
         # loopay 구매예약 (confirmed=1, item.status='waiting') 별도 조회
         _loopay_buy_rows = db.execute(
@@ -7391,7 +7396,12 @@ def testtools_debug_r2_matching():
                AND COALESCE(r.confirmed,0)=0
                AND u.username != 'loopay'
                AND r.user_id NOT IN (SELECT m.buyer_id FROM matches m WHERE m.match_round=1 AND m.status='failed' AND m.match_date=?)
-            """, (round_num, round_num, today, today)
+               AND r.user_id NOT IN (
+                   SELECT r2.user_id FROM reservations r2
+                   WHERE r2.match_round=2 AND r2.status='pending'
+                   AND r2.reserve_date=? AND COALESCE(r2.item_id,0)>0
+               )
+            """, (round_num, round_num, today, today, today)
         ).fetchall()
         
         sell_rows = db.execute(
