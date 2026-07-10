@@ -91,25 +91,29 @@ function changeRes(type,delta){
     if(delta>0 && bzCnt===0){ bzCnt=BZ_MIN; }
     else if(delta<0 && bzCnt===BZ_MIN){ bzCnt=0; svCnt=0; gdCnt=0; }
     else { bzCnt=Math.max(BZ_MIN,Math.min(BZ_MAX,bzCnt+delta)); }
-    if(bzCnt < BZ_MAX){ svCnt=0; gdCnt=0; }
+    // 수정이 최솟값 미달이면 루비/다이아 초기화
+    if(bzCnt < BZ_MIN){ svCnt=0; gdCnt=0; }
   } else if(type==='sv'){
-    if(bzCnt >= BZ_MAX && SV_MAX > 0){
+    // 수정이 최솟값(BZ_MIN) 이상이면 루비 선택 가능
+    if(bzCnt >= BZ_MIN && SV_MAX > 0){
       var _dynSvMax2 = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
-      // 이전 bz 단계의 sv값 = 현재 sv의 최솟값 (점프 시작점)
-      var _svJumpMin = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt-1) : 0;
-      if(delta>0 && svCnt===0){ svCnt=_svJumpMin||_dynSvMax2; }  // 0→sv 최솟값으로 점프
-      else if(delta<0 && svCnt===(_svJumpMin||_dynSvMax2)){ svCnt=0; gdCnt=0; }  // 최솟값→0으로
-      else { svCnt=Math.max(_svJumpMin||0,Math.min(_dynSvMax2,svCnt+delta)); }
-      if(svCnt < _dynSvMax2) gdCnt=0;
+      var _svJumpMin = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt-1)||1 : 1;
+      if(delta>0 && svCnt===0){ svCnt=_svJumpMin; }      // 0→sv 최솟값으로 점프
+      else if(delta<0 && svCnt===_svJumpMin){ svCnt=0; gdCnt=0; }  // 최솟값→0
+      else { svCnt=Math.max(_svJumpMin,Math.min(_dynSvMax2,svCnt+delta)); }
+      // 루비가 현재 단계 최솟값 미달이면 다이아 초기화
+      if(svCnt < _svJumpMin){ gdCnt=0; }
     }
   } else if(type==='gd'){
     var _dynSvMax3 = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
+    var _svJumpMin3 = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt-1)||1 : 1;
     var _dynGdMax2 = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt) : GD_MAX;
-    if(bzCnt >= BZ_MAX && svCnt >= _dynSvMax3 && _dynGdMax2 > 0){
-      var _gdJumpMin = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt-1) : 0;
-      if(delta>0 && gdCnt===0){ gdCnt=_gdJumpMin||_dynGdMax2; }  // 0→gd 최솟값으로 점프
-      else if(delta<0 && gdCnt===(_gdJumpMin||_dynGdMax2)){ gdCnt=0; }  // 최솟값→0으로
-      else { gdCnt=Math.max(_gdJumpMin||0,Math.min(_dynGdMax2,gdCnt+delta)); }
+    // 루비가 최솟값(_svJumpMin3) 이상이면 다이아 선택 가능
+    if(bzCnt >= BZ_MIN && svCnt >= _svJumpMin3 && _dynGdMax2 > 0){
+      var _gdJumpMin = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt-1)||1 : 1;
+      if(delta>0 && gdCnt===0){ gdCnt=_gdJumpMin; }      // 0→gd 최솟값으로 점프
+      else if(delta<0 && gdCnt===_gdJumpMin){ gdCnt=0; }  // 최솟값→0
+      else { gdCnt=Math.max(_gdJumpMin,Math.min(_dynGdMax2,gdCnt+delta)); }
     }
   }
   var SV_MIN_C=(cfg.sv_min!=null?cfg.sv_min:0), SV_MAX_C=cfg.sv_max||0;
