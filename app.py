@@ -1057,11 +1057,12 @@ def user_level_up_check():
         next_cfg = LEVEL_CONFIG.get(next_lv)
         if not next_cfg: return jsonify(available=False)
 
-        # 현재 레벨의 누적 기준치
+        # 다음 레벨 업그레이드 조건: 현재 레벨의 cum 기준치 달성
+        # 예) 레벨1→2: cum >= LEVEL_CONFIG[1]['cum']=150
+        #     레벨3→4: cum >= LEVEL_CONFIG[3]['cum']=960
         cur_cfg = LEVEL_CONFIG.get(cur_lv, {})
         cur_cum_threshold = cur_cfg.get('cum', 0) or 0
 
-        # 다음 레벨 조건: 현재 레벨 cum 이상
         if cum < cur_cum_threshold:
             return jsonify(available=False)
 
@@ -1125,8 +1126,12 @@ def user_level_up_decide():
                     db.execute("UPDATE users SET charge_points=0, exchange_points=exchange_points-? WHERE id=?", (remain, uid))
 
             # 레벨업 + level_paid_at 오늘로 갱신 (기존 유지기간 무시)
-            db.execute("UPDATE users SET level=?, level_paid_at=?, level_upgrade_declined_until=NULL WHERE id=?",
-                      (next_lv, today_str, uid))
+            try:
+                db.execute("UPDATE users SET level=?, level_paid_at=?, level_upgrade_declined_until=NULL WHERE id=?",
+                          (next_lv, today_str, uid))
+            except Exception:
+                db.execute("UPDATE users SET level=?, level_paid_at=? WHERE id=?",
+                          (next_lv, today_str, uid))
             db.commit()
 
             insert_notification(db, uid, 'level_up',
@@ -1149,8 +1154,12 @@ def user_level_up_decide():
                 # 유지포인트 미결제 상태면 30일 후 다시
                 decline_until = get_today() + _dt.timedelta(days=30)
 
-            db.execute("UPDATE users SET level_upgrade_declined_until=? WHERE id=?",
-                      (decline_until.isoformat(), uid))
+            try:
+                db.execute("UPDATE users SET level_upgrade_declined_until=? WHERE id=?",
+                          (decline_until.isoformat(), uid))
+            except Exception:
+                # 컬럼 없으면 무시 (마이그레이션 미실행 환경)
+                pass
             db.commit()
             return jsonify(success=True, declined_until=decline_until.isoformat())
     finally:
