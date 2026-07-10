@@ -1075,17 +1075,19 @@ def user_level_up_check():
                     return jsonify(available=False, declined_until=str(dec_date))
             except Exception: pass
 
-        # 레벨업 총 비용 = 현재 레벨 유지비 + 다음 레벨 유지비 + 레벨업 고정비 100P
-        cur_maintain = LEVEL_COST.get(cur_lv, 0)
-        next_maintain = LEVEL_COST.get(next_lv, 0)
-        total_cost = cur_maintain + next_maintain + LEVEL_UP_FEE
+        # 레벨업 총 비용 = 레벨업 고정비(100P) + 1레벨~다음레벨 유지비 합계
+        next_maintain_total = sum(LEVEL_COST.get(lv, 0) for lv in range(1, next_lv + 1))
+        total_cost = LEVEL_UP_FEE + next_maintain_total
+        # 내역 표시용: 레벨별 유지비 목록
+        maintain_breakdown = [{'level': lv, 'cost': LEVEL_COST.get(lv, 0)}
+                              for lv in range(1, next_lv + 1) if LEVEL_COST.get(lv, 0) > 0]
 
         return jsonify(
             available=True,
             current_level=cur_lv,
             next_level=next_lv,
-            cur_maintain_cost=cur_maintain,
-            next_maintain_cost=next_maintain,
+            next_maintain_total=next_maintain_total,
+            maintain_breakdown=maintain_breakdown,
             level_up_fee=LEVEL_UP_FEE,
             next_level_cost=total_cost,
             cumulative_count=cum,
@@ -1112,10 +1114,8 @@ def user_level_up_decide():
         next_lv = cur_lv + 1
 
         if upgrade:
-            # 레벨업 총 비용 = 현재 레벨 유지비 + 다음 레벨 유지비 + 고정 100P
-            cur_maintain = LEVEL_COST.get(cur_lv, 0)
-            next_maintain = LEVEL_COST.get(next_lv, 0)
-            next_cost = cur_maintain + next_maintain + LEVEL_UP_FEE
+            # 레벨업 총 비용 = 고정 100P + 1레벨~다음레벨 유지비 합계
+            next_cost = LEVEL_UP_FEE + sum(LEVEL_COST.get(lv, 0) for lv in range(1, next_lv + 1))
             charge_p = u['charge_points'] or 0
             exchange_p = u['exchange_points'] or 0
             total_p = charge_p + exchange_p

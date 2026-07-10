@@ -859,9 +859,8 @@ function showLevelUpModal(info){
         누적 예약 ${info.cumulative_count}회로<br>
         <b style="color:#f5c842;">${info.next_level}레벨</b> 업그레이드가 가능합니다.<br><br>
         <div style="background:#0d1b2a;border-radius:8px;padding:10px 14px;margin-bottom:4px;text-align:left;font-size:12px;line-height:2;">
-          ${info.cur_maintain_cost>0 ? `<div style="display:flex;justify-content:space-between;"><span style="color:#7a9abf;">${info.current_level}레벨 유지비</span><span style="color:#fff;">${info.cur_maintain_cost}P</span></div>` : ''}
-          ${info.next_maintain_cost>0 ? `<div style="display:flex;justify-content:space-between;"><span style="color:#7a9abf;">${info.next_level}레벨 유지비</span><span style="color:#fff;">${info.next_maintain_cost}P</span></div>` : ''}
           <div style="display:flex;justify-content:space-between;"><span style="color:#7a9abf;">레벨업 비용</span><span style="color:#fff;">${info.level_up_fee}P</span></div>
+          ${(info.maintain_breakdown||[]).map(b=>`<div style="display:flex;justify-content:space-between;"><span style="color:#7a9abf;">${b.level}레벨 유지비</span><span style="color:#fff;">${b.cost}P</span></div>`).join('')}
           <div style="border-top:1px solid #2a3a4a;margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;"><span style="color:#aac4e0;">합계</span><span style="color:#4fc3f7;">${costTxt}</span></div>
         </div>
         <span style="font-size:11px;color:#7a9abf;">결제일부터 30일간 ${info.next_level}레벨 유지</span>
