@@ -842,45 +842,47 @@ async function checkLevelUpAvailable(){
 }
 
 function showLevelUpModal(info){
-  // 기존 팝업 제거
   var exist = document.getElementById('level-up-modal');
   if(exist) exist.remove();
 
   var nextCost = info.next_level_cost || 0;
   var costTxt = nextCost > 0 ? nextCost+'P' : '무료';
+
+  // 비용 내역 HTML 생성
+  var breakdownHtml = '';
+  (info.maintain_breakdown || []).forEach(function(b){
+    breakdownHtml += '<div style="display:flex;justify-content:space-between;">'
+      + '<span style="color:#7a9abf;">'+b.level+'레벨 유지비</span>'
+      + '<span style="color:#fff;">'+b.cost+'P</span></div>';
+  });
+
   var modal = document.createElement('div');
   modal.id = 'level-up-modal';
   modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;';
-  modal.innerHTML = `
-    <div style="background:#1e2a3a;border-radius:16px;padding:28px 24px;max-width:320px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
-      <div style="font-size:36px;margin-bottom:12px;">🎉</div>
-      <div style="color:#fff;font-size:18px;font-weight:700;margin-bottom:8px;">${info.next_level}레벨 달성 조건 충족!</div>
-      <div style="color:#aac4e0;font-size:13px;margin-bottom:20px;line-height:1.6;">
-        누적 예약 ${info.cumulative_count}회로<br>
-        <b style="color:#f5c842;">${info.next_level}레벨</b> 업그레이드가 가능합니다.<br><br>
-        <div style="background:#0d1b2a;border-radius:8px;padding:10px 14px;margin-bottom:4px;text-align:left;font-size:12px;line-height:2;">
-          <div style="display:flex;justify-content:space-between;"><span style="color:#7a9abf;">레벨업 비용</span><span style="color:#fff;">${info.level_up_fee}P</span></div>
-          ${(info.maintain_breakdown||[]).map(b=>`<div style="display:flex;justify-content:space-between;"><span style="color:#7a9abf;">${b.level}레벨 유지비</span><span style="color:#fff;">${b.cost}P</span></div>`).join('')}
-          <div style="border-top:1px solid #2a3a4a;margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;"><span style="color:#aac4e0;">합계</span><span style="color:#4fc3f7;">${costTxt}</span></div>
-        </div>
-        <span style="font-size:11px;color:#7a9abf;">결제일부터 30일간 ${info.next_level}레벨 유지</span>
-      </div>
-      <div style="display:flex;gap:10px;">
-        <button id="lv-decline-btn" style="flex:1;padding:12px;border-radius:10px;border:none;background:#2a3a4a;color:#aac4e0;font-size:14px;cursor:pointer;">
-          기존 레벨 유지
-        </button>
-        <button id="lv-upgrade-btn" style="flex:1;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">
-          ${info.next_level}레벨 업그레이드
-        </button>
-      </div>
-    </div>
-  `;
+
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#1e2a3a;border-radius:16px;padding:28px 24px;max-width:320px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+  box.innerHTML = '<div style="font-size:36px;margin-bottom:12px;">🎉</div>'
+    + '<div style="color:#fff;font-size:18px;font-weight:700;margin-bottom:8px;">'+info.next_level+'레벨 달성 조건 충족!</div>'
+    + '<div style="color:#aac4e0;font-size:13px;margin-bottom:16px;line-height:1.6;">'
+    + '누적 예약 '+info.cumulative_count+'회로<br>'
+    + '<b style="color:#f5c842;">'+info.next_level+'레벨</b> 업그레이드가 가능합니다.</div>'
+    + '<div style="background:#0d1b2a;border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:left;font-size:12px;line-height:2;">'
+    + '<div style="display:flex;justify-content:space-between;"><span style="color:#7a9abf;">레벨업 비용</span><span style="color:#fff;">'+(info.level_up_fee||100)+'P</span></div>'
+    + breakdownHtml
+    + '<div style="border-top:1px solid #2a3a4a;margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700;">'
+    + '<span style="color:#aac4e0;">합계</span><span style="color:#4fc3f7;">'+costTxt+'</span></div></div>'
+    + '<div style="font-size:11px;color:#7a9abf;margin-bottom:16px;">결제일부터 30일간 '+info.next_level+'레벨 유지</div>'
+    + '<div style="display:flex;gap:10px;">'
+    + '<button id="lv-decline-btn" style="flex:1;padding:12px;border-radius:10px;border:none;background:#2a3a4a;color:#aac4e0;font-size:14px;cursor:pointer;">기존 레벨 유지</button>'
+    + '<button id="lv-upgrade-btn" style="flex:1;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">'+info.next_level+'레벨 업그레이드</button>'
+    + '</div>';
+
+  modal.appendChild(box);
   document.body.appendChild(modal);
 
   document.getElementById('lv-decline-btn').onclick = async function(){
-    try{
-      await api('/user/level-up-decide',{method:'POST',body:JSON.stringify({upgrade:false})});
-    }catch(e){}
+    try{ await api('/user/level-up-decide',{method:'POST',body:JSON.stringify({upgrade:false})}); }catch(e){}
     modal.remove();
   };
   document.getElementById('lv-upgrade-btn').onclick = async function(){
