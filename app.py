@@ -7734,6 +7734,11 @@ def testtools_run_db_migration():
         "ALTER TABLE matches ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
         "ALTER TABLE items ADD COLUMN is_extra INTEGER DEFAULT 0",
         "ALTER TABLE matches ADD COLUMN buyer_res_id INTEGER DEFAULT NULL",
+        "ALTER TABLE users ADD COLUMN maintain_points INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN level_upgrade_declined_until TEXT DEFAULT NULL",
+        "ALTER TABLE users ADD COLUMN suspended_until DATETIME",
+        "ALTER TABLE users ADD COLUMN unpaid_count INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN level_paid_at DATE DEFAULT NULL",
     ]
     try:
         _c = _sq3_m.connect(db_path, timeout=10)
