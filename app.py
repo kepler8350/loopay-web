@@ -1044,7 +1044,7 @@ def user_level_up_check():
     uid = int(get_jwt_identity())
     db = get_db()
     try:
-        u = db.execute("SELECT level, cumulative_count, level_paid_at FROM users WHERE id=?", (uid,)).fetchone()
+        u = db.execute("SELECT level, cumulative_count, level_paid_at, level_upgrade_declined_until FROM users WHERE id=?", (uid,)).fetchone()
         if not u: return jsonify(available=False)
 
         cur_lv = u['level'] or 1
