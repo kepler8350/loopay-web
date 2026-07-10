@@ -767,7 +767,7 @@ def get_matching_date():
         import datetime
         return (now - datetime.timedelta(days=1)).date()
     return now.date()
-from db import get_db, init_db, LEVEL_CONFIG, LEVEL_COST, SPLIT_CONFIG, BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES, PENALTY_TABLE, get_sv_count, get_gd_count
+from db import get_db, init_db, LEVEL_CONFIG, LEVEL_COST, LEVEL_UP_FEE, SPLIT_CONFIG, BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES, PENALTY_TABLE, get_sv_count, get_gd_count
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path='')
@@ -1075,14 +1075,19 @@ def user_level_up_check():
                     return jsonify(available=False, declined_until=str(dec_date))
             except Exception: pass
 
-        # 레벨업 포인트 비용
-        next_cost = LEVEL_COST.get(next_lv, 0)
+        # 레벨업 총 비용 = 현재 레벨 유지비 + 다음 레벨 유지비 + 레벨업 고정비 100P
+        cur_maintain = LEVEL_COST.get(cur_lv, 0)
+        next_maintain = LEVEL_COST.get(next_lv, 0)
+        total_cost = cur_maintain + next_maintain + LEVEL_UP_FEE
 
         return jsonify(
             available=True,
             current_level=cur_lv,
             next_level=next_lv,
-            next_level_cost=next_cost,
+            cur_maintain_cost=cur_maintain,
+            next_maintain_cost=next_maintain,
+            level_up_fee=LEVEL_UP_FEE,
+            next_level_cost=total_cost,
             cumulative_count=cum,
             required_cum=cur_cum_threshold
         )
@@ -1107,8 +1112,10 @@ def user_level_up_decide():
         next_lv = cur_lv + 1
 
         if upgrade:
-            # 레벨업 결제
-            next_cost = LEVEL_COST.get(next_lv, 0)
+            # 레벨업 총 비용 = 현재 레벨 유지비 + 다음 레벨 유지비 + 고정 100P
+            cur_maintain = LEVEL_COST.get(cur_lv, 0)
+            next_maintain = LEVEL_COST.get(next_lv, 0)
+            next_cost = cur_maintain + next_maintain + LEVEL_UP_FEE
             charge_p = u['charge_points'] or 0
             exchange_p = u['exchange_points'] or 0
             total_p = charge_p + exchange_p
