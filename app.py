@@ -772,7 +772,7 @@ from db import get_db, init_db, LEVEL_CONFIG, LEVEL_COST, SPLIT_CONFIG, BRONZE_P
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path='')
 def check_and_level_up(db, user_id):
-    """누적횟수 기반 자동 레벨업 체크 + 알림"""
+    """누적횟수 기반 자동 레벨업 체크 + 알림 (기존 매칭 완료 시 자동 레벨업 - 유지)"""
     u = db.execute("SELECT id, level, cumulative_count FROM users WHERE id=?", (user_id,)).fetchone()
     if not u: return False
     cur_lv = u['level'] or 1
@@ -1032,6 +1032,127 @@ def register():
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/user/level-up-check', methods=['GET'])
+@jwt_required()
+def user_level_up_check():
+    """로그인 시 레벨업 가능 여부 체크 - 다음 레벨 조건 달성 시 알림"""
+    import datetime as _dt
+    uid = int(get_jwt_identity())
+    db = get_db()
+    try:
+        u = db.execute("SELECT level, cumulative_count, level_upgrade_declined_until, level_paid_at FROM users WHERE id=?", (uid,)).fetchone()
+        if not u: return jsonify(available=False)
+
+        cur_lv = u['level'] or 1
+        cum = u['cumulative_count'] or 0
+
+        if cur_lv >= 7:
+            return jsonify(available=False)
+
+        next_lv = cur_lv + 1
+        next_cfg = LEVEL_CONFIG.get(next_lv)
+        if not next_cfg: return jsonify(available=False)
+
+        # 현재 레벨의 누적 기준치
+        cur_cfg = LEVEL_CONFIG.get(cur_lv, {})
+        cur_cum_threshold = cur_cfg.get('cum', 0) or 0
+
+        # 다음 레벨 조건: 현재 레벨 cum 이상
+        if cum < cur_cum_threshold:
+            return jsonify(available=False)
+
+        # 유지(거절) 선택 기간 체크 - level_paid_at 기준 유지기간 남아있으면 묻지 않음
+        declined_until = u['level_upgrade_declined_until']
+        if declined_until:
+            try:
+                dec_date = _dt.date.fromisoformat(str(declined_until)[:10])
+                if get_today() < dec_date:
+                    return jsonify(available=False, declined_until=str(dec_date))
+            except Exception: pass
+
+        # 레벨업 포인트 비용
+        next_cost = LEVEL_COST.get(next_lv, 0)
+
+        return jsonify(
+            available=True,
+            current_level=cur_lv,
+            next_level=next_lv,
+            next_level_cost=next_cost,
+            cumulative_count=cum,
+            required_cum=cur_cum_threshold
+        )
+    finally:
+        db.close()
+
+
+@app.route('/api/user/level-up-decide', methods=['POST'])
+@jwt_required()
+def user_level_up_decide():
+    """레벨업 여부 결정 - upgrade: True면 레벨업 결제, False면 유지기간까지 묻지 않음"""
+    import datetime as _dt
+    uid = int(get_jwt_identity())
+    data = request.json or {}
+    upgrade = data.get('upgrade', False)
+    db = get_db()
+    try:
+        u = db.execute("SELECT level, charge_points, exchange_points, level_paid_at FROM users WHERE id=?", (uid,)).fetchone()
+        if not u: return jsonify(error='사용자 없음'), 404
+
+        cur_lv = u['level'] or 1
+        next_lv = cur_lv + 1
+
+        if upgrade:
+            # 레벨업 결제
+            next_cost = LEVEL_COST.get(next_lv, 0)
+            charge_p = u['charge_points'] or 0
+            exchange_p = u['exchange_points'] or 0
+            total_p = charge_p + exchange_p
+
+            if next_cost > 0 and total_p < next_cost:
+                return jsonify(error=f'포인트 부족 (필요: {next_cost}P, 보유: {total_p}P)'), 400
+
+            # 포인트 차감 (충전포인트 먼저)
+            today_str = get_today().isoformat()
+            if next_cost > 0:
+                if charge_p >= next_cost:
+                    db.execute("UPDATE users SET charge_points=charge_points-? WHERE id=?", (next_cost, uid))
+                else:
+                    remain = next_cost - charge_p
+                    db.execute("UPDATE users SET charge_points=0, exchange_points=exchange_points-? WHERE id=?", (remain, uid))
+
+            # 레벨업 + level_paid_at 오늘로 갱신 (기존 유지기간 무시)
+            db.execute("UPDATE users SET level=?, level_paid_at=?, level_upgrade_declined_until=NULL WHERE id=?",
+                      (next_lv, today_str, uid))
+            db.commit()
+
+            insert_notification(db, uid, 'level_up',
+                f'{next_lv}레벨 업그레이드 완료!',
+                f'🎉 {next_lv}레벨로 업그레이드되었습니다.\n결제일로부터 30일간 유지됩니다.')
+
+            return jsonify(success=True, new_level=next_lv, paid_at=today_str, cost=next_cost)
+
+        else:
+            # 유지 선택: level_paid_at 기준 남은 유지기간까지 묻지 않음
+            paid_at = u['level_paid_at']
+            if paid_at:
+                try:
+                    paid_date = _dt.date.fromisoformat(str(paid_at)[:10])
+                    expire_date = paid_date + _dt.timedelta(days=30)
+                    decline_until = max(expire_date, get_today() + _dt.timedelta(days=1))
+                except Exception:
+                    decline_until = get_today() + _dt.timedelta(days=30)
+            else:
+                # 유지포인트 미결제 상태면 30일 후 다시
+                decline_until = get_today() + _dt.timedelta(days=30)
+
+            db.execute("UPDATE users SET level_upgrade_declined_until=? WHERE id=?",
+                      (decline_until.isoformat(), uid))
+            db.commit()
+            return jsonify(success=True, declined_until=decline_until.isoformat())
     finally:
         db.close()
 
@@ -3308,6 +3429,7 @@ with app.app_context():
             "ALTER TABLE matches ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
             "ALTER TABLE matches ADD COLUMN buyer_res_id INTEGER DEFAULT NULL",
             "ALTER TABLE users ADD COLUMN maintain_points INTEGER DEFAULT 0",
+            "ALTER TABLE users ADD COLUMN level_upgrade_declined_until TEXT DEFAULT NULL",
             "ALTER TABLE items ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
             "ALTER TABLE reservations ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
             "ALTER TABLE lucky_buy_results ADD COLUMN status TEXT DEFAULT 'confirmed'",

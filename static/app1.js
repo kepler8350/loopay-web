@@ -827,8 +827,70 @@ async function doLogin(){
     // 로그인 후 홈 탭 기본 표시
     var homeBtn=document.querySelector(".nav-btn[onclick*=\"'home'\"]");
     if(homeBtn) showTab('home',homeBtn);
+    // 로그인 후 레벨업 가능 여부 체크
+    setTimeout(checkLevelUpAvailable, 800);
   }catch(e){errEl.textContent='서버 오류: '+e.message;}
 }
+
+// ── 레벨업 체크 & 팝업 ──────────────────────────────────────────
+async function checkLevelUpAvailable(){
+  try{
+    var res = await api('/user/level-up-check');
+    if(!res.available) return;
+    showLevelUpModal(res);
+  }catch(e){ console.log('level-up-check err', e); }
+}
+
+function showLevelUpModal(info){
+  // 기존 팝업 제거
+  var exist = document.getElementById('level-up-modal');
+  if(exist) exist.remove();
+
+  var nextCost = info.next_level_cost || 0;
+  var costTxt = nextCost > 0 ? nextCost+'P' : '무료';
+  var modal = document.createElement('div');
+  modal.id = 'level-up-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML = `
+    <div style="background:#1e2a3a;border-radius:16px;padding:28px 24px;max-width:320px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+      <div style="font-size:36px;margin-bottom:12px;">🎉</div>
+      <div style="color:#fff;font-size:18px;font-weight:700;margin-bottom:8px;">${info.next_level}레벨 달성 조건 충족!</div>
+      <div style="color:#aac4e0;font-size:13px;margin-bottom:20px;line-height:1.6;">
+        누적 예약 ${info.cumulative_count}회로<br>
+        <b style="color:#f5c842;">${info.next_level}레벨</b> 업그레이드가 가능합니다.<br><br>
+        레벨업 비용: <b style="color:#4fc3f7;">${costTxt} / 30일</b><br>
+        <span style="font-size:11px;color:#7a9abf;">결제일부터 30일간 ${info.next_level}레벨 유지</span>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button id="lv-decline-btn" style="flex:1;padding:12px;border-radius:10px;border:none;background:#2a3a4a;color:#aac4e0;font-size:14px;cursor:pointer;">
+          기존 레벨 유지
+        </button>
+        <button id="lv-upgrade-btn" style="flex:1;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#2196f3,#1565c0);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">
+          ${info.next_level}레벨 업그레이드
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById('lv-decline-btn').onclick = async function(){
+    try{
+      await api('/user/level-up-decide',{method:'POST',body:JSON.stringify({upgrade:false})});
+    }catch(e){}
+    modal.remove();
+  };
+  document.getElementById('lv-upgrade-btn').onclick = async function(){
+    try{
+      var r = await api('/user/level-up-decide',{method:'POST',body:JSON.stringify({upgrade:true})});
+      modal.remove();
+      await loadUserData();
+      toast('🎉 '+r.new_level+'레벨로 업그레이드되었습니다!');
+    }catch(e){
+      toast('❌ '+(e.message||'레벨업 실패'));
+    }
+  };
+}
+// ─────────────────────────────────────────────────────────────────
 async function doRegister(){
   var username=document.getElementById('reg-username').value.trim();
   var password=document.getElementById('reg-password').value;
