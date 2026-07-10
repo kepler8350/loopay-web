@@ -1870,7 +1870,6 @@ function updateResUI(BZ_MIN,BZ_MAX,SV_MIN,SV_MAX,GD_MIN,GD_MAX){
   var _bzV=document.getElementById('r-bz-v'); if(_bzV) _bzV.textContent=bzCnt;
   var _bzRange=document.getElementById('r-bz-range'); if(_bzRange) _bzRange.textContent='최소 '+BZ_MIN+' / 최대 '+BZ_MAX;
   var bzNote=document.getElementById('r-bz-note');
-  if(bzNote) bzNote.textContent='수정 '+BZ_MIN+'개 예약시 루비 '+_svJumpMin+'개 활성화 / 루비 '+_svJumpMin+'개 예약시 다이아 '+_gdJumpMin+'개 활성화';
   var _byUser = _reservedToday;
   var _bzM=document.getElementById('r-bz-m'); if(_bzM) _bzM.disabled=(_byUser || !_isRT || bzCnt<=0);
   var _bzP=document.getElementById('r-bz-p'); if(_bzP) _bzP.disabled=(_byUser || !_isRT || bzCnt>=BZ_MAX);
@@ -1902,6 +1901,8 @@ function updateResUI(BZ_MIN,BZ_MAX,SV_MIN,SV_MAX,GD_MIN,GD_MAX){
   var _dynGdMax = (sv>=_svJumpMin && sv>0 && typeof getGdFromSv==='function') ? getGdFromSv(sv) : GD_MAX;
   var _gdJumpMin = (sv>=_svJumpMin && sv>0 && typeof getGdFromSv==='function') ? getGdFromSv(sv) : 1;  // 현재 sv의 gd값
   var gdUnlocked = svUnlocked && (sv >= _svJumpMin) && _dynGdMax > 0;
+  // bzNote: _svJumpMin, _gdJumpMin 정의 이후에 업데이트
+  if(bzNote) bzNote.textContent='수정 '+BZ_MIN+'개 예약시 루비 '+_svJumpMin+'개 활성화 / 루비 '+_svJumpMin+'개 예약시 다이아 '+_gdJumpMin+'개 활성화';
   // 루비가 SV_MAX 미달이면 gdCnt 강제 0
   if(!gdUnlocked) gdCnt = 0;
   gd = gdCnt;
