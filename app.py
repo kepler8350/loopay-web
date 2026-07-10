@@ -1044,7 +1044,7 @@ def user_level_up_check():
     uid = int(get_jwt_identity())
     db = get_db()
     try:
-        u = db.execute("SELECT level, cumulative_count, level_upgrade_declined_until, level_paid_at FROM users WHERE id=?", (uid,)).fetchone()
+        u = db.execute("SELECT level, cumulative_count, level_paid_at FROM users WHERE id=?", (uid,)).fetchone()
         if not u: return jsonify(available=False)
 
         cur_lv = u['level'] or 1
@@ -1066,7 +1066,7 @@ def user_level_up_check():
             return jsonify(available=False)
 
         # 유지(거절) 선택 기간 체크 - level_paid_at 기준 유지기간 남아있으면 묻지 않음
-        declined_until = u['level_upgrade_declined_until']
+        declined_until = u['level_upgrade_declined_until'] if 'level_upgrade_declined_until' in u.keys() else None
         if declined_until:
             try:
                 dec_date = _dt.date.fromisoformat(str(declined_until)[:10])
