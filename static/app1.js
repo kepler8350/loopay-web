@@ -1880,7 +1880,7 @@ function updateResUI(BZ_MIN,BZ_MAX,SV_MIN,SV_MAX,GD_MIN,GD_MAX){
 
   // 루비: 수정이 BZ_MIN 이상이면 선택 가능, sv_max는 bz 수량에 따라 동적 결정
   var _dynSvMax = (bzCnt>=BZ_MIN && typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
-  var _svJumpMin = (bzCnt>=BZ_MIN && typeof getSvFromBz==='function') ? (getSvFromBz(bzCnt-1)||1) : 1;
+  var _svJumpMin = (bzCnt>=BZ_MIN && typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : 1;  // 현재 bz의 sv값
   var svUnlocked = (bzCnt >= BZ_MIN) && _dynSvMax > 0;
   // 수정이 BZ_MAX 미달이면 svCnt 강제 0
   if(!svUnlocked) svCnt = 0;
@@ -1900,7 +1900,7 @@ function updateResUI(BZ_MIN,BZ_MAX,SV_MIN,SV_MAX,GD_MIN,GD_MAX){
 
   // 다이아: 루비가 SV_MAX 도달해야 선택 가능
   var _dynGdMax = (sv>=_svJumpMin && sv>0 && typeof getGdFromSv==='function') ? getGdFromSv(sv) : GD_MAX;
-  var _gdJumpMin = (sv>=_svJumpMin && sv>0 && typeof getGdFromSv==='function') ? (getGdFromSv(sv-1)||1) : 1;
+  var _gdJumpMin = (sv>=_svJumpMin && sv>0 && typeof getGdFromSv==='function') ? getGdFromSv(sv) : 1;  // 현재 sv의 gd값
   var gdUnlocked = svUnlocked && (sv >= _svJumpMin) && _dynGdMax > 0;
   // 루비가 SV_MAX 미달이면 gdCnt 강제 0
   if(!gdUnlocked) gdCnt = 0;

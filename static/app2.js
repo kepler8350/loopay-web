@@ -97,20 +97,18 @@ function changeRes(type,delta){
     // 수정이 최솟값(BZ_MIN) 이상이면 루비 선택 가능
     if(bzCnt >= BZ_MIN && SV_MAX > 0){
       var _dynSvMax2 = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
-      var _svJumpMin = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt-1)||1 : 1;
+      var _svJumpMin = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : 1;  // 현재 bz의 sv값이 sv 최솟값
       if(delta>0 && svCnt===0){ svCnt=_svJumpMin; }      // 0→sv 최솟값으로 점프
       else if(delta<0 && svCnt===_svJumpMin){ svCnt=0; gdCnt=0; }  // 최솟값→0
       else { svCnt=Math.max(_svJumpMin,Math.min(_dynSvMax2,svCnt+delta)); }
-      // 루비가 현재 단계 최솟값 미달이면 다이아 초기화
       if(svCnt < _svJumpMin){ gdCnt=0; }
     }
   } else if(type==='gd'){
     var _dynSvMax3 = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
-    var _svJumpMin3 = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt-1)||1 : 1;
+    var _svJumpMin3 = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : 1;  // 현재 bz의 sv값
     var _dynGdMax2 = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt) : GD_MAX;
-    // 루비가 최솟값(_svJumpMin3) 이상이면 다이아 선택 가능
     if(bzCnt >= BZ_MIN && svCnt >= _svJumpMin3 && _dynGdMax2 > 0){
-      var _gdJumpMin = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt-1)||1 : 1;
+      var _gdJumpMin = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt) : 1;  // 현재 sv의 gd값이 gd 최솟값
       if(delta>0 && gdCnt===0){ gdCnt=_gdJumpMin; }      // 0→gd 최솟값으로 점프
       else if(delta<0 && gdCnt===_gdJumpMin){ gdCnt=0; }  // 최솟값→0
       else { gdCnt=Math.max(_gdJumpMin,Math.min(_dynGdMax2,gdCnt+delta)); }
