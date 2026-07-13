@@ -7753,11 +7753,17 @@ def testtools_set_user_points():
     data = flask.request.json or {}
     uid = data.get('user_id')
     try:
-        db.execute("UPDATE users SET charge_points=?, exchange_points=?, maintain_points=? WHERE id=?",
-                  (data.get('charge',0), data.get('exchange',0), data.get('maintain',0), uid))
+        db.execute("UPDATE users SET charge_points=?, exchange_points=?, maintain_points=COALESCE(maintain_points,0) WHERE id=?",
+                  (data.get('charge',0), data.get('exchange',0), uid))
+        # maintain은 별도 처리 (컬럼 없을 수 있음)
+        try:
+            db.execute("UPDATE users SET maintain_points=? WHERE id=?", (data.get('maintain',0), uid))
+        except Exception: pass
         db.commit()
-        u = db.execute("SELECT charge_points, exchange_points, maintain_points FROM users WHERE id=?", (uid,)).fetchone()
+        u = db.execute("SELECT charge_points, exchange_points FROM users WHERE id=?", (uid,)).fetchone()
         return flask.jsonify(success=True, **dict(u))
+    except Exception as e:
+        return flask.jsonify(error=str(e)), 500
     finally:
         db.close()
 
