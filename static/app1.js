@@ -1543,7 +1543,7 @@ function renderMatchBuyList(items){
       infoHtml = '<div style="font-size:12px;color:var(--text2);margin:6px 0;line-height:1.9">'
         +'<div>🏦 은행: <span style="color:var(--text)">'+(m.seller_bank||'-')+'</span></div>'
         +'<div>💳 계좌: <span style="color:var(--text);font-weight:600">'+(_sellerAcct||'-')+'</span>'
-        +(_sellerAcct ? ' <button onclick="_copyAcct(\'' + _sellerAcct + '\',this)" style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px 0 4px;color:#90caf9;vertical-align:middle" title="계좌번호 복사">📋</button>' : '')
+        +(_sellerAcct ? ' <button onclick="_copyAcct(\'' + _sellerAcct + '\',this)" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 6px;color:#90caf9;vertical-align:middle;display:inline-flex;align-items:center;gap:3px;" title="계좌번호 복사">📋 계좌번호복사</button>' : '')
         +'</div>'
         +'<div>👤 예금주: <span style="color:var(--text)">'+(m.seller_account_name||'-')+'</span></div>'
         +'<div>💰 입금액: <span style="color:#f9a825;font-weight:600">'+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</span></div>'
