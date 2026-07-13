@@ -7746,6 +7746,21 @@ def testtools_debug_sell_normal():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/set-user-points', methods=['POST'])
+def testtools_set_user_points():
+    import flask
+    db = get_db()
+    data = flask.request.json or {}
+    uid = data.get('user_id')
+    try:
+        db.execute("UPDATE users SET charge_points=?, exchange_points=?, maintain_points=? WHERE id=?",
+                  (data.get('charge',0), data.get('exchange',0), data.get('maintain',0), uid))
+        db.commit()
+        u = db.execute("SELECT charge_points, exchange_points, maintain_points FROM users WHERE id=?", (uid,)).fetchone()
+        return flask.jsonify(success=True, **dict(u))
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
