@@ -719,18 +719,36 @@ def _run_matching_internal(db, round_num, today):
             _cnt_map[buyer['buyer_id']] = _cnt_map.get(buyer['buyer_id'], 0) + 1
             pairs.append({'bar_type': bt, 'buyer_id': buyer['buyer_id']})
 
-        # 포인트 정산
+        # 포인트 정산: maintain_points에서 매칭 수량×40P 차감, 나머지 환불
+        # 환불 우선순위: exchange_points → charge_points
         for bid, bcnt in _cnt_map.items():
-            u = db.execute("SELECT maintain_points, charge_points FROM users WHERE id=?", (bid,)).fetchone()
+            u = db.execute("SELECT maintain_points, charge_points, exchange_points FROM users WHERE id=?", (bid,)).fetchone()
             if not u: continue
             mn = int(u['maintain_points'] or 0)
-            consume = bcnt * 40
+            consume = bcnt * 40  # 실제 매칭된 포인트
             if mn >= consume:
-                db.execute("UPDATE users SET maintain_points=0, charge_points=charge_points+? WHERE id=?", (mn-consume, bid))
+                # 환불액 = mn - consume (전환포인트 → 충전포인트 순서로 환불)
+                refund = mn - consume
+                if refund > 0:
+                    ex_now = int(u['exchange_points'] or 0)
+                    # 환불은 exchange_points로 먼저 (원래 빠진 것이므로)
+                    # 단순화: 환불액을 exchange_points에 돌려줌
+                    db.execute("UPDATE users SET maintain_points=0, exchange_points=exchange_points+? WHERE id=?", (refund, bid))
+                else:
+                    db.execute("UPDATE users SET maintain_points=0 WHERE id=?", (bid,))
             elif mn > 0:
-                db.execute("UPDATE users SET maintain_points=0, charge_points=charge_points-? WHERE id=?", (consume-mn, bid))
+                # maintain_points 부족 → 나머지를 추가 차감
+                extra = consume - mn
+                ex_now = int(u['exchange_points'] or 0)
+                ex_use = min(ex_now, extra)
+                ch_use = extra - ex_use
+                db.execute("UPDATE users SET maintain_points=0, exchange_points=exchange_points-?, charge_points=charge_points-? WHERE id=?", (ex_use, ch_use, bid))
             else:
-                db.execute("UPDATE users SET charge_points=charge_points-? WHERE id=?", (consume, bid))
+                # maintain_points 없음 → 전환포인트 먼저 차감
+                ex_now = int(u['exchange_points'] or 0)
+                ex_use = min(ex_now, consume)
+                ch_use = consume - ex_use
+                db.execute("UPDATE users SET exchange_points=exchange_points-?, charge_points=charge_points-? WHERE id=?", (ex_use, ch_use, bid))
 
         # 미매칭 처리 - 구매예약(confirmed=0)만 unmatched 처리 (판매예약은 유지)
         db.execute(
@@ -1401,7 +1419,7 @@ def get_me():
         v = _ud.get(k)
         return v if v is not None else d
     try:
-        return jsonify(id=_ud.get('id'),username=_safe('username'),nickname=_safe('nickname'),real_name=_safe('real_name'),phone=_safe('phone'),bank=_safe('bank'),account_no=_safe('account_no'),account_name=_safe('account_name'),level=lv,charge_points=_ud.get('charge_points',0),exchange_points=_ud.get('exchange_points',0),total_points=(_ud.get('charge_points',0) or 0)+(_ud.get('exchange_points',0) or 0),maintain_points=_maintain,match_maintain_cost=_maintain,today_reserve_cost=0,cumulative_count=_ud.get('cumulative_count',0),next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve,
+        return jsonify(id=_ud.get('id'),username=_safe('username'),nickname=_safe('nickname'),real_name=_safe('real_name'),phone=_safe('phone'),bank=_safe('bank'),account_no=_safe('account_no'),account_name=_safe('account_name'),level=lv,charge_points=_ud.get('charge_points',0),exchange_points=_ud.get('exchange_points',0),total_points=(_ud.get('charge_points',0) or 0)+(_ud.get('exchange_points',0) or 0),maintain_points=_maintain,match_maintain_cost=_maintain,today_reserve_cost=_maintain,cumulative_count=_ud.get('cumulative_count',0),next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve,
             suspended_until=_ud.get('suspended_until'),
             unpaid_count=int(_ud.get('unpaid_count') or 0),
             level_trade_active=_level_trade_active,
