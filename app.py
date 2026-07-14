@@ -2684,20 +2684,28 @@ def admin_matching_status():
     db = get_db()
     # 매칭 기준일: 1차 매칭이 실행된 가장 최근 날짜 우선, 없으면 get_matching_date()
     _calc_today = get_matching_date().isoformat()
-    # today = 오늘 기준, 단 오늘 매칭이 없고 어제 매칭이 있으면 어제 기준 (날짜 넘어간 직후 처리)
-    _today_match = db.execute(
-        "SELECT match_date FROM matches WHERE match_round=1 AND match_date=? LIMIT 1",
+    # today 결정: 오늘 예약이 있으면 무조건 오늘 기준
+    # 오늘 예약도 없고 오늘 매칭도 없을 때만 어제 fallback (자정 직후 처리용)
+    _today_has_res = db.execute(
+        "SELECT COUNT(*) as c FROM reservations WHERE reserve_date=?",
         (_calc_today,)
-    ).fetchone()
-    if _today_match:
-        today = _calc_today  # 오늘 매칭 있음 → 오늘 기준
+    ).fetchone()['c'] > 0
+    if _today_has_res:
+        today = _calc_today
     else:
-        _yesterday = (get_matching_date() - __import__('datetime').timedelta(days=1)).isoformat()
-        _yest_match = db.execute(
+        _today_match = db.execute(
             "SELECT match_date FROM matches WHERE match_round=1 AND match_date=? LIMIT 1",
-            (_yesterday,)
+            (_calc_today,)
         ).fetchone()
-        today = _yesterday if _yest_match else _calc_today  # 어제 매칭 있으면 어제, 없으면 오늘
+        if _today_match:
+            today = _calc_today
+        else:
+            _yesterday = (get_matching_date() - __import__('datetime').timedelta(days=1)).isoformat()
+            _yest_match = db.execute(
+                "SELECT match_date FROM matches WHERE match_round=1 AND match_date=? LIMIT 1",
+                (_yesterday,)
+            ).fetchone()
+            today = _yesterday if _yest_match else _calc_today
 
     # loopay 계정 ID 조회
     loopay_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
