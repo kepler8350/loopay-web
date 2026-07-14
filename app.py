@@ -2844,7 +2844,7 @@ def admin_matching_status():
 
         buy_by_type = db.execute(
             f"""SELECT bar_type, COUNT(*) as cnt FROM reservations r
-               WHERE r.status='pending' AND r.user_id!=?
+               WHERE r.status IN ('pending','unmatched') AND r.user_id!=?
                AND (r.item_id IS NULL OR r.item_id=0)
                AND (r.match_round=? {_round2_join_cond})
                {_date_cond} AND COALESCE(r.confirmed,0)=0
