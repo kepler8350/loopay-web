@@ -7880,6 +7880,22 @@ def testtools_test_settle_points():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/delete-settings-keys', methods=['POST'])
+def testtools_delete_settings_keys():
+    import flask
+    db = get_db()
+    data = flask.request.json or {}
+    keys = data.get('keys', [])
+    try:
+        deleted = 0
+        for key in keys:
+            r = db.execute("DELETE FROM system_settings WHERE key=?", (key,))
+            deleted += r.rowcount
+        db.commit()
+        return flask.jsonify(success=True, deleted=deleted)
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/system-settings', methods=['GET'])
 def testtools_system_settings():
     import flask
