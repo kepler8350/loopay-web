@@ -414,7 +414,7 @@ function closeAdminPanel(){document.getElementById('admin-panel').style.display=
 
 // --- init -----------------------------------------------------------------
 
-if(token){showMainApp();loadUserData();}
+if(token){showMainApp();loadUserData();startMatchEventSource();}
 loadPrices();
 
 // ── 매칭 완료 자동 새로고침 (30초마다 체크) ──
@@ -742,6 +742,7 @@ function toggleHeader(){
 function doLogout() {
   localStorage.removeItem('lp_token');
   localStorage.removeItem('lp_kakao_id');
+  stopMatchEventSource();
   // 전역 userData/token 초기화
   userData = null;
   token = '';
@@ -829,6 +830,7 @@ async function doLogin(){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('main-app').style.display='flex';
     startTimeBar();
+    startMatchEventSource();  // SSE 연결
     // 로그인 후 홈 탭 기본 표시
     var homeBtn=document.querySelector(".nav-btn[onclick*=\"'home'\"]");
     if(homeBtn) showTab('home',homeBtn);
@@ -902,6 +904,41 @@ function showLevelUpModal(info){
   };
 }
 // ─────────────────────────────────────────────────────────────────
+
+// ── SSE: 매칭 이벤트 실시간 구독 ──────────────────────────────
+var _matchEventSource = null;
+
+function startMatchEventSource(){
+  var tok = localStorage.getItem('lp_token');
+  if(!tok || _matchEventSource) return;
+  _matchEventSource = new EventSource('/api/user/match-events?token='+encodeURIComponent(tok));
+  _matchEventSource.onmessage = function(e){
+    try{
+      var ev = JSON.parse(e.data);
+      if(ev.type === 'match_done'){
+        // 매칭 완료 즉시 데이터 갱신
+        loadUserData().then(function(){
+          if(window.userData){
+            renderHeader(window.userData);
+            renderBars && renderBars(window.userData);
+            if(typeof updateReserveDefaults==='function') updateReserveDefaults(window.userData.level||1);
+          }
+        });
+      }
+    }catch(ex){}
+  };
+  _matchEventSource.onerror = function(){
+    // 연결 끊기면 정리 후 재연결
+    if(_matchEventSource){ _matchEventSource.close(); _matchEventSource=null; }
+    setTimeout(startMatchEventSource, 5000);
+  };
+}
+
+function stopMatchEventSource(){
+  if(_matchEventSource){ _matchEventSource.close(); _matchEventSource=null; }
+}
+// ────────────────────────────────────────────────────────────────
+
 async function doRegister(){
   var username=document.getElementById('reg-username').value.trim();
   var password=document.getElementById('reg-password').value;
