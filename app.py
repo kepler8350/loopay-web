@@ -2997,6 +2997,19 @@ def admin_run_matching():
         if _cnt_map:
             _settle_match_points(db, _cnt_map)
 
+        # 미매칭 구매자: maintain_points 전액 exchange_points로 환불
+        _all_buyer_ids = set(int(b['buyer_id']) for b in _all_buy_rows
+                             if b.get('buyer_username') != 'loopay')
+        _matched_buyer_ids_set = set(_cnt_map.keys())
+        _unmatched_buyer_ids = _all_buyer_ids - _matched_buyer_ids_set
+        for _uid in _unmatched_buyer_ids:
+            _u = db.execute("SELECT maintain_points FROM users WHERE id=?", (_uid,)).fetchone()
+            if not _u: continue
+            _mn = int(_u['maintain_points'] or 0)
+            if _mn > 0:
+                db.execute("UPDATE users SET maintain_points=0, exchange_points=exchange_points+? WHERE id=?",
+                          (_mn, _uid))
+
         db.commit()
 
         # 행운구매 동일 구매자 통일: 같은 lucky_pair_id를 가진 매치는 첫 번째 매치의 구매자로 통일
