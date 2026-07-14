@@ -1723,13 +1723,14 @@ async function loadMatchingStatus(){
     var _r1Done = (d.r1_ran_today === true);
     if(!_r1Done) window._r1MatchingDone = false;
     // 1차 매칭 실행 후에는 미매칭 잔여수 대신 0 표시
-    var _r1BuyDisplay = _r1Done ? 0 : (r1.buy_count!=null?r1.buy_count:'-');
+    // 1차 매칭 실행 후라도 새 예약이 있으면 카드에 표시
+    var _r1BuyDisplay = (r1.buy_count!=null ? r1.buy_count : (_r1Done ? 0 : '-'));
     var _r1SellDisplay = _r1Done ? 0 : (r1.sell_count!=null?r1.sell_count:'-');
     set('r1-buy', _r1BuyDisplay);
     set('r1-sell', _r1SellDisplay);
     var rateEl1=document.getElementById('r1-rate');
     if(rateEl1){ rateEl1.textContent=mr1+'%'; rateEl1.style.color=mrc(mr1); }
-    var bb1=document.getElementById('r1-buy-by-type'); if(bb1) bb1.innerHTML=_r1Done ? '' : mkTypeTable(sortByBarType(r1.buy_by_type));
+    var bb1=document.getElementById('r1-buy-by-type'); if(bb1) bb1.innerHTML=(r1.buy_by_type&&r1.buy_by_type.length) ? mkTypeTable(sortByBarType(r1.buy_by_type)) : '';
     var bt1=document.getElementById('r1-by-type'); if(bt1) bt1.innerHTML=_r1Done ? '' : mkTypeTable(r1.by_type);
 
 
