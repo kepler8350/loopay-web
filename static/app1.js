@@ -419,7 +419,7 @@ loadPrices();
 
 // ── 매칭 완료 자동 새로고침 (30초마다 체크) ──
 var _lastMatchState = null;
-async function checkMatchRefresh(){
+async async function checkMatchRefresh(){
   if(!localStorage.getItem('lp_token')) return;
   try{
     var d = await api('/user/me');
@@ -438,13 +438,17 @@ async function checkMatchRefresh(){
       renderLevelTab && renderLevelTab();
       // loadUserData로 나머지 UI도 갱신 (비동기, 포인트표시 재확정 포함)
       loadUserData().then(function(){
-        if(window.userData) renderHeader(window.userData);
+        if(window.userData){
+          renderHeader(window.userData);
+          // 매칭유지포인트 정산 후 수량 UI도 갱신
+          if(typeof updateReserveDefaults==='function') updateReserveDefaults(window.userData.level||1);
+        }
       });
     }
     _lastMatchState = curState;
   }catch(e){}
 }
-setInterval(checkMatchRefresh, 30000);
+setInterval(checkMatchRefresh, 5000);  // 5초마다 포인트/매칭 상태 감지
 setInterval(loadNotifBadge, 20000);  // 20초마다 알림 체크 → 새 알림 시 포인트 갱신
 
 // 결합판매
