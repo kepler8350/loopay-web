@@ -200,6 +200,45 @@ def insert_notification(db, user_id, ntype, title, message):
 
 # ── 자동 2차매칭 스케줄러 ────────────────────────────────────────
 
+def _auto_confirm_paid_matches(db):
+    """14:00(1차)/20:00(2차) 이후 paid 상태 매치를 자동 입금확인 처리"""
+    import datetime as _dt
+    now = get_now()
+    h, mn = now.hour, now.minute
+    total_min = h * 60 + mn
+
+    # 1차: 14:00 이후 paid → auto confirmed
+    # 2차: 20:00 이후 paid → auto confirmed
+    today = get_matching_date().isoformat()
+
+    targets = []
+    # 1차: match_round=1, 14:00 이후
+    if total_min >= 840:  # 14:00
+        rows = db.execute(
+            """SELECT m.* FROM matches m
+               WHERE m.status='paid' AND m.match_round=1
+               AND m.match_date=?""",
+            (today,)
+        ).fetchall()
+        targets.extend([(dict(r), '1차 자동 입금확인') for r in rows])
+
+    # 2차: match_round=2, 20:00 이후
+    if total_min >= 1200:  # 20:00
+        rows = db.execute(
+            """SELECT m.* FROM matches m
+               WHERE m.status='paid' AND m.match_round=2
+               AND m.match_date=?""",
+            (today,)
+        ).fetchall()
+        targets.extend([(dict(r), '2차 자동 입금확인') for r in rows])
+
+    for (m, reason) in targets:
+        try:
+            _do_confirm_transfer(db, m)
+        except Exception as _e:
+            pass
+
+
 def get_today():
     """오늘 날짜 반환"""
     return get_now().date()
@@ -339,6 +378,22 @@ def _settle_match_points(db, cnt_map):
                 exchange_points=exchange_points-?,
                 charge_points=charge_points-?
                 WHERE id=?""", (ex_use, ch_use, bid))
+
+
+@app.route('/api/user/auto-confirm-paid', methods=['POST'])
+@jwt_required()
+def user_auto_confirm_paid():
+    """14:00(1차)/20:00(2차) 이후 paid 매치 자동 입금확인 트리거"""
+    db = get_db()
+    try:
+        _auto_confirm_paid_matches(db)
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
 
 
 @app.route('/api/user/match-ts', methods=['GET'])

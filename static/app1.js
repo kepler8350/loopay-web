@@ -430,6 +430,12 @@ async function checkMatchRefresh(){
       maintain: d.maintain_points,
       total: d.total_points
     });
+    // 14:00(1차)/20:00(2차) 이후 paid 매치 자동 입금확인 트리거
+    var _now = new Date();
+    var _hm = _now.getHours()*60 + _now.getMinutes();
+    if(_hm >= 840 || _hm >= 1200){  // 14:00 or 20:00 이후
+      api('/user/auto-confirm-paid', {method:'POST', body:'{}'}).catch(function(){});
+    }
     // 상태 변경 감지 (첫 실행 포함)
     if(_lastMatchState !== curState){
       if(_lastMatchState !== undefined){
@@ -1654,22 +1660,18 @@ function renderMatchSellList(items){
     var canUnpaid = (_sr===2) ? (h>=19 && h<20) : (h>=13 && h<14);
     // 입금요청: 1차 12:30~13:00, 2차 18:30~19:00
     var canRequest = (_sr===2) ? (_totalMinSell >= 1110 && _totalMinSell < 1140) : (_totalMinSell >= 750 && _totalMinSell < 780);
-    // 입금확인: 1차 05:00~13:00, 2차 15:00~19:00 (분 단위 정밀 체크)
-    var canConfirmMin = (_sr===2) ? (_totalMinSell>=900&&_totalMinSell<1140) : (_totalMinSell>=300&&_totalMinSell<780);
-    // 미입금: 1차 13:00~14:00, 2차 19:00~20:00 (분 단위)
-    var canUnpaidMin = (_sr===2) ? (_totalMinSell>=1140&&_totalMinSell<1200) : (_totalMinSell>=780&&_totalMinSell<840);
+    // paid 상태: 구매자 송금완료 → 판매자 입금확인+미입금 버튼 활성화 시간
+    // 1차: paid이면 14:00까지 / 2차: paid이면 20:00까지
+    var canConfirmMin = (_sr===2) ? (_totalMinSell<1200) : (_totalMinSell<840);
+    var canUnpaidMin  = canConfirmMin;
     var btnHtml = '';
     if(m.status==='paid'){
       btnHtml = '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">';
       if(canConfirmMin){
         btnHtml += '<button onclick="doConfirmPayment('+m.id+')" style="padding:7px 14px;background:#388e3c;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">✅ 입금확인</button>';
-      }
-      if(canUnpaidMin){
         btnHtml += '<button onclick="doReportUnpaid('+m.id+')" style="padding:7px 14px;background:#c62828;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">❌ 미입금</button>';
-      }
-      if(!canConfirmMin && !canUnpaidMin){
-        var _waitTxt = (_sr===2) ? '입금확인: 15:00~19:00 / 미입금: 19:00~20:00' : '입금확인: 05:00~13:00 / 미입금: 13:00~14:00';
-        btnHtml += '<div style="font-size:11px;color:#f9a825;padding:4px 0">' + _waitTxt + '</div>';
+      } else {
+        btnHtml += '<div style="font-size:11px;color:#66bb6a;padding:4px 0">✅ 입금확인 시간 종료 (자동 처리됨)</div>';
       }
       btnHtml += '</div>';
       if(m.receipt_url){
