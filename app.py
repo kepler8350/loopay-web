@@ -7880,6 +7880,16 @@ def testtools_test_settle_points():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/system-settings', methods=['GET'])
+def testtools_system_settings():
+    import flask
+    db = get_db()
+    try:
+        rows = db.execute("SELECT key, value FROM system_settings WHERE key LIKE '%ran%' OR key LIKE '%match%' ORDER BY key").fetchall()
+        return flask.jsonify(settings=[dict(r) for r in rows])
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
