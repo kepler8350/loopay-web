@@ -7877,6 +7877,8 @@ def testtools_run_db_migration():
         "ALTER TABLE users ADD COLUMN suspended_until DATETIME",
         "ALTER TABLE users ADD COLUMN unpaid_count INTEGER DEFAULT 0",
         "ALTER TABLE users ADD COLUMN level_paid_at DATE DEFAULT NULL",
+        "ALTER TABLE users ADD COLUMN maintain_from_exchange INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN maintain_from_charge INTEGER DEFAULT 0",
     ]
     try:
         _c = _sq3_m.connect(db_path, timeout=10)
