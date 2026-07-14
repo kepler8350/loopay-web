@@ -2196,7 +2196,7 @@ def admin_run_matching():
                u.phone as buyer_phone, u.account_name as buyer_account_name
                FROM reservations r
                LEFT JOIN users u ON r.user_id = u.id
-               WHERE r.status='pending'
+               WHERE r.status IN ('pending','unmatched')
                AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.match_round=1 AND ?=2))
                AND r.reserve_date=?
                AND COALESCE(r.confirmed,0)=0
@@ -2815,7 +2815,7 @@ def admin_matching_status():
         _round2_join_args = [today] if round_num == 2 else []
         buy_count = db.execute(
             f"""SELECT COUNT(*) as c FROM reservations r
-               WHERE r.status='pending' AND r.user_id!=?
+               WHERE r.status IN ('pending','unmatched') AND r.user_id!=?
                AND (r.item_id IS NULL OR r.item_id=0)
                AND (r.match_round=? {_round2_join_cond})
                {_date_cond}
@@ -5804,7 +5804,7 @@ def user_matching():
                           'reservation' as source
                    FROM reservations r
                    WHERE r.user_id=? AND r.match_round=1
-                     AND r.status='pending' AND r.confirmed=0
+                     AND r.status IN ('pending','unmatched') AND r.confirmed=0
                    ORDER BY r.id DESC""",
                 (uid,)
             ).fetchall()
@@ -5815,7 +5815,7 @@ def user_matching():
                           'reservation' as source
                    FROM reservations r
                    WHERE r.user_id=? AND r.match_round=1
-                     AND r.status='pending' AND r.confirmed=0
+                     AND r.status IN ('pending','unmatched') AND r.confirmed=0
                      AND r.reserve_date >= ?
                    ORDER BY r.id DESC""",
                 (uid, _today)
@@ -5833,7 +5833,7 @@ def user_matching():
                       'match' as source
                FROM matches m
                LEFT JOIN users su ON m.seller_id = su.id
-               WHERE m.buyer_id=? AND m.status NOT IN ('confirmed','cancelled')
+               WHERE m.buyer_id=? AND m.status NOT IN ('cancelled')
                  AND m.match_date >= date(?, '-30 days')
                ORDER BY m.id DESC""",
             (uid, today)
@@ -5898,7 +5898,12 @@ def user_matching():
                 ).fetchone()['c']
                 d['status'] = 'lucky_matched' if _has_match > 0 else 'lucky_waiting'
             else:
-                d['status'] = 'waiting'   # 예약 대기
+                # 실제 예약 상태 반영
+                res_s = d.get('res_status') or d.get('status')
+                if res_s == 'unmatched':
+                    d['status'] = 'unmatched'  # 1차 미매칭 → 2차 대기
+                else:
+                    d['status'] = 'waiting'    # 매칭 대기
             return d
 
         def fmt_match(m, role):
@@ -7208,7 +7213,7 @@ def testtools_debug_r2_matching():
         buy_rows = db.execute(
             """SELECT r.id, u.username, r.bar_type, r.match_round, r.join_round2, r.status, r.reserve_date
                FROM reservations r LEFT JOIN users u ON r.user_id=u.id
-               WHERE r.status='pending'
+               WHERE r.status IN ('pending','unmatched')
                AND (r.match_round=? OR (COALESCE(r.join_round2,0)=1 AND r.match_round=1 AND ?=2))
                AND r.reserve_date=?
                AND COALESCE(r.confirmed,0)=0

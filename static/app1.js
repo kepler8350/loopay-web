@@ -1576,8 +1576,8 @@ function renderMatchBuyList(items){
   var _effDate = getEffectiveDate ? getEffectiveDate() : new Date();
   var h = (_effDate.getUTCHours() + 9) % 24;  // KST = UTC+9
   el.innerHTML = items.map(function(m){
-    var statusLabel = {waiting:'예약대기',lucky_waiting:'🍀 행운예약중',lucky_matched:'🍀 행운매칭완료',pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'입금',unpaid:'미입금',failed:'미입금'}[m.status]||m.status;
-    var statusColor = {waiting:'#90caf9',lucky_waiting:'#7b1fa2',lucky_matched:'#7b1fa2',pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
+    var statusLabel = {waiting:'매칭대기',unmatched:'2차대기',lucky_waiting:'🍀 행운예약중',lucky_matched:'🍀 행운매칭완료',pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'✅ 거래완료',unpaid:'미입금',failed:'미입금'}[m.status]||m.status;
+    var statusColor = {waiting:'#90caf9',unmatched:'#ff9800',lucky_waiting:'#7b1fa2',lucky_matched:'#7b1fa2',pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
     var hasMatchInfo = !!(m.seller_phone || m.seller_bank || m.seller_account);
     var dateTxt = m.source==='reservation'?m.reserve_date:(m.match_date||'');
     var isLucky = !!(m.lucky_pair_id);
@@ -1642,8 +1642,8 @@ function renderMatchSellList(items){
   }
   var h = getEffectiveDate ? getEffectiveDate().getHours() : new Date().getHours();
   el.innerHTML = items.map(function(m){
-    var statusLabel = {waiting:'예약대기',lucky_waiting:'예약대기',lucky_matched:'입금대기',pending:'입금대기',paid:'입금확인중',confirmed:'거래완료',unpaid:'미입금'}[m.status]||m.status;
-    var statusColor = {waiting:'#90caf9',lucky_waiting:'#90caf9',lucky_matched:'#f9a825',pending:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
+    var statusLabel = {waiting:'매칭대기',unmatched:'2차대기',lucky_waiting:'예약대기',lucky_matched:'입금대기',pending:'입금대기',paid:'입금확인중',confirmed:'✅ 거래완료',unpaid:'미입금'}[m.status]||m.status;
+    var statusColor = {waiting:'#90caf9',unmatched:'#ff9800',lucky_waiting:'#90caf9',lucky_matched:'#f9a825',pending:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
     var _luckyBadgeSell = '';  // 판매 카드에는 행운 표시 제거
     var buyerInfo = (m.status==='waiting'||m.status==='lucky_waiting')
       ? '<div style="font-size:12px;color:#90caf9;margin:6px 0">⏳ 매칭 대기 중...</div>'
