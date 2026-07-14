@@ -3521,7 +3521,6 @@ def admin_matching_status():
         ).fetchone()['c'],
         'r1_ran_today': (
             bool(db.execute("SELECT value FROM system_settings WHERE key=?", (f'r1_ran_{today}',)).fetchone())
-            and db.execute("SELECT COUNT(*) as c FROM matches WHERE match_round=1 AND match_date=?", (today,)).fetchone()['c'] > 0
         ),
         'r2_ran_today': (
             bool(db.execute("SELECT value FROM system_settings WHERE key=?", (f'r2_ran_{today}',)).fetchone())
