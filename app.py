@@ -4359,8 +4359,8 @@ def match_confirm_payment():
             _h, _mn = _now.hour, _now.minute
             _total = _h*60+_mn
             _mround = m['match_round'] or 1
-            if _mround == 1 and not (300 <= _total < 780):
-                return jsonify(error='입금확인은 05:00~13:00 사이에만 가능합니다'), 400
+            if _mround == 1 and not (300 <= _total < 840):
+                return jsonify(error='입금확인은 05:00~14:00 사이에만 가능합니다'), 400
             if _mround == 2 and not (900 <= _total < 1140):
                 return jsonify(error='입금확인은 15:00~19:00 사이에만 가능합니다'), 400
 
