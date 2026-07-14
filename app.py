@@ -3066,6 +3066,15 @@ def admin_run_matching():
                     charge_points=charge_points+?
                     WHERE id=?""", (_mfe, _mfc, _uid))
 
+        # 미매칭 구매예약: pending → unmatched (카드에서 0으로 표시되도록)
+        db.execute("""UPDATE reservations SET status='unmatched'
+            WHERE status='pending'
+            AND (item_id IS NULL OR item_id=0)
+            AND reserve_date=?
+            AND match_round=?
+            AND user_id != (SELECT id FROM users WHERE username='loopay' LIMIT 1)""",
+            (today, round_num))
+
         db.commit()
 
         # 마지막 매칭 시각 기록 (클라이언트 폴링용) + 매칭 실행 완료 기록
