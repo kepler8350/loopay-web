@@ -1177,8 +1177,8 @@ async function loadReservationsLog(page){
       }
       var _is2nd = (r.match_round===2) || (r.matched_round===2);  // 2차 매칭 관련 예약 (예약자체가 2차이거나 2차매치와 연결된 경우)
 
-      // ms=failed 처리 (1차/2차 구분)
-      if(r.match_status==='failed'){
+      // ms=failed/unpaid 처리 (1차/2차 구분)
+      if(r.match_status==='failed' || r.match_status==='unpaid'){
         if(_is2nd){
           statusKo = '2차미입금';  // 2차 매칭 미입금 (구매자/판매자 모두)
         } else if(r.res_type==='buy'){
