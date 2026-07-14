@@ -430,22 +430,23 @@ async function checkMatchRefresh(){
       maintain: d.maintain_points,
       total: d.total_points
     });
-    if(_lastMatchState && _lastMatchState !== curState){
-      // 상태 변경 감지 → 이미 받은 최신 d로 즉시 갱신 (포인트 정산 포함)
-      userData = d;
-      renderHeader(d);
-      renderBars && renderBars(d);
-      renderLevelTab && renderLevelTab();
-      // loadUserData로 나머지 UI도 갱신 (비동기, 포인트표시 재확정 포함)
-      loadUserData().then(function(){
-        if(window.userData){
-          renderHeader(window.userData);
-          // 매칭유지포인트 정산 후 수량 UI도 갱신
-          if(typeof updateReserveDefaults==='function') updateReserveDefaults(window.userData.level||1);
-        }
-      });
+    // 상태 변경 감지 (첫 실행 포함)
+    if(_lastMatchState !== curState){
+      if(_lastMatchState !== undefined){
+        // 변화 감지 → 즉시 전체 UI 갱신
+        userData = d;
+        renderHeader(d);
+        renderBars && renderBars(d);
+        renderLevelTab && renderLevelTab();
+        loadUserData().then(function(){
+          if(window.userData){
+            renderHeader(window.userData);
+            if(typeof updateReserveDefaults==='function') updateReserveDefaults(window.userData.level||1);
+          }
+        });
+      }
+      _lastMatchState = curState;
     }
-    _lastMatchState = curState;
   }catch(e){}
 }
 setInterval(checkMatchRefresh, 5000);  // 5초마다 포인트/매칭 상태 감지
