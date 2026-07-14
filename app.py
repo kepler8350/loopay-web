@@ -5833,7 +5833,7 @@ def user_matching():
                       'match' as source
                FROM matches m
                LEFT JOIN users su ON m.seller_id = su.id
-               WHERE m.buyer_id=? AND m.status NOT IN ('cancelled')
+               WHERE m.buyer_id=? AND m.status NOT IN ('cancelled','confirmed')
                  AND m.match_date >= date(?, '-30 days')
                ORDER BY m.id DESC""",
             (uid, today)
