@@ -2714,7 +2714,7 @@ def admin_run_matching():
         matched_pairs = []
         total_matched = 0
         _buyer_notif_map = {}  # buyer_id → {items:[], bank, acct, acct_name}
-        _matched_cnt_map = {}  # buyer_id(int) → 매칭건수
+        _cnt_map = {}  # buyer_id(int) → 매칭건수 (포인트 정산용)
 
         # stage별 매칭 (정확한 매칭)
         # ── 랜덤 셔플: 판매/구매 모두 랜덤 순서로 ──
@@ -2856,6 +2856,7 @@ def admin_run_matching():
                     if _seller_iid:
                         db.execute("UPDATE items SET status='matched' WHERE id=?", (_seller_iid,))
                     total_matched += 1
+                    _cnt_map[int(_chosen_uid)] = _cnt_map.get(int(_chosen_uid), 0) + 1
                     matched_pairs.append({
                         'seller': _seller.get('seller_username'),
                         'buyer': _buyer_res.get('buyer_username'),
@@ -2863,9 +2864,6 @@ def admin_run_matching():
                     })
                 except Exception as _e:
                     pass
-
-            # 2차 매칭 포인트 정산
-            _settle_match_points(db, _cnt_map)
 
             db.commit()
 
@@ -2984,6 +2982,7 @@ def admin_run_matching():
                 if _sell_item_id:
                     db.execute("UPDATE items SET status='matched' WHERE id=?", (_sell_item_id,))
                 total_matched += 1
+                _cnt_map[int(_buyer['buyer_id'])] = _cnt_map.get(int(_buyer['buyer_id']), 0) + 1
                 matched_pairs.append({
                     'seller': _seller.get('seller_username'),
                     'buyer': _buyer.get('buyer_username'),
@@ -2993,6 +2992,10 @@ def admin_run_matching():
                 import traceback
                 _match_err_log = traceback.format_exc()
                 matched_pairs.append({'error': str(_match_err), 'trace': _match_err_log[:500]})
+
+        # 포인트 정산: 모든 매칭 완료 후 _cnt_map 기준으로 정산
+        if _cnt_map:
+            _settle_match_points(db, _cnt_map)
 
         db.commit()
 
