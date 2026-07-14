@@ -419,7 +419,7 @@ loadPrices();
 
 // ── 매칭 완료 자동 새로고침 (30초마다 체크) ──
 var _lastMatchState = null;
-async async function checkMatchRefresh(){
+async function checkMatchRefresh(){
   if(!localStorage.getItem('lp_token')) return;
   try{
     var d = await api('/user/me');
