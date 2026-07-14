@@ -3531,8 +3531,19 @@ def admin_matching_status():
                AND match_date=?""",
             (today,)
         ).fetchone()['c'],
+        # r1_ran_today: 오늘 1차 구매예약 중 unmatched/matched 상태인 것이 있으면 매칭 실행됨
+        # system_settings 키는 mock_time 테스트 등으로 오염되므로 reservations 상태로 직접 판단
         'r1_ran_today': (
-            bool(db.execute("SELECT value FROM system_settings WHERE key=?", (f'r1_ran_{today}',)).fetchone())
+            db.execute(
+                """SELECT COUNT(*) as c FROM reservations
+                   WHERE reserve_date=? AND match_round=1
+                   AND status IN ('unmatched','matched','confirmed','paid','unpaid')
+                   AND (item_id IS NULL OR item_id=0)
+                   AND user_id != COALESCE(
+                     (SELECT id FROM users WHERE username='loopay' LIMIT 1), 0
+                   )""",
+                (today,)
+            ).fetchone()['c'] > 0
         ),
         'r2_ran_today': (
             bool(db.execute("SELECT value FROM system_settings WHERE key=?", (f'r2_ran_{today}',)).fetchone())
