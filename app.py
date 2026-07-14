@@ -3068,11 +3068,14 @@ def admin_run_matching():
 
         db.commit()
 
-        # 마지막 매칭 시각 기록 (클라이언트 폴링용)
+        # 마지막 매칭 시각 기록 (클라이언트 폴링용) + 매칭 실행 완료 기록
         try:
             import time as _time_mod
-            db.execute("INSERT OR REPLACE INTO system_settings(key,value) VALUES('last_match_ts',?)",
-                      (str(int(_time_mod.time())),))
+            _ts_now = str(int(_time_mod.time()))
+            db.execute("INSERT OR REPLACE INTO system_settings(key,value) VALUES('last_match_ts',?)", (_ts_now,))
+            # r1/r2_ran_{today} 저장 - 매칭 실행 여부 추적
+            _ran_key = f'r{round_num}_ran_{today}'
+            db.execute("INSERT OR REPLACE INTO system_settings(key,value) VALUES(?,?)", (_ran_key, today))
         except Exception: pass
 
         # 행운구매 동일 구매자 통일: 같은 lucky_pair_id를 가진 매치는 첫 번째 매치의 구매자로 통일
