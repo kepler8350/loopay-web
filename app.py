@@ -7768,6 +7768,29 @@ def testtools_set_user_points():
     finally:
         db.close()
 
+@app.route('/api/admin/testtools/test-settle-points', methods=['POST'])
+def testtools_test_settle_points():
+    import flask
+    db = get_db()
+    data = flask.request.json or {}
+    uid = data.get('user_id')
+    matched_count = data.get('matched_count', 1)
+    try:
+        before = db.execute("SELECT maintain_points, exchange_points, charge_points FROM users WHERE id=?", (uid,)).fetchone()
+        _settle_match_points(db, {uid: matched_count})
+        db.commit()
+        after = db.execute("SELECT maintain_points, exchange_points, charge_points FROM users WHERE id=?", (uid,)).fetchone()
+        return flask.jsonify(
+            success=True,
+            before=dict(before),
+            after=dict(after),
+            matched_count=matched_count,
+            consumed=matched_count*40,
+            refund=max(0,(before['maintain_points'] or 0)-matched_count*40)
+        )
+    finally:
+        db.close()
+
 @app.route('/api/admin/testtools/run-db-migration', methods=['POST'])
 def testtools_run_db_migration():
     """DB 마이그레이션 강제 실행 (개발용)"""
