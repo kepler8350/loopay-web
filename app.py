@@ -2968,10 +2968,9 @@ def admin_matching_status():
         (today,)
     ).fetchone()['c']
     # 오늘 미입금 (1차+2차 모두, 오늘 날짜만)
-    # failed 매치: today 기준으로 조회하되, today에 없으면 최근 failed 날짜 기준
+    # failed 매치: 가장 최근 failed 날짜 기준 (날짜 무관)
     _failed_ref_row = db.execute(
-        "SELECT MAX(match_date) as d FROM matches WHERE status='failed' AND match_date<=?",
-        (today,)
+        "SELECT MAX(match_date) as d FROM matches WHERE status='failed'"
     ).fetchone()
     _failed_ref_date = (_failed_ref_row['d'] if _failed_ref_row and _failed_ref_row['d'] else today)
     failed_count = db.execute(
