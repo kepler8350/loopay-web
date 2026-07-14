@@ -759,62 +759,6 @@ def get_matching_date():
     return now.date()
 from db import get_db, init_db, LEVEL_CONFIG, LEVEL_COST, LEVEL_UP_FEE, SPLIT_CONFIG, BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES, PENALTY_TABLE, get_sv_count, get_gd_count
 
-# ── SSE: 매칭 이벤트 실시간 push ────────────────────────────────
-import queue, threading
-_match_event_queues = {}   # uid → Queue
-_match_event_lock = threading.Lock()
-
-def _push_match_event(uid, data):
-    """특정 사용자의 SSE 큐에 이벤트 push"""
-    with _match_event_lock:
-        q = _match_event_queues.get(int(uid))
-    if q:
-        try: q.put_nowait(data)
-        except: pass
-
-def _push_match_event_all(data):
-    """로그인한 모든 사용자에게 이벤트 push"""
-    with _match_event_lock:
-        qs = list(_match_event_queues.values())
-    for q in qs:
-        try: q.put_nowait(data)
-        except: pass
-
-@app.route('/api/user/match-events')
-def user_match_events():
-    """SSE 엔드포인트: 매칭 완료 시 실시간 알림 (쿼리 토큰 또는 Authorization 헤더)"""
-    from flask import Response, stream_with_context, request as _req
-    from flask_jwt_extended import decode_token
-    import json, time
-    # 토큰 검증 (EventSource는 헤더 불가이므로 쿼리 파라미터 지원)
-    tok = _req.args.get('token') or (_req.headers.get('Authorization','').replace('Bearer ',''))
-    try:
-        decoded = decode_token(tok)
-        uid = int(decoded['sub'])
-    except Exception:
-        return jsonify(error='Unauthorized'), 401
-    q = queue.Queue(maxsize=10)
-    with _match_event_lock:
-        _match_event_queues[uid] = q
-
-    def generate():
-        try:
-            yield 'data: {"type":"connected"}\n\n'
-            while True:
-                try:
-                    event = q.get(timeout=25)
-                    yield f'data: {json.dumps(event)}\n\n'
-                except queue.Empty:
-                    yield 'data: {"type":"ping"}\n\n'
-        finally:
-            with _match_event_lock:
-                _match_event_queues.pop(uid, None)
-
-    return Response(stream_with_context(generate()),
-                    mimetype='text/event-stream',
-                    headers={'Cache-Control':'no-cache','X-Accel-Buffering':'no'})
-# ────────────────────────────────────────────────────────────────
-
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path='')
@@ -941,6 +885,17 @@ def _settle_match_points(db, cnt_map):
                 exchange_points=exchange_points-?,
                 charge_points=charge_points-?
                 WHERE id=?""", (ex_use, ch_use, bid))
+
+
+@app.route('/api/user/match-ts', methods=['GET'])
+def get_match_ts():
+    """마지막 매칭 실행 시각 반환 (인증 불필요 - 초경량)"""
+    db = get_db()
+    try:
+        row = db.execute("SELECT value FROM system_settings WHERE key='last_match_ts'").fetchone()
+        return jsonify(ts=int(row['value']) if row else 0)
+    finally:
+        db.close()
 
 
 def get_price(bar_type, stage):
@@ -3113,6 +3068,13 @@ def admin_run_matching():
 
         db.commit()
 
+        # 마지막 매칭 시각 기록 (클라이언트 폴링용)
+        try:
+            import time as _time_mod
+            db.execute("INSERT OR REPLACE INTO system_settings(key,value) VALUES('last_match_ts',?)",
+                      (str(int(_time_mod.time())),))
+        except Exception: pass
+
         # 행운구매 동일 구매자 통일: 같은 lucky_pair_id를 가진 매치는 첫 번째 매치의 구매자로 통일
         _lucky_pairs = db.execute(
             """SELECT lucky_pair_id, MIN(id) as first_id
@@ -3140,9 +3102,6 @@ def admin_run_matching():
                     (_actual_buyer_id, _lp['lucky_pair_id'])
                 )
         db.commit()
-
-        # SSE: 매칭 완료 이벤트 전송
-        _push_match_event_all({'type':'match_done','round':round_num,'matched':total_matched})
 
         return jsonify(
             success=True,

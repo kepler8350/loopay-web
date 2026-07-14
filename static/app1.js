@@ -905,37 +905,39 @@ function showLevelUpModal(info){
 }
 // ─────────────────────────────────────────────────────────────────
 
-// ── SSE: 매칭 이벤트 실시간 구독 ──────────────────────────────
-var _matchEventSource = null;
+// ── 매칭 타임스탬프 폴링: 매칭 완료 즉시 감지 ──────────────────
+var _lastMatchTs = 0;
+var _matchTsInterval = null;
+
+async function _pollMatchTs(){
+  if(!localStorage.getItem('lp_token')) return;
+  try{
+    var r = await fetch('/api/user/match-ts').then(function(r){return r.json();});
+    var ts = r.ts || 0;
+    if(_lastMatchTs && ts > _lastMatchTs){
+      // 매칭 완료 감지 → 즉시 전체 갱신
+      loadUserData().then(function(){
+        if(window.userData){
+          renderHeader(window.userData);
+          renderBars && renderBars(window.userData);
+          if(typeof updateReserveDefaults==='function') updateReserveDefaults(window.userData.level||1);
+        }
+      });
+    }
+    _lastMatchTs = ts;
+  }catch(e){}
+}
 
 function startMatchEventSource(){
-  var tok = localStorage.getItem('lp_token');
-  if(!tok || _matchEventSource) return;
-  _matchEventSource = new EventSource('/api/user/match-events?token='+encodeURIComponent(tok));
-  _matchEventSource.onmessage = function(e){
-    try{
-      var ev = JSON.parse(e.data);
-      if(ev.type === 'match_done'){
-        // 매칭 완료 즉시 데이터 갱신
-        loadUserData().then(function(){
-          if(window.userData){
-            renderHeader(window.userData);
-            renderBars && renderBars(window.userData);
-            if(typeof updateReserveDefaults==='function') updateReserveDefaults(window.userData.level||1);
-          }
-        });
-      }
-    }catch(ex){}
-  };
-  _matchEventSource.onerror = function(){
-    // 연결 끊기면 정리 후 재연결
-    if(_matchEventSource){ _matchEventSource.close(); _matchEventSource=null; }
-    setTimeout(startMatchEventSource, 5000);
-  };
+  if(_matchTsInterval) return;
+  _lastMatchTs = 0;
+  _pollMatchTs();  // 즉시 1회 실행해서 기준값 설정
+  _matchTsInterval = setInterval(_pollMatchTs, 2000);  // 2초마다 체크
 }
 
 function stopMatchEventSource(){
-  if(_matchEventSource){ _matchEventSource.close(); _matchEventSource=null; }
+  if(_matchTsInterval){ clearInterval(_matchTsInterval); _matchTsInterval=null; }
+  _lastMatchTs = 0;
 }
 // ────────────────────────────────────────────────────────────────
 
