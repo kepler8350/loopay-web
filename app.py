@@ -833,29 +833,57 @@ def is_level_trade_active(db_or_uid, user_id=None):
 
 
 def _settle_match_points(db, cnt_map):
-    """매칭 후 포인트 정산: maintain_points에서 매칭수량×40P 차감, 나머지 exchange_points로 환불"""
+    """매칭 후 포인트 정산: maintain_points에서 매칭수량×40P 차감
+    - 환불 시 원천별 반환: exchange에서 가져온 금액→exchange, charge에서 가져온 금액→charge
+    - 매칭 차감 시: exchange 우선 차감 후 charge
+    """
     for bid, bcnt in cnt_map.items():
-        u = db.execute("SELECT maintain_points, charge_points, exchange_points FROM users WHERE id=?", (bid,)).fetchone()
+        u = db.execute("""SELECT maintain_points, charge_points, exchange_points,
+                          COALESCE(maintain_from_exchange,0) as mfe,
+                          COALESCE(maintain_from_charge,0) as mfc
+                          FROM users WHERE id=?""", (bid,)).fetchone()
         if not u: continue
         mn = int(u['maintain_points'] or 0)
-        consume = bcnt * 40
+        mfe = int(u['mfe'] or 0)   # maintain 중 exchange 원천분
+        mfc = int(u['mfc'] or 0)   # maintain 중 charge 원천분
+        consume = bcnt * 40         # 매칭 차감액
+
         if mn >= consume:
+            # 환불액 = mn - consume → 원천 비율로 반환
             refund = mn - consume
-            if refund > 0:
-                db.execute("UPDATE users SET maintain_points=0, exchange_points=exchange_points+? WHERE id=?", (refund, bid))
-            else:
-                db.execute("UPDATE users SET maintain_points=0 WHERE id=?", (bid,))
+            # 소비 비율: exchange 우선 차감
+            consume_from_ex = min(mfe, consume)
+            consume_from_ch = consume - consume_from_ex
+            refund_to_ex = mfe - consume_from_ex   # exchange에서 남은 환불분
+            refund_to_ch = mfc - consume_from_ch   # charge에서 남은 환불분
+            # 음수 방지
+            refund_to_ex = max(0, refund_to_ex)
+            refund_to_ch = max(0, refund_to_ch)
+            db.execute("""UPDATE users SET
+                maintain_points=0, maintain_from_exchange=0, maintain_from_charge=0,
+                exchange_points=exchange_points+?,
+                charge_points=charge_points+?
+                WHERE id=?""", (refund_to_ex, refund_to_ch, bid))
         elif mn > 0:
+            # maintain 부족 → 전액 소비 + 부족분 추가 차감 (exchange 우선)
             extra = consume - mn
             ex_now = int(u['exchange_points'] or 0)
             ex_use = min(ex_now, extra)
             ch_use = extra - ex_use
-            db.execute("UPDATE users SET maintain_points=0, exchange_points=exchange_points-?, charge_points=charge_points-? WHERE id=?", (ex_use, ch_use, bid))
+            db.execute("""UPDATE users SET
+                maintain_points=0, maintain_from_exchange=0, maintain_from_charge=0,
+                exchange_points=exchange_points-?,
+                charge_points=charge_points-?
+                WHERE id=?""", (ex_use, ch_use, bid))
         else:
+            # maintain 없음 → exchange 우선 차감
             ex_now = int(u['exchange_points'] or 0)
             ex_use = min(ex_now, consume)
             ch_use = consume - ex_use
-            db.execute("UPDATE users SET exchange_points=exchange_points-?, charge_points=charge_points-? WHERE id=?", (ex_use, ch_use, bid))
+            db.execute("""UPDATE users SET
+                exchange_points=exchange_points-?,
+                charge_points=charge_points-?
+                WHERE id=?""", (ex_use, ch_use, bid))
 
 
 def get_price(bar_type, stage):
@@ -1517,11 +1545,18 @@ def create_reservation():
              charge_points=charge_points-?,
              cumulative_count=cumulative_count+?
          WHERE id=?""", (ex_use, ch_use, total, uid))
-      # 2단계: maintain_points에 비용 추가 (컬럼 없으면 무시)
+      # 2단계: maintain_points에 비용 추가 + 원천 추적
       try:
-          db.execute("UPDATE users SET maintain_points=COALESCE(maintain_points,0)+? WHERE id=?", (cost, uid))
+          db.execute("""UPDATE users SET
+              maintain_points=COALESCE(maintain_points,0)+?,
+              maintain_from_exchange=COALESCE(maintain_from_exchange,0)+?,
+              maintain_from_charge=COALESCE(maintain_from_charge,0)+?
+              WHERE id=?""", (cost, ex_use, ch_use, uid))
       except Exception:
-          pass
+          try:
+              db.execute("UPDATE users SET maintain_points=COALESCE(maintain_points,0)+? WHERE id=?", (cost, uid))
+          except Exception:
+              pass
       db.commit()
       db.close()
       return jsonify(success=True,message=f'매칭예약 완료! 총 {total}회, {cost}P 차감',bronze=bz,silver=sv,gold=gd,join_round2=join_r2,join_round2_denied=(_join_r2_req==1 and _has_unpaid))
@@ -3003,12 +3038,21 @@ def admin_run_matching():
         _matched_buyer_ids_set = set(_cnt_map.keys())
         _unmatched_buyer_ids = _all_buyer_ids - _matched_buyer_ids_set
         for _uid in _unmatched_buyer_ids:
-            _u = db.execute("SELECT maintain_points FROM users WHERE id=?", (_uid,)).fetchone()
+            _u = db.execute("""SELECT maintain_points,
+                              COALESCE(maintain_from_exchange,0) as mfe,
+                              COALESCE(maintain_from_charge,0) as mfc
+                              FROM users WHERE id=?""", (_uid,)).fetchone()
             if not _u: continue
             _mn = int(_u['maintain_points'] or 0)
             if _mn > 0:
-                db.execute("UPDATE users SET maintain_points=0, exchange_points=exchange_points+? WHERE id=?",
-                          (_mn, _uid))
+                # 미매칭 전액 환불 - 원천별 반환
+                _mfe = int(_u['mfe'] or 0)
+                _mfc = int(_u['mfc'] or 0)
+                db.execute("""UPDATE users SET
+                    maintain_points=0, maintain_from_exchange=0, maintain_from_charge=0,
+                    exchange_points=exchange_points+?,
+                    charge_points=charge_points+?
+                    WHERE id=?""", (_mfe, _mfc, _uid))
 
         db.commit()
 
@@ -3481,6 +3525,8 @@ with app.app_context():
             "ALTER TABLE matches ADD COLUMN buyer_res_id INTEGER DEFAULT NULL",
             "ALTER TABLE users ADD COLUMN maintain_points INTEGER DEFAULT 0",
             "ALTER TABLE users ADD COLUMN level_upgrade_declined_until TEXT DEFAULT NULL",
+        "ALTER TABLE users ADD COLUMN maintain_from_exchange INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN maintain_from_charge INTEGER DEFAULT 0",
             "ALTER TABLE items ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
             "ALTER TABLE reservations ADD COLUMN lucky_pair_id INTEGER DEFAULT NULL",
             "ALTER TABLE lucky_buy_results ADD COLUMN status TEXT DEFAULT 'confirmed'",
@@ -7770,12 +7816,18 @@ def testtools_set_user_points():
     data = flask.request.json or {}
     uid = data.get('user_id')
     try:
-        db.execute("UPDATE users SET charge_points=?, exchange_points=?, maintain_points=COALESCE(maintain_points,0) WHERE id=?",
+        db.execute("UPDATE users SET charge_points=?, exchange_points=? WHERE id=?",
                   (data.get('charge',0), data.get('exchange',0), uid))
-        # maintain은 별도 처리 (컬럼 없을 수 있음)
         try:
-            db.execute("UPDATE users SET maintain_points=? WHERE id=?", (data.get('maintain',0), uid))
-        except Exception: pass
+            maintain = data.get('maintain', 0)
+            mfe = data.get('maintain_from_exchange', maintain)  # 기본: 전액 exchange에서
+            mfc = data.get('maintain_from_charge', 0)
+            db.execute("UPDATE users SET maintain_points=?, maintain_from_exchange=?, maintain_from_charge=? WHERE id=?",
+                      (maintain, mfe, mfc, uid))
+        except Exception:
+            try:
+                db.execute("UPDATE users SET maintain_points=? WHERE id=?", (data.get('maintain',0), uid))
+            except Exception: pass
         db.commit()
         u = db.execute("SELECT charge_points, exchange_points FROM users WHERE id=?", (uid,)).fetchone()
         return flask.jsonify(success=True, **dict(u))
