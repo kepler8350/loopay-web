@@ -1855,21 +1855,29 @@ def admin_run_matching():
     db = get_db()
     try:
         _calc_today = get_matching_date().isoformat()
-        # 오늘 1차 매칭 있으면 오늘, 없으면 어제 (날짜 넘어간 직후 처리)
-        _today_match = db.execute(
-            "SELECT match_date FROM matches WHERE match_round=1 AND match_date=? LIMIT 1",
+        # today 결정: 오늘 예약 있으면 무조건 오늘 기준
+        # 오늘 예약 없고 오늘 매칭도 없을 때만 어제 fallback
+        _today_has_res = db.execute(
+            "SELECT COUNT(*) as c FROM reservations WHERE reserve_date=?",
             (_calc_today,)
-        ).fetchone()
-        if _today_match:
+        ).fetchone()['c'] > 0
+        if _today_has_res:
             today = _calc_today
         else:
-            import datetime as _dt
-            _yesterday = (_dt.date.fromisoformat(_calc_today) - _dt.timedelta(days=1)).isoformat()
-            _yest_match = db.execute(
+            _today_match = db.execute(
                 "SELECT match_date FROM matches WHERE match_round=1 AND match_date=? LIMIT 1",
-                (_yesterday,)
+                (_calc_today,)
             ).fetchone()
-            today = _yesterday if _yest_match else _calc_today
+            if _today_match:
+                today = _calc_today
+            else:
+                import datetime as _dt
+                _yesterday = (_dt.date.fromisoformat(_calc_today) - _dt.timedelta(days=1)).isoformat()
+                _yest_match = db.execute(
+                    "SELECT match_date FROM matches WHERE match_round=1 AND match_date=? LIMIT 1",
+                    (_yesterday,)
+                ).fetchone()
+                today = _yesterday if _yest_match else _calc_today
         loopay_id = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()['id']
 
         # ── 이전 매칭은 당일 예약만 참가 (이전 날짜 예약은 매칭 불참)
