@@ -1138,7 +1138,7 @@ async function loadReservationsLog(page){
     }
 
     var barNames = {bronze:'수정', silver:'루비', gold:'다이아'};
-    var statusColors = {pending:'#42a5f5', matched:'#66bb6a', unmatched:'#ef9a9a', cancelled:'#888'};
+    var statusColors = {pending:'#42a5f5', matched:'#66bb6a', unmatched:'#ef9a9a', cancelled:'#888', sold:'#66bb6a', confirmed:'#66bb6a', paid:'#42a5f5'};
     var typeColors = {buy:'#ab47bc', sell:'#42a5f5'};
 
     if(tbody) tbody.innerHTML = rows.map(function(r, i){
@@ -1167,6 +1167,10 @@ async function loadReservationsLog(page){
         sold:'판매완료', reserved:'예약중', cancelled:'취소', confirmed:'확정',
         pending:'대기', sell_reserved:'판매예약중', unmatched:'미매칭',
         expired:'만료', rejected:'거절', complete:'완료'}[r.status] || r.status;
+      // unmatched + join_round2=1 → 2차대기 (1차 미매칭 후 2차 대기 중)
+      if(r.status==='unmatched' && r.res_type==='buy' && r.join_round2===1){
+        statusKo = '2차대기';
+      }
       // status=matched + ms=null → 대기 (유령 matched 예약 - 실제 매치 없음)
       if(r.status==='matched' && !r.match_status){
         statusKo = '대기';
