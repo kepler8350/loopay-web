@@ -1147,7 +1147,7 @@ async function loadReservationsLog(page){
       var barColor = r.bar_type==='bronze'?'#cd7f32':r.bar_type==='silver'?'#c0c0c0':'#ffd700';
       var typeName = r.res_type==='sell'?'판매':'구매';
       var typeColor = r.res_type==='sell' ? typeColors['sell'] : typeColors['buy'];
-      var // 상태별 고유 색상
+      // 상태별 고유 색상
       var _scm = {
         '매칭대기':'#64b5f6','대기':'#64b5f6','2차대기':'#ffa726',
         '매칭완료':'#ce93d8','2차매칭완료':'#7b1fa2',
