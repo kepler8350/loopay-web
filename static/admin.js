@@ -1147,14 +1147,26 @@ async function loadReservationsLog(page){
       var barColor = r.bar_type==='bronze'?'#cd7f32':r.bar_type==='silver'?'#c0c0c0':'#ffd700';
       var typeName = r.res_type==='sell'?'판매':'구매';
       var typeColor = r.res_type==='sell' ? typeColors['sell'] : typeColors['buy'];
-      // 상태별 고유 색상
+      // 상태별 고유 색상 - 모든 상태를 명확히 다른 색으로 구분
       var _scm = {
-        '매칭대기':'#64b5f6','대기':'#64b5f6','2차대기':'#ffa726',
-        '매칭완료':'#ce93d8','2차매칭완료':'#7b1fa2',
-        '송금완료':'#4db6ac','입금확인중':'#26c6da',
-        '거래완료':'#66bb6a','2차완료':'#43a047','2차거래완료':'#26a69a',
-        '미입금':'#ef5350','2차미입금':'#b71c1c',
-        '판매완료':'#81c784','취소':'#757575','대기중':'#90a4ae'
+        '대기':        '#64b5f6',   // 연파랑
+        '매칭대기':    '#64b5f6',   // 연파랑
+        '대기중':      '#90a4ae',   // 청회색
+        '미매칭':      '#ef9a9a',   // 연빨강
+        '매칭완료':    '#ff9800',   // 주황
+        '2차대기':     '#ffca28',   // 노랑
+        '2차매칭완료': '#e91e63',   // 핑크
+        '송금완료':    '#40c4ff',   // 하늘파랑
+        '입금확인중':  '#18ffff',   // 시안
+        '거래완료':    '#00e676',   // 밝은초록
+        '완료':        '#69f0ae',   // 민트
+        '2차완료':     '#b9f6ca',   // 연민트
+        '2차거래완료': '#00bcd4',   // 청록
+        '미입금':      '#f44336',   // 빨강
+        '2차미입금':   '#ad1457',   // 진자주
+        '판매완료':    '#aed581',   // 연두
+        '취소':        '#757575',   // 회색
+        '예약완료':    '#ce93d8',   // 연보라
       };
       statusColor = _scm[statusKo] || (statusColors[r.status] || '#888')
       var confirmedBadge = r.confirmed ? '<span style="font-size:10px;background:#1b5e20;color:#a5d6a7;padding:1px 5px;border-radius:3px">확인</span>' : '';
