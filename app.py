@@ -201,42 +201,110 @@ def insert_notification(db, user_id, ntype, title, message):
 # ── 자동 2차매칭 스케줄러 ────────────────────────────────────────
 
 def _auto_confirm_paid_matches(db):
-    """14:00(1차)/20:00(2차) 이후 paid 상태 매치를 자동 입금확인 처리"""
+    """14:00(1차)/20:00(2차) 이후 paid 상태 매치를 자동 입금확인 처리
+    + 14:00 이후 미송금(pending) 매치 자동 미입금 처리"""
     import datetime as _dt
     now = get_now()
     h, mn = now.hour, now.minute
     total_min = h * 60 + mn
 
-    # 1차: 14:00 이후 paid → auto confirmed
-    # 2차: 20:00 이후 paid → auto confirmed
-    today = get_matching_date().isoformat()
+    # 매칭 기준 날짜: 가장 최근 매칭이 있는 날짜
+    _latest = db.execute(
+        """SELECT MAX(match_date) as d FROM matches
+           WHERE match_round=1 AND status IN ('pending','paid','confirmed','failed')"""    ).fetchone()
+    match_ref_date = _latest['d'] if _latest and _latest['d'] else get_matching_date().isoformat()
 
-    targets = []
-    # 1차: match_round=1, 14:00 이후
-    if total_min >= 840:  # 14:00
+    targets_confirm = []
+    targets_unpaid = []
+
+    if total_min >= 840:  # 14:00 이후
+        # paid → 자동 입금확인
         rows = db.execute(
             """SELECT m.* FROM matches m
                WHERE m.status='paid' AND m.match_round=1
                AND m.match_date=?""",
-            (today,)
+            (match_ref_date,)
         ).fetchall()
-        targets.extend([(dict(r), '1차 자동 입금확인') for r in rows])
+        targets_confirm.extend([dict(r) for r in rows])
 
-    # 2차: match_round=2, 20:00 이후
-    if total_min >= 1200:  # 20:00
-        rows = db.execute(
+        # pending → 자동 미입금 처리 (구매자가 14:00까지 송금 안 함)
+        unpaid_rows = db.execute(
+            """SELECT m.* FROM matches m
+               WHERE m.status='pending' AND m.match_round=1
+               AND m.match_date=?""",
+            (match_ref_date,)
+        ).fetchall()
+        targets_unpaid.extend([dict(r) for r in unpaid_rows])
+
+    if total_min >= 1200:  # 20:00 이후
+        # 2차 paid → 자동 입금확인
+        rows2 = db.execute(
             """SELECT m.* FROM matches m
                WHERE m.status='paid' AND m.match_round=2
                AND m.match_date=?""",
-            (today,)
+            (match_ref_date,)
         ).fetchall()
-        targets.extend([(dict(r), '2차 자동 입금확인') for r in rows])
+        targets_confirm.extend([dict(r) for r in rows2])
 
-    for (m, reason) in targets:
+        # 2차 pending → 자동 미입금
+        unpaid_rows2 = db.execute(
+            """SELECT m.* FROM matches m
+               WHERE m.status='pending' AND m.match_round=2
+               AND m.match_date=?""",
+            (match_ref_date,)
+        ).fetchall()
+        targets_unpaid.extend([dict(r) for r in unpaid_rows2])
+
+    for m in targets_confirm:
         try:
             _do_confirm_transfer(db, m)
-        except Exception as _e:
-            pass
+        except Exception: pass
+
+    for m in targets_unpaid:
+        try:
+            _auto_process_unpaid(db, m)
+        except Exception: pass
+
+
+def _auto_process_unpaid(db, m):
+    """pending 매치를 자동 미입금(failed) 처리 - 패널티 없이 상태만 변경"""
+    match_id = m['id']
+    # 1. match → failed
+    db.execute("UPDATE matches SET status='failed' WHERE id=?", (match_id,))
+
+    # 2. 구매예약 유지 (match_status=failed로 표시되도록)
+    _buy_res_ids = set()
+    if m.get('reservation_id'): _buy_res_ids.add(m['reservation_id'])
+    if m.get('buyer_res_id'): _buy_res_ids.add(m['buyer_res_id'])
+    for _brid in _buy_res_ids:
+        db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_brid,))
+
+    # 3. 판매 아이템 → reservable 복원 + 2차 sell 예약 생성
+    if m.get('seller_item_id'):
+        db.execute("UPDATE items SET status='reservable' WHERE id=?", (m['seller_item_id'],))
+        # 2차 매칭용 sell 예약 생성 (없으면)
+        _exist = db.execute(
+            "SELECT id FROM reservations WHERE item_id=? AND match_round=2 AND status='pending'",
+            (m['seller_item_id'],)
+        ).fetchone()
+        if not _exist:
+            _item = db.execute("SELECT * FROM items WHERE id=?", (m['seller_item_id'],)).fetchone()
+            if _item:
+                db.execute(
+                    """INSERT INTO reservations(user_id,item_id,bar_type,match_round,
+                       reserve_date,status,confirmed)
+                       VALUES(?,?,?,2,?,'pending',1)""",
+                    (_item['user_id'], m['seller_item_id'],
+                     _item['bar_type'], m['match_date'])
+                )
+
+    # 4. 구매자 패널티 없이 미입금 처리 (자동이므로 패널티 부여 안 함)
+    # unpaid_count만 증가
+    if m.get('buyer_id'):
+        try:
+            db.execute("UPDATE users SET unpaid_count=COALESCE(unpaid_count,0)+1 WHERE id=?",
+                      (m['buyer_id'],))
+        except Exception: pass
 
 
 def get_today():
