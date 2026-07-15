@@ -1148,6 +1148,7 @@ async function loadReservationsLog(page){
       var typeName = r.res_type==='sell'?'판매':'구매';
       var typeColor = r.res_type==='sell' ? typeColors['sell'] : typeColors['buy'];
       // 상태별 고유 색상 - 모든 상태를 명확히 다른 색으로 구분
+      var statusColor;
       var _scm = {
         '대기':        '#64b5f6',   // 연파랑
         '매칭대기':    '#64b5f6',   // 연파랑
