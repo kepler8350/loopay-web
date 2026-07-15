@@ -1275,7 +1275,7 @@ async function loadReservationsLog(page){
           return '<td style="text-align:center;color:#888">'+_displayRound+'차</td>';
         })()
         +'<td style="text-align:center">'+round2Badge+'</td>'
-        +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+statusColor+'22;color:'+statusColor+'">'+statusKo+'</span></td>'
+        +'<td style="text-align:center"><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+((_scm[statusKo])||(statusColors[r.status])||'#888')+'22;color:'+((_scm[statusKo])||(statusColors[r.status])||'#888')+'">'+statusKo+'</span></td>'
         +'</tr>';
     }).join('');
 
