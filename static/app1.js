@@ -59,11 +59,12 @@ function showConfirm(opts){
   var ov = document.getElementById('common-confirm-overlay');
   if(!ov){ if(opts.onOk && confirm((opts.title||'확인')+'\n'+(opts.message||''))) opts.onOk(); else if(opts.onCancel) opts.onCancel(); return; }
   document.getElementById('common-confirm-title').innerHTML = opts.title||'확인';
-  document.getElementById('common-confirm-body').innerHTML = opts.message||'';
+  document.getElementById('common-confirm-body').innerHTML = (opts.message||'').replace(/\n/g,'<br>');
   var okBtn = document.getElementById('common-confirm-ok-btn');
   var cancelBtn = document.getElementById('common-confirm-cancel-btn');
   okBtn.textContent = opts.okText||'확인';
   okBtn.style.background = opts.okColor||'';
+  cancelBtn.style.display = opts.hideCancelBtn ? 'none' : '';
   var newOk = okBtn.cloneNode(true); var newCancel = cancelBtn.cloneNode(true);
   okBtn.parentNode.replaceChild(newOk, okBtn); cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
   newOk.onclick = function(){ _closeCommonConfirm(); if(opts.onOk) opts.onOk(); };
@@ -1508,7 +1509,15 @@ function toggleSellSelect(itemId, barType){
       var info2=_itemCache[k2]||_itemCache[Number(k2)];
       if(info2 && info2.purchase_date && info2.purchase_date!==cd2){_diffDate2=true;break;}
     }
-    if(_diffDate2){toast('같은 구매일의 아이템만 함께 선택할 수 있습니다.','error');return;}
+    if(_diffDate2){
+      showConfirm({
+        title: '📅 날짜 불일치',
+        message: '구매일이 같은 날짜의 아이템만\n판매예약 할 수 있습니다.',
+        okText: '확인',
+        hideCancelBtn: true
+      });
+      return;
+    }
   }
 
   _sellSelected[_id] = !_sellSelected[_id];
