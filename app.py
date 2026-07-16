@@ -954,7 +954,7 @@ def get_me():
     cfg = LEVEL_CONFIG.get(lv, {})
     next_cum = cfg.get('cum')
     pct = round(u['cumulative_count'] / next_cum * 100, 1) if next_cum else None
-    items = db.execute("SELECT * FROM items WHERE user_id=? AND status NOT IN ('sold') ORDER BY bar_type, stage", (uid,)).fetchall()
+    items = db.execute("SELECT * FROM items WHERE user_id=? AND status NOT IN ('sold') ORDER BY purchase_date DESC, id DESC", (uid,)).fetchall()
     # 판매예약중인 아이템 확인 (reservations.status='pending'인 것)
     _item_ids = [i['id'] for i in items]
     _pending_sell_set = set()
@@ -1163,9 +1163,9 @@ def get_items():
     db = get_db()
     try:
         if bar_type:
-            rows = db.execute("SELECT * FROM items WHERE user_id=? AND bar_type=? AND status!='sold' ORDER BY bar_type, stage", (uid, bar_type)).fetchall()
+            rows = db.execute("SELECT * FROM items WHERE user_id=? AND bar_type=? AND status!='sold' ORDER BY purchase_date DESC, id DESC", (uid, bar_type)).fetchall()
         else:
-            rows = db.execute("SELECT * FROM items WHERE user_id=? AND status!='sold' ORDER BY bar_type, stage", (uid,)).fetchall()
+            rows = db.execute("SELECT * FROM items WHERE user_id=? AND status!='sold' ORDER BY purchase_date DESC, id DESC", (uid,)).fetchall()
         # pending reservation 한번에 조회 (아이템별 예약중 여부)
         item_ids = [it['id'] for it in rows]
         pending_set = set()
