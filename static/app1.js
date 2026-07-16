@@ -430,14 +430,22 @@ async function checkMatchRefresh(){
       maintain: d.maintain_points,
       total: d.total_points
     });
-    // 14:00(1차)/20:00(2차) 이후 paid 매치 자동 입금확인 트리거
-    var _now = new Date();
-    var _hm = _now.getHours()*60 + _now.getMinutes();
+    // 서버 시간 기준으로 자동 입금확인 트리거 (로컬 시간 아닌 getEffectiveDate 사용)
+    var _eff = getEffectiveDate ? getEffectiveDate() : new Date();
+    var _hm = _eff.getHours()*60 + _eff.getMinutes();
     if(_hm >= 840 || _hm >= 1200){  // 14:00 or 20:00 이후
       api('/user/auto-confirm-paid', {method:'POST', body:'{}'}).catch(function(){});
     }
+    // paid 상태 매치도 감지에 포함 (판매자 입금확인 버튼 즉시 반영)
+    // /api/user/matching에서 sell paid 상태 확인
+    var _sellPaidKey = '';
+    try{
+      var _mt = await api('/user/matching');
+      _sellPaidKey = JSON.stringify((_mt.sell||[]).map(function(m){ return m.id+'_'+m.status; }));
+    }catch(e2){}
+    var _fullState = curState + '|' + _sellPaidKey;
     // 상태 변경 감지 (첫 실행 포함)
-    if(_lastMatchState !== curState){
+    if(_lastMatchState !== _fullState){
       if(_lastMatchState !== undefined){
         // 변화 감지 → 즉시 전체 UI 갱신
         userData = d;
@@ -450,8 +458,16 @@ async function checkMatchRefresh(){
             if(typeof updateReserveDefaults==='function') updateReserveDefaults(window.userData.level||1);
           }
         });
+        // 현재 buy(matching)/sell 탭이면 매칭목록도 갱신 (paid 상태 즉시 반영)
+        var _sellTabEl = document.getElementById('tab-sell');
+        var _buyTabEl = document.getElementById('tab-matching');
+        var _sellVisible = _sellTabEl && (_sellTabEl.style.display==='block' || !_sellTabEl.hidden);
+        var _buyVisible = _buyTabEl && (_buyTabEl.style.display==='block' || !_buyTabEl.hidden);
+        if((_sellVisible || _buyVisible) && typeof loadMatchingTab==='function'){
+          loadMatchingTab();
+        }
       }
-      _lastMatchState = curState;
+      _lastMatchState = _fullState;
     }
   }catch(e){}
 }
