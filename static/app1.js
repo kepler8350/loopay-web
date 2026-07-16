@@ -2654,7 +2654,9 @@ function renderSellTab(){
     } else
     if(item.match_id && ms && ms !== 'cancelled' && ms !== 'confirmed' && !_isBuyerRoleAct){
       var _mRound = item.match_round || 1;
-      var _sh = _sellServerHour||0, _sm = _sellServerMin||0;
+      // 서버 시간 실시간 계산 (고정값이 아닌 getEffectiveDate 사용)
+      var _eff = (typeof getEffectiveDate === 'function') ? getEffectiveDate() : new Date();
+      var _sh = _eff.getHours(), _sm = _eff.getMinutes();
       var _totalMin = _sh*60+_sm;
       var _inPayWin  = (_mRound===2)?(_totalMin>=900&&_totalMin<1140):(_totalMin>=300&&_totalMin<780);
       var _inWarnWin = (_mRound===2)?(_totalMin>=1110&&_totalMin<1140):(_totalMin>=750&&_totalMin<780);
