@@ -422,6 +422,11 @@ var _lastMatchState = null;
 async function checkMatchRefresh(){
   if(!localStorage.getItem('lp_token')) return;
   try{
+    // 판매탭이 활성이면 매 폴링마다 즉시 재렌더링 (시간 경계 버튼 즉시 갱신)
+    var _sellTabEl = document.getElementById('tab-sell');
+    var _sellVisible = _sellTabEl && (_sellTabEl.classList.contains('active') || _sellTabEl.offsetHeight > 0);
+    if(_sellVisible && typeof renderSellTab === 'function') renderSellTab();
+
     var d = await api('/user/me');
     var curState = JSON.stringify({
       bronze: d.items?.bronze?.length,
@@ -430,26 +435,22 @@ async function checkMatchRefresh(){
       maintain: d.maintain_points,
       total: d.total_points
     });
-    // 서버 시간 기준으로 자동 입금확인 트리거 (로컬 시간 아닌 getEffectiveDate 사용)
+    // 서버 시간 기준으로 자동 입금확인 트리거
     var _eff = getEffectiveDate ? getEffectiveDate() : new Date();
     var _hm = _eff.getHours()*60 + _eff.getMinutes();
-    if(_hm >= 840 || _hm >= 1200){  // 14:00 or 20:00 이후
+    if(_hm >= 840 || _hm >= 1200){
       api('/user/auto-confirm-paid', {method:'POST', body:'{}'}).catch(function(){});
     }
-    // paid 상태 매치도 감지에 포함 (판매자 입금확인 버튼 즉시 반영)
-    // /api/user/matching에서 sell paid/pending 상태 확인
+    // paid 상태 매치 감지에 포함
     var _sellPaidKey = '';
     try{
       var _mt = await api('/user/matching');
       _sellPaidKey = JSON.stringify((_mt.sell||[]).map(function(m){ return m.id+'_'+m.status; }));
     }catch(e2){}
-    // 현재 시간(분)도 포함 → 13:00, 14:00 등 시간 경계에서 버튼 상태 자동 갱신
-    var _timeBucket = Math.floor(_hm / 1);  // 매 분마다 변화 감지
+    var _timeBucket = Math.floor(_hm / 1);
     var _fullState = curState + '|' + _sellPaidKey + '|t' + _timeBucket;
-    // 상태 변경 감지 (첫 실행 포함)
     if(_lastMatchState !== _fullState){
       if(_lastMatchState !== undefined){
-        // 변화 감지 → 즉시 전체 UI 갱신
         userData = d;
         renderHeader(d);
         renderBars && renderBars(d);
@@ -460,20 +461,12 @@ async function checkMatchRefresh(){
             if(typeof updateReserveDefaults==='function') updateReserveDefaults(window.userData.level||1);
           }
         });
+        // 구매탭 갱신
+        var _buyTabEl = document.getElementById('tab-matching');
+        var _buyVisible = _buyTabEl && (_buyTabEl.classList.contains('active') || _buyTabEl.offsetHeight > 0);
+        if(_buyVisible && typeof loadMatchingTab === 'function') loadMatchingTab();
       }
       _lastMatchState = _fullState;
-    }
-    // 현재 sell/buy 탭이면 매 폴링마다 재렌더링 (시간 경계 버튼 상태 갱신)
-    var _sellTabEl = document.getElementById('tab-sell');
-    var _buyTabEl = document.getElementById('tab-matching');
-    var _sellVisible = _sellTabEl && (_sellTabEl.classList.contains('active') || _sellTabEl.offsetHeight > 0);
-    var _buyVisible = _buyTabEl && (_buyTabEl.classList.contains('active') || _buyTabEl.offsetHeight > 0);
-    if(_sellVisible){
-      // 판매탭: renderSellTab()이 sell-tab-list를 렌더링 (renderCard에서 실시간 시간 계산)
-      if(typeof renderSellTab === 'function') renderSellTab();
-    }
-    if(_buyVisible && typeof loadMatchingTab === 'function'){
-      loadMatchingTab();
     }
   }catch(e){}
 }
