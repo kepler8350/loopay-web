@@ -466,8 +466,8 @@ async function checkMatchRefresh(){
     // 현재 sell/buy 탭이면 매 폴링마다 매칭목록 재렌더링 (시간 경계 버튼 상태 갱신)
     var _sellTabEl = document.getElementById('tab-sell');
     var _buyTabEl = document.getElementById('tab-matching');
-    var _sellVisible = _sellTabEl && _sellTabEl.style.display === 'block';
-    var _buyVisible = _buyTabEl && _buyTabEl.style.display === 'block';
+    var _sellVisible = _sellTabEl && (_sellTabEl.classList.contains('active') || _sellTabEl.offsetHeight > 0);
+    var _buyVisible = _buyTabEl && (_buyTabEl.classList.contains('active') || _buyTabEl.offsetHeight > 0);
     if((_sellVisible || _buyVisible) && typeof loadMatchingTab === 'function'){
       loadMatchingTab();
     }
