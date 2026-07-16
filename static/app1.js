@@ -437,13 +437,15 @@ async function checkMatchRefresh(){
       api('/user/auto-confirm-paid', {method:'POST', body:'{}'}).catch(function(){});
     }
     // paid 상태 매치도 감지에 포함 (판매자 입금확인 버튼 즉시 반영)
-    // /api/user/matching에서 sell paid 상태 확인
+    // /api/user/matching에서 sell paid/pending 상태 확인
     var _sellPaidKey = '';
     try{
       var _mt = await api('/user/matching');
       _sellPaidKey = JSON.stringify((_mt.sell||[]).map(function(m){ return m.id+'_'+m.status; }));
     }catch(e2){}
-    var _fullState = curState + '|' + _sellPaidKey;
+    // 현재 시간(분)도 포함 → 13:00, 14:00 등 시간 경계에서 버튼 상태 자동 갱신
+    var _timeBucket = Math.floor(_hm / 1);  // 매 분마다 변화 감지
+    var _fullState = curState + '|' + _sellPaidKey + '|t' + _timeBucket;
     // 상태 변경 감지 (첫 실행 포함)
     if(_lastMatchState !== _fullState){
       if(_lastMatchState !== undefined){
@@ -458,16 +460,16 @@ async function checkMatchRefresh(){
             if(typeof updateReserveDefaults==='function') updateReserveDefaults(window.userData.level||1);
           }
         });
-        // 현재 buy(matching)/sell 탭이면 매칭목록도 갱신 (paid 상태 즉시 반영)
-        var _sellTabEl = document.getElementById('tab-sell');
-        var _buyTabEl = document.getElementById('tab-matching');
-        var _sellVisible = _sellTabEl && (_sellTabEl.style.display==='block' || !_sellTabEl.hidden);
-        var _buyVisible = _buyTabEl && (_buyTabEl.style.display==='block' || !_buyTabEl.hidden);
-        if((_sellVisible || _buyVisible) && typeof loadMatchingTab==='function'){
-          loadMatchingTab();
-        }
       }
       _lastMatchState = _fullState;
+    }
+    // 현재 sell/buy 탭이면 매 폴링마다 매칭목록 재렌더링 (시간 경계 버튼 상태 갱신)
+    var _sellTabEl = document.getElementById('tab-sell');
+    var _buyTabEl = document.getElementById('tab-matching');
+    var _sellVisible = _sellTabEl && _sellTabEl.style.display === 'block';
+    var _buyVisible = _buyTabEl && _buyTabEl.style.display === 'block';
+    if((_sellVisible || _buyVisible) && typeof loadMatchingTab === 'function'){
+      loadMatchingTab();
     }
   }catch(e){}
 }
