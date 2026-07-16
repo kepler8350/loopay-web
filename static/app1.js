@@ -480,7 +480,12 @@ setInterval(checkMatchRefresh, 5000);  // 5초마다 포인트/매칭 상태 감
 setInterval(function(){
   var _sellTabEl = document.getElementById('tab-sell');
   if(_sellTabEl && _sellTabEl.classList.contains('active') && typeof renderSellTab === 'function'){
-    renderSellTab();
+    // 서버 시간 동기화 후 렌더링 (mock_time 환경 포함하여 정확한 시간 보장)
+    if(typeof syncServerTime === 'function'){
+      syncServerTime().then(function(){ renderSellTab(); }).catch(function(){ renderSellTab(); });
+    } else {
+      renderSellTab();
+    }
   }
 }, 5000);
 setInterval(loadNotifBadge, 20000);  // 20초마다 알림 체크 → 새 알림 시 포인트 갱신
