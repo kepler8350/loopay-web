@@ -2663,7 +2663,7 @@ function renderSellTab(){
       var _eff = (typeof getEffectiveDate === 'function') ? getEffectiveDate() : new Date();
       var _sh = _eff.getHours(), _sm = _eff.getMinutes();
       var _totalMin = _sh*60+_sm;
-      var _inPayWin  = (_mRound===2)?(_totalMin>=900&&_totalMin<1140):(_totalMin>=300&&_totalMin<780);
+      var _inPayWin  = (_mRound===2)?(_totalMin>=900&&_totalMin<1140):(_totalMin>=300&&_totalMin<840);
       var _inWarnWin = (_mRound===2)?(_totalMin>=1110&&_totalMin<1140):(_totalMin>=750&&_totalMin<780);
       var _inConfWin = (_mRound===2)?(_totalMin>=1140&&_totalMin<1200):(_totalMin>=780&&_totalMin<840);
       var _isPaid = (ms==='paid');
