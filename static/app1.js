@@ -471,12 +471,21 @@ async function checkMatchRefresh(){
   }catch(e){}
 }
 setInterval(checkMatchRefresh, 5000);  // 5초마다 포인트/매칭 상태 감지
-// 판매탭 버튼 상태 갱신: 5초마다 renderSellTab 직접 호출 (13:00 등 시간 경계 즉시 반영)
-setInterval(function(){
+// 판매탭 버튼 상태 갱신: 5초마다 my-items 재조회 후 renderSellTab (paid 변화 + 시간 경계 즉시 반영)
+setInterval(async function(){
   try{
     var _sellTabEl = document.getElementById('tab-sell');
     var _sellVisible = _sellTabEl && (_sellTabEl.classList.contains('active') || _sellTabEl.offsetHeight > 0);
-    if(_sellVisible && typeof renderSellTab === 'function') renderSellTab();
+    if(!_sellVisible) return;
+    // my-items 최신 데이터로 갱신 (match_status=paid 반영)
+    var tok = localStorage.getItem('lp_token');
+    if(!tok) return;
+    var d = await fetch('/api/user/my-items', {headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'}}).then(function(r){return r.json();});
+    if(d && d.items){
+      _myItems = d.items;
+      _myItems.sort(function(a,b){ return (b.purchase_date||'').localeCompare(a.purchase_date||'') || b.id - a.id; });
+    }
+    if(typeof renderSellTab === 'function') renderSellTab();
   }catch(e){}
 }, 5000);
 setInterval(loadNotifBadge, 20000);  // 20초마다 알림 체크 → 새 알림 시 포인트 갱신
