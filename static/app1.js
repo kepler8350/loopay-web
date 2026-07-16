@@ -1377,6 +1377,8 @@ async function loadItemDetail(barType){
     updateBulkSellBtn(barType, items);
     // 구매일 기준 최신순 정렬
     items.sort(function(a,b){ return (b.purchase_date||'').localeCompare(a.purchase_date||'') || b.id - a.id; });
+    // 판매선택된 아이템을 맨 위로
+    items.sort(function(a,b){ return (!!_sellSelected[String(b.id)] ? 1 : 0) - (!!_sellSelected[String(a.id)] ? 1 : 0); });
     // 아이템 캐시 업데이트 (판매보드에서 사용)
     items.forEach(function(it){ _itemCache[it.id]={bar_type:barType,stage:it.stage,sell_price:it.sell_price,profit:it.profit,buy_price:it.buy_price,purchase_date:it.purchase_date,days:it.days}; });
     // 구매일자 내림차순 정렬 (최신 구매 아이템 위에)
@@ -2612,12 +2614,18 @@ function renderSellTab(){
   // 매칭 시간 여부: 서버에서 받은 값 사용 (더 정확)
   var _isMatchingTime = _isMatchingTimeServer;
 
-  // 단계별 그룹 정의 (순서: 보유중 → 판매가능 → 판매예약중 → 진행중)
+  // 단계별 그룹 정의 (순서: 매칭/거래중 → 판매가능 → 판매예약중 → 보유중)
   var stages = [
-    {key:'보유중',   label:'보유중',     color:'#64b5f6', filter:function(x){
-      if(x.match_status && x.match_status!=='cancelled') return false;
-      return x.status_label==='보유중';
+    {key:'진행중',   label:'매칭/거래중', color:'#f9a825', filter:function(x){
+      var ms = x.match_status;
+      if(!ms) return false;
+      // 매칭 시간(20~05시)에는 진행중 표시 안 함
+      if(_isMatchingTime && (ms==='pending'||ms==='matched')) return false;
+      // 05시 이후: pending/matched도 진행중으로 표시 (매칭 결과 공개)
+      if(!_isMatchingTime && (ms==='pending'||ms==='matched')) return true;
+      return ms==='paid' || ms==='confirmed' || ms==='unpaid' || ms==='failed';
     }},
+
     {key:'판매가능', label:'판매가능',   color:'#66bb6a', filter:function(x){
       if(x.match_status && x.match_status!=='cancelled') return false;
       return x.status_label==='판매가능';
@@ -2632,16 +2640,10 @@ function renderSellTab(){
       if(ms==='pending'||ms==='matched') return _isMatchingTime;
       return true;
     }},
-
-    {key:'진행중',   label:'매칭/거래중', color:'#f9a825', filter:function(x){
-      var ms = x.match_status;
-      if(!ms) return false;
-      // 매칭 시간(20~05시)에는 진행중 표시 안 함
-      if(_isMatchingTime && (ms==='pending'||ms==='matched')) return false;
-      // 05시 이후: pending/matched도 진행중으로 표시 (매칭 결과 공개)
-      if(!_isMatchingTime && (ms==='pending'||ms==='matched')) return true;
-      return ms==='paid' || ms==='confirmed' || ms==='unpaid' || ms==='failed';
-    }}
+    {key:'보유중',   label:'보유중',     color:'#64b5f6', filter:function(x){
+      if(x.match_status && x.match_status!=='cancelled') return false;
+      return x.status_label==='보유중';
+    }},
   ];
 
   function renderCard(item){
