@@ -2062,7 +2062,7 @@ function updateResUI(BZ_MIN,BZ_MAX,SV_MIN,SV_MAX,GD_MIN,GD_MAX){
   var _svRange=document.getElementById('r-sv-range'); if(_svRange) _svRange.textContent = svUnlocked
     ? '최소 '+SV_MIN+' / 최대 '+_dynSvMax
     : '(수정 '+BZ_MIN+'개 달성 시 선택 가능)';
-  var _svNote=document.getElementById('r-sv-note'); if(_svNote) _svNote.textContent = '수정 '+BZ_MAX+'개 예약 시 루비 선택 가능';
+  var _svNote=document.getElementById('r-sv-note'); if(_svNote) _svNote.textContent = '수정 '+BZ_MIN+'개 예약 시 루비 선택 가능';
   document.getElementById('r-sv-wrap').className = 'r-wrap'+(svUnlocked?'':' locked');
   var svWrap2 = document.getElementById('r-sv-wrap');
   if(svWrap2){ svWrap2.style.opacity = _byUser ? '0.5' : ''; svWrap2.style.pointerEvents = _byUser ? 'none' : ''; }
@@ -2084,7 +2084,7 @@ function updateResUI(BZ_MIN,BZ_MAX,SV_MIN,SV_MAX,GD_MIN,GD_MAX){
   var _gdRange=document.getElementById('r-gd-range'); if(_gdRange) _gdRange.textContent = gdUnlocked
     ? '최소 '+GD_MIN+' / 최대 '+_dynGdMax
     : '(루비 '+_svJumpMin+'개 달성 시 선택 가능)';
-  var _gdNote=document.getElementById('r-gd-note'); if(_gdNote) _gdNote.textContent = '루비 '+SV_MAX+'개 예약 시 다이아 선택 가능';
+  var _gdNote=document.getElementById('r-gd-note'); if(_gdNote) _gdNote.textContent = '루비 '+_svJumpMin+'개 예약 시 다이아 선택 가능';
   document.getElementById('r-gd-wrap').className = 'r-wrap'+(gdUnlocked?'':' locked');
   var gdWrap2 = document.getElementById('r-gd-wrap');
   if(gdWrap2){ gdWrap2.style.opacity = _byUser ? '0.5' : ''; gdWrap2.style.pointerEvents = _byUser ? 'none' : ''; }
