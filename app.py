@@ -6514,6 +6514,37 @@ def check_level_demotion_api():
         db.close()
 
 
+@app.route('/api/admin/testtools/set-user-level-status', methods=['POST'])
+@jwt_required()
+def testtools_set_user_level_status():
+    """테스트용: 사용자 레벨 상태 강제 설정"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='권한 없음'), 403
+    data = request.json or {}
+    user_id = int(data.get('user_id', 0))
+    db = get_db()
+    try:
+        fields = []
+        vals = []
+        for col in ['level','original_level','consecutive_reserve_days',
+                    'last_reserve_date','level_demoted_at','level_changed_at',
+                    'level_change_streak_start']:
+            if col in data:
+                fields.append(f'{col}=?')
+                vals.append(data[col])
+        if not fields:
+            return jsonify(error='변경할 필드 없음'), 400
+        vals.append(user_id)
+        db.execute(f"UPDATE users SET {','.join(fields)} WHERE id=?", vals)
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/user/profile', methods=['GET'])
 @jwt_required()
 def get_user_profile():
