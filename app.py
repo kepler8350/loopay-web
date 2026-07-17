@@ -269,6 +269,8 @@ def _auto_confirm_paid_matches(db):
 def _auto_process_unpaid(db, m):
     """pending 매치를 자동 미입금(failed) 처리 - 패널티 포함 거래정지"""
     match_id = m['id']
+    match_round = m.get('match_round') or 1
+
     # 1. match → failed
     db.execute("UPDATE matches SET status='failed' WHERE id=?", (match_id,))
 
@@ -279,24 +281,53 @@ def _auto_process_unpaid(db, m):
     for _brid in _buy_res_ids:
         db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_brid,))
 
-    # 3. 판매 아이템 → reservable 복원 + 2차 sell 예약 생성
+    # 3. 판매 아이템 처리
     if m.get('seller_item_id'):
         db.execute("UPDATE items SET status='reservable' WHERE id=?", (m['seller_item_id'],))
-        # 2차 매칭용 sell 예약 생성 (없으면)
-        _exist = db.execute(
-            "SELECT id FROM reservations WHERE item_id=? AND match_round=2 AND status='pending'",
-            (m['seller_item_id'],)
-        ).fetchone()
-        if not _exist:
-            _item = db.execute("SELECT * FROM items WHERE id=?", (m['seller_item_id'],)).fetchone()
-            if _item:
-                db.execute(
-                    """INSERT INTO reservations(user_id,item_id,bar_type,match_round,
-                       reserve_date,status,confirmed)
-                       VALUES(?,?,?,2,?,'pending',1)""",
-                    (_item['user_id'], m['seller_item_id'],
-                     _item['bar_type'], m['match_date'])
-                )
+
+        if match_round == 1:
+            # 1차 미입금 → 2차 sell 예약 생성
+            _exist = db.execute(
+                "SELECT id FROM reservations WHERE item_id=? AND match_round=2 AND status='pending'",
+                (m['seller_item_id'],)
+            ).fetchone()
+            if not _exist:
+                _item = db.execute("SELECT * FROM items WHERE id=?", (m['seller_item_id'],)).fetchone()
+                if _item:
+                    db.execute(
+                        """INSERT INTO reservations(user_id,item_id,bar_type,match_round,
+                           reserve_date,status,confirmed)
+                           VALUES(?,?,?,2,?,'pending',1)""",
+                        (_item['user_id'], m['seller_item_id'],
+                         _item['bar_type'], m['match_date'])
+                    )
+        else:
+            # 2차 미입금 → loopay 계정 구매예약 생성 (강제 구매)
+            _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+            if _loopay_row:
+                loopay_id = _loopay_row['id']
+                _item = db.execute("SELECT * FROM items WHERE id=?", (m['seller_item_id'],)).fetchone()
+                if _item:
+                    _dup = db.execute(
+                        """SELECT id FROM reservations WHERE user_id=? AND item_id=?
+                           AND match_round=2 AND status IN ('pending','matched')""",
+                        (loopay_id, m['seller_item_id'])
+                    ).fetchone()
+                    if not _dup:
+                        db.execute(
+                            """INSERT INTO reservations(user_id,bar_type,stage,match_round,
+                               status,reserve_date,confirmed,item_id)
+                               VALUES(?,?,?,2,'pending',?,1,?)""",
+                            (loopay_id, _item['bar_type'], _item['stage'] or 1,
+                             m['match_date'], m['seller_item_id'])
+                        )
+                    db.execute("UPDATE items SET status='matched' WHERE id=?", (m['seller_item_id'],))
+                    try:
+                        bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+                        insert_notification(db, _item['user_id'], 'loopay_purchase', 'loopay 구매',
+                            f'2차 매칭 미입금으로 인해 {bar_names.get(_item["bar_type"],_item["bar_type"])} 아이템이 loopay 계정으로 구매 처리됩니다.')
+                    except Exception:
+                        pass
 
     # 4. 구매자 패널티 처리 + 거래정지
     if m.get('buyer_id'):
@@ -312,15 +343,13 @@ def _auto_process_unpaid(db, m):
             _release_dt = _now + timedelta(days=suspend_days)
             _release_str = _release_dt.strftime('%Y-%m-%d %H:%M:%S')
             _now_str = _now.strftime('%Y-%m-%d %H:%M:%S')
-            # suspended_until 설정 → 즉시 거래정지
             db.execute("UPDATE users SET unpaid_count=?, suspended_until=? WHERE id=?",
                        (current_count, _release_str, buyer_id))
             db.execute(
                 """INSERT INTO penalties(user_id,unpaid_count,suspend_days,release_points,is_released,created_at,match_id,match_round)
                    VALUES(?,?,?,?,0,?,?,?)""",
-                (buyer_id, current_count, suspend_days, release_pts, _now_str, match_id, m.get('match_round') or 1)
+                (buyer_id, current_count, suspend_days, release_pts, _now_str, match_id, match_round)
             )
-            # 미입금 구매자 2차 예약 제외
             db.execute("UPDATE reservations SET status='unmatched' WHERE user_id=? AND match_round=2 AND status='pending'",
                        (buyer_id,))
             try:
