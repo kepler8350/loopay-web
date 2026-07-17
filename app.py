@@ -2720,7 +2720,11 @@ def admin_run_matching():
         # bar_type+stage별로 묶어서 랜덤 매칭
         import random
         random.shuffle(all_sell_normal)
-        random.shuffle(buy_normal)
+        # loopay 구매예약 우선: loopay를 맨 앞으로, 나머지는 랜덤
+        _loopay_buy_normal = [b for b in buy_normal if b.get('buyer_username') == 'loopay']
+        _other_buy_normal = [b for b in buy_normal if b.get('buyer_username') != 'loopay']
+        random.shuffle(_other_buy_normal)
+        buy_normal = _loopay_buy_normal + _other_buy_normal
 
         # bar_type별로 구매예약 인덱스
         buy_by_bt = {}
@@ -2744,7 +2748,9 @@ def admin_run_matching():
             if not _candidates:
                 continue
 
-            _buyer = random.choice(_candidates)
+            # loopay 구매예약 우선 선택
+            _loopay_cands = [b for b in _candidates if b.get('buyer_username') == 'loopay']
+            _buyer = _loopay_cands[0] if _loopay_cands else random.choice(_candidates)
 
             # DB 검증
             _chk = db.execute("SELECT user_id FROM reservations WHERE id=?", (_buyer['res_id'],)).fetchone()
