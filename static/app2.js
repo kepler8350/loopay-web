@@ -88,30 +88,38 @@ function changeRes(type,delta){
   var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
   var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
   if(type==='bz'){
+    var _prevBz = bzCnt;
     if(delta>0 && bzCnt===0){ bzCnt=BZ_MIN; }
     else if(delta<0 && bzCnt===BZ_MIN){ bzCnt=0; svCnt=0; gdCnt=0; }
     else { bzCnt=Math.max(BZ_MIN,Math.min(BZ_MAX,bzCnt+delta)); }
-    // 수정이 최솟값 미달이면 루비/다이아 초기화
+    var _newSvMax = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
     if(bzCnt < BZ_MIN){ svCnt=0; gdCnt=0; }
+    else if(bzCnt === BZ_MAX && _prevBz < BZ_MAX && _newSvMax > 0){
+      // 수정 BZ_MAX 도달 시 루비/다이아 자동 최솟값으로 점프
+      svCnt = _newSvMax;
+      var _newGdMax = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt) : GD_MAX;
+      gdCnt = _newGdMax > 0 ? _newGdMax : 0;
+    } else if(bzCnt < BZ_MAX){
+      // BZ_MAX 미만이면 루비/다이아 0
+      svCnt=0; gdCnt=0;
+    }
   } else if(type==='sv'){
-    // 수정이 최솟값(BZ_MIN) 이상이면 루비 선택 가능
-    if(bzCnt >= BZ_MIN && SV_MAX > 0){
+    // 수정이 BZ_MAX 도달해야 루비 선택 가능
+    if(bzCnt >= BZ_MAX && SV_MAX > 0){
       var _dynSvMax2 = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
-      var _svJumpMin = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : 1;  // 현재 bz의 sv값이 sv 최솟값
-      if(delta>0 && svCnt===0){ svCnt=_svJumpMin; }      // 0→sv 최솟값으로 점프
-      else if(delta<0 && svCnt===_svJumpMin){ svCnt=0; gdCnt=0; }  // 최솟값→0
-      else { svCnt=Math.max(_svJumpMin,Math.min(_dynSvMax2,svCnt+delta)); }
+      var _svJumpMin = _dynSvMax2;
+      if(delta<0 && svCnt===_svJumpMin){ svCnt=0; gdCnt=0; }
+      else { svCnt=Math.max(0,Math.min(_dynSvMax2,svCnt+delta)); }
       if(svCnt < _svJumpMin){ gdCnt=0; }
     }
   } else if(type==='gd'){
     var _dynSvMax3 = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
-    var _svJumpMin3 = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : 1;  // 현재 bz의 sv값
+    var _svJumpMin3 = _dynSvMax3;
     var _dynGdMax2 = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt) : GD_MAX;
-    if(bzCnt >= BZ_MIN && svCnt >= _svJumpMin3 && _dynGdMax2 > 0){
-      var _gdJumpMin = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt) : 1;  // 현재 sv의 gd값이 gd 최솟값
-      if(delta>0 && gdCnt===0){ gdCnt=_gdJumpMin; }      // 0→gd 최솟값으로 점프
-      else if(delta<0 && gdCnt===_gdJumpMin){ gdCnt=0; }  // 최솟값→0
-      else { gdCnt=Math.max(_gdJumpMin,Math.min(_dynGdMax2,gdCnt+delta)); }
+    if(bzCnt >= BZ_MAX && svCnt >= _svJumpMin3 && _dynGdMax2 > 0){
+      var _gdJumpMin = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt) : 1;
+      if(delta<0 && gdCnt===_gdJumpMin){ gdCnt=0; }
+      else { gdCnt=Math.max(0,Math.min(_dynGdMax2,gdCnt+delta)); }
     }
   }
   var SV_MIN_C=(cfg.sv_min!=null?cfg.sv_min:0), SV_MAX_C=cfg.sv_max||0;
