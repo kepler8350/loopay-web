@@ -132,7 +132,7 @@ var SV_TO_GD_JS={
   10:8,11:8,12:8,13:9,
   14:10,15:11,16:11,17:12
 };
-function getSvFromBz(bz){ return BZ_TO_SV_JS[bz]||1; }
+function getSvFromBz(bz){ var v=BZ_TO_SV_JS[bz]; return (v!=null)?v:1; }
 function getGdFromSv(sv){ return SV_TO_GD_JS[sv]||1; }
 var combinePairs=[];var pendingItem=null;
 
