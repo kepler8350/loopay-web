@@ -2036,17 +2036,17 @@ function updateResUI(BZ_MIN,BZ_MAX,SV_MIN,SV_MAX,GD_MIN,GD_MAX){
   var bzWrap = document.getElementById('r-bz-wrap');
   if(bzWrap){ bzWrap.style.opacity = _byUser ? '0.5' : ''; bzWrap.style.pointerEvents = _byUser ? 'none' : ''; }
 
-  // 루비: 수정이 BZ_MIN 이상이면 선택 가능, sv_max는 bz 수량에 따라 동적 결정
-  var _dynSvMax = (bzCnt>=BZ_MIN && typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
-  var _svJumpMin = (bzCnt>=BZ_MIN && typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : 1;  // 현재 bz의 sv값
-  var svUnlocked = (bzCnt >= BZ_MIN) && _dynSvMax > 0;
+  // 루비: 수정이 BZ_MAX 도달해야 선택 가능 (최대 수량일 때만 루비/다이아 활성화)
+  var _dynSvMax = (bzCnt>=BZ_MAX && typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
+  var _svJumpMin = (bzCnt>=BZ_MAX && typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : 1;  // 현재 bz의 sv값
+  var svUnlocked = (bzCnt >= BZ_MAX) && _dynSvMax > 0;
   // 수정이 BZ_MAX 미달이면 svCnt 강제 0
   if(!svUnlocked) svCnt = 0;
   sv = svCnt;
   var _svV=document.getElementById('r-sv-v'); if(_svV) _svV.textContent = sv;
   var _svRange=document.getElementById('r-sv-range'); if(_svRange) _svRange.textContent = svUnlocked
     ? '최소 '+SV_MIN+' / 최대 '+_dynSvMax
-    : '(수정 '+BZ_MIN+'개 달성 시 선택 가능)';
+    : '(수정 '+BZ_MAX+'개 달성 시 선택 가능)';
   var _svNote=document.getElementById('r-sv-note'); if(_svNote) _svNote.textContent = '수정 '+BZ_MAX+'개 예약 시 루비 선택 가능';
   document.getElementById('r-sv-wrap').className = 'r-wrap'+(svUnlocked?'':' locked');
   var svWrap2 = document.getElementById('r-sv-wrap');
@@ -2061,7 +2061,7 @@ function updateResUI(BZ_MIN,BZ_MAX,SV_MIN,SV_MAX,GD_MIN,GD_MAX){
   var _gdJumpMin = (sv>=_svJumpMin && sv>0 && typeof getGdFromSv==='function') ? getGdFromSv(sv) : 1;  // 현재 sv의 gd값
   var gdUnlocked = svUnlocked && (sv >= _svJumpMin) && _dynGdMax > 0;
   // bzNote: _svJumpMin, _gdJumpMin 정의 이후에 업데이트
-  if(bzNote) bzNote.textContent='수정 '+BZ_MIN+'개 예약시 루비 '+_svJumpMin+'개 활성화 / 루비 '+_svJumpMin+'개 예약시 다이아 '+_gdJumpMin+'개 활성화';
+  if(bzNote) bzNote.textContent='수정 '+BZ_MAX+'개 예약시 루비 '+_svJumpMin+'개 활성화 / 루비 '+_svJumpMin+'개 예약시 다이아 '+_gdJumpMin+'개 활성화';
   // 루비가 SV_MAX 미달이면 gdCnt 강제 0
   if(!gdUnlocked) gdCnt = 0;
   gd = gdCnt;
