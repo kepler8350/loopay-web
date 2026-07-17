@@ -3502,7 +3502,7 @@ def admin_lucky_buy_setup():
                 (bar_type, today_str, *lucky_stages[bar_type])
             ).fetchall()
 
-            # 당일 해당 bar_type 구매예약 2개 이상인 사용자 조회 (행운구매 가능 구매자)
+            # 당일 해당 bar_type 구매예약이 있는 사용자 조회 (행운구매 가능 구매자)
             buy_eligible = conn.execute(
                 """SELECT r.user_id, COUNT(*) as cnt
                    FROM reservations r
@@ -3511,7 +3511,7 @@ def admin_lucky_buy_setup():
                    AND r.reserve_date=?
                    AND COALESCE(r.confirmed,0)=0
                    GROUP BY r.user_id
-                   HAVING COUNT(*) >= 2""",
+                   HAVING COUNT(*) >= 1""",
                 (bar_type, today_str)
             ).fetchall()
             eligible_buyer_ids = {row['user_id'] for row in buy_eligible}
