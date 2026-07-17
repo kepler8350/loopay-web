@@ -441,6 +441,8 @@ async function checkMatchRefresh(){
     var _hm = _eff.getHours()*60 + _eff.getMinutes();
     if(_hm >= 840 || _hm >= 1200){
       api('/user/auto-confirm-paid', {method:'POST', body:'{}'}).catch(function(){});
+    // 매일 강등 체크 (클라이언트가 트리거)
+    api('/user/check-level-demotion', {method:'POST', body:'{}'}).catch(function(){});
     }
     // paid 상태 매치 감지에 포함
     var _sellPaidKey = '';

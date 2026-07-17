@@ -103,7 +103,7 @@ async function loadUsers(){
       <td>${i+1}</td>
       <td>${u.username||'-'}</td>
       <td>${u.real_name||u.nickname||'-'}</td>
-      <td id="level-cell-${u.id}" style="text-align:center;cursor:pointer" onclick="editUserField(${u.id},'level',${u.level||1})" title="클릭하여 수정"><span class="badge badge-info" style="cursor:pointer">${u.level||1}L ✏️</span></td>
+      <td id="level-cell-${u.id}" style="text-align:center;cursor:pointer" onclick="editUserField(${u.id},'level',${u.level||1})" title="클릭하여 수정"><span class="badge badge-info" style="cursor:pointer">${u.level||1}L${u.original_level && u.level < u.original_level ? '<span style="color:#e65100;font-size:10px">(강등)</span>' : u.level_change_streak_start ? '<span style="color:#1a4fa3;font-size:10px">★</span>' : ''} ✏️</span></td>
       <td>${(u.charge_points||0).toLocaleString()}P</td>
       <td>${((u.total_charged_amount||0)||(u.charge_points||0)*120).toLocaleString()}원</td>
       <td>${(u.exchange_points||0).toLocaleString()}</td>
@@ -2127,7 +2127,8 @@ async function showUserDetail(uid){
       '<tr><th>은행명</th><td>'+(u.bank||'-')+'</td></tr>' +
       '<tr><th>계좌번호</th><td>'+(u.account_no||'-')+'</td></tr>' +
       '<tr><th>가입일</th><td>'+(u.created_at||'-').slice(0,10)+'</td></tr>' +
-      '<tr><th>레벨</th><td>'+(u.level||1)+'</td></tr>' +
+      '<tr><th>레벨</th><td>'+(u.level||1)+(u.original_level && u.level < u.original_level ? ' <span style="color:#e65100;font-size:11px">(원:'+u.original_level+'레벨 강등)</span>' : u.level_change_streak_start ? ' <span style="color:#1a4fa3;font-size:11px">(변경가능)</span>' : '')+'</td></tr>' +
+      '<tr><th>연속예약</th><td>'+(u.consecutive_reserve_days||0)+'일'+(u.last_reserve_date ? ' / 최근:'+u.last_reserve_date : '')+'</td></tr>' +
       '<tr><th>충전P</th><td>'+(u.charge_points||0)+'P</td></tr>' +
       '<tr><th>전환P</th><td>'+(u.exchange_points||0)+'P</td></tr>' +
       '</table></div>';

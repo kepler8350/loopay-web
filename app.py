@@ -579,6 +579,129 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(hours=24)
 CORS(app, origins='*')
 jwt = JWTManager(app)
 
+
+def _check_level_demotion(db, uid):
+    """구매예약 후 연속일 체크 및 레벨 강등/회복/변경 처리"""
+    import datetime as _dt
+    u = db.execute(
+        """SELECT level, original_level, consecutive_reserve_days,
+                  last_reserve_date, level_demoted_at, level_changed_at,
+                  level_change_streak_start
+           FROM users WHERE id=?""", (uid,)
+    ).fetchone()
+    if not u: return
+
+    today = get_today()  # date
+    today_str = today.isoformat()
+    level = u['level'] or 1
+    original_level = u['original_level']  # None이면 아직 강등 없음
+    consecutive = u['consecutive_reserve_days'] or 0
+    last_date_str = u['last_reserve_date']
+    streak_start_str = u['level_change_streak_start']
+
+    # 오늘 이미 체크했으면 스킵
+    if last_date_str == today_str:
+        return
+
+    # 연속일 계산
+    if last_date_str:
+        last_date = _dt.date.fromisoformat(last_date_str)
+        diff = (today - last_date).days
+        if diff == 1:
+            consecutive += 1  # 어제 예약 → 연속
+        elif diff == 0:
+            return  # 오늘 이미 처리됨
+        else:
+            consecutive = 1  # 중간에 끊김 → 1로 리셋 (오늘부터 새로 카운트)
+    else:
+        consecutive = 1  # 최초 예약
+
+    db.execute(
+        "UPDATE users SET consecutive_reserve_days=?, last_reserve_date=? WHERE id=?",
+        (consecutive, today_str, uid)
+    )
+
+    # ── 강등 체크 (원래 레벨 유지 중인 사용자) ──
+    # original_level이 없다 = 아직 강등된 적 없는 정상 상태
+    # 강등은 예약을 '하지 않은' 날에 발생 → 스케줄러에서 처리
+    # 여기서는 회복/변경 로직만 처리
+
+    # ── 레벨 회복 체크 (강등된 사용자, 4일 연속 시 한 레벨 올림) ──
+    if original_level and level < original_level and consecutive >= 4:
+        new_level = level + 1
+        # streak 리셋 (다음 4일 연속으로 또 한 단계)
+        db.execute(
+            """UPDATE users SET level=?, consecutive_reserve_days=0,
+               level_change_streak_start=? WHERE id=?""",
+            (new_level, today_str, uid)
+        )
+        try:
+            insert_notification(db, uid, 'level_recover', '레벨 회복',
+                f'4일 연속 구매예약으로 {new_level}레벨로 회복되었습니다.')
+        except Exception: pass
+        return
+
+    # ── 레벨 변경 가능 조건 달성 체크 (4일 연속) ──
+    # original_level 없음(정상) 또는 original_level과 현재 level이 같음(회복 완료)
+    # → 4일 연속이면 레벨 변경 가능 상태로 표시
+    current_original = original_level or level
+    if level >= current_original and consecutive >= 4:
+        # level_change_streak_start 설정 (이미 설정됐으면 유지)
+        if not streak_start_str:
+            db.execute(
+                "UPDATE users SET level_change_streak_start=? WHERE id=?",
+                (today_str, uid)
+            )
+
+
+def _check_daily_demotion(db):
+    """매일 실행: 어제 구매예약 없는 사용자 → 1레벨 강등"""
+    import datetime as _dt
+    yesterday = (get_today() - _dt.timedelta(days=1)).isoformat()
+    today_str = get_today().isoformat()
+
+    # 어제 구매예약이 있었는지 확인 (어제 매칭이 있었던 날만 체크)
+    had_matching = db.execute(
+        "SELECT COUNT(*) as c FROM matches WHERE match_date=?", (yesterday,)
+    ).fetchone()
+    if not had_matching or had_matching['c'] == 0:
+        return  # 어제 매칭 자체가 없었으면 체크 안 함
+
+    # 승인된 일반 사용자 중 어제 구매예약 안 한 사람
+    # (loopay 제외, 이미 1레벨인 사람 제외)
+    all_users = db.execute(
+        """SELECT u.id, u.level, u.original_level
+           FROM users u
+           WHERE u.approved=1 AND u.username != 'loopay' AND u.level > 1"""
+    ).fetchall()
+
+    for u in all_users:
+        uid = u['id']
+        # 어제 구매예약 여부
+        reserved_yesterday = db.execute(
+            """SELECT COUNT(*) as c FROM reservations
+               WHERE user_id=? AND reserve_date=? AND match_round=1
+               AND (item_id IS NULL OR item_id=0)""",
+            (uid, yesterday)
+        ).fetchone()
+        did_reserve = reserved_yesterday and reserved_yesterday['c'] > 0
+        if not did_reserve:
+            # 강등
+            orig = u['original_level'] or u['level']
+            db.execute(
+                """UPDATE users SET level=1,
+                   original_level=?, level_demoted_at=?,
+                   consecutive_reserve_days=0, level_change_streak_start=NULL
+                   WHERE id=?""",
+                (orig, today_str, uid)
+            )
+            try:
+                insert_notification(db, uid, 'level_demote', '레벨 강등',
+                    f'어제 구매예약이 없어 1레벨로 강등되었습니다. 4일 연속 구매예약으로 원래 레벨까지 회복할 수 있습니다.')
+            except Exception: pass
+    db.commit()
+
+
 @app.route('/')
 def index():
     from flask import make_response, Response
@@ -1089,7 +1212,7 @@ def get_me():
         v = _ud.get(k)
         return v if v is not None else d
     try:
-        return jsonify(id=_ud.get('id'),username=_safe('username'),nickname=_safe('nickname'),real_name=_safe('real_name'),phone=_safe('phone'),bank=_safe('bank'),account_no=_safe('account_no'),account_name=_safe('account_name'),level=lv,charge_points=_ud.get('charge_points',0),exchange_points=_ud.get('exchange_points',0),total_points=(_ud.get('charge_points',0) or 0)+(_ud.get('exchange_points',0) or 0),maintain_points=_maintain,match_maintain_cost=_maintain,today_reserve_cost=_maintain,cumulative_count=_ud.get('cumulative_count',0),next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve,
+        return jsonify(id=_ud.get('id'),username=_safe('username'),nickname=_safe('nickname'),real_name=_safe('real_name'),phone=_safe('phone'),bank=_safe('bank'),account_no=_safe('account_no'),account_name=_safe('account_name'),level=lv,charge_points=_ud.get('charge_points',0),exchange_points=_ud.get('exchange_points',0),total_points=(_ud.get('charge_points',0) or 0)+(_ud.get('exchange_points',0) or 0),maintain_points=_maintain,match_maintain_cost=_maintain,today_reserve_cost=_maintain,cumulative_count=_ud.get('cumulative_count',0),next_level_cum=next_cum,progress_pct=pct,level_config=dict(cfg),items={'bronze':bronze,'silver':silver,'gold':gold},reservable={'bronze':reservable_bz,'silver':reservable_sv,'gold':reservable_gd},today_reservations={'bronze':today_res.get('bronze',0),'silver':today_res.get('silver',0),'gold':today_res.get('gold',0)},auto_reserve=auto_reserve,original_level=_ud.get('original_level'),consecutive_reserve_days=int(_ud.get('consecutive_reserve_days') or 0),last_reserve_date=_ud.get('last_reserve_date'),level_demoted_at=_ud.get('level_demoted_at'),level_changed_at=_ud.get('level_changed_at'),level_change_streak_start=_ud.get('level_change_streak_start'),
             suspended_until=_ud.get('suspended_until'),
             unpaid_count=int(_ud.get('unpaid_count') or 0),
             level_trade_active=_level_trade_active,
@@ -1201,6 +1324,11 @@ def create_reservation():
               db.execute("UPDATE users SET maintain_points=COALESCE(maintain_points,0)+? WHERE id=?", (cost, uid))
           except Exception:
               pass
+      # 레벨 연속 구매예약 체크 (강등/회복/변경 가능 여부)
+      try:
+          _check_level_demotion(db, uid)
+          db.commit()
+      except Exception: pass
       db.commit()
       db.close()
       return jsonify(success=True,message=f'매칭예약 완료! 총 {total}회, {cost}P 차감',bronze=bz,silver=sv,gold=gd,join_round2=join_r2,join_round2_denied=(_join_r2_req==1 and _has_unpaid))
@@ -1513,6 +1641,13 @@ def admin_migrate_db():
         "ALTER TABLE penalties ADD COLUMN release_paid INTEGER DEFAULT 0",
         # 데이터 정리: is_released=1인 패널티 보유자의 suspended_until 초기화
         "UPDATE users SET suspended_until=NULL WHERE id IN (SELECT DISTINCT user_id FROM penalties WHERE is_released=1) AND id NOT IN (SELECT user_id FROM penalties WHERE is_released=0)",
+        # 레벨 유지/강등/변경 관련 컬럼
+        "ALTER TABLE users ADD COLUMN original_level INTEGER DEFAULT NULL",
+        "ALTER TABLE users ADD COLUMN consecutive_reserve_days INTEGER DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN last_reserve_date DATE DEFAULT NULL",
+        "ALTER TABLE users ADD COLUMN level_demoted_at DATE DEFAULT NULL",
+        "ALTER TABLE users ADD COLUMN level_changed_at DATE DEFAULT NULL",
+        "ALTER TABLE users ADD COLUMN level_change_streak_start DATE DEFAULT NULL",
     ]
     data = request.json or {}
     extra_sqls = data.get('extra_sqls', [])
@@ -1943,7 +2078,7 @@ def admin_users():
     identity = get_jwt_identity()
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     db = get_db()
-    rows = db.execute("SELECT id,username,nickname,email,level,charge_points,exchange_points,cumulative_count,phone,bank,account_no,account_name,created_at FROM users WHERE approved=1 ORDER BY created_at DESC").fetchall()
+    rows = db.execute("SELECT id,username,nickname,email,level,original_level,consecutive_reserve_days,last_reserve_date,level_demoted_at,level_changed_at,level_change_streak_start,charge_points,exchange_points,cumulative_count,phone,bank,account_no,account_name,created_at FROM users WHERE approved=1 ORDER BY created_at DESC").fetchall()
     # 각 사용자별 충전 합계 (confirmed 기준)
     charge_totals = {}
     charge_rows = db.execute("SELECT user_id, SUM(amount) as total_amount, SUM(points) as total_points FROM charge_requests WHERE status='confirmed' GROUP BY user_id").fetchall()
@@ -6250,6 +6385,130 @@ def pay_level():
         return jsonify(success=True, paid_at=today_str, expire_at=expire_str, cost=cost)
     except Exception as e:
         db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/user/level-change', methods=['POST'])
+@jwt_required()
+def user_level_change():
+    """사용자가 원하는 레벨로 변경 (4일 연속 달성 시)"""
+    uid = int(get_jwt_identity())
+    data = request.json or {}
+    target_level = int(data.get('target_level', 0))
+    db = get_db()
+    try:
+        u = db.execute(
+            """SELECT level, original_level, consecutive_reserve_days,
+                      level_change_streak_start
+               FROM users WHERE id=?""", (uid,)
+        ).fetchone()
+        if not u:
+            return jsonify(error='사용자 없음'), 404
+
+        level = u['level'] or 1
+        original_level = u['original_level'] or level
+        consecutive = u['consecutive_reserve_days'] or 0
+        streak_start = u['level_change_streak_start']
+
+        # 레벨 변경 가능 조건: 4일 연속 달성
+        if consecutive < 4 and not streak_start:
+            return jsonify(error=f'4일 연속 구매예약이 필요합니다. (현재 {consecutive}일)'), 400
+
+        # 변경 가능 범위: 1 ~ original_level
+        max_level = original_level
+        if not (1 <= target_level <= max_level):
+            return jsonify(error=f'변경 가능 레벨: 1~{max_level}레벨'), 400
+
+        if target_level == level:
+            return jsonify(error='현재 레벨과 동일합니다'), 400
+
+        now_str = get_today().isoformat()
+        db.execute(
+            """UPDATE users SET level=?, level_changed_at=?,
+               consecutive_reserve_days=0, level_change_streak_start=NULL
+               WHERE id=?""",
+            (target_level, now_str, uid)
+        )
+        # 레벨 변경 시 original_level은 유지 (원래 레벨 기억)
+        db.commit()
+        try:
+            insert_notification(db, uid, 'level_change', '레벨 변경',
+                f'{target_level}레벨로 변경되었습니다. 4일 연속 구매예약으로 다시 변경할 수 있습니다.')
+        except Exception: pass
+        return jsonify(success=True, new_level=target_level,
+                       message=f'{target_level}레벨로 변경되었습니다.')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/user/level-status', methods=['GET'])
+@jwt_required()
+def user_level_status():
+    """레벨 상태 상세 조회 (내정보용)"""
+    uid = int(get_jwt_identity())
+    db = get_db()
+    try:
+        u = db.execute(
+            """SELECT level, original_level, consecutive_reserve_days,
+                      last_reserve_date, level_demoted_at, level_changed_at,
+                      level_change_streak_start
+               FROM users WHERE id=?""", (uid,)
+        ).fetchone()
+        if not u:
+            return jsonify(error='없음'), 404
+
+        level = u['level'] or 1
+        original_level = u['original_level'] or level
+        consecutive = u['consecutive_reserve_days'] or 0
+        streak_start = u['level_change_streak_start']
+        demoted_at = u['level_demoted_at']
+        changed_at = u['level_changed_at']
+
+        # 상태 판단
+        is_demoted = (demoted_at is not None and level < original_level)
+        can_change = (consecutive >= 4 or streak_start is not None) and level >= original_level
+        days_to_change = max(0, 4 - consecutive) if not can_change else 0
+
+        # 회복 중인 경우
+        recovering = is_demoted
+        days_to_recover = max(0, 4 - consecutive) if recovering else 0
+
+        return jsonify(
+            success=True,
+            level=level,
+            original_level=original_level,
+            consecutive_reserve_days=consecutive,
+            last_reserve_date=u['last_reserve_date'],
+            level_demoted_at=demoted_at,
+            level_changed_at=changed_at,
+            is_demoted=is_demoted,
+            can_change_level=can_change,
+            days_to_change=days_to_change,
+            recovering=recovering,
+            days_to_recover=days_to_recover,
+            changeable_levels=list(range(1, original_level + 1))
+        )
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/user/check-level-demotion', methods=['POST'])
+@jwt_required()
+def check_level_demotion_api():
+    """매일 체크: 어제 예약 없으면 강등 (클라이언트 폴링 호출)"""
+    uid = int(get_jwt_identity())
+    db = get_db()
+    try:
+        _check_daily_demotion(db)
+        return jsonify(success=True)
+    except Exception as e:
         return jsonify(error=str(e)), 500
     finally:
         db.close()

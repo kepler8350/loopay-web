@@ -348,6 +348,82 @@ async function loadProfileForm(){
   }catch(e){
     if(rows) rows.innerHTML='<div style="color:#ef5350;font-size:13px">정보를 불러오지 못했습니다: '+e.message+'</div>';
   }
+  // 레벨 상태 로딩
+  await loadLevelStatus();
+}
+
+async function loadLevelStatus(){
+  var sec = document.getElementById('level-status-section');
+  var cont = document.getElementById('level-status-content');
+  if(!sec || !cont) return;
+  try{
+    var s = await api('/user/level-status');
+    sec.style.display = '';
+    var html = '';
+    var progressBar = function(val, max, color){
+      var pct = Math.min(100, Math.round((val/max)*100));
+      return '<div style="background:#e0e0e0;border-radius:4px;height:8px;margin:4px 0"><div style="background:'+color+';width:'+pct+'%;height:8px;border-radius:4px;transition:width 0.3s"></div></div>';
+    };
+
+    // 강등 상태
+    if(s.is_demoted){
+      html += '<div style="background:#fff3e0;border:1px solid #ff9800;border-radius:8px;padding:12px;margin-bottom:10px">';
+      html += '<div style="color:#e65100;font-weight:700;font-size:13px">⚠️ 레벨 강등 상태</div>';
+      html += '<div style="font-size:12px;color:#555;margin-top:4px">원래 레벨: <b>'+s.original_level+'레벨</b> → 현재: <b>'+s.level+'레벨</b></div>';
+      html += '<div style="font-size:12px;color:#555;margin-top:6px">4일 연속 구매예약 시 한 단계씩 회복됩니다.</div>';
+      html += '<div style="font-size:12px;color:#555;margin-top:4px">현재 연속 예약: <b>'+s.consecutive_reserve_days+'일</b></div>';
+      html += progressBar(s.consecutive_reserve_days, 4, '#ff9800');
+      html += '<div style="font-size:12px;color:#888;margin-top:2px">회복까지 <b>'+s.days_to_recover+'일</b> 남음</div>';
+      html += '</div>';
+    } else {
+      html += '<div style="background:#e8f5e9;border:1px solid #4caf50;border-radius:8px;padding:10px;margin-bottom:10px">';
+      html += '<div style="color:#2e7d32;font-weight:700;font-size:13px">✅ 현재 레벨: '+s.level+'레벨</div>';
+      html += '</div>';
+    }
+
+    // 연속 예약 진행 상황
+    html += '<div style="margin-bottom:10px">';
+    html += '<div style="font-size:13px;font-weight:600;margin-bottom:4px">연속 구매예약 현황</div>';
+    html += '<div style="font-size:12px;color:#666">'+s.consecutive_reserve_days+'일 / 4일</div>';
+    html += progressBar(s.consecutive_reserve_days, 4, '#1a4fa3');
+    if(s.last_reserve_date){
+      html += '<div style="font-size:11px;color:#888;margin-top:2px">마지막 예약일: '+s.last_reserve_date+'</div>';
+    }
+    html += '</div>';
+
+    // 레벨 변경 가능 상태
+    if(s.can_change_level){
+      html += '<div style="background:#e3f2fd;border:1px solid #1a4fa3;border-radius:8px;padding:12px;margin-bottom:10px">';
+      html += '<div style="color:#1a4fa3;font-weight:700;font-size:13px">🎯 레벨 변경 가능!</div>';
+      html += '<div style="font-size:12px;color:#555;margin-top:4px">4일 연속 달성! 원 레벨('+s.original_level+'레벨) 이하로 변경할 수 있습니다.</div>';
+      html += '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">';
+      s.changeable_levels.forEach(function(lv){
+        if(lv === s.level) return; // 현재 레벨 제외
+        html += '<button onclick="changeLevelTo('+lv+')" style="padding:7px 14px;background:#1a4fa3;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">'+lv+'레벨</button>';
+      });
+      html += '</div></div>';
+    } else if(!s.is_demoted){
+      html += '<div style="font-size:12px;color:#888;padding:8px;background:#f5f5f5;border-radius:6px">';
+      html += '4일 연속 구매예약 달성 시 레벨 변경이 가능합니다. ('+s.days_to_change+'일 남음)';
+      html += '</div>';
+    }
+
+    cont.innerHTML = html;
+  }catch(e){
+    if(sec) sec.style.display='none';
+  }
+}
+
+async function changeLevelTo(targetLevel){
+  if(!confirm(targetLevel+'레벨로 변경하시겠습니까? 변경 후 4일 연속 구매예약으로 다시 변경할 수 있습니다.')) return;
+  try{
+    var r = await api('/user/level-change', {method:'POST', body:JSON.stringify({target_level:targetLevel})});
+    toast('✅ '+r.message, 'success');
+    await loadUserData();
+    await loadProfileForm();
+  }catch(e){
+    toast('레벨 변경 실패: '+(e.message||'오류'), 'error');
+  }
 }
 function startEditProfile(){
   // 편집 모드 전환
