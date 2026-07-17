@@ -1059,16 +1059,31 @@ function changeRes(t, delta){
   var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
   var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
   if(t==='bz'){
+    var _prevBz = bzCnt;
     if(delta>0 && bzCnt===0){ bzCnt=BZ_MIN; }
     else if(delta<0 && bzCnt===BZ_MIN){ bzCnt=0; svCnt=0; gdCnt=0; }
     else { bzCnt=Math.min(Math.max(bzCnt+delta, BZ_MIN), BZ_MAX); }
     var _newSvMax = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
     if(bzCnt < BZ_MIN){ svCnt=0; gdCnt=0; }
-    else if(svCnt > _newSvMax){ svCnt=_newSvMax; gdCnt=0; }
+    else if(bzCnt === BZ_MAX && _prevBz < BZ_MAX && _newSvMax > 0){
+      // 수정 BZ_MAX 도달 시 루비/다이아 자동 최솟값으로 점프
+      svCnt = _newSvMax;
+      var _newGdMax = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt) : GD_MAX;
+      gdCnt = _newGdMax > 0 ? _newGdMax : 0;
+    } else if(bzCnt < BZ_MAX){
+      // BZ_MAX 미만으로 내려가면 루비/다이아 0으로 초기화
+      svCnt=0; gdCnt=0;
+    } else if(svCnt > _newSvMax){ svCnt=_newSvMax; gdCnt=0; }
   } else if(t==='sv'){
     if(bzCnt >= BZ_MAX && SV_MAX > 0){
       svCnt = Math.min(Math.max(svCnt+delta, 0), SV_MAX);
-      if(svCnt < SV_MAX) gdCnt=0;
+      if(svCnt < SV_MAX){
+        gdCnt=0;
+      } else {
+        // 루비 SV_MAX 도달 시 다이아 자동 최솟값으로 점프
+        var _newGdMax2 = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt) : GD_MAX;
+        if(delta > 0 && _newGdMax2 > 0) gdCnt = _newGdMax2;
+      }
     }
   } else if(t==='gd'){
     if(bzCnt >= BZ_MAX && svCnt >= SV_MAX && GD_MAX > 0){
