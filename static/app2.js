@@ -88,38 +88,18 @@ function changeRes(type,delta){
   var BZ_MIN=(cfg.bz_min!=null?cfg.bz_min:0), BZ_MAX=cfg.bz_max||3;
   var SV_MAX=cfg.sv_max||0, GD_MAX=cfg.gd_max||0;
   if(type==='bz'){
-    var _prevBz = bzCnt;
     if(delta>0 && bzCnt===0){ bzCnt=BZ_MIN; }
-    else if(delta<0 && bzCnt===BZ_MIN){ bzCnt=0; svCnt=0; gdCnt=0; }
+    else if(delta<0 && bzCnt===BZ_MIN){ bzCnt=0; }
     else { bzCnt=Math.max(BZ_MIN,Math.min(BZ_MAX,bzCnt+delta)); }
-    var _newSvMax = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
-    if(bzCnt < BZ_MIN){ svCnt=0; gdCnt=0; }
-    else if(bzCnt === BZ_MAX && _prevBz < BZ_MAX && _newSvMax > 0){
-      // 수정 BZ_MAX 도달 시 루비/다이아 자동 최솟값으로 점프
-      svCnt = _newSvMax;
-      var _newGdMax = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt) : GD_MAX;
-      gdCnt = _newGdMax > 0 ? _newGdMax : 0;
-    } else if(bzCnt < BZ_MAX){
-      // BZ_MAX 미만이면 루비/다이아 0
+    // 수정 수량에 따라 루비/다이아 자동 결정 (BZ_MIN 미만이면 0,0)
+    if(bzCnt < BZ_MIN){
       svCnt=0; gdCnt=0;
-    }
-  } else if(type==='sv'){
-    // 수정이 BZ_MAX 도달해야 루비 선택 가능
-    if(bzCnt >= BZ_MAX && SV_MAX > 0){
-      var _dynSvMax2 = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
-      var _svJumpMin = _dynSvMax2;
-      if(delta<0 && svCnt===_svJumpMin){ svCnt=0; gdCnt=0; }
-      else { svCnt=Math.max(0,Math.min(_dynSvMax2,svCnt+delta)); }
-      if(svCnt < _svJumpMin){ gdCnt=0; }
-    }
-  } else if(type==='gd'){
-    var _dynSvMax3 = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
-    var _svJumpMin3 = _dynSvMax3;
-    var _dynGdMax2 = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt) : GD_MAX;
-    if(bzCnt >= BZ_MAX && svCnt >= _svJumpMin3 && _dynGdMax2 > 0){
-      var _gdJumpMin = (typeof getGdFromSv==='function') ? getGdFromSv(svCnt) : 1;
-      if(delta<0 && gdCnt===_gdJumpMin){ gdCnt=0; }
-      else { gdCnt=Math.max(0,Math.min(_dynGdMax2,gdCnt+delta)); }
+    } else {
+      // BZ_MIN 이상: 수정 수량에 맞는 루비/다이아 자동 점프
+      var _autoSv = (typeof getSvFromBz==='function') ? getSvFromBz(bzCnt) : SV_MAX;
+      svCnt = _autoSv;
+      var _autoGd = (svCnt>0 && typeof getGdFromSv==='function') ? getGdFromSv(svCnt) : 0;
+      gdCnt = _autoGd;
     }
   }
   var SV_MIN_C=(cfg.sv_min!=null?cfg.sv_min:0), SV_MAX_C=cfg.sv_max||0;
