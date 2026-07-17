@@ -267,7 +267,7 @@ def _auto_confirm_paid_matches(db):
 
 
 def _auto_process_unpaid(db, m):
-    """pending 매치를 자동 미입금(failed) 처리 - 패널티 없이 상태만 변경"""
+    """pending 매치를 자동 미입금(failed) 처리 - 패널티 포함 거래정지"""
     match_id = m['id']
     # 1. match → failed
     db.execute("UPDATE matches SET status='failed' WHERE id=?", (match_id,))
@@ -298,13 +298,39 @@ def _auto_process_unpaid(db, m):
                      _item['bar_type'], m['match_date'])
                 )
 
-    # 4. 구매자 패널티 없이 미입금 처리 (자동이므로 패널티 부여 안 함)
-    # unpaid_count만 증가
+    # 4. 구매자 패널티 처리 + 거래정지
     if m.get('buyer_id'):
+        buyer_id = m['buyer_id']
         try:
-            db.execute("UPDATE users SET unpaid_count=COALESCE(unpaid_count,0)+1 WHERE id=?",
-                      (m['buyer_id'],))
-        except Exception: pass
+            from datetime import timedelta
+            buyer_row = db.execute("SELECT unpaid_count FROM users WHERE id=?", (buyer_id,)).fetchone()
+            current_count = int((buyer_row['unpaid_count'] or 0) if buyer_row else 0) + 1
+            penalty_entry = next((p for p in PENALTY_TABLE if p[0] == current_count), PENALTY_TABLE[-1])
+            suspend_days = penalty_entry[1]
+            release_pts  = penalty_entry[2]
+            _now = get_now()
+            _release_dt = _now + timedelta(days=suspend_days)
+            _release_str = _release_dt.strftime('%Y-%m-%d %H:%M:%S')
+            _now_str = _now.strftime('%Y-%m-%d %H:%M:%S')
+            # suspended_until 설정 → 즉시 거래정지
+            db.execute("UPDATE users SET unpaid_count=?, suspended_until=? WHERE id=?",
+                       (current_count, _release_str, buyer_id))
+            db.execute(
+                """INSERT INTO penalties(user_id,unpaid_count,suspend_days,release_points,is_released,created_at,match_id,match_round)
+                   VALUES(?,?,?,?,0,?,?,?)""",
+                (buyer_id, current_count, suspend_days, release_pts, _now_str, match_id, m.get('match_round') or 1)
+            )
+            # 미입금 구매자 2차 예약 제외
+            db.execute("UPDATE reservations SET status='unmatched' WHERE user_id=? AND match_round=2 AND status='pending'",
+                       (buyer_id,))
+            try:
+                bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+                insert_notification(db, buyer_id, 'unpaid_penalty', '미입금 패널티',
+                    f'{bar_names.get(m.get("bar_type",""),m.get("bar_type",""))} 거래 미입금이 확정됐습니다. {suspend_days}일간 거래가 정지됩니다.')
+            except Exception:
+                pass
+        except Exception as e:
+            pass
 
 
 def get_today():
