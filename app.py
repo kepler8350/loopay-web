@@ -3496,7 +3496,6 @@ def admin_lucky_buy_setup():
                    AND r.item_id IS NOT NULL AND r.item_id > 0
                    AND i.status IN ('reservable','waiting')
                    AND r.lucky_pair_id IS NULL
-                   AND r.match_round=1
                    AND r.reserve_date=?
                    AND i.stage IN ({})
                    ORDER BY RANDOM()""".format(','.join('?' * len(lucky_stages[bar_type]))),
@@ -3510,7 +3509,6 @@ def admin_lucky_buy_setup():
                    WHERE r.bar_type=? AND r.status='pending'
                    AND (r.item_id IS NULL OR r.item_id=0)
                    AND r.reserve_date=?
-                   AND r.match_round=1
                    AND COALESCE(r.confirmed,0)=0
                    GROUP BY r.user_id
                    HAVING COUNT(*) >= 1""",
