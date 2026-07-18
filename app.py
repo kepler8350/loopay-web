@@ -2494,13 +2494,6 @@ def admin_run_matching():
             (round_num, today)
         ).fetchall()
         buy_rows = list(_normal_buy_rows) + list(_loopay_buy_rows)
-        _debug_info = {
-            'normal_buy': len(_normal_buy_rows),
-            'loopay_buy': len(_loopay_buy_rows),
-            'sell': len(sell_rows),
-            'loopay_buy_sample': [dict(r) for r in _loopay_buy_rows[:3]],
-            'sell_sample': [dict(r) for r in sell_rows[:3]],
-        }
         sell_by_type_stage = {}
         for r in sell_rows:
             bt = r['bar_type']
@@ -2913,9 +2906,6 @@ def admin_run_matching():
             debug_sell_count=len(sell_rows) if sell_rows else 0,
             debug_sell_normal=len(sell_normal) if 'sell_normal' in dir() else -1,
             debug_buy_normal=len(buy_normal) if 'buy_normal' in dir() else -1,
-            debug_loopay_buy=_debug_info.get('loopay_buy', -1) if '_debug_info' in dir() else -1,
-            debug_normal_buy=_debug_info.get('normal_buy', -1) if '_debug_info' in dir() else -1,
-            debug_loopay_sample=_debug_info.get('loopay_buy_sample', []) if '_debug_info' in dir() else [],
             debug_matched_seller=list(matched_seller_ids),
             debug_sell_rows_lp=[dict(s).get('lucky_pair_id') for s in sell_rows],
             debug_sell_normal_check=[{'id':dict(s)['res_id'],'lp':dict(s).get('lucky_pair_id'),'in_matched':dict(s)['res_id'] in matched_seller_ids} for s in sell_rows]
