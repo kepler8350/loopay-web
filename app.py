@@ -2480,6 +2480,8 @@ def admin_run_matching():
             """SELECT r.id as res_id, r.user_id as buyer_id, r.bar_type,
                CASE WHEN COALESCE(r.stage,0) <= 0 THEN 1 ELSE r.stage END as stage,
                COALESCE(r.stage, 0) as raw_stage,
+               COALESCE(r.join_round2, 0) as join_round2,
+               r.reserve_date,
                r.item_id,
                u.username as buyer_username, u.nickname as buyer_nickname,
                u.phone as buyer_phone, u.account_name as buyer_account_name
@@ -2712,10 +2714,10 @@ def admin_run_matching():
 
         all_sell_normal = sell_normal  # loopay도 sell_rows에 포함됨
 
-        # 구매예약: 미매칭된 것
+        # 구매예약: 미매칭된 것 (loopay는 reserve_date 무관하게 포함)
         buy_normal = [b for b in _all_buy_rows
             if b['res_id'] not in matched_buyer_ids
-            and b.get('reserve_date') == today]
+            and (b.get('buyer_username') == 'loopay' or b.get('reserve_date') == today)]
 
         # bar_type+stage별로 묶어서 랜덤 매칭
         import random
