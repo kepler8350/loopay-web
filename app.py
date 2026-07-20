@@ -302,6 +302,9 @@ def _auto_confirm_paid_matches(db):
                     _seen_items.add(_sid)
                     _all_sells.append(dict(_s))
             print(f'[loopay_buy] _all_sells count={len(_all_sells)}, _unmatched_sells={len(_unmatched_sells)}, _unmatched_sells2={len(_unmatched_sells2)}')
+            # 전역 디버그 변수에 저장
+            import builtins
+            builtins._loopay_buy_debug = {'all_sells': _all_sells, 'total_min': total_min}
             for _sr in _all_sells:
                 try:
                     _today_str3 = get_today().isoformat()
@@ -652,10 +655,14 @@ def scheduler_auto_process():
         _loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
         _loopay_items = db.execute("SELECT COUNT(*) as c FROM items WHERE user_id=?", (_loopay['id'] if _loopay else -1,)).fetchone() if _loopay else None
         _r2_with_item = db.execute("SELECT COUNT(*) as c FROM matches m JOIN items i ON m.seller_item_id=i.id WHERE m.match_round=2 AND m.status='failed' AND m.seller_item_id>0").fetchone()
+        import builtins as _bi
+        _buy_debug = getattr(_bi, '_loopay_buy_debug', {})
         return jsonify(success=True, time=get_now().isoformat(),
                        debug_r2_failed=_debug_r2['c'] if _debug_r2 else 0,
                        debug_loopay_items=_loopay_items['c'] if _loopay_items else 0,
                        debug_r2_with_item=_r2_with_item['c'] if _r2_with_item else 0,
+                       debug_all_sells=_buy_debug.get('all_sells', []),
+                       debug_total_min=_buy_debug.get('total_min', -1),
                        errors=_errors[:3])
     except Exception as e:
         db.rollback()
