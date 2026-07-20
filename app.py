@@ -351,10 +351,8 @@ def _auto_confirm_paid_matches(db):
                             f'2차 매칭 미매칭으로 인해 {_bar_names3.get(_bar3,_bar3)} 아이템이 loopay 계정으로 구매 처리됩니다.')
                     except Exception:
                         pass
-                except Exception:
-                    pass
-
-    for m in targets_confirm:
+                except Exception as _e3:
+                    import traceback; print(f'[loopay_buy_error] {traceback.format_exc()}')for m in targets_confirm:
         try:
             _do_confirm_transfer(db, m)
         except Exception: pass
