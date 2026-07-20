@@ -323,7 +323,9 @@ def _auto_confirm_paid_matches(db):
                     ).fetchone()
                     import builtins as _dbg_bi
                     if not hasattr(_dbg_bi, '_sell_log'): _dbg_bi._sell_log = []
-                    _dbg_bi._sell_log.append({'item_id':_item_id3,'already':bool(_already)})
+                    # loopay_id도 기록
+                    _already_id = _already['id'] if _already else None
+                    _dbg_bi._sell_log.append({'item_id':_item_id3,'already':bool(_already),'loopay_id':_loopay_id2,'already_match_id':_already_id})
                     if _already:
                         continue
                     # ── 판매자 아이템 sold 처리
