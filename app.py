@@ -270,13 +270,8 @@ def _auto_confirm_paid_matches(db):
                    FROM matches m
                    JOIN items i ON m.seller_item_id = i.id
                    WHERE m.match_round=2 AND m.status='failed'
-                   AND m.seller_item_id IS NOT NULL AND m.seller_item_id > 0
-                   AND NOT EXISTS (
-                       SELECT 1 FROM items i2
-                       WHERE i2.user_id=? AND i2.bar_type=i.bar_type AND i2.stage=i.stage
-                       AND i2.purchase_date>=m.match_date
-                   )""",
-                (_loopay_id2,)
+                   AND m.seller_item_id IS NOT NULL AND m.seller_item_id > 0""",
+                ()
             ).fetchall()
             # 케이스2: 2차 sell 예약 미매칭
             _unmatched_sells2 = db.execute(
@@ -312,6 +307,14 @@ def _auto_confirm_paid_matches(db):
                     _stage3 = _sr['i_stage'] or 1
                     _bar3 = _sr['i_bar_type']
                     _item_id3 = _sr['item_id']
+                    # 이미 loopay가 처리했는지 확인
+                    _already = db.execute(
+                        """SELECT id FROM items WHERE user_id=? AND bar_type=? AND stage=?
+                           AND purchase_date>=? LIMIT 1""",
+                        (_loopay_id2, _bar3, _stage3, _sr.get('reserve_date', _today_str3))
+                    ).fetchone()
+                    if _already:
+                        continue
                     # 판매자 아이템 sold
                     db.execute("UPDATE items SET status='sold' WHERE id=?", (_item_id3,))
                     # 관련 sell 예약도 matched 처리
