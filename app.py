@@ -4228,6 +4228,30 @@ def admin_reservation_status():
     finally:
         conn.close()
 
+@app.route('/api/admin/failed-matches', methods=['GET'])
+@jwt_required()
+def admin_failed_matches():
+    """failed 매치 조회 (match_round 포함)"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='권한 없음'), 403
+    db = get_db()
+    try:
+        rows = db.execute(
+            """SELECT m.id, m.match_round, m.status, m.match_date,
+                      m.seller_item_id, m.buyer_id, m.bar_type, m.stage,
+                      u.username as buyer_username
+               FROM matches m
+               LEFT JOIN users u ON m.buyer_id=u.id
+               WHERE m.status='failed'
+               ORDER BY m.id DESC LIMIT 20"""
+        ).fetchall()
+        return jsonify(matches=[dict(r) for r in rows])
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/reservations-list', methods=['GET'])
 @jwt_required()
 def admin_reservations_list():
