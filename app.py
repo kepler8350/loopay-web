@@ -302,26 +302,40 @@ def _auto_process_unpaid(db, m):
                          _item['bar_type'], m['match_date'])
                     )
         else:
-            # 2차 미입금 → loopay 계정 구매예약 생성 (강제 구매)
+            # 2차 미입금 → loopay 즉시 구매 처리 (아이템 생성 + matched)
             _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
             if _loopay_row:
                 loopay_id = _loopay_row['id']
                 _item = db.execute("SELECT * FROM items WHERE id=?", (m['seller_item_id'],)).fetchone()
                 if _item:
+                    _today_str2 = get_today().isoformat()
+                    _stage = _item['stage'] or 1
+                    # 1. 판매자 아이템 sold 처리
+                    db.execute("UPDATE items SET status='sold' WHERE id=?", (m['seller_item_id'],))
+                    # 2. loopay 소유 새 아이템 생성
+                    try:
+                        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
+                        _pmap = {'bronze': BRONZE_PRICES, 'silver': SILVER_PRICES, 'gold': GOLD_PRICES}
+                        _prices = {s: (b, sl) for s, b, sl in _pmap.get(_item['bar_type'], [])}
+                        _buy_p, _sell_p = _prices.get(_stage, (0, 0))
+                    except Exception:
+                        _buy_p, _sell_p = 0, 0
+                    db.execute(
+                        """INSERT INTO items(user_id, bar_type, stage, status, purchase_date, buy_price, sell_price)
+                           VALUES(?, ?, ?, 'reservable', ?, ?, ?)""",
+                        (loopay_id, _item['bar_type'], _stage, _today_str2, _buy_p, _sell_p)
+                    )
+                    _new_item_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+                    # 3. loopay 구매예약 confirmed 처리
                     _dup = db.execute(
-                        """SELECT id FROM reservations WHERE user_id=? AND item_id=?
-                           AND match_round=2 AND status IN ('pending','matched')""",
-                        (loopay_id, m['seller_item_id'])
+                        """SELECT id FROM reservations WHERE user_id=? AND bar_type=?
+                           AND match_round=2 AND status IN ('pending','matched')
+                           AND (item_id IS NULL OR item_id=0)""",
+                        (loopay_id, _item['bar_type'])
                     ).fetchone()
-                    if not _dup:
-                        db.execute(
-                            """INSERT INTO reservations(user_id,bar_type,stage,match_round,
-                               status,reserve_date,confirmed,item_id)
-                               VALUES(?,?,?,2,'pending',?,1,?)""",
-                            (loopay_id, _item['bar_type'], _item['stage'] or 1,
-                             m['match_date'], m['seller_item_id'])
-                        )
-                    db.execute("UPDATE items SET status='matched' WHERE id=?", (m['seller_item_id'],))
+                    if _dup:
+                        db.execute("UPDATE reservations SET status='matched', item_id=? WHERE id=?",
+                                   (_new_item_id, _dup['id']))
                     try:
                         bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
                         insert_notification(db, _item['user_id'], 'loopay_purchase', 'loopay 구매',

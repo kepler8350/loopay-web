@@ -1237,8 +1237,11 @@ async function loadReservationsLog(page){
             statusKo = '완료';
           } else if(_isToday2 && _r2FailedCount===0 && _noMorePending){
             statusKo = '완료';   // 오늘 + 미입금없음 + 미결없음
+          } else if(_isToday2 && _r2RanToday){
+            // 2차 매칭이 실행됐으면 미매칭 아이템은 완료로 표시
+            statusKo = '완료';
           } else if(_isToday2 && _r2FailedCount>0){
-            statusKo = '2차대기';  // 미입금 있음 → 유지
+            statusKo = '2차대기';  // 미입금 있음, 2차 미실행 → 유지
           }
         }
       }
