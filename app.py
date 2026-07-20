@@ -352,7 +352,9 @@ def _auto_confirm_paid_matches(db):
                     except Exception:
                         pass
                 except Exception as _e3:
-                    import traceback; print(f'[loopay_buy_error] {traceback.format_exc()}')for m in targets_confirm:
+                    import traceback; print(f'[loopay_buy_error] {traceback.format_exc()}')
+
+    for m in targets_confirm:
         try:
             _do_confirm_transfer(db, m)
         except Exception: pass
