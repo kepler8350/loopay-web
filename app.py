@@ -352,10 +352,12 @@ def _auto_confirm_paid_matches(db):
                         pass
                 except Exception as _e3:
                     import traceback
-                    _err_msg = traceback.format_exc()
-                    print(f'[loopay_buy_error] {_err_msg}')
-                    # 오류를 전역 변수에 저장
-                    try: _auto_confirm_errors.append(_err_msg)
+                    _err = traceback.format_exc()
+                    print(f'[loopay_buy_error] {_err}')
+                    try:
+                        import builtins as _bi2
+                        if not hasattr(_bi2, '_loopay_errors'): _bi2._loopay_errors = []
+                        _bi2._loopay_errors.append(_err[-200:])
                     except: pass
 
     for m in targets_confirm:
@@ -658,12 +660,14 @@ def scheduler_auto_process():
         _r2_with_item = db.execute("SELECT COUNT(*) as c FROM matches m JOIN items i ON m.seller_item_id=i.id WHERE m.match_round=2 AND m.status='failed' AND m.seller_item_id>0").fetchone()
         import builtins as _bi
         _buy_debug = getattr(_bi, '_loopay_buy_debug', {})
+        _loopay_errs = getattr(_bi, '_loopay_errors', [])
         return jsonify(success=True, time=get_now().isoformat(),
                        debug_r2_failed=_debug_r2['c'] if _debug_r2 else 0,
                        debug_loopay_items=_loopay_items['c'] if _loopay_items else 0,
                        debug_r2_with_item=_r2_with_item['c'] if _r2_with_item else 0,
                        debug_all_sells=_buy_debug.get('all_sells', []),
                        debug_total_min=_buy_debug.get('total_min', -1),
+                       loopay_errors=_loopay_errs[-3:],
                        errors=_errors[:3])
     except Exception as e:
         db.rollback()
