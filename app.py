@@ -5577,6 +5577,11 @@ def admin_loopay_items():
     db = get_db()
     try:
         loopay = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        if not loopay:
+            from werkzeug.security import generate_password_hash as _gph2
+            db.execute("INSERT INTO users(username,password_hash,nickname,approved,level,charge_points,exchange_points) VALUES('loopay',?,'루페이',1,1,0,0)", (_gph2('loopay1234'),))
+            db.commit()
+            loopay = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
         if not loopay: return jsonify(items=[], total=0, debug_no_loopay=True)
         lid = loopay['id']
         # 아이템 목록 먼저 가져오기
