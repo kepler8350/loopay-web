@@ -271,7 +271,6 @@ def _auto_confirm_paid_matches(db):
                    JOIN items i ON m.seller_item_id = i.id
                    WHERE m.match_round=2 AND m.status='failed'
                    AND m.seller_item_id IS NOT NULL AND m.seller_item_id > 0
-                   AND i.status NOT IN ('sold')
                    AND NOT EXISTS (
                        SELECT 1 FROM items i2
                        WHERE i2.user_id=? AND i2.bar_type=i.bar_type AND i2.stage=i.stage
