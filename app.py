@@ -653,7 +653,10 @@ def scheduler_auto_process():
         ).fetchone() if _loopay else None
         return jsonify(success=True, time=get_now().isoformat(),
                        debug_r2_failed=_debug_r2['c'] if _debug_r2 else 0,
-                       debug_loopay_items=_loopay_items['c'] if _loopay_items else 0)
+                       debug_loopay_items=_loopay_items['c'] if _loopay_items else 0,
+                       debug_r2_failed_with_item=db.execute(
+                           "SELECT COUNT(*) as c FROM matches m JOIN items i ON m.seller_item_id=i.id WHERE m.match_round=2 AND m.status='failed' AND m.seller_item_id>0"
+                       ).fetchone()['c'])
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
