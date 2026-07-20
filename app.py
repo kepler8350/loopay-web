@@ -3134,6 +3134,37 @@ def admin_matching_status():
 
     # ── failed 매치 → 2차 sell 예약 백필 (seller_id 컬럼 없을 경우 대비) ──
     _today_str = get_today().isoformat()
+    # ── 일반 판매자 기준 2차 sell 예약 백필 ──
+    _failed_seller_r2 = db.execute(
+        """SELECT m.id, m.seller_item_id, m.bar_type, COALESCE(m.stage,1) as stage,
+                  m.match_date
+           FROM matches m
+           WHERE m.match_round=1 AND m.status='failed'
+           AND m.match_date=? AND m.seller_item_id IS NOT NULL AND m.seller_item_id > 0
+           AND NOT EXISTS (
+               SELECT 1 FROM reservations r2
+               WHERE r2.item_id=m.seller_item_id
+               AND r2.match_round=2 AND r2.status IN ('pending','matched')
+           )""",
+        (_today_str,)
+    ).fetchall()
+    for _fsr in _failed_seller_r2:
+        try:
+            _fs_item = db.execute("SELECT * FROM items WHERE id=?", (_fsr['seller_item_id'],)).fetchone()
+            if _fs_item:
+                db.execute("UPDATE items SET status='reservable' WHERE id=?", (_fsr['seller_item_id'],))
+                db.execute(
+                    """INSERT INTO reservations(user_id,item_id,bar_type,stage,match_round,
+                       reserve_date,status,confirmed)
+                       VALUES(?,?,?,?,2,?,'pending',1)""",
+                    (_fs_item['user_id'], _fsr['seller_item_id'], _fsr['bar_type'],
+                     _fsr['stage'], _fsr['match_date'])
+                )
+        except Exception:
+            pass
+    if _failed_seller_r2:
+        db.commit()
+
     _failed_without_r2 = db.execute(
         """SELECT m.id, m.bar_type, COALESCE(m.stage,1) as stage
            FROM matches m
