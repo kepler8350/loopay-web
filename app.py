@@ -309,13 +309,7 @@ def _auto_confirm_paid_matches(db):
                     _item_id3 = _sr['item_id']
                     # 이미 loopay가 처리했는지 확인
                     _sr_dict = dict(_sr)
-                    _already = db.execute(
-                        """SELECT id FROM items WHERE user_id=? AND bar_type=? AND stage=?
-                           AND purchase_date>=? LIMIT 1""",
-                        (_loopay_id2, _bar3, _stage3, _sr_dict.get('reserve_date', _today_str3))
-                    ).fetchone()
-                    if _already:
-                        continue
+                    _already = None  # TODO: 중복 방지 로직 추가 필요
                     # 판매자 아이템 sold
                     db.execute("UPDATE items SET status='sold' WHERE id=?", (_item_id3,))
                     # 관련 sell 예약도 matched 처리
