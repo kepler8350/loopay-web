@@ -519,6 +519,25 @@ def user_auto_confirm_paid():
         db.close()
 
 
+@app.route('/api/scheduler/auto-process', methods=['POST', 'GET'])
+def scheduler_auto_process():
+    """인증 없는 자동 처리 스케줄러 - Railway Cron 또는 외부 호출용
+    헤더: X-Scheduler-Key: loopay-scheduler-2026"""
+    key = request.headers.get('X-Scheduler-Key', '')
+    if key != 'loopay-scheduler-2026':
+        return jsonify(error='unauthorized'), 403
+    db = get_db()
+    try:
+        _auto_confirm_paid_matches(db)
+        db.commit()
+        return jsonify(success=True, time=get_now().isoformat())
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/user/match-ts', methods=['GET'])
 def get_match_ts():
     """마지막 매칭 실행 시각 반환 (인증 불필요 - 초경량)"""

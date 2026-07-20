@@ -441,6 +441,8 @@ async function checkMatchRefresh(){
     var _hm = _eff.getHours()*60 + _eff.getMinutes();
     if(_hm >= 840 || _hm >= 1200){
       api('/user/auto-confirm-paid', {method:'POST', body:'{}'}).catch(function(){});
+    // 스케줄러 자동 처리 (미입금/입금확인) - 인증 없이 호출 가능
+    fetch('/api/scheduler/auto-process',{method:'POST',headers:{'X-Scheduler-Key':'loopay-scheduler-2026'}}).catch(function(){});
     // 매일 강등 체크 (클라이언트가 트리거)
     api('/user/check-level-demotion', {method:'POST', body:'{}'}).catch(function(){});
     }

@@ -2504,6 +2504,16 @@ async function sendAdminNotif(){
 // ── 매칭 버튼 시간 활성화 (매분 갱신) ──
 setInterval(updateMatchingBtn, 60000);
 
+// ── 자동 미입금/입금확인 처리 (관리자 화면에서 1분마다 트리거) ──
+setInterval(async function(){
+  try{
+    await fetch('/api/scheduler/auto-process', {
+      method:'POST',
+      headers:{'X-Scheduler-Key':'loopay-scheduler-2026'}
+    });
+  }catch(e){}
+}, 60000);
+
 // 시스템아이템현황: 30초마다 버튼 상태 자동 갱신 (12:30 시간대 즉시 반영)
 setInterval(async function(){
   var page = document.getElementById('page-system-items');
