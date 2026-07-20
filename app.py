@@ -369,7 +369,9 @@ def _auto_confirm_paid_matches(db):
                     except Exception:
                         pass
                 except Exception:
-                    pass
+                    import traceback as _tb3, builtins as _bi_err
+                    if not hasattr(_bi_err, '_sell_errors'): _bi_err._sell_errors = []
+                    _bi_err._sell_errors.append(_tb3.format_exc()[-300:])
 
     for m in targets_confirm:
         try:
@@ -662,9 +664,11 @@ def scheduler_auto_process():
         db.commit()
         import builtins as _bi3
         _d = getattr(_bi3, '_loopay_buy_debug', {})
+        _errs = getattr(_bi3, '_sell_errors', [])
         return jsonify(success=True, time=get_now().isoformat(),
                        debug_all_sells_count=len(_d.get('all_sells',[])),
-                       debug_all_sells=_d.get('all_sells',[]))
+                       debug_all_sells=_d.get('all_sells',[]),
+                       sell_errors=_errs[-3:])
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
