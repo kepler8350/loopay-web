@@ -301,6 +301,7 @@ def _auto_confirm_paid_matches(db):
                 if _sid and _sid not in _seen_items:
                     _seen_items.add(_sid)
                     _all_sells.append(dict(_s))
+            print(f'[loopay_buy] _all_sells count={len(_all_sells)}, _unmatched_sells={len(_unmatched_sells)}, _unmatched_sells2={len(_unmatched_sells2)}')
             for _sr in _all_sells:
                 try:
                     _today_str3 = get_today().isoformat()
