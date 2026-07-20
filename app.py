@@ -256,10 +256,12 @@ def _auto_confirm_paid_matches(db):
         targets_unpaid.extend([dict(r) for r in unpaid_rows2])
 
         # 2차 미입금 판매아이템 → loopay 즉시 구매 (20:00 이후 자동)
-        # match_round=2 AND status='failed' 매치의 seller_item_id 기반
+        # 케이스1: match_round=2 AND status='failed' 매치의 seller_item_id
+        # 케이스2: 2차 sell 예약 pending/unmatched (매칭 자체 안 됨)
         _loopay_row2 = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
         if _loopay_row2:
             _loopay_id2 = _loopay_row2['id']
+            # 케이스1: 2차 매치 failed → seller_item_id
             _unmatched_sells = db.execute(
                 """SELECT DISTINCT m.seller_item_id as item_id,
                           i.bar_type as i_bar_type, i.stage as i_stage,
@@ -269,16 +271,43 @@ def _auto_confirm_paid_matches(db):
                    JOIN items i ON m.seller_item_id = i.id
                    WHERE m.match_round=2 AND m.status='failed'
                    AND m.seller_item_id IS NOT NULL AND m.seller_item_id > 0
-                   AND i.status NOT IN ('sold','active')
+                   AND i.status NOT IN ('sold')
                    AND NOT EXISTS (
                        SELECT 1 FROM items i2
-                       WHERE i2.user_id=? AND i2.status='reservable'
-                       AND i2.bar_type=i.bar_type AND i2.stage=i.stage
-                       AND i2.purchase_date=date(m.match_date, '+1 day')
+                       WHERE i2.user_id=? AND i2.bar_type=i.bar_type AND i2.stage=i.stage
+                       AND i2.purchase_date>=m.match_date
                    )""",
                 (_loopay_id2,)
             ).fetchall()
-            for _sr in _unmatched_sells:
+            # 케이스2: 2차 sell 예약 미매칭
+            _unmatched_sells2 = db.execute(
+                """SELECT r.item_id, i.bar_type as i_bar_type, i.stage as i_stage,
+                          i.user_id as seller_user_id, r.reserve_date
+                   FROM reservations r
+                   JOIN items i ON r.item_id = i.id
+                   WHERE r.match_round=2 AND r.status IN ('pending','unmatched')
+                   AND r.confirmed=1 AND r.reserve_date=?
+                   AND r.user_id != ?
+                   AND NOT EXISTS (
+                       SELECT 1 FROM matches m2
+                       WHERE m2.seller_item_id=r.item_id AND m2.match_round=2
+                       AND m2.status IN ('pending','paid','confirmed')
+                   ) AND NOT EXISTS (
+                       SELECT 1 FROM items i2
+                       WHERE i2.user_id=? AND i2.bar_type=i.bar_type AND i2.stage=i.stage
+                       AND i2.purchase_date>=r.reserve_date
+                   )""",
+                (match_ref_date, _loopay_id2, _loopay_id2)
+            ).fetchall()
+            # 두 케이스 합치기 (item_id 중복 제거)
+            _seen_items = set()
+            _all_sells = []
+            for _s in list(_unmatched_sells) + list(_unmatched_sells2):
+                _sid = dict(_s).get('item_id')
+                if _sid and _sid not in _seen_items:
+                    _seen_items.add(_sid)
+                    _all_sells.append(dict(_s))
+            for _sr in _all_sells:
                 try:
                     _today_str3 = get_today().isoformat()
                     _stage3 = _sr['i_stage'] or 1
