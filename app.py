@@ -327,9 +327,9 @@ def _auto_confirm_paid_matches(db):
                     except Exception:
                         _buy_p3, _sell_p3 = 0, 0
                     db.execute(
-                        """INSERT INTO items(user_id, bar_type, stage, status, purchase_date, buy_price, sell_price)
-                           VALUES(?, ?, ?, 'reservable', ?, ?, ?)""",
-                        (_loopay_id2, _bar3, _stage3, _today_str3, _buy_p3, _sell_p3)
+                        """INSERT INTO items(user_id, bar_type, stage, status, purchase_date)
+                           VALUES(?, ?, ?, 'reservable', ?)""",
+                        (_loopay_id2, _bar3, _stage3, _today_str3)
                     )
                     _new_item3 = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
                     print(f'[loopay_buy] Inserted item id={_new_item3} for loopay user={_loopay_id2}')
@@ -426,9 +426,9 @@ def _auto_process_unpaid(db, m):
                     except Exception:
                         _buy_p, _sell_p = 0, 0
                     db.execute(
-                        """INSERT INTO items(user_id, bar_type, stage, status, purchase_date, buy_price, sell_price)
-                           VALUES(?, ?, ?, 'reservable', ?, ?, ?)""",
-                        (loopay_id, _item['bar_type'], _stage, _today_str2, _buy_p, _sell_p)
+                        """INSERT INTO items(user_id, bar_type, stage, status, purchase_date)
+                           VALUES(?, ?, ?, 'reservable', ?)""",
+                        (loopay_id, _item['bar_type'], _stage, _today_str2)
                     )
                     _new_item_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
                     # 3. loopay 구매예약 confirmed 처리
