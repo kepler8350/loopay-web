@@ -301,10 +301,6 @@ def _auto_confirm_paid_matches(db):
                 if _sid and _sid not in _seen_items:
                     _seen_items.add(_sid)
                     _all_sells.append(dict(_s))
-            print(f'[loopay_buy] _all_sells count={len(_all_sells)}, _unmatched_sells={len(_unmatched_sells)}, _unmatched_sells2={len(_unmatched_sells2)}')
-            # 전역 디버그 변수에 저장
-            import builtins
-            builtins._loopay_buy_debug = {'all_sells': _all_sells, 'total_min': total_min}
             for _sr in _all_sells:
                 try:
                     _today_str3 = get_today().isoformat()
@@ -332,7 +328,6 @@ def _auto_confirm_paid_matches(db):
                         (_loopay_id2, _bar3, _stage3, _today_str3)
                     )
                     _new_item3 = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
-                    print(f'[loopay_buy] Inserted item id={_new_item3} for loopay user={_loopay_id2}')
                     # loopay 구매예약 matched 처리
                     _lbr3 = db.execute(
                         """SELECT id FROM reservations WHERE user_id=? AND bar_type=?
@@ -350,15 +345,8 @@ def _auto_confirm_paid_matches(db):
                             f'2차 매칭 미매칭으로 인해 {_bar_names3.get(_bar3,_bar3)} 아이템이 loopay 계정으로 구매 처리됩니다.')
                     except Exception:
                         pass
-                except Exception as _e3:
-                    import traceback
-                    _err = traceback.format_exc()
-                    print(f'[loopay_buy_error] {_err}')
-                    try:
-                        import builtins as _bi2
-                        if not hasattr(_bi2, '_loopay_errors'): _bi2._loopay_errors = []
-                        _bi2._loopay_errors.append(_err[-200:])
-                    except: pass
+                except Exception:
+                    pass
 
     for m in targets_confirm:
         try:
@@ -647,28 +635,9 @@ def scheduler_auto_process():
         return jsonify(error='unauthorized'), 403
     db = get_db()
     try:
-        import traceback as _tb
-        _errors = []
-        try:
-            _auto_confirm_paid_matches(db)
-        except Exception as _ace:
-            _errors.append(_tb.format_exc())
+        _auto_confirm_paid_matches(db)
         db.commit()
-        _debug_r2 = db.execute("SELECT COUNT(*) as c FROM matches WHERE match_round=2 AND status='failed'").fetchone()
-        _loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
-        _loopay_items = db.execute("SELECT COUNT(*) as c FROM items WHERE user_id=?", (_loopay['id'] if _loopay else -1,)).fetchone() if _loopay else None
-        _r2_with_item = db.execute("SELECT COUNT(*) as c FROM matches m JOIN items i ON m.seller_item_id=i.id WHERE m.match_round=2 AND m.status='failed' AND m.seller_item_id>0").fetchone()
-        import builtins as _bi
-        _buy_debug = getattr(_bi, '_loopay_buy_debug', {})
-        _loopay_errs = getattr(_bi, '_loopay_errors', [])
-        return jsonify(success=True, time=get_now().isoformat(),
-                       debug_r2_failed=_debug_r2['c'] if _debug_r2 else 0,
-                       debug_loopay_items=_loopay_items['c'] if _loopay_items else 0,
-                       debug_r2_with_item=_r2_with_item['c'] if _r2_with_item else 0,
-                       debug_all_sells=_buy_debug.get('all_sells', []),
-                       debug_total_min=_buy_debug.get('total_min', -1),
-                       loopay_errors=_loopay_errs[-3:],
-                       errors=_errors[:3])
+        return jsonify(success=True, time=get_now().isoformat())
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
