@@ -255,6 +255,67 @@ def _auto_confirm_paid_matches(db):
         ).fetchall()
         targets_unpaid.extend([dict(r) for r in unpaid_rows2])
 
+        # 2차 미매칭 sell 예약 → loopay 즉시 구매 (20:00 이후 자동)
+        _loopay_row2 = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if _loopay_row2:
+            _loopay_id2 = _loopay_row2['id']
+            _unmatched_sells = db.execute(
+                """SELECT r.*, i.bar_type as i_bar_type, i.stage as i_stage,
+                          i.user_id as seller_user_id
+                   FROM reservations r
+                   JOIN items i ON r.item_id = i.id
+                   WHERE r.match_round=2 AND r.status IN ('pending','unmatched')
+                   AND r.confirmed=1 AND r.reserve_date=?
+                   AND r.user_id != ?
+                   AND NOT EXISTS (
+                       SELECT 1 FROM matches m2
+                       WHERE m2.seller_item_id=r.item_id AND m2.match_round=2
+                       AND m2.status IN ('pending','paid','confirmed')
+                   )""",
+                (match_ref_date, _loopay_id2)
+            ).fetchall()
+            for _sr in _unmatched_sells:
+                try:
+                    _today_str3 = get_today().isoformat()
+                    _stage3 = _sr['i_stage'] or 1
+                    _bar3 = _sr['i_bar_type']
+                    # 판매자 아이템 sold
+                    db.execute("UPDATE items SET status='sold' WHERE id=?", (_sr['item_id'],))
+                    db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_sr['id'],))
+                    # loopay 소유 신규 아이템 생성
+                    try:
+                        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
+                        _pmap3 = {'bronze': BRONZE_PRICES, 'silver': SILVER_PRICES, 'gold': GOLD_PRICES}
+                        _prices3 = {s: (b, sl) for s, b, sl in _pmap3.get(_bar3, [])}
+                        _buy_p3, _sell_p3 = _prices3.get(_stage3, (0, 0))
+                    except Exception:
+                        _buy_p3, _sell_p3 = 0, 0
+                    db.execute(
+                        """INSERT INTO items(user_id, bar_type, stage, status, purchase_date, buy_price, sell_price)
+                           VALUES(?, ?, ?, 'reservable', ?, ?, ?)""",
+                        (_loopay_id2, _bar3, _stage3, _today_str3, _buy_p3, _sell_p3)
+                    )
+                    _new_item3 = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+                    # loopay 구매예약 matched 처리
+                    _lbr3 = db.execute(
+                        """SELECT id FROM reservations WHERE user_id=? AND bar_type=?
+                           AND match_round=2 AND status IN ('pending','unmatched')
+                           AND (item_id IS NULL OR item_id=0)""",
+                        (_loopay_id2, _bar3)
+                    ).fetchone()
+                    if _lbr3:
+                        db.execute("UPDATE reservations SET status='matched', item_id=? WHERE id=?",
+                                   (_new_item3, _lbr3['id']))
+                    # 판매자 알림
+                    try:
+                        _bar_names3 = {'bronze':'수정','silver':'루비','gold':'다이아'}
+                        insert_notification(db, _sr['seller_user_id'], 'loopay_purchase', 'loopay 구매',
+                            f'2차 매칭 미매칭으로 인해 {_bar_names3.get(_bar3,_bar3)} 아이템이 loopay 계정으로 구매 처리됩니다.')
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
+
     for m in targets_confirm:
         try:
             _do_confirm_transfer(db, m)
