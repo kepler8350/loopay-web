@@ -302,8 +302,6 @@ def _auto_confirm_paid_matches(db):
                     _seen_items.add(_sid)
                     _all_sells.append(dict(_s))
 
-            import builtins as _bi_dbg
-            _bi_dbg._loopay_buy_debug = {'all_sells': _all_sells, 'total_min': total_min}
             for _sr in _all_sells:
                 try:
                     _today_str3 = get_today().isoformat()
@@ -321,11 +319,6 @@ def _auto_confirm_paid_matches(db):
                            AND status IN ('confirmed','pending','paid')""",
                         (_loopay_id2, _item_id3)
                     ).fetchone()
-                    import builtins as _dbg_bi
-                    if not hasattr(_dbg_bi, '_sell_log'): _dbg_bi._sell_log = []
-                    # loopay_id도 기록
-                    _already_id = _already['id'] if _already else None
-                    _dbg_bi._sell_log.append({'item_id':_item_id3,'already':bool(_already),'loopay_id':_loopay_id2,'already_match_id':_already_id})
                     if _already:
                         continue
                     # ── 판매자 아이템 sold 처리
@@ -375,9 +368,7 @@ def _auto_confirm_paid_matches(db):
                     except Exception:
                         pass
                 except Exception:
-                    import traceback as _tb3, builtins as _bi_err
-                    if not hasattr(_bi_err, '_sell_errors'): _bi_err._sell_errors = []
-                    _bi_err._sell_errors.append(_tb3.format_exc()[-300:])
+                    pass
 
     for m in targets_confirm:
         try:
@@ -668,14 +659,7 @@ def scheduler_auto_process():
     try:
         _auto_confirm_paid_matches(db)
         db.commit()
-        import builtins as _bi3
-        _d = getattr(_bi3, '_loopay_buy_debug', {})
-        _errs = getattr(_bi3, '_sell_errors', [])
-        _slog = getattr(_bi3, '_sell_log', [])
-        return jsonify(success=True, time=get_now().isoformat(),
-                       debug_all_sells_count=len(_d.get('all_sells',[])),
-                       sell_log=_slog[-5:],
-                       sell_errors=_errs[-3:])
+        return jsonify(success=True, time=get_now().isoformat())
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
@@ -5578,7 +5562,7 @@ def admin_loopay_items():
     try:
         # approved=1 loopay 우선, 없으면 전체에서 가장 낮은 id
         loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone() or                  db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
-        if not loopay: return jsonify(items=[], total=0, debug_no_loopay=True)
+        if not loopay: return jsonify(items=[], total=0)
         lid = loopay['id']
         # 아이템 목록 먼저 가져오기
         item_rows = db.execute(
@@ -5883,8 +5867,7 @@ def admin_loopay_items():
                 'is_extra': r.get('is_extra', 0),
                 'sell_type': r.get('sell_type', 'normal'),
             } for r in rows],
-            total=len(rows),
-            debug_lid=lid
+            total=len(rows)
         )
     finally:
         db.close()
