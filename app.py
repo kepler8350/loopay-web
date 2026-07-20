@@ -308,10 +308,11 @@ def _auto_confirm_paid_matches(db):
                     _bar3 = _sr['i_bar_type']
                     _item_id3 = _sr['item_id']
                     # 이미 loopay가 처리했는지 확인
+                    _sr_dict = dict(_sr)
                     _already = db.execute(
                         """SELECT id FROM items WHERE user_id=? AND bar_type=? AND stage=?
                            AND purchase_date>=? LIMIT 1""",
-                        (_loopay_id2, _bar3, _stage3, _sr.get('reserve_date', _today_str3))
+                        (_loopay_id2, _bar3, _stage3, _sr_dict.get('reserve_date', _today_str3))
                     ).fetchone()
                     if _already:
                         continue
