@@ -255,33 +255,39 @@ def _auto_confirm_paid_matches(db):
         ).fetchall()
         targets_unpaid.extend([dict(r) for r in unpaid_rows2])
 
-        # 2차 미매칭 sell 예약 → loopay 즉시 구매 (20:00 이후 자동)
+        # 2차 미입금 판매아이템 → loopay 즉시 구매 (20:00 이후 자동)
+        # match_round=2 AND status='failed' 매치의 seller_item_id 기반
         _loopay_row2 = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
         if _loopay_row2:
             _loopay_id2 = _loopay_row2['id']
             _unmatched_sells = db.execute(
-                """SELECT r.*, i.bar_type as i_bar_type, i.stage as i_stage,
-                          i.user_id as seller_user_id
-                   FROM reservations r
-                   JOIN items i ON r.item_id = i.id
-                   WHERE r.match_round=2 AND r.status IN ('pending','unmatched')
-                   AND r.confirmed=1 AND r.reserve_date=?
-                   AND r.user_id != ?
+                """SELECT DISTINCT m.seller_item_id as item_id,
+                          i.bar_type as i_bar_type, i.stage as i_stage,
+                          i.user_id as seller_user_id,
+                          m.match_date as reserve_date
+                   FROM matches m
+                   JOIN items i ON m.seller_item_id = i.id
+                   WHERE m.match_round=2 AND m.status='failed'
+                   AND m.seller_item_id IS NOT NULL AND m.seller_item_id > 0
+                   AND i.status NOT IN ('sold','active')
                    AND NOT EXISTS (
-                       SELECT 1 FROM matches m2
-                       WHERE m2.seller_item_id=r.item_id AND m2.match_round=2
-                       AND m2.status IN ('pending','paid','confirmed')
+                       SELECT 1 FROM items i2
+                       WHERE i2.user_id=? AND i2.status='reservable'
+                       AND i2.bar_type=i.bar_type AND i2.stage=i.stage
+                       AND i2.purchase_date=date(m.match_date, '+1 day')
                    )""",
-                (match_ref_date, _loopay_id2)
+                (_loopay_id2,)
             ).fetchall()
             for _sr in _unmatched_sells:
                 try:
                     _today_str3 = get_today().isoformat()
                     _stage3 = _sr['i_stage'] or 1
                     _bar3 = _sr['i_bar_type']
+                    _item_id3 = _sr['item_id']
                     # 판매자 아이템 sold
-                    db.execute("UPDATE items SET status='sold' WHERE id=?", (_sr['item_id'],))
-                    db.execute("UPDATE reservations SET status='matched' WHERE id=?", (_sr['id'],))
+                    db.execute("UPDATE items SET status='sold' WHERE id=?", (_item_id3,))
+                    # 관련 sell 예약도 matched 처리
+                    db.execute("UPDATE reservations SET status='matched' WHERE item_id=? AND status IN ('pending','unmatched')", (_item_id3,))
                     # loopay 소유 신규 아이템 생성
                     try:
                         from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
