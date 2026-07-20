@@ -333,17 +333,18 @@ def _auto_confirm_paid_matches(db):
                     )
                     _new_item3 = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
                     # ── match 레코드 생성 (loopay가 구매자, 2차, confirmed)
-                    _seller_item_row = db.execute("SELECT * FROM items WHERE id=?", (_item_id3,)).fetchone()
                     _sell_res3 = db.execute(
                         "SELECT id FROM reservations WHERE item_id=? AND confirmed=1 LIMIT 1",
                         (_item_id3,)
                     ).fetchone()
+                    _sell_res_id3 = _sell_res3['id'] if _sell_res3 else None
                     db.execute(
-                        """INSERT INTO matches(buyer_id, seller_id, seller_item_id, bar_type, stage,
-                           match_round, match_date, status, reservation_id)
-                           VALUES(?,?,?,?,?,2,?,'confirmed',?)""",
-                        (_loopay_id2, _seller_uid3, _item_id3, _bar3, _stage3,
-                         _today_str3, _sell_res3['id'] if _sell_res3 else None)
+                        """INSERT INTO matches(reservation_id, buyer_id, seller_id,
+                           seller_item_id, bar_type, stage, buy_price, sell_price,
+                           match_round, match_date, status)
+                           VALUES(?,?,?,?,?,?,0,0,2,?,'confirmed')""",
+                        (_sell_res_id3, _loopay_id2, _seller_uid3,
+                         _item_id3, _bar3, _stage3, _today_str3)
                     )
                     # ── loopay 구매예약 matched 처리
                     _lbr3 = db.execute(
