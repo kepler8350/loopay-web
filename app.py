@@ -304,45 +304,64 @@ def _auto_confirm_paid_matches(db):
             for _sr in _all_sells:
                 try:
                     _today_str3 = get_today().isoformat()
-                    _stage3 = _sr['i_stage'] or 1
-                    _bar3 = _sr['i_bar_type']
-                    _item_id3 = _sr['item_id']
-                    # 이미 loopay가 처리했는지 확인
                     _sr_dict = dict(_sr)
-                    _already = None  # TODO: 중복 방지 로직 추가 필요
-                    # 판매자 아이템 sold
+                    _stage3 = _sr_dict.get('i_stage') or 1
+                    _bar3 = _sr_dict.get('i_bar_type', 'bronze')
+                    _item_id3 = _sr_dict.get('item_id')
+                    _seller_uid3 = _sr_dict.get('seller_user_id')
+                    if not _item_id3:
+                        continue
+                    # ── 중복 방지: 이미 loopay가 이 seller_item_id로 구매한 match가 있으면 skip
+                    _already = db.execute(
+                        """SELECT id FROM matches
+                           WHERE buyer_id=? AND seller_item_id=? AND match_round=2""",
+                        (_loopay_id2, _item_id3)
+                    ).fetchone()
+                    if _already:
+                        continue
+                    # ── 판매자 아이템 sold 처리
                     db.execute("UPDATE items SET status='sold' WHERE id=?", (_item_id3,))
-                    # 관련 sell 예약도 matched 처리
-                    db.execute("UPDATE reservations SET status='matched' WHERE item_id=? AND status IN ('pending','unmatched')", (_item_id3,))
-                    # loopay 소유 신규 아이템 생성
-                    try:
-                        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
-                        _pmap3 = {'bronze': BRONZE_PRICES, 'silver': SILVER_PRICES, 'gold': GOLD_PRICES}
-                        _prices3 = {s: (b, sl) for s, b, sl in _pmap3.get(_bar3, [])}
-                        _buy_p3, _sell_p3 = _prices3.get(_stage3, (0, 0))
-                    except Exception:
-                        _buy_p3, _sell_p3 = 0, 0
+                    db.execute(
+                        "UPDATE reservations SET status='matched' WHERE item_id=? AND status IN ('pending','unmatched')",
+                        (_item_id3,)
+                    )
+                    # ── loopay 소유 신규 아이템 생성 (matched 상태 - 구매 탭 표시용)
                     db.execute(
                         """INSERT INTO items(user_id, bar_type, stage, status, purchase_date)
-                           VALUES(?, ?, ?, 'reservable', ?)""",
+                           VALUES(?, ?, ?, 'matched', ?)""",
                         (_loopay_id2, _bar3, _stage3, _today_str3)
                     )
                     _new_item3 = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
-                    # loopay 구매예약 matched 처리
+                    # ── match 레코드 생성 (loopay가 구매자, 2차, confirmed)
+                    _seller_item_row = db.execute("SELECT * FROM items WHERE id=?", (_item_id3,)).fetchone()
+                    _sell_res3 = db.execute(
+                        "SELECT id FROM reservations WHERE item_id=? AND confirmed=1 LIMIT 1",
+                        (_item_id3,)
+                    ).fetchone()
+                    db.execute(
+                        """INSERT INTO matches(buyer_id, seller_id, seller_item_id, bar_type, stage,
+                           match_round, match_date, status, reservation_id)
+                           VALUES(?,?,?,?,?,2,?,'confirmed',?)""",
+                        (_loopay_id2, _seller_uid3, _item_id3, _bar3, _stage3,
+                         _today_str3, _sell_res3['id'] if _sell_res3 else None)
+                    )
+                    # ── loopay 구매예약 matched 처리
                     _lbr3 = db.execute(
                         """SELECT id FROM reservations WHERE user_id=? AND bar_type=?
                            AND match_round=2 AND status IN ('pending','unmatched')
-                           AND (item_id IS NULL OR item_id=0)""",
+                           AND (item_id IS NULL OR item_id=0) LIMIT 1""",
                         (_loopay_id2, _bar3)
                     ).fetchone()
                     if _lbr3:
-                        db.execute("UPDATE reservations SET status='matched', item_id=? WHERE id=?",
-                                   (_new_item3, _lbr3['id']))
-                    # 판매자 알림
+                        db.execute(
+                            "UPDATE reservations SET status='matched', item_id=? WHERE id=?",
+                            (_new_item3, _lbr3['id'])
+                        )
+                    # ── 판매자 알림
                     try:
                         _bar_names3 = {'bronze':'수정','silver':'루비','gold':'다이아'}
-                        insert_notification(db, _sr['seller_user_id'], 'loopay_purchase', 'loopay 구매',
-                            f'2차 매칭 미매칭으로 인해 {_bar_names3.get(_bar3,_bar3)} 아이템이 loopay 계정으로 구매 처리됩니다.')
+                        insert_notification(db, _seller_uid3, 'loopay_purchase', 'loopay 구매',
+                            f'2차 매칭 미입금으로 인해 {_bar_names3.get(_bar3,_bar3)} 아이템이 loopay 계정으로 구매 처리되었습니다.')
                     except Exception:
                         pass
                 except Exception:
