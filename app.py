@@ -642,7 +642,17 @@ def scheduler_auto_process():
     try:
         _auto_confirm_paid_matches(db)
         db.commit()
-        return jsonify(success=True, time=get_now().isoformat())
+        # 디버그: 2차 failed 매치 현황
+        _debug_r2 = db.execute(
+            "SELECT COUNT(*) as c FROM matches WHERE match_round=2 AND status='failed'"
+        ).fetchone()
+        _loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        _loopay_items = db.execute(
+            "SELECT COUNT(*) as c FROM items WHERE user_id=?", (_loopay['id'] if _loopay else -1,)
+        ).fetchone() if _loopay else None
+        return jsonify(success=True, time=get_now().isoformat(),
+                       debug_r2_failed=_debug_r2['c'] if _debug_r2 else 0,
+                       debug_loopay_items=_loopay_items['c'] if _loopay_items else 0)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
