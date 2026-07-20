@@ -332,6 +332,7 @@ def _auto_confirm_paid_matches(db):
                         (_loopay_id2, _bar3, _stage3, _today_str3, _buy_p3, _sell_p3)
                     )
                     _new_item3 = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+                    print(f'[loopay_buy] Inserted item id={_new_item3} for loopay user={_loopay_id2}')
                     # loopay 구매예약 matched 처리
                     _lbr3 = db.execute(
                         """SELECT id FROM reservations WHERE user_id=? AND bar_type=?
