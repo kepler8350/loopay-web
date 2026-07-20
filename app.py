@@ -69,7 +69,7 @@ def _set_mock_time_to_db(dt):
 def _do_confirm_transfer(db, m):
     """매칭 확인 완료 후 아이템 이전 처리 (판매자→sold, 구매자→새 아이템)"""
     try:
-        _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         loopay_id = _loopay_row['id'] if _loopay_row else None
         # 중복 방지: buyer에게 이미 이 매치로 생성된 아이템이 있으면 스킵
         _today = get_today().isoformat()
@@ -100,7 +100,7 @@ def _do_confirm_transfer(db, m):
                     ).fetchone()
         if not seller_item:
             _loopay_check = db.execute(
-                "SELECT id FROM users WHERE username='loopay' ORDER BY id ASC AND id=?", (m['seller_id'],)
+                "SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC AND id=?", (m['seller_id'],)
             ).fetchone()
             if _loopay_check and dict(m).get('seller_item_id'):
                 # seller_item_id로 정확히 조회 (ORDER BY LIMIT 1 방식 제거 - 다른 매치 아이템 오선택 방지)
@@ -258,7 +258,7 @@ def _auto_confirm_paid_matches(db):
         # 2차 미입금 판매아이템 → loopay 즉시 구매 (20:00 이후 자동)
         # 케이스1: match_round=2 AND status='failed' 매치의 seller_item_id
         # 케이스2: 2차 sell 예약 pending/unmatched (매칭 자체 안 됨)
-        _loopay_row2 = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        _loopay_row2 = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if _loopay_row2:
             _loopay_id2 = _loopay_row2['id']
             # 케이스1: 2차 매치 failed → seller_item_id
@@ -427,7 +427,7 @@ def _auto_process_unpaid(db, m):
                     )
         else:
             # 2차 미입금 → loopay 즉시 구매 처리 (아이템 생성 + matched)
-            _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+            _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
             if _loopay_row:
                 loopay_id = _loopay_row['id']
                 _item = db.execute("SELECT * FROM items WHERE id=?", (m['seller_item_id'],)).fetchone()
@@ -2355,7 +2355,7 @@ def admin_run_matching():
                     (_yesterday,)
                 ).fetchone()
                 today = _yesterday if _yest_match else _calc_today
-        loopay_id = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()['id']
+        loopay_id = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()['id']
 
         # ── 이전 매칭은 당일 예약만 참가 (이전 날짜 예약은 매칭 불참)
         db.commit()
@@ -2573,7 +2573,7 @@ def admin_run_matching():
                     """DELETE FROM reservations
                        WHERE match_round=2 AND status='pending' AND reserve_date=?
                        AND (item_id IS NULL OR item_id=0)
-                       AND user_id!=(SELECT id FROM users WHERE username='loopay' ORDER BY id ASC)""",
+                       AND user_id!=(SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC)""",
                     (today,)
                 )
                 db.commit()
@@ -2601,7 +2601,7 @@ def admin_run_matching():
 
 
         # loopay_id 조회 (이후 로직에서 사용)
-        _loopay = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        _loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         loopay_id = _loopay['id'] if _loopay else -1
         # 확정된 예약만 사용 - reservable 아이템 자동등록 fallback 제거
 
@@ -3017,7 +3017,7 @@ def admin_run_matching():
             AND (item_id IS NULL OR item_id=0)
             AND reserve_date=?
             AND match_round=?
-            AND user_id != (SELECT id FROM users WHERE username='loopay' ORDER BY id ASC LIMIT 1)""",
+            AND user_id != (SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC LIMIT 1)""",
             (today, round_num))
 
         db.commit()
@@ -3147,7 +3147,7 @@ def admin_stats():
         "SELECT COUNT(*) as c FROM users WHERE approved=1 AND username NOT IN ('admin','loopay')"
     ).fetchone()['c']
     # 일반 유저 아이템만 (loopay 계정 제외)
-    loopay_id_row = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+    loopay_id_row = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
     loopay_id = loopay_id_row['id'] if loopay_id_row else -1
     # 실제 존재하는 승인된 회원의 아이템만 카운트
     total_items = db.execute(
@@ -3199,7 +3199,7 @@ def admin_matching_status():
             today = _yesterday if _yest_match else _calc_today
 
     # loopay 계정 ID 조회
-    loopay_row = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+    loopay_row = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
     loopay_id = loopay_row['id'] if loopay_row else -1
 
     # ── failed 매치 → 2차 sell 예약 백필 (seller_id 컬럼 없을 경우 대비) ──
@@ -3529,7 +3529,7 @@ def admin_matching_status():
                    AND status IN ('unmatched','matched','confirmed','paid','unpaid')
                    AND (item_id IS NULL OR item_id=0)
                    AND user_id != COALESCE(
-                     (SELECT id FROM users WHERE username='loopay' ORDER BY id ASC LIMIT 1), 0
+                     (SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC LIMIT 1), 0
                    )""",
                 (today,)
             ).fetchone()['c'] > 0
@@ -3582,7 +3582,7 @@ with app.app_context():
     # loopay 아이템 중 잘못 sold 처리된 것 복원 (match가 pending인 경우)
     try:
         _c2 = _sq3.connect(_DB_PATH, timeout=10)
-        _loopay = _c2.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        _loopay = _c2.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if _loopay:
             _lid = _loopay[0]
             # match가 pending인데 아이템이 sold인 경우 matched로 복원
@@ -3616,7 +3616,7 @@ with app.app_context():
         from db import DB_PATH as _DB_PATH_b
         _cb = _sq3b.connect(_DB_PATH_b, timeout=10)
         _cb.row_factory = _sq3b.Row
-        _loopay_b = _cb.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        _loopay_b = _cb.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if _loopay_b:
             _lid_b = _loopay_b['id']
             _ph = _cb.execute("SELECT value FROM system_settings WHERE key='loopay_phone'").fetchone()
@@ -4106,7 +4106,7 @@ def admin_reservation_status():
     today = get_today().isoformat()
     try:
         # loopay 계정 ID
-        loopay = conn.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        loopay = conn.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         loopay_id = loopay['id'] if loopay else -1
 
         # 가격 테이블 로드 (sell_price 기준 분류)
@@ -4328,7 +4328,7 @@ def admin_reservations_list():
     # 판매예약 = loopay user, 구매예약 = 일반 user
     conn = get_db()
     try:
-        _loopay_row = conn.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        _loopay_row = conn.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         loopay_uid = _loopay_row['id'] if _loopay_row else -1
         if res_type == 'sell':
             where.append('r.user_id = ?'); params.append(loopay_uid)
@@ -4419,13 +4419,13 @@ def admin_add_reservation():
     conn = get_db()
     try:
         # loopay 계정 확인/생성
-        loopay_user = conn.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        loopay_user = conn.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if not loopay_user:
             from werkzeug.security import generate_password_hash
             conn.execute("INSERT INTO users(username,password_hash,nickname,approved,level,charge_points,exchange_points) VALUES('loopay',?,'루페이',1,1,0,0)",
                 (generate_password_hash('loopay1234'),))
             conn.commit()
-            loopay_user = conn.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+            loopay_user = conn.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         loopay_id = loopay_user['id']
         today = get_today().isoformat()
         match_round = int(data.get('match_round', 1))  # 기본 1차 매칭용
@@ -4889,7 +4889,7 @@ def match_confirm_payment():
         from datetime import date as _date
         # seller 아이템 찾기: match_id와 연결된 loopay reservation → item
         # loopay 계정 ID 조회
-        _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         loopay_id = _loopay_row['id'] if _loopay_row else None
         seller_item = None
         # loopay 판매예약(reservation)에서 이 match와 연결된 아이템 찾기
@@ -5192,7 +5192,7 @@ def user_confirm_unpaid():
     db = get_db()
     try:
         # 판매자 본인 또는 loopay 계정 허용
-        loopay_row = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        loopay_row = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         loopay_id = loopay_row['id'] if loopay_row else -1
         m = db.execute(
             "SELECT * FROM matches WHERE id=? AND status IN ('pending','paid')",
@@ -5577,7 +5577,7 @@ def admin_loopay_items():
     db = get_db()
     try:
         # approved=1 loopay 우선, 없으면 전체에서 가장 낮은 id
-        loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone() or                  db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone() or                  db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if not loopay: return jsonify(items=[], total=0, debug_no_loopay=True)
         lid = loopay['id']
         # 아이템 목록 먼저 가져오기
@@ -5901,7 +5901,7 @@ def admin_loopay_sell_reserve():
     match_round = int(data.get('match_round', 1))
     db = get_db()
     try:
-        loopay = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if not loopay: return jsonify(error='loopay 계정 없음'), 404
         lid = loopay['id']
         item = db.execute(
@@ -5937,7 +5937,7 @@ def admin_delete_loopay_items():
     item_ids = data.get('item_ids', []) or data.get('ids', [])
     db = get_db()
     try:
-        loopay = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if not loopay: return jsonify(error='loopay 계정 없음'), 404
         lid = loopay['id']
         if item_ids == 'all':
@@ -6005,7 +6005,7 @@ def admin_loopay_extra_reservations():
     if not identity.startswith('admin:'): return jsonify(error='Forbidden'), 403
     conn = get_db()
     try:
-        loopay = conn.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        loopay = conn.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if not loopay: return jsonify(reservations=[])
         lid = loopay['id']
         rows = conn.execute("""
@@ -6036,7 +6036,7 @@ def admin_delete_extra_reservations():
     if not ids: return jsonify(error='ids 필요'), 400
     conn = get_db()
     try:
-        loopay = conn.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        loopay = conn.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if not loopay: return jsonify(error='loopay 계정 없음'), 404
         lid = loopay['id']
         ph = ','.join('?'*len(ids))
@@ -6073,7 +6073,7 @@ def admin_confirm_extra_reservations():
     if not ids: return jsonify(error='ids 필요'), 400
     conn = get_db()
     try:
-        loopay = conn.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        loopay = conn.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if not loopay: return jsonify(error='loopay 계정 없음'), 404
         lid = loopay['id']
         today = get_today().isoformat()
@@ -6417,7 +6417,7 @@ def payment_complete():
     identity = get_jwt_identity()
     # 관리자가 호출 시 loopay 계정으로 처리
     if identity.startswith('admin:'):
-        _loopay_row = get_db().execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        _loopay_row = get_db().execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         uid = _loopay_row['id'] if _loopay_row else -1
     else:
         uid = int(identity)
@@ -6982,7 +6982,7 @@ def admin_add_loopay_items():
     count = int(data.get('count', 5))
     db = get_db()
     try:
-        loopay = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if not loopay: return jsonify(error='loopay 계정 없음'), 404
         lid = loopay['id']
         # purchase_date를 3일 전으로 설정 (즉시 판매예약 가능하도록)
@@ -7009,7 +7009,7 @@ def admin_item_stats():
     bar_type = request.args.get('bar_type', 'bronze')
     db = get_db()
     try:
-        loopay = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         loopay_id = loopay['id'] if loopay else -1
         prices = {'bronze': BRONZE_PRICES, 'silver': SILVER_PRICES, 'gold': GOLD_PRICES}
         price_list = prices.get(bar_type, BRONZE_PRICES)
@@ -7249,7 +7249,7 @@ def testtools_fix_extra_items():
     """추가예약으로 생성된 루페이 아이템 is_extra=1로 업데이트"""
     db = get_db()
     try:
-        loopay = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if not loopay: return jsonify(success=True, updated=0)
         lid = loopay['id']
         # 루페이 소유 아이템 중 reservation이 있는 것 = 추가예약으로 생성된 것
@@ -7346,7 +7346,7 @@ def testtools_fix_missing_items():
             'silver': {s:(b,sl) for s,b,sl in SILVER_PRICES},
             'gold':   {s:(b,sl) for s,b,sl in GOLD_PRICES},
         }
-        loopay_id = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()['id']
+        loopay_id = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()['id']
         today = get_today().isoformat()
         created = 0
         # confirmed 매치 중 구매자에게 아이템 없는 것
@@ -7580,7 +7580,7 @@ def testtools_cleanup_loopay_old_reservations():
     db = get_db()
     try:
         today = get_today().isoformat()
-        loopay_id = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()['id']
+        loopay_id = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()['id']
         result = db.execute(
             """DELETE FROM reservations
                WHERE user_id=? AND reserve_date != ?
@@ -7755,7 +7755,7 @@ def testtools_debug_buy_count():
     db = get_db()
     try:
         today = '2026-07-12'
-        loopay = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()['id']
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()['id']
         rows = db.execute("""
             SELECT r.id, u.username as username, r.user_id, r.status, r.match_round, r.join_round2
             FROM reservations r
@@ -7782,7 +7782,7 @@ def testtools_debug_r2_buy():
     db = get_db()
     try:
         today = '2026-07-12'
-        loopay = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()['id']
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()['id']
         # failed buyers
         fb = db.execute("""SELECT DISTINCT m.buyer_id, u.username
             FROM matches m JOIN users u ON m.buyer_id=u.id
@@ -7852,7 +7852,7 @@ def testtools_debug_r2_matching():
     db = get_db()
     try:
         today = '2026-07-12'
-        loopay = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()['id']
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()['id']
         round_num = 2
         
         buy_rows = db.execute(
@@ -8145,7 +8145,7 @@ def testtools_run_round2_auto():
     db = get_db()
     try:
         today = get_today().isoformat()
-        _loopay2 = db.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+        _loopay2 = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         _loopay_id2 = _loopay2['id'] if _loopay2 else None
         pending2 = db.execute(
             """SELECT m.id, m.buyer_id, m.seller_item_id, m.bar_type,
