@@ -3140,13 +3140,13 @@ def admin_matching_status():
                   m.match_date
            FROM matches m
            WHERE m.match_round=1 AND m.status='failed'
-           AND m.match_date=? AND m.seller_item_id IS NOT NULL AND m.seller_item_id > 0
+           AND m.seller_item_id IS NOT NULL AND m.seller_item_id > 0
            AND NOT EXISTS (
                SELECT 1 FROM reservations r2
                WHERE r2.item_id=m.seller_item_id
                AND r2.match_round=2 AND r2.status IN ('pending','matched')
            )""",
-        (_today_str,)
+        ()
     ).fetchall()
     for _fsr in _failed_seller_r2:
         try:
