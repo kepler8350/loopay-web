@@ -346,7 +346,12 @@ def _auto_confirm_paid_matches(db):
                     except Exception:
                         pass
                 except Exception as _e3:
-                    import traceback; print(f'[loopay_buy_error] {traceback.format_exc()}')
+                    import traceback
+                    _err_msg = traceback.format_exc()
+                    print(f'[loopay_buy_error] {_err_msg}')
+                    # 오류를 전역 변수에 저장
+                    try: _auto_confirm_errors.append(_err_msg)
+                    except: pass
 
     for m in targets_confirm:
         try:
@@ -635,22 +640,22 @@ def scheduler_auto_process():
         return jsonify(error='unauthorized'), 403
     db = get_db()
     try:
-        _auto_confirm_paid_matches(db)
+        import traceback as _tb
+        _errors = []
+        try:
+            _auto_confirm_paid_matches(db)
+        except Exception as _ace:
+            _errors.append(_tb.format_exc())
         db.commit()
-        # 디버그: 2차 failed 매치 현황
-        _debug_r2 = db.execute(
-            "SELECT COUNT(*) as c FROM matches WHERE match_round=2 AND status='failed'"
-        ).fetchone()
+        _debug_r2 = db.execute("SELECT COUNT(*) as c FROM matches WHERE match_round=2 AND status='failed'").fetchone()
         _loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
-        _loopay_items = db.execute(
-            "SELECT COUNT(*) as c FROM items WHERE user_id=?", (_loopay['id'] if _loopay else -1,)
-        ).fetchone() if _loopay else None
+        _loopay_items = db.execute("SELECT COUNT(*) as c FROM items WHERE user_id=?", (_loopay['id'] if _loopay else -1,)).fetchone() if _loopay else None
+        _r2_with_item = db.execute("SELECT COUNT(*) as c FROM matches m JOIN items i ON m.seller_item_id=i.id WHERE m.match_round=2 AND m.status='failed' AND m.seller_item_id>0").fetchone()
         return jsonify(success=True, time=get_now().isoformat(),
                        debug_r2_failed=_debug_r2['c'] if _debug_r2 else 0,
                        debug_loopay_items=_loopay_items['c'] if _loopay_items else 0,
-                       debug_r2_failed_with_item=db.execute(
-                           "SELECT COUNT(*) as c FROM matches m JOIN items i ON m.seller_item_id=i.id WHERE m.match_round=2 AND m.status='failed' AND m.seller_item_id>0"
-                       ).fetchone()['c'])
+                       debug_r2_with_item=_r2_with_item['c'] if _r2_with_item else 0,
+                       errors=_errors[:3])
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
