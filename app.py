@@ -301,6 +301,9 @@ def _auto_confirm_paid_matches(db):
                 if _sid and _sid not in _seen_items:
                     _seen_items.add(_sid)
                     _all_sells.append(dict(_s))
+
+            import builtins as _bi_dbg
+            _bi_dbg._loopay_buy_debug = {'all_sells': _all_sells, 'total_min': total_min}
             for _sr in _all_sells:
                 try:
                     _today_str3 = get_today().isoformat()
@@ -657,7 +660,11 @@ def scheduler_auto_process():
     try:
         _auto_confirm_paid_matches(db)
         db.commit()
-        return jsonify(success=True, time=get_now().isoformat())
+        import builtins as _bi3
+        _d = getattr(_bi3, '_loopay_buy_debug', {})
+        return jsonify(success=True, time=get_now().isoformat(),
+                       debug_all_sells_count=len(_d.get('all_sells',[])),
+                       debug_all_sells=_d.get('all_sells',[]))
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
