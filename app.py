@@ -314,12 +314,16 @@ def _auto_confirm_paid_matches(db):
                     _seller_uid3 = _sr_dict.get('seller_user_id')
                     if not _item_id3:
                         continue
-                    # ── 중복 방지: 이미 loopay가 이 seller_item_id로 구매한 match가 있으면 skip
+                    # ── 중복 방지: loopay가 이 seller_item_id로 구매한 match(confirmed)가 있으면 skip
                     _already = db.execute(
                         """SELECT id FROM matches
-                           WHERE buyer_id=? AND seller_item_id=? AND match_round=2""",
+                           WHERE buyer_id=? AND seller_item_id=? AND match_round=2
+                           AND status IN ('confirmed','pending','paid')""",
                         (_loopay_id2, _item_id3)
                     ).fetchone()
+                    import builtins as _dbg_bi
+                    if not hasattr(_dbg_bi, '_sell_log'): _dbg_bi._sell_log = []
+                    _dbg_bi._sell_log.append({'item_id':_item_id3,'already':bool(_already)})
                     if _already:
                         continue
                     # ── 판매자 아이템 sold 처리
@@ -665,9 +669,10 @@ def scheduler_auto_process():
         import builtins as _bi3
         _d = getattr(_bi3, '_loopay_buy_debug', {})
         _errs = getattr(_bi3, '_sell_errors', [])
+        _slog = getattr(_bi3, '_sell_log', [])
         return jsonify(success=True, time=get_now().isoformat(),
                        debug_all_sells_count=len(_d.get('all_sells',[])),
-                       debug_all_sells=_d.get('all_sells',[]),
+                       sell_log=_slog[-5:],
                        sell_errors=_errs[-3:])
     except Exception as e:
         db.rollback()
