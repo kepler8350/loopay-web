@@ -4411,14 +4411,21 @@ def admin_add_reservation():
     stage = int(data.get('stage', 1))
     conn = get_db()
     try:
-        # loopay 계정 확인/생성
+        # loopay 계정 확인/승인
         loopay_user = conn.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if not loopay_user:
-            from werkzeug.security import generate_password_hash
-            conn.execute("INSERT INTO users(username,password_hash,nickname,approved,level,charge_points,exchange_points) VALUES('loopay',?,'루페이',1,1,0,0)",
-                (generate_password_hash('loopay1234'),))
-            conn.commit()
-            loopay_user = conn.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
+            # 기존 loopay를 approved=1로 업데이트
+            _any_loopay = conn.execute("SELECT id FROM users WHERE username='loopay' ORDER BY id ASC").fetchone()
+            if _any_loopay:
+                conn.execute("UPDATE users SET approved=1 WHERE id=?", (_any_loopay['id'],))
+                conn.commit()
+                loopay_user = _any_loopay
+            else:
+                from werkzeug.security import generate_password_hash
+                conn.execute("INSERT INTO users(username,password_hash,nickname,approved,level,charge_points,exchange_points) VALUES('loopay',?,'루페이',1,1,0,0)",
+                             (generate_password_hash('loopay1234'),))
+                conn.commit()
+                loopay_user = conn.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         loopay_id = loopay_user['id']
         today = get_today().isoformat()
         match_round = int(data.get('match_round', 1))  # 기본 1차 매칭용
