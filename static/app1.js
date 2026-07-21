@@ -2748,13 +2748,6 @@ function renderSellTab(){
       +'</div>';
   });
   listEl.innerHTML = html || '<div style="text-align:center;color:var(--text2);padding:20px;font-size:13px">아이템 없음</div>';
-  // 판매 매칭 현황 (입금대기/확인 등) 렌더링
-  try {
-    api('/user/matching').then(function(_md){
-      var _sells = (_md && _md.sell) ? _md.sell : [];
-      if(typeof renderMatchSellList === 'function') renderMatchSellList(_sells);
-    }).catch(function(){});
-  } catch(e2) {}
 }
 
 // 판매탭: 입금확인
