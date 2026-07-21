@@ -671,6 +671,6 @@ def scheduler_auto_process():
         return jsonify(error='unauthorized'), 403
     db = get_db()
     try:
-                _auto_confirm_paid_matches(db)
+        _auto_confirm_paid_matches(db)
         db.commit()
-        return jsonify(success=True, time=get_now().isoformat(), _confirm_targets=_ct, _ref_date=_cr, _total_min=_cm)
+        return jsonify(success=True, time=get_now().isoformat())
