@@ -5522,17 +5522,17 @@ def user_my_items():
                         item_status = 'lucky_matched' if _mc_cnt > 0 else 'lucky_waiting'
 
             # loopay 자동구매 매치 확인 (sold 상태인 경우)
-                _loopay_match = None
-                if row['status'] == 'sold':
-                    _loopay_match = db.execute(
-                        """SELECT m.id, m.status, m.match_round
-                           FROM matches m JOIN users u ON m.buyer_id=u.id
-                           WHERE m.seller_item_id=? AND u.username='loopay'
-                           AND m.status IN ('pending','paid')
-                           ORDER BY m.id DESC LIMIT 1""",
-                        (row['id'],)
-                    ).fetchone()
-                result.append({
+            _loopay_match = None
+            if row['status'] == 'sold':
+                _loopay_match = db.execute(
+                    """SELECT m.id, m.status, m.match_round
+                       FROM matches m JOIN users u ON m.buyer_id=u.id
+                       WHERE m.seller_item_id=? AND u.username='loopay'
+                       AND m.status IN ('pending','paid')
+                       ORDER BY m.id DESC LIMIT 1""",
+                    (row['id'],)
+                ).fetchone()
+            result.append({
                 'id': row['id'],
                 'bar_type': row['bar_type'],
                 'stage': row['stage'] or 1,
