@@ -302,8 +302,6 @@ def _auto_confirm_paid_matches(db):
                     _seen_items.add(_sid)
                     _all_sells.append(dict(_s))
 
-            import builtins as _bi4
-            _bi4._sell_debug = {'count': len(_all_sells), 'items': [{'item_id':s.get('item_id'),'bar':s.get('i_bar_type')} for s in _all_sells[:3]], 'error':''}
             for _sr in _all_sells:
                 try:
                     _today_str3 = get_today().isoformat()
@@ -322,8 +320,6 @@ def _auto_confirm_paid_matches(db):
                         (_loopay_id2, _item_id3)
                     ).fetchone()
                     if _already:
-                        import builtins as _bi4
-                        if hasattr(_bi4, '_sell_debug'): _bi4._sell_debug['error'] = f'dup:{_already["id"]},loopay:{_loopay_id2},item:{_item_id3}'
                         continue
                     # ── 판매자 아이템 sold 처리
                     db.execute("UPDATE items SET status='sold' WHERE id=?", (_item_id3,))
@@ -371,9 +367,8 @@ def _auto_confirm_paid_matches(db):
                             f'2차 매칭 미입금으로 인해 {_bar_names3.get(_bar3,_bar3)} 아이템이 loopay 계정으로 구매 처리되었습니다.')
                     except Exception:
                         pass
-                except Exception as _e99:
-                    import builtins as _bi4
-                    if hasattr(_bi4, '_sell_debug'): _bi4._sell_debug['error'] = str(_e99)
+                except Exception:
+                    pass
 
     for m in targets_confirm:
         try:
@@ -673,12 +668,7 @@ def scheduler_auto_process():
     try:
         _auto_confirm_paid_matches(db)
         db.commit()
-        import builtins as _bi4
-        _sd = getattr(_bi4, '_sell_debug', {})
-        return jsonify(success=True, time=get_now().isoformat(),
-                       sell_count=_sd.get('count',0),
-                       sell_items=_sd.get('items',[]),
-                       sell_error=_sd.get('error',''))
+        return jsonify(success=True, time=get_now().isoformat())
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
@@ -5608,9 +5598,10 @@ def admin_loopay_items():
                AND (
                  -- reservable 아이템: 항상 표시 (판매예약 대기 포함)
                  i.status = 'reservable'
-                 -- matched: reservation 연결된 것만 표시
-                 OR (i.status = 'matched' AND EXISTS (
-                   SELECT 1 FROM reservations r3 WHERE r3.item_id = i.id
+                 -- matched: reservation 연결되거나 loopay buyer match가 있는 것만 표시
+                 OR (i.status = 'matched' AND (
+                   EXISTS (SELECT 1 FROM reservations r3 WHERE r3.item_id = i.id)
+                   OR EXISTS (SELECT 1 FROM matches mb WHERE mb.buyer_id = i.user_id AND mb.seller_item_id IS NOT NULL AND mb.match_round=2)
                  ))
                  -- 나머지 상태: 그대로 표시
                  OR i.status NOT IN ('reservable','matched')
