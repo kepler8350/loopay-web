@@ -5631,6 +5631,12 @@ def debug_sql():
                JOIN users ub ON m.buyer_id=ub.id
                WHERE m.seller_item_id=? AND ub.username='loopay'
                AND m.status IN ('pending','paid')""", (item_id,)).fetchone()
+        # loopay_pending_items 쿼리 테스트
+        lpi_rows = db.execute("""SELECT DISTINCT m.seller_item_id
+               FROM matches m JOIN users u ON m.buyer_id=u.id
+               WHERE u.username='loopay' AND m.status IN ('pending','paid')
+               AND m.seller_item_id IS NOT NULL""").fetchall()
+        lpi = [r['seller_item_id'] for r in lpi_rows]
         # item 상태
         item = db.execute("SELECT id,status,user_id FROM items WHERE id=?", (item_id,)).fetchone()
         # loopay users
@@ -5643,7 +5649,8 @@ def debug_sql():
             exists_count=ex['c'],
             item=dict(item) if item else None,
             loopay_users=[dict(r) for r in loopay_users],
-            match_buyers=[dict(r) for r in match_buyers]
+            match_buyers=[dict(r) for r in match_buyers],
+            loopay_pending_items=lpi
         )
     finally:
         db.close()
