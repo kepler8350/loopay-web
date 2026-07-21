@@ -2686,6 +2686,8 @@ function renderSellTab(){
     {key:'진행중',   label:'매칭/거래중', color:'#f9a825', filter:function(x){
       var ms = x.match_status;
       if(!ms) return false;
+      // loopay 시스템 매치: 시간 무관 항상 표시
+      if(x.is_loopay_match && (ms==='pending'||ms==='paid')) return true;
       // 매칭 시간(20~05시)에는 진행중 표시 안 함
       if(_isMatchingTime && (ms==='pending'||ms==='matched')) return false;
       // 05시 이후: pending/matched도 진행중으로 표시 (매칭 결과 공개)
