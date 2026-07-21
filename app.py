@@ -5420,7 +5420,7 @@ def user_my_items():
                (SELECT MAX(r2.reserve_date) FROM reservations r2 WHERE r2.item_id=i.id) as reserve_date
                FROM items i
                WHERE i.user_id=? AND (
-                 i.status NOT IN ('sold')
+                 i.status NOT IN ('sold','active')
                  OR EXISTS (
                    SELECT 1 FROM matches m
                    JOIN users ub ON m.buyer_id=ub.id
