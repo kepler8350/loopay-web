@@ -5569,46 +5569,6 @@ def user_my_items():
     finally:
         db.close()
 
-@app.route('/api/admin/debug-loopay-item', methods=['GET'])
-@jwt_required()
-def debug_loopay_item():
-    identity = get_jwt_identity()
-    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
-    db = get_db()
-    try:
-        lid = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
-        lid_id = lid['id'] if lid else None
-        # EXISTS 조건 직접 테스트
-        ex1 = db.execute("SELECT COUNT(*) as c FROM reservations r3 WHERE r3.item_id = 2256").fetchone()['c']
-        ex2 = db.execute("SELECT COUNT(*) as c FROM matches mb WHERE mb.buyer_id = ? AND mb.seller_item_id IS NOT NULL AND mb.match_round=2 AND mb.status IN ('pending','paid','confirmed')", (lid_id,)).fetchone()['c']
-        ex3 = db.execute("SELECT COUNT(*) as c FROM matches mb WHERE mb.buyer_id = ? AND mb.match_round=2 AND mb.status IN ('pending','paid','confirmed')", (lid_id,)).fetchone()['c']
-        # 아이템 2256 조회
-        item = db.execute("SELECT * FROM items WHERE id=2256").fetchone()
-        # match buyer_id 직접 확인
-        m1674 = db.execute("SELECT id, buyer_id, seller_id, bar_type, stage, match_round, status FROM matches WHERE id=1674").fetchone()
-        # WHERE 조건 직접 테스트
-        item_in_where = db.execute(
-            """SELECT i.id FROM items i WHERE i.user_id=? AND i.id=2256
-               AND i.status NOT IN ('sold')
-               AND (i.status='reservable'
-                    OR (i.status='matched' AND (
-                        EXISTS(SELECT 1 FROM reservations r3 WHERE r3.item_id=i.id)
-                        OR EXISTS(SELECT 1 FROM matches mb WHERE mb.buyer_id=i.user_id AND mb.seller_item_id IS NOT NULL AND mb.match_round=2 AND mb.status IN ('pending','paid','confirmed'))
-                    ))
-                    OR i.status NOT IN ('reservable','matched')
-               )""", (lid_id,)
-        ).fetchone()
-        return jsonify(lid=lid_id, exists_reservations=ex1, exists_matches_buyer_loopay=ex2,
-                       exists_matches_r2_loopay=ex3,
-                       item_2256=dict(item) if item else None,
-                       match_1674=dict(m1674) if m1674 else None,
-                       item_in_where=dict(item_in_where) if item_in_where else None)
-    except Exception as e:
-        return jsonify(error=str(e)), 500
-    finally:
-        db.close()
-
-
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
@@ -5620,7 +5580,6 @@ def admin_loopay_items():
         loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone() or                  db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if not loopay: return jsonify(items=[], total=0)
         lid = loopay['id']
-        _debug_lid = lid  # 디버그용
         # 아이템 목록 먼저 가져오기
         item_rows = db.execute(
             """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date, COALESCE(i.is_extra,0) as is_extra,
@@ -5926,8 +5885,7 @@ def admin_loopay_items():
                 'is_extra': r.get('is_extra', 0),
                 'sell_type': r.get('sell_type', 'normal'),
             } for r in rows],
-            total=len(rows),
-            debug_lid=_debug_lid
+            total=len(rows)
         )
     finally:
         db.close()

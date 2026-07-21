@@ -807,7 +807,7 @@ function renderSystemItems(){
   var sellItems = filtered.filter(function(i){
     if(i.is_buy_reservation) return false;
     // confirmed 구매아이템은 판매아이템으로 표시 (구매완료 후 판매예약 대상)
-    if(i.is_buy_matched && i.buy_match_confirmed) return true;
+    if(i.is_buy_matched && i.buy_match_confirmed && i.match_round !== 2) return true;  // 2차 loopay 구매는 판매탭 제외
     if(i.is_buy_matched && !i.is_self_match) return false; // 자기매칭이 아닌 미완료 구매매칭은 제외
     if(i.status === 'waiting') return false;
     if(i.status === 'matched' && !i.match_id && !i.sell_reservation_id) return false; // 매칭/판매예약 연결 없는 matched
@@ -816,7 +816,10 @@ function renderSystemItems(){
   });
   // 구매아이템: 1차 매칭 완료(pending/paid만). confirmed(입금확인 완료)는 제외
   var buyItems = filtered.filter(function(i){
-    return i.is_buy_matched === true && i.buy_match_confirmed !== true;
+    if(!i.is_buy_matched) return false;
+    // 2차 매칭 loopay 구매아이템 (match_round=2, confirmed) → 구매탭 표시
+    if(i.buy_match_confirmed && i.match_round === 2) return true;
+    return i.buy_match_confirmed !== true;
   });
   var buyTbody = document.getElementById('si-buy-tbody');
   tbody.innerHTML = sellItems.map(function(item,i){
