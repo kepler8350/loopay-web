@@ -678,7 +678,10 @@ def scheduler_auto_process():
         db.rollback()
         return jsonify(error=str(e)), 500
     finally:
-        db.close()@app.route('/api/admin/delete-users', methods=['POST'])
+        db.close()
+
+
+@app.route('/api/admin/delete-users', methods=['POST'])
 @jwt_required()
 def admin_delete_users():
     """회원 삭제 (admin, loopay 제외)"""
