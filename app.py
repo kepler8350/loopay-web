@@ -5565,7 +5565,7 @@ def user_my_items():
         _loopay_pending_items = {r['seller_item_id'] for r in _lp_rows}
         result = [i for i in result if not (
             (i.get('status') == 'sold' and i['id'] not in _loopay_pending_items)
-            or (i.get('status_label') == '판매완료' and not i.get('_role'))
+            or (i.get('status_label') == '판매완료' and not i.get('_role') and i['id'] not in _loopay_pending_items)
         )]
         # sold+loopay 아이템에 match 정보 보강
         for _ri in result:
