@@ -693,6 +693,10 @@ def scheduler_auto_process():
         db.close()
 
 
+@app.route('/api/admin/delete-users-test', methods=['POST'])
+def admin_delete_users_test():
+    return jsonify(ok=True, data=request.json)
+
 @app.route('/api/admin/delete-users', methods=['POST'])
 @jwt_required()
 def admin_delete_users():
