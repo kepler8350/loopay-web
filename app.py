@@ -69,6 +69,11 @@ def _set_mock_time_to_db(dt):
 def _do_confirm_transfer(db, m):
     """매칭 확인 완료 후 아이템 이전 처리 (판매자→sold, 구매자→새 아이템)"""
     try:
+        # match status → confirmed
+        db.execute(
+            "UPDATE matches SET status='confirmed', confirmed_at=datetime('now','localtime') WHERE id=? AND status='paid'",
+            (m['id'],)
+        )
         _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         loopay_id = _loopay_row['id'] if _loopay_row else None
         # 중복 방지: buyer에게 이미 이 매치로 생성된 아이템이 있으면 스킵
@@ -370,10 +375,18 @@ def _auto_confirm_paid_matches(db):
                 except Exception:
                     pass
 
+    # 디버그: targets_confirm 정보 저장
+    try:
+        import builtins as _sbi2
+        _sbi2._confirm_targets = [{'id':m['id'],'status':m.get('status'),'match_date':m.get('match_date')} for m in targets_confirm]
+        _sbi2._confirm_ref_date = match_ref_date
+        _sbi2._confirm_total_min = total_min
+    except Exception: pass
     for m in targets_confirm:
         try:
             _do_confirm_transfer(db, m)
-        except Exception: pass
+        except Exception as _e_confirm:
+            import traceback; print(f'[auto_confirm_error] match={m.get("id")} {traceback.format_exc()[-200:]}')
 
     for m in targets_unpaid:
         try:
@@ -666,9 +679,15 @@ def scheduler_auto_process():
         return jsonify(error='unauthorized'), 403
     db = get_db()
     try:
+        import builtins as _sbi
+        _sbi._confirm_debug = []
         _auto_confirm_paid_matches(db)
         db.commit()
-        return jsonify(success=True, time=get_now().isoformat())
+        import builtins as _sbi3
+        _ct = getattr(_sbi3, '_confirm_targets', [])
+        _cr = getattr(_sbi3, '_confirm_ref_date', '')
+        _cm = getattr(_sbi3, '_confirm_total_min', -1)
+        return jsonify(success=True, time=get_now().isoformat(), _confirm_targets=_ct, _ref_date=_cr, _total_min=_cm)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
