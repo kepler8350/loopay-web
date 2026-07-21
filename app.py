@@ -5580,6 +5580,7 @@ def admin_loopay_items():
         loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone() or                  db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if not loopay: return jsonify(items=[], total=0)
         lid = loopay['id']
+        _debug_lid = lid  # 디버그용
         # 아이템 목록 먼저 가져오기
         item_rows = db.execute(
             """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date, COALESCE(i.is_extra,0) as is_extra,
@@ -5884,7 +5885,8 @@ def admin_loopay_items():
                 'is_extra': r.get('is_extra', 0),
                 'sell_type': r.get('sell_type', 'normal'),
             } for r in rows],
-            total=len(rows)
+            total=len(rows),
+            debug_lid=_debug_lid
         )
     finally:
         db.close()
