@@ -100,7 +100,7 @@ def _do_confirm_transfer(db, m):
                     ).fetchone()
         if not seller_item:
             _loopay_check = db.execute(
-                "SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC AND id=?", (m['seller_id'],)
+                "SELECT id FROM users WHERE username='loopay' AND approved=1 AND id=? ORDER BY id ASC", (m['seller_id'],)
             ).fetchone()
             if _loopay_check and dict(m).get('seller_item_id'):
                 # seller_item_id로 정확히 조회 (ORDER BY LIMIT 1 방식 제거 - 다른 매치 아이템 오선택 방지)
@@ -417,7 +417,7 @@ def _auto_process_unpaid(db, m):
                          _item['bar_type'], m['match_date'])
                     )
         else:
-            # 2차 미입금 → loopay 즉시 구매 처리 (아이템 생성 + matched)
+            # 2차 미입금 → loopay 즉시 구매 처리
             _loopay_row = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
             if _loopay_row:
                 loopay_id = _loopay_row['id']
@@ -425,38 +425,47 @@ def _auto_process_unpaid(db, m):
                 if _item:
                     _today_str2 = get_today().isoformat()
                     _stage = _item['stage'] or 1
-                    # 1. 판매자 아이템 sold 처리
-                    db.execute("UPDATE items SET status='sold' WHERE id=?", (m['seller_item_id'],))
-                    # 2. loopay 소유 새 아이템 생성
-                    try:
-                        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
-                        _pmap = {'bronze': BRONZE_PRICES, 'silver': SILVER_PRICES, 'gold': GOLD_PRICES}
-                        _prices = {s: (b, sl) for s, b, sl in _pmap.get(_item['bar_type'], [])}
-                        _buy_p, _sell_p = _prices.get(_stage, (0, 0))
-                    except Exception:
-                        _buy_p, _sell_p = 0, 0
-                    db.execute(
-                        """INSERT INTO items(user_id, bar_type, stage, status, purchase_date)
-                           VALUES(?, ?, ?, 'reservable', ?)""",
-                        (loopay_id, _item['bar_type'], _stage, _today_str2)
-                    )
-                    _new_item_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
-                    # 3. loopay 구매예약 confirmed 처리
-                    _dup = db.execute(
-                        """SELECT id FROM reservations WHERE user_id=? AND bar_type=?
-                           AND match_round=2 AND status IN ('pending','matched')
-                           AND (item_id IS NULL OR item_id=0)""",
-                        (loopay_id, _item['bar_type'])
+                    _bar = _item['bar_type']
+                    # 중복 방지: 이미 loopay buyer match가 있으면 skip
+                    _dup_match = db.execute(
+                        "SELECT id FROM matches WHERE buyer_id=? AND seller_item_id=? AND match_round=2 AND status IN ('confirmed','pending','paid')",
+                        (loopay_id, m['seller_item_id'])
                     ).fetchone()
-                    if _dup:
-                        db.execute("UPDATE reservations SET status='matched', item_id=? WHERE id=?",
-                                   (_new_item_id, _dup['id']))
-                    try:
-                        bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
-                        insert_notification(db, _item['user_id'], 'loopay_purchase', 'loopay 구매',
-                            f'2차 매칭 미입금으로 인해 {bar_names.get(_item["bar_type"],_item["bar_type"])} 아이템이 loopay 계정으로 구매 처리됩니다.')
-                    except Exception:
-                        pass
+                    if not _dup_match:
+                        # 1. 판매자 아이템 sold 처리
+                        db.execute("UPDATE items SET status='sold' WHERE id=?", (m['seller_item_id'],))
+                        # 2. loopay 소유 신규 아이템 생성 (matched 상태)
+                        db.execute(
+                            "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'matched',?)",
+                            (loopay_id, _bar, _stage, _today_str2)
+                        )
+                        _new_item_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+                        # 3. sell 예약 matched 처리
+                        _sell_res = db.execute(
+                            "SELECT id FROM reservations WHERE item_id=? AND confirmed=1 LIMIT 1",
+                            (m['seller_item_id'],)
+                        ).fetchone()
+                        # 4. match 레코드 생성 (loopay buyer, confirmed)
+                        db.execute(
+                            "INSERT INTO matches(reservation_id, buyer_id, seller_id, seller_item_id, bar_type, stage, buy_price, sell_price, match_round, match_date, status) VALUES(?,?,?,?,?,?,0,0,2,?,'confirmed')",
+                            (_sell_res['id'] if _sell_res else None, loopay_id,
+                             _item['user_id'], m['seller_item_id'],
+                             _bar, _stage, _today_str2)
+                        )
+                        # 5. loopay 구매예약 matched 처리
+                        _lbr = db.execute(
+                            "SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND match_round=2 AND status IN ('pending','unmatched') AND (item_id IS NULL OR item_id=0) LIMIT 1",
+                            (loopay_id, _bar)
+                        ).fetchone()
+                        if _lbr:
+                            db.execute("UPDATE reservations SET status='matched', item_id=? WHERE id=?",
+                                       (_new_item_id, _lbr['id']))
+                        try:
+                            _bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
+                            insert_notification(db, _item['user_id'], 'loopay_purchase', 'loopay 구매',
+                                f'2차 매칭 미입금으로 인해 {_bar_names.get(_bar,_bar)} 아이템이 loopay 계정으로 구매 처리되었습니다.')
+                        except Exception:
+                            pass
 
     # 4. 구매자 패널티 처리 + 거래정지
     if m.get('buyer_id'):
