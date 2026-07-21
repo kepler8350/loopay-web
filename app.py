@@ -5569,6 +5569,33 @@ def user_my_items():
     finally:
         db.close()
 
+@app.route('/api/admin/debug-loopay-item', methods=['GET'])
+@jwt_required()
+def debug_loopay_item():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    db = get_db()
+    try:
+        lid = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
+        lid_id = lid['id'] if lid else None
+        # EXISTS 조건 직접 테스트
+        ex1 = db.execute("SELECT COUNT(*) as c FROM reservations r3 WHERE r3.item_id = 2256").fetchone()['c']
+        ex2 = db.execute("SELECT COUNT(*) as c FROM matches mb WHERE mb.buyer_id = ? AND mb.seller_item_id IS NOT NULL AND mb.match_round=2 AND mb.status IN ('pending','paid','confirmed')", (lid_id,)).fetchone()['c']
+        ex3 = db.execute("SELECT COUNT(*) as c FROM matches mb WHERE mb.buyer_id = ? AND mb.match_round=2 AND mb.status IN ('pending','paid','confirmed')", (lid_id,)).fetchone()['c']
+        # 아이템 2256 조회
+        item = db.execute("SELECT * FROM items WHERE id=2256").fetchone()
+        # match buyer_id 직접 확인
+        m1674 = db.execute("SELECT id, buyer_id, seller_id, bar_type, stage, match_round, status FROM matches WHERE id=1674").fetchone()
+        return jsonify(lid=lid_id, exists_reservations=ex1, exists_matches_buyer_loopay=ex2,
+                       exists_matches_r2_loopay=ex3,
+                       item_2256=dict(item) if item else None,
+                       match_1674=dict(m1674) if m1674 else None)
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
@@ -5602,7 +5629,7 @@ def admin_loopay_items():
                  -- matched: reservation 연결되거나 loopay buyer match가 있는 것만 표시
                  OR (i.status = 'matched' AND (
                    EXISTS (SELECT 1 FROM reservations r3 WHERE r3.item_id = i.id)
-                   OR EXISTS (SELECT 1 FROM matches mb WHERE mb.buyer_id = i.user_id AND mb.seller_item_id IS NOT NULL AND mb.match_round=2)
+                   OR EXISTS (SELECT 1 FROM matches mb WHERE mb.buyer_id = i.user_id AND mb.seller_item_id IS NOT NULL AND mb.match_round=2 AND mb.status IN ('pending','paid','confirmed'))
                  ))
                  -- 나머지 상태: 그대로 표시
                  OR i.status NOT IN ('reservable','matched')
@@ -5711,7 +5738,7 @@ def admin_loopay_items():
                            WHERE m.buyer_id = ? AND m.bar_type = ? AND m.stage = ?
                              AND m.status IN ('pending', 'paid', 'confirmed')
                              AND m.id NOT IN ({})
-                           ORDER BY m.id DESC LIMIT 1""".format(
+                           ORDER BY m.match_round DESC, m.id DESC LIMIT 1""".format(
                                ','.join(str(x) for x in used_match_ids) if used_match_ids else '0'
                            ),
                         (lid, bt, st)
