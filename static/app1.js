@@ -1754,7 +1754,8 @@ function renderMatchSellList(items){
       +'<span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+sellSub+'</span>'
       +(sellDate?'<span style="font-size:10px;color:var(--text2);white-space:nowrap">'+sellDate+'</span>':'')
       +'<span style="font-size:11px;color:'+statusColor+';font-weight:600;white-space:nowrap">'+statusLabel+'</span>'
-      +'</div>';
+      +'</div>'
+      +(btnHtml?'<div style="padding:0 10px 8px">'+btnHtml+'</div>':'');
   }).join('');
 }
 
