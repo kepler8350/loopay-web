@@ -661,6 +661,15 @@ async function doSiSellReserve(){
 
 // ── 루페이 구매아이템 송금 모달 (사용자 화면 openPaymentModal과 동일 구조) ──
 var _adminRemitMatchId = null;
+async function adminLoopayAddSellRes(itemId){
+  if(!confirm('이 아이템을 판매예약 등록하겠습니까?')) return;
+  try{
+    var d = await apiAdmin('/admin/loopay-sell-reservation',{method:'POST',body:JSON.stringify({item_id:itemId})});
+    if(d.success){ toast('✅ 판매예약 완료','success'); loadSystemItems(); }
+    else toast(d.error||'오류','error');
+  }catch(e){ toast('오류: '+e.message,'error'); }
+}
+
 function adminLoopayRemit(matchId, sellerAccName, sellerAcc, sellerBank){
   _adminRemitMatchId = matchId;
   var modal = document.getElementById('admin-remit-modal');
@@ -817,8 +826,10 @@ function renderSystemItems(){
   // 구매아이템: 1차 매칭 완료(pending/paid만). confirmed(입금확인 완료)는 제외
   var buyItems = filtered.filter(function(i){
     if(!i.is_buy_matched) return false;
-    // 2차 매칭 loopay 구매아이템 (match_round=2, confirmed) → 구매탭 표시
-    if(i.buy_match_confirmed && i.match_round === 2) return true;
+    // confirmed 이어도 sell_reservation_id가 없으면 구매탭 유지 (판매예약 전)
+    if(i.buy_match_confirmed && !i.sell_reservation_id) return true;
+    // 판매예약이 됐으면 판매탭으로 (구매탭 제외)
+    if(i.buy_match_confirmed && i.sell_reservation_id) return false;
     return i.buy_match_confirmed !== true;
   });
   var buyTbody = document.getElementById('si-buy-tbody');
@@ -974,6 +985,9 @@ function renderSystemItems(){
         var actionBtn = '';
         if(item.is_buy_matched && item.match_id && ms2 === 'pending'){
           actionBtn = '<button onclick="adminLoopayRemit('+item.match_id+',\''+sellerAccName+'\',\''+sellerAcc+'\',\''+sellerBank+'\')" style="padding:3px 10px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">💸 송금</button>';
+        } else if(ms2 === 'confirmed' || (!ms2 && item.is_buy_matched)){
+          // 거래완료 후 판매예약 버튼
+          actionBtn = '<button onclick="adminLoopayAddSellRes('+item.id+')" style="padding:3px 10px;background:#388e3c;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">📋 판매예약</button>';
         }
         return '<tr style="background:'+bg2+';border-bottom:1px solid #23243a">'
           +'<td style="padding:6px 8px;text-align:center"><input type="checkbox" class="si-buy-check" data-id="'+item.id+'" onchange="updateBuyDeleteBtn()" style="cursor:pointer"></td>'

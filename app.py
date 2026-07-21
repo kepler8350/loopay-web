@@ -5651,6 +5651,51 @@ def debug_sql():
         db.close()
 
 
+@app.route('/api/admin/loopay-sell-reservation', methods=['POST'])
+@jwt_required()
+def admin_loopay_sell_reservation():
+    """loopay 구매완료 아이템 판매예약 등록"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='권한 없음'), 403
+    data = request.json or {}
+    item_id = int(data.get('item_id', 0))
+    if not item_id: return jsonify(error='item_id 필요'), 400
+    db = get_db()
+    try:
+        # loopay 계정
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
+        if not loopay: return jsonify(error='loopay 계정 없음'), 400
+        lid = loopay['id']
+        # 아이템 확인
+        item = db.execute("SELECT * FROM items WHERE id=? AND user_id=?", (item_id, lid)).fetchone()
+        if not item: return jsonify(error='아이템 없음'), 400
+        if item['status'] not in ('reservable', 'matched', 'active'):
+            return jsonify(error=f'판매예약 불가 상태: {item["status"]}'), 400
+        # 중복 판매예약 확인
+        dup = db.execute(
+            "SELECT id FROM reservations WHERE item_id=? AND status IN ('pending','matched')",
+            (item_id,)
+        ).fetchone()
+        if dup: return jsonify(error='이미 판매예약됨'), 400
+        # 판매예약 생성
+        today = get_today().isoformat()
+        db.execute(
+            """INSERT INTO reservations(user_id, item_id, bar_type, stage, match_round,
+               reserve_date, status, confirmed, join_round2)
+               VALUES(?,?,?,?,1,?,'pending',1,0)""",
+            (lid, item_id, item['bar_type'], item['stage'] or 1, today)
+        )
+        # 아이템 상태 reservable로 확보
+        db.execute("UPDATE items SET status='reservable' WHERE id=?", (item_id,))
+        db.commit()
+        return jsonify(success=True, message='판매예약 등록 완료')
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
