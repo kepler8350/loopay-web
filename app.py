@@ -5423,8 +5423,10 @@ def user_my_items():
                  i.status NOT IN ('sold')
                  OR EXISTS (
                    SELECT 1 FROM matches m
+                   JOIN users ub ON m.buyer_id=ub.id
                    WHERE m.seller_item_id=i.id
-                   AND m.match_round=2 AND m.status IN ('pending','paid')
+                   AND ub.username='loopay'
+                   AND m.status IN ('pending','paid')
                  )
                )
                ORDER BY i.id DESC""",
@@ -5526,7 +5528,7 @@ def user_my_items():
                         """SELECT m.id, m.status, m.match_round
                            FROM matches m JOIN users u ON m.buyer_id=u.id
                            WHERE m.seller_item_id=? AND u.username='loopay'
-                           AND m.match_round=2 AND m.status IN ('pending','paid')
+                           AND m.status IN ('pending','paid')
                            ORDER BY m.id DESC LIMIT 1""",
                         (row['id'],)
                     ).fetchone()
