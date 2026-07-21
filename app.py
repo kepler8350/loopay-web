@@ -5556,16 +5556,13 @@ def user_my_items():
         # 판매완료 아이템은 판매탭 리스트에서 제외
         # sold 아이템 중 loopay pending/paid 매치가 있으면 유지
         _loopay_pending_items = set()
-        try:
-            _lp_rows = db.execute(
-                """SELECT DISTINCT m.seller_item_id
-                   FROM matches m JOIN users u ON m.buyer_id=u.id
-                   WHERE u.username='loopay' AND m.status IN ('pending','paid')
-                   AND m.seller_item_id IS NOT NULL"""
-            ).fetchall()
-            _loopay_pending_items = {r['seller_item_id'] for r in _lp_rows}
-        except Exception:
-            pass
+        _lp_rows = db.execute(
+            """SELECT DISTINCT m.seller_item_id
+               FROM matches m JOIN users u ON m.buyer_id=u.id
+               WHERE u.username='loopay' AND m.status IN ('pending','paid')
+               AND m.seller_item_id IS NOT NULL"""
+        ).fetchall()
+        _loopay_pending_items = {r['seller_item_id'] for r in _lp_rows}
         result = [i for i in result if not (
             (i.get('status') == 'sold' and i['id'] not in _loopay_pending_items)
             or (i.get('status_label') == '판매완료' and not i.get('_role'))
