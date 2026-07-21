@@ -6488,7 +6488,11 @@ def user_matching():
         buy_list = [fmt_reservation(r) for r in buy_reservations] + [fmt_match(m,'buyer') for m in buy_matches]
         sell_list = [fmt_reservation(r) for r in sell_reservations] + [fmt_match(m,'seller') for m in sell_matches]
 
-        return jsonify(buy=buy_list, sell=sell_list)
+        # 2차 매칭 실행 여부
+        today = get_matching_date().isoformat()
+        _r2_ran = bool(db.execute("SELECT value FROM system_settings WHERE key=?",
+                                   (f'r2_ran_{today}',)).fetchone())
+        return jsonify(buy=buy_list, sell=sell_list, r2_ran_today=_r2_ran)
     finally:
         db.close()
 

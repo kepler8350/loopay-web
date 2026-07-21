@@ -1640,6 +1640,10 @@ async function loadMatchingTab(){
       buys = d.buy || [];
       sells = d.sell || [];
     }
+    // 2차 매칭이 실행됐으면 unmatched(2차대기) 예약은 숨김 (완료 처리됨)
+    if(d && d.r2_ran_today) {
+      buys = buys.filter(function(b){ return b.status !== 'unmatched'; });
+    }
     renderMatchBuyList(buys);
     renderMatchSellList(sells);
   }catch(e){
