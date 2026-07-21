@@ -5419,7 +5419,14 @@ def user_my_items():
             """SELECT i.id, i.bar_type, i.stage, i.status, i.purchase_date,
                (SELECT MAX(r2.reserve_date) FROM reservations r2 WHERE r2.item_id=i.id) as reserve_date
                FROM items i
-               WHERE i.user_id=? AND i.status NOT IN ('sold')
+               WHERE i.user_id=? AND (
+                 i.status NOT IN ('sold')
+                 OR EXISTS (
+                   SELECT 1 FROM matches m
+                   WHERE m.seller_item_id=i.id
+                   AND m.match_round=2 AND m.status IN ('pending','paid')
+                 )
+               )
                ORDER BY i.id DESC""",
             (uid,)
         ).fetchall()
@@ -5512,7 +5519,18 @@ def user_my_items():
                         ).fetchone()['c']
                         item_status = 'lucky_matched' if _mc_cnt > 0 else 'lucky_waiting'
 
-            result.append({
+            # loopay 자동구매 매치 확인 (sold 상태인 경우)
+                _loopay_match = None
+                if row['status'] == 'sold':
+                    _loopay_match = db.execute(
+                        """SELECT m.id, m.status, m.match_round
+                           FROM matches m JOIN users u ON m.buyer_id=u.id
+                           WHERE m.seller_item_id=? AND u.username='loopay'
+                           AND m.match_round=2 AND m.status IN ('pending','paid')
+                           ORDER BY m.id DESC LIMIT 1""",
+                        (row['id'],)
+                    ).fetchone()
+                result.append({
                 'id': row['id'],
                 'bar_type': row['bar_type'],
                 'stage': row['stage'] or 1,
@@ -5521,43 +5539,14 @@ def user_my_items():
                 'days': days_since(row['purchase_date']),
                 'purchase_date': row['purchase_date'],
                 'reserve_date': row.get('reserve_date'),
-                'match_id': m['id'] if (m and match_status not in [None]) else None,
-                'match_status': match_status,
-                'match_round': match_round,
+                'match_id': (_loopay_match['id'] if _loopay_match else (m['id'] if (m and match_status not in [None]) else None)),
+                'match_status': (_loopay_match['status'] if _loopay_match else match_status),
+                'match_round': (_loopay_match['match_round'] if _loopay_match else match_round),
                 'receipt_url': row.get('receipt_url'),
-                'buyer_username': buyer_username,
+                'buyer_username': ('loopay' if _loopay_match else buyer_username),
                 'buyer_account_name': buyer_account_name,
                 'buyer_account': buyer_account,
-            })
-        # ── 구매자 매칭 내역은 user/matching API에서 별도 표시 ──
-        # 거래완료 전(pending/paid)은 아이템 현황에 미포함, confirmed는 items에 이미 생성됨
-        buy_matches = []
-
-        for bm in buy_matches:
-            try:
-                r_row = db.execute('SELECT receipt_url FROM matches WHERE id=?', (bm['id'],)).fetchone()
-                receipt = r_row['receipt_url'] if r_row else None
-            except Exception:
-                receipt = None
-            result.append({
-                'id': -bm['id'],
-                'bar_type': bm['bar_type'],
-                'stage': bm['stage'] or 1,
-                'status': 'matched',
-                'purchase_date': bm['match_date'],
-                'reserve_date': bm['match_date'],
-                'match_id': bm['id'],
-                'match_status': bm['status'],
-                'match_round': bm['match_round'],
-                'receipt_url': receipt,
-                'buyer_username': None,
-                'buyer_account_name': None,
-                'buyer_account': None,
-                'seller_username': bm['seller_username'],
-                'seller_account_name': bm['seller_account_name'],
-                'seller_account': bm['seller_account'],
-                'seller_bank': bm['seller_bank'],
-                '_role': 'buyer',
+                'is_loopay_match': bool(_loopay_match),
             })
 
         # 판매완료 아이템은 판매탭 리스트에서 제외

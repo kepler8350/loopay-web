@@ -2638,7 +2638,25 @@ function renderSellTab(){
 
   var tC={bronze:'#cd7f32',silver:'#a8a9ad',gold:'#ffd700'};
   var tN={bronze:'수정',silver:'루비',gold:'다이아'};
-  var msKr={pending:'대기',matched:'매칭완료',paid:'송금',confirmed:'거래완료',cancelled:'취소',failed:'미입금',unpaid:'미입금'};
+  var msKr={pending:'대기',matched:'매칭완료',paid:'송금완료',confirmed:'거래완료',cancelled:'취소',failed:'미입금',unpaid:'미입금'};
+  // match_round + buyer에 따른 라벨
+  function getMatchLabel(item) {
+    var ms = item.match_status;
+    var round = item.match_round || 1;
+    var isLoopay = item.is_loopay_match || item.buyer_username === 'loopay';
+    if(!ms || ms === 'confirmed' || ms === 'failed') return null;
+    if(isLoopay) {
+      if(ms === 'pending') return {label:'시스템 입금대기', color:'#ab47bc', bg:'#ab47bc22'};
+      if(ms === 'paid')    return {label:'시스템 입금확인중', color:'#ab47bc', bg:'#ab47bc22'};
+    }
+    if(round === 2) {
+      if(ms === 'pending') return {label:'2차 입금대기', color:'#ff9800', bg:'#ff980022'};
+      if(ms === 'paid')    return {label:'2차 입금확인중', color:'#ff9800', bg:'#ff980022'};
+    }
+    if(ms === 'pending') return {label:'1차 입금대기', color:'#f9a825', bg:'#f9a82522'};
+    if(ms === 'paid')    return {label:'1차 입금확인중', color:'#42a5f5', bg:'#42a5f522'};
+    return null;
+  }
   var msColor={pending:'#888',matched:'#f9a825',paid:'#42a5f5',confirmed:'#66bb6a',cancelled:'#ef5350',failed:'#ef5350',unpaid:'#ef5350'};
 
   // 매칭 시간 여부: 서버에서 받은 값 사용 (더 정확)
@@ -2683,6 +2701,12 @@ function renderSellTab(){
       ? '<span style="font-size:10px;background:#1565c033;color:#90caf9;padding:1px 6px;border-radius:6px;margin-left:4px">구매</span>'
       : '';
     var _stLabel = ms ? (msKr[ms]||ms) : (item.status_label||(item.status||''));
+    // 매치 구분 배지 (1차/2차/시스템 입금대기)
+    var _matchBadge = '';
+    var _ml = (typeof getMatchLabel === 'function') ? getMatchLabel(item) : null;
+    if(_ml) {
+      _matchBadge = '<span style="font-size:10px;background:'+_ml.bg+';color:'+_ml.color+';padding:2px 7px;border-radius:6px;font-weight:700;margin-left:4px">'+_ml.label+'</span>';
+    }
     var _stColor = ms ? (msColor[ms]||'#888') : (
       _stLabel==='판매가능'?'#66bb6a':_stLabel==='보유중'?'#64b5f6':
       _stLabel==='판매예약중'?'#ab47bc':_stLabel==='매칭완료'?'#f9a825':
@@ -2707,6 +2731,8 @@ function renderSellTab(){
       var _inPayWin  = (_mRound===2)?(_totalMin>=900&&_totalMin<1140):(_totalMin>=300&&_totalMin<840);
       var _inWarnWin = (_mRound===2)?(_totalMin>=1110&&_totalMin<1140):(_totalMin>=750&&_totalMin<780);
       var _inConfWin = (_mRound===2)?(_totalMin>=1140&&_totalMin<1200):(_totalMin>=780&&_totalMin<840);
+      // loopay 시스템 매치(paid): 시간 무관 입금확인 가능
+      if(item.is_loopay_match && ms==='paid') { _inPayWin=true; _inConfWin=true; }
       var _isPaid = (ms==='paid');
       var _isConf = (ms==='confirmed' || ms==='failed' || ms==='unpaid') || !!_confirmedUnpaidMatchIds[item.match_id];
       var _lastMin = (_sellUnpaidClickedAt[item.match_id]||0);
@@ -2725,7 +2751,7 @@ function renderSellTab(){
     }
     return '<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:6px">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
-        +'<span style="font-size:13px;font-weight:700;color:'+(tC[item.bar_type]||'#fff')+'">'+( tN[item.bar_type]||item.bar_type)+' '+(item.stage||1)+'단계'+_roleBadge+'</span>'
+        +'<span style="font-size:13px;font-weight:700;color:'+(tC[item.bar_type]||'#fff')+'">'+( tN[item.bar_type]||item.bar_type)+' '+(item.stage||1)+'단계'+_roleBadge+_matchBadge+'</span>'
         +'<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:'+_stColor+'22;color:'+_stColor+';border:1px solid '+_stColor+'44">'+_stLabel+'</span>'
       +'</div>'
       +(item.purchase_date ? '<div style="font-size:11px;color:var(--text2);margin-bottom:2px">구매일: '+item.purchase_date+(item.days!=null?' ('+(item.days+1)+'일째)':'')+(item.reserve_date&&item.reserve_date!==item.purchase_date?' | 예약: '+item.reserve_date:'')+'</div>' : '')
