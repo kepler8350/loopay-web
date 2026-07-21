@@ -5586,10 +5586,23 @@ def debug_loopay_item():
         item = db.execute("SELECT * FROM items WHERE id=2256").fetchone()
         # match buyer_id 직접 확인
         m1674 = db.execute("SELECT id, buyer_id, seller_id, bar_type, stage, match_round, status FROM matches WHERE id=1674").fetchone()
+        # WHERE 조건 직접 테스트
+        item_in_where = db.execute(
+            """SELECT i.id FROM items i WHERE i.user_id=? AND i.id=2256
+               AND i.status NOT IN ('sold')
+               AND (i.status='reservable'
+                    OR (i.status='matched' AND (
+                        EXISTS(SELECT 1 FROM reservations r3 WHERE r3.item_id=i.id)
+                        OR EXISTS(SELECT 1 FROM matches mb WHERE mb.buyer_id=i.user_id AND mb.seller_item_id IS NOT NULL AND mb.match_round=2 AND mb.status IN ('pending','paid','confirmed'))
+                    ))
+                    OR i.status NOT IN ('reservable','matched')
+               )""", (lid_id,)
+        ).fetchone()
         return jsonify(lid=lid_id, exists_reservations=ex1, exists_matches_buyer_loopay=ex2,
                        exists_matches_r2_loopay=ex3,
                        item_2256=dict(item) if item else None,
-                       match_1674=dict(m1674) if m1674 else None)
+                       match_1674=dict(m1674) if m1674 else None,
+                       item_in_where=dict(item_in_where) if item_in_where else None)
     except Exception as e:
         return jsonify(error=str(e)), 500
     finally:
