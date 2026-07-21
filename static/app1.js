@@ -1718,15 +1718,16 @@ function renderMatchSellList(items){
       +'</div>';
     var _sr = m.match_round || 1;
     var _totalMinSell = h * 60 + (getEffectiveDate ? getEffectiveDate().getMinutes() : new Date().getMinutes());
-    // 입금확인 가능: 1차 05~13, 2차 15~19
-    var canConfirm = (_sr===2) ? (h>=15 && h<19) : (h>=5 && h<13);
+    // 입금확인 가능: paid 상태면 시간 무관, 아니면 1차 05~13, 2차 15~19
+    var canConfirm = (m.status==='paid') || ((_sr===2) ? (h>=15 && h<19) : (h>=5 && h<13));
     // 미입금 버튼: 1차 13~14, 2차 19~20
     var canUnpaid = (_sr===2) ? (h>=19 && h<20) : (h>=13 && h<14);
     // 입금요청: 1차 12:30~13:00, 2차 18:30~19:00
     var canRequest = (_sr===2) ? (_totalMinSell >= 1110 && _totalMinSell < 1140) : (_totalMinSell >= 750 && _totalMinSell < 780);
     // paid 상태: 구매자 송금완료 → 판매자 입금확인+미입금 버튼 활성화 시간
     // 1차: paid이면 14:00까지 / 2차: paid이면 20:00까지
-    var canConfirmMin = (_sr===2) ? (_totalMinSell<1200) : (_totalMinSell<840);
+    // paid 상태면 시간 무관하게 입금확인/미입금 가능
+    var canConfirmMin = (m.status==='paid') || ((_sr===2) ? (_totalMinSell<1200) : (_totalMinSell<840));
     var canUnpaidMin  = canConfirmMin;
     var btnHtml = '';
     if(m.status==='paid'){
