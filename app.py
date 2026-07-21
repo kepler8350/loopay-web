@@ -5552,7 +5552,10 @@ def user_my_items():
             })
 
         # 판매완료 아이템은 판매탭 리스트에서 제외
-        result = [i for i in result if not (i.get('status') == 'sold' or (i.get('status_label') == '판매완료' and not i.get('_role')))]
+        result = [i for i in result if not (
+            (i.get('status') == 'sold' and not i.get('is_loopay_match'))
+            or (i.get('status_label') == '판매완료' and not i.get('_role'))
+        )]
         _now_h = get_now().hour
         _is_matching_time = _now_h >= 20 or _now_h < 5
         return jsonify(items=result, total=len(result), is_matching_time=_is_matching_time, _db_total=len(items))
