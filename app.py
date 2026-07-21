@@ -5549,6 +5549,8 @@ def user_my_items():
                 'buyer_account_name': buyer_account_name,
                 'buyer_account': buyer_account,
                 'is_loopay_match': bool(_loopay_match),
+                '_debug_sold': row['status'] == 'sold',
+                '_debug_lm': dict(_loopay_match) if _loopay_match else None,
             })
 
         # 판매완료 아이템은 판매탭 리스트에서 제외
