@@ -5580,6 +5580,38 @@ def testtools_update_match_status():
         db.close()
 
 
+@app.route('/api/admin/debug-sql', methods=['GET'])
+@jwt_required()
+def debug_sql():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    db = get_db()
+    try:
+        item_id = int(request.args.get('item_id', 2270))
+        uid = int(request.args.get('uid', 4083))
+        # EXISTS 테스트
+        ex = db.execute("""SELECT COUNT(*) as c FROM matches m
+               JOIN users ub ON m.buyer_id=ub.id
+               WHERE m.seller_item_id=? AND ub.username='loopay'
+               AND m.status IN ('pending','paid')""", (item_id,)).fetchone()
+        # item 상태
+        item = db.execute("SELECT id,status,user_id FROM items WHERE id=?", (item_id,)).fetchone()
+        # loopay users
+        loopay_users = db.execute("SELECT id,username,approved FROM users WHERE username='loopay'").fetchall()
+        # match buyer
+        match_buyers = db.execute("""SELECT m.id, m.buyer_id, m.status, u.username as buyer_name
+               FROM matches m LEFT JOIN users u ON m.buyer_id=u.id
+               WHERE m.seller_item_id=?""", (item_id,)).fetchall()
+        return jsonify(
+            exists_count=ex['c'],
+            item=dict(item) if item else None,
+            loopay_users=[dict(r) for r in loopay_users],
+            match_buyers=[dict(r) for r in match_buyers]
+        )
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
