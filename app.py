@@ -674,3 +674,8 @@ def scheduler_auto_process():
         _auto_confirm_paid_matches(db)
         db.commit()
         return jsonify(success=True, time=get_now().isoformat())
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
