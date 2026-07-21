@@ -704,18 +704,19 @@ def admin_delete_users():
         if not target_ids:
             return jsonify(success=True, deleted=0, message='삭제 대상 없음')
         placeholders = ','.join('?' * len(target_ids))
+        target_tuple = tuple(target_ids)
         # 관련 데이터 삭제 (순서 주의)
         for tbl, col in [('notifications','user_id'),('reservations','user_id'),('items','user_id'),('charge_requests','user_id')]:
             try:
-                db.execute(f"DELETE FROM {tbl} WHERE {col} IN ({placeholders})", target_ids)
+                db.execute(f"DELETE FROM {tbl} WHERE {col} IN ({placeholders})", target_tuple)
             except Exception:
                 pass
         try:
-            db.execute(f"DELETE FROM matches WHERE buyer_id IN ({placeholders})", target_ids)
-            db.execute(f"DELETE FROM matches WHERE seller_id IN ({placeholders})", target_ids)
+            db.execute(f"DELETE FROM matches WHERE buyer_id IN ({placeholders})", target_tuple)
+            db.execute(f"DELETE FROM matches WHERE seller_id IN ({placeholders})", target_tuple)
         except Exception:
             pass
-        db.execute(f"DELETE FROM users WHERE id IN ({placeholders})", target_ids)
+        db.execute(f"DELETE FROM users WHERE id IN ({placeholders})", target_tuple)
         db.commit()
         return jsonify(success=True, deleted=len(target_ids))
     except Exception as e:
