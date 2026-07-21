@@ -522,17 +522,7 @@ from db import get_db, init_db, LEVEL_CONFIG, LEVEL_COST, LEVEL_UP_FEE, SPLIT_CO
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path='')
 
-@app.errorhandler(500)
-def handle_500(e):
-    return jsonify(error='Internal Server Error', detail=str(e)), 500
 
-@app.errorhandler(404)
-def handle_404(e):
-    return jsonify(error='Not Found'), 404
-
-@app.errorhandler(405)
-def handle_405(e):
-    return jsonify(error='Method Not Allowed'), 405
 def check_and_level_up(db, user_id):
     """누적횟수 기반 자동 레벨업 체크 + 알림 (기존 매칭 완료 시 자동 레벨업 - 유지)"""
     u = db.execute("SELECT id, level, cumulative_count FROM users WHERE id=?", (user_id,)).fetchone()
@@ -693,16 +683,20 @@ def scheduler_auto_process():
         db.close()
 
 
-@app.route('/api/admin/delete-users-test', methods=['POST'])
-def admin_delete_users_test():
-    return jsonify(ok=True, data=request.json)
-
 @app.route('/api/admin/delete-users', methods=['POST'])
-@jwt_required()
 def admin_delete_users():
     """회원 삭제 (admin, loopay 제외)"""
-    identity = get_jwt_identity()
-    if not str(identity).startswith('admin:'): return jsonify(error='권한 없음'), 403
+    # 직접 JWT 검증
+    auth = request.headers.get('Authorization', '')
+    try:
+        from flask_jwt_extended import decode_token
+        token = auth.replace('Bearer ', '')
+        data = decode_token(token)
+        identity = str(data.get('sub', ''))
+    except Exception:
+        return jsonify(error='인증 필요'), 401
+    if not identity.startswith('admin:'):
+        return jsonify(error='권한 없음'), 403
     data = request.json or {}
     user_ids = data.get('user_ids', [])
     db = get_db()
