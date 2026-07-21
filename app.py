@@ -5554,10 +5554,42 @@ def user_my_items():
             })
 
         # 판매완료 아이템은 판매탭 리스트에서 제외
+        # sold 아이템 중 loopay pending/paid 매치가 있으면 유지
+        _loopay_pending_items = set()
+        try:
+            _lp_rows = db.execute(
+                """SELECT DISTINCT m.seller_item_id
+                   FROM matches m JOIN users u ON m.buyer_id=u.id
+                   WHERE u.username='loopay' AND m.status IN ('pending','paid')
+                   AND m.seller_item_id IS NOT NULL"""
+            ).fetchall()
+            _loopay_pending_items = {r['seller_item_id'] for r in _lp_rows}
+        except Exception:
+            pass
         result = [i for i in result if not (
-            (i.get('status') == 'sold' and not i.get('is_loopay_match'))
+            (i.get('status') == 'sold' and i['id'] not in _loopay_pending_items)
             or (i.get('status_label') == '판매완료' and not i.get('_role'))
         )]
+        # sold+loopay 아이템에 match 정보 보강
+        for _ri in result:
+            if _ri.get('status') == 'sold' and _ri['id'] in _loopay_pending_items:
+                _ri['is_loopay_match'] = True
+                try:
+                    _lm = db.execute(
+                        """SELECT m.id, m.status, m.match_round
+                           FROM matches m JOIN users u ON m.buyer_id=u.id
+                           WHERE m.seller_item_id=? AND u.username='loopay'
+                           AND m.status IN ('pending','paid')
+                           ORDER BY m.id DESC LIMIT 1""",
+                        (_ri['id'],)
+                    ).fetchone()
+                    if _lm:
+                        _ri['match_id'] = _lm['id']
+                        _ri['match_status'] = _lm['status']
+                        _ri['match_round'] = _lm['match_round']
+                        _ri['buyer_username'] = 'loopay'
+                except Exception:
+                    pass
         _now_h = get_now().hour
         _is_matching_time = _now_h >= 20 or _now_h < 5
         return jsonify(items=result, total=len(result), is_matching_time=_is_matching_time, _db_total=len(items))
