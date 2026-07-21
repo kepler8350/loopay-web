@@ -4842,7 +4842,8 @@ def match_confirm_payment():
         if not m:
             return jsonify(error='처리 불가'), 400
         # 시간 창 체크 (관리자 제외): 1차 05:00~13:00, 2차 15:00~19:00
-        if not is_admin:
+        # paid 상태(loopay 송금완료)면 시간 무관 허용
+        if not is_admin and m.get('status') != 'paid':
             _now = get_now()
             _h, _mn = _now.hour, _now.minute
             _total = _h*60+_mn
