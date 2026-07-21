@@ -721,7 +721,8 @@ def admin_delete_users():
         return jsonify(success=True, deleted=len(target_ids))
     except Exception as e:
         db.rollback()
-        return jsonify(error=str(e)), 500
+        import traceback
+        return jsonify(error=str(e), detail=traceback.format_exc()[-500:]), 500   return jsonify(error=str(e)), 500
     finally:
         db.close()
 
