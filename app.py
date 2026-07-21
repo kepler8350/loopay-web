@@ -5824,7 +5824,8 @@ def admin_loopay_items():
 
         # confirmed/failed match는 목록에서 제외 (match_id 기준으로 제외, item 기준 아님)
         rows = [d for d in rows_with_match
-                if d.get('match_status') not in ('confirmed', 'failed')]
+                if d.get('match_status') not in ('confirmed', 'failed')
+                or d.get('is_buy_matched')]  # loopay 구매 완료 아이템은 유지
 
         # ── loopay 구매 중 매치 (item_id=0 구매예약) → 구매아이템으로 표시 ──
         # 아이템 없이 구매예약한 경우: items 테이블에 아이템이 없어서 위 rows에 안 잡힘
