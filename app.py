@@ -322,6 +322,8 @@ def _auto_confirm_paid_matches(db):
                         (_loopay_id2, _item_id3)
                     ).fetchone()
                     if _already:
+                        import builtins as _bi4
+                        if hasattr(_bi4, '_sell_debug'): _bi4._sell_debug['error'] = f'dup:{_already["id"]},loopay:{_loopay_id2},item:{_item_id3}'
                         continue
                     # ── 판매자 아이템 sold 처리
                     db.execute("UPDATE items SET status='sold' WHERE id=?", (_item_id3,))
