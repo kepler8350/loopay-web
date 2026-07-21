@@ -521,6 +521,18 @@ from db import get_db, init_db, LEVEL_CONFIG, LEVEL_COST, LEVEL_UP_FEE, SPLIT_CO
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), 'static')
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path='')
+
+@app.errorhandler(500)
+def handle_500(e):
+    return jsonify(error='Internal Server Error', detail=str(e)), 500
+
+@app.errorhandler(404)
+def handle_404(e):
+    return jsonify(error='Not Found'), 404
+
+@app.errorhandler(405)
+def handle_405(e):
+    return jsonify(error='Method Not Allowed'), 405
 def check_and_level_up(db, user_id):
     """누적횟수 기반 자동 레벨업 체크 + 알림 (기존 매칭 완료 시 자동 레벨업 - 유지)"""
     u = db.execute("SELECT id, level, cumulative_count FROM users WHERE id=?", (user_id,)).fetchone()
