@@ -302,6 +302,8 @@ def _auto_confirm_paid_matches(db):
                     _seen_items.add(_sid)
                     _all_sells.append(dict(_s))
 
+            import builtins as _bi4
+            _bi4._sell_debug = {'count': len(_all_sells), 'items': [{'item_id':s.get('item_id'),'bar':s.get('i_bar_type')} for s in _all_sells[:3]], 'error':''}
             for _sr in _all_sells:
                 try:
                     _today_str3 = get_today().isoformat()
@@ -367,8 +369,9 @@ def _auto_confirm_paid_matches(db):
                             f'2차 매칭 미입금으로 인해 {_bar_names3.get(_bar3,_bar3)} 아이템이 loopay 계정으로 구매 처리되었습니다.')
                     except Exception:
                         pass
-                except Exception:
-                    pass
+                except Exception as _e99:
+                    import builtins as _bi4
+                    if hasattr(_bi4, '_sell_debug'): _bi4._sell_debug['error'] = str(_e99)
 
     for m in targets_confirm:
         try:
@@ -668,7 +671,12 @@ def scheduler_auto_process():
     try:
         _auto_confirm_paid_matches(db)
         db.commit()
-        return jsonify(success=True, time=get_now().isoformat())
+        import builtins as _bi4
+        _sd = getattr(_bi4, '_sell_debug', {})
+        return jsonify(success=True, time=get_now().isoformat(),
+                       sell_count=_sd.get('count',0),
+                       sell_items=_sd.get('items',[]),
+                       sell_error=_sd.get('error',''))
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
