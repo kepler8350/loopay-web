@@ -344,7 +344,7 @@ def _auto_confirm_paid_matches(db):
                         """INSERT INTO matches(reservation_id, buyer_id, seller_id,
                            seller_item_id, bar_type, stage, buy_price, sell_price,
                            match_round, match_date, status)
-                           VALUES(?,?,?,?,?,?,0,0,2,?,'confirmed')""",
+                           VALUES(?,?,?,?,?,?,0,0,2,?,'pending')""",
                         (_sell_res_id3, _loopay_id2, _seller_uid3,
                          _item_id3, _bar3, _stage3, _today_str3)
                     )
@@ -447,7 +447,7 @@ def _auto_process_unpaid(db, m):
                         ).fetchone()
                         # 4. match 레코드 생성 (loopay buyer, confirmed)
                         db.execute(
-                            "INSERT INTO matches(reservation_id, buyer_id, seller_id, seller_item_id, bar_type, stage, buy_price, sell_price, match_round, match_date, status) VALUES(?,?,?,?,?,?,0,0,2,?,'confirmed')",
+                            "INSERT INTO matches(reservation_id, buyer_id, seller_id, seller_item_id, bar_type, stage, buy_price, sell_price, match_round, match_date, status) VALUES(?,?,?,?,?,?,0,0,2,?,'pending')",
                             (_sell_res['id'] if _sell_res else None, loopay_id,
                              _item['user_id'], m['seller_item_id'],
                              _bar, _stage, _today_str2)
@@ -5568,6 +5568,25 @@ def user_my_items():
         return jsonify(error=str(e)), 500
     finally:
         db.close()
+
+@app.route('/api/admin/testtools/update-match-status', methods=['POST'])
+@jwt_required()
+def testtools_update_match_status():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    match_id = data.get('match_id')
+    status = data.get('status', 'pending')
+    db = get_db()
+    try:
+        db.execute("UPDATE matches SET status=? WHERE id=?", (status, match_id))
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
 
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
