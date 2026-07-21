@@ -5549,8 +5549,6 @@ def user_my_items():
                 'buyer_account_name': buyer_account_name,
                 'buyer_account': buyer_account,
                 'is_loopay_match': bool(_loopay_match),
-                '_debug_sold': row['status'] == 'sold',
-                '_debug_lm': dict(_loopay_match) if _loopay_match else None,
             })
 
         # 판매완료 아이템은 판매탭 리스트에서 제외
@@ -5589,7 +5587,7 @@ def user_my_items():
                     pass
         _now_h = get_now().hour
         _is_matching_time = _now_h >= 20 or _now_h < 5
-        return jsonify(items=result, total=len(result), is_matching_time=_is_matching_time, _db_total=len(items))
+        return jsonify(items=result, total=len(result), is_matching_time=_is_matching_time)
     except Exception as e:
         return jsonify(error=str(e)), 500
     finally:

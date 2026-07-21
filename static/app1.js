@@ -1,3 +1,22 @@
+// 판매탭 매치 라벨 (전역)
+window.getMatchLabel = function(item) {
+  var ms = item.match_status;
+  var round = item.match_round || 1;
+  var isLoopay = item.is_loopay_match || item.buyer_username === 'loopay';
+  if(!ms || ms === 'confirmed' || ms === 'failed') return null;
+  if(isLoopay) {
+    if(ms === 'pending') return {label:'시스템 입금대기', color:'#ab47bc', bg:'#ab47bc22'};
+    if(ms === 'paid')    return {label:'시스템 입금확인중', color:'#ab47bc', bg:'#ab47bc22'};
+  }
+  if(round === 2) {
+    if(ms === 'pending') return {label:'2차 입금대기', color:'#ff9800', bg:'#ff980022'};
+    if(ms === 'paid')    return {label:'2차 입금확인중', color:'#ff9800', bg:'#ff980022'};
+  }
+  if(ms === 'pending') return {label:'1차 입금대기', color:'#f9a825', bg:'#f9a82522'};
+  if(ms === 'paid')    return {label:'1차 입금확인중', color:'#42a5f5', bg:'#42a5f522'};
+  return null;
+};
+
 // ── 공통 커스텀 confirm 팝업 ──
 
 // ── 판매예약 버튼 상태 통합 관리 ──
