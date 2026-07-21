@@ -688,43 +688,32 @@ def admin_delete_users():
     identity = get_jwt_identity()
     if not str(identity).startswith('admin:'): return jsonify(error='권한 없음'), 403
     data = request.json or {}
-    user_ids = data.get('user_ids', [])  # 빈 리스트면 전체 삭제
+    user_ids = data.get('user_ids', [])
     db = get_db()
     try:
-        # admin, loopay 계정 ID 보호
-        protected = {r['id'] for r in db.execute(
-            "SELECT id FROM users WHERE username IN ('admin','loopay')"
-        ).fetchall()}
+        protected = {r['id'] for r in db.execute("SELECT id FROM users WHERE username IN ('admin','loopay')").fetchall()}
         if user_ids:
             target_ids = [int(i) for i in user_ids if int(i) not in protected]
         else:
-            # 전체 삭제 (protected 제외)
             all_ids = [r['id'] for r in db.execute("SELECT id FROM users").fetchall()]
             target_ids = [i for i in all_ids if i not in protected]
         if not target_ids:
             return jsonify(success=True, deleted=0, message='삭제 대상 없음')
-        placeholders = ','.join('?' * len(target_ids))
-        target_tuple = tuple(target_ids)
-        # 관련 데이터 삭제 (순서 주의)
+        ph = ','.join('?' * len(target_ids))
+        tt = tuple(target_ids)
         for tbl, col in [('notifications','user_id'),('reservations','user_id'),('items','user_id'),('charge_requests','user_id')]:
-            try:
-                db.execute(f"DELETE FROM {tbl} WHERE {col} IN ({placeholders})", target_tuple)
-            except Exception:
-                pass
+            try: db.execute(f"DELETE FROM {tbl} WHERE {col} IN ({ph})", tt)
+            except Exception: pass
         try:
-            db.execute(f"DELETE FROM matches WHERE buyer_id IN ({placeholders})", target_tuple)
-            db.execute(f"DELETE FROM matches WHERE seller_id IN ({placeholders})", target_tuple)
-        except Exception:
-            pass
-        db.execute(f"DELETE FROM users WHERE id IN ({placeholders})", target_tuple)
+            db.execute(f"DELETE FROM matches WHERE buyer_id IN ({ph})", tt)
+            db.execute(f"DELETE FROM matches WHERE seller_id IN ({ph})", tt)
+        except Exception: pass
+        db.execute(f"DELETE FROM users WHERE id IN ({ph})", tt)
         db.commit()
         return jsonify(success=True, deleted=len(target_ids))
     except Exception as e:
         db.rollback()
-        import traceback
-         return jsonify(error=str(e), detail=traceback.format_exc()[-500:]), 500
+        return jsonify(error=str(e)), 500
     finally:
         db.close()
-
-
 
