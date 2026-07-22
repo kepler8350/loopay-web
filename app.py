@@ -152,7 +152,7 @@ def _do_confirm_transfer(db, m):
         _lucky_pair_id = dict(m).get('lucky_pair_id')
         if _lucky_pair_id:
             _lbr = db.execute(
-                """SELECT * FROM lucky_buy_results WHERE id=? AND status='confirmed'""",
+                """SELECT * FROM lucky_buy_results WHERE id=?""",
                 (_lucky_pair_id,)
             ).fetchone()
             if _lbr and not _lbr['new_item_id']:
@@ -162,7 +162,6 @@ def _do_confirm_transfer(db, m):
                     (_lucky_pair_id,)
                 ).fetchall()
                 _all_confirmed = all(pm['status'] == 'confirmed' for pm in _pair_matches)
-                import builtins as _dbi; _dbi._lucky_debug = {'lbr_found':bool(_lbr),'new_item_id':_lbr['new_item_id'] if _lbr else None,'pair_statuses':[pm['status'] for pm in _pair_matches],'all_confirmed':_all_confirmed}
                 if _all_confirmed:
                     # 두 아이템으로 새 아이템 생성
                     _new_stage = _lbr['new_stage']
@@ -5092,7 +5091,7 @@ def match_confirm_payment():
         _lucky_pair_id = _m_dict.get('lucky_pair_id')
         if _lucky_pair_id:
             _lbr = db.execute(
-                "SELECT * FROM lucky_buy_results WHERE id=? AND status='confirmed'",
+                "SELECT * FROM lucky_buy_results WHERE id=?",
                 (_lucky_pair_id,)
             ).fetchone()
             if _lbr and not _lbr['new_item_id']:
@@ -5801,12 +5800,9 @@ def testtools_trigger_lucky_item():
         m = db.execute("SELECT * FROM matches WHERE id=?", (match_id,)).fetchone()
         if not m: return jsonify(error='매치 없음'), 400
         m = dict(m)
-        import builtins as _dbi
-        _dbi._lucky_debug = {}
         _do_confirm_transfer(db, m)
         db.commit()
-        return jsonify(success=True, debug=getattr(_dbi, '_lucky_debug', {}),
-                       match_data={'id':m['id'],'status':m.get('status'),'lucky_pair_id':m.get('lucky_pair_id'),'seller_item_id':m.get('seller_item_id')})
+        return jsonify(success=True)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
