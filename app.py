@@ -5787,6 +5787,29 @@ def admin_fix_lucky_confirmed():
         db.close()
 
 
+@app.route('/api/admin/testtools/trigger-lucky-item', methods=['POST'])
+@jwt_required()
+def testtools_trigger_lucky_item():
+    """행운구매 아이템 생성 수동 트리거"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    match_id = int(data.get('match_id', 0))
+    db = get_db()
+    try:
+        m = db.execute("SELECT * FROM matches WHERE id=?", (match_id,)).fetchone()
+        if not m: return jsonify(error='매치 없음'), 400
+        m = dict(m)
+        _do_confirm_transfer(db, m)
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
