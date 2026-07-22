@@ -162,6 +162,7 @@ def _do_confirm_transfer(db, m):
                     (_lucky_pair_id,)
                 ).fetchall()
                 _all_confirmed = all(pm['status'] == 'confirmed' for pm in _pair_matches)
+                import builtins as _dbi; _dbi._lucky_debug = {'lbr_found':bool(_lbr),'new_item_id':_lbr['new_item_id'] if _lbr else None,'pair_statuses':[pm['status'] for pm in _pair_matches],'all_confirmed':_all_confirmed}
                 if _all_confirmed:
                     # 두 아이템으로 새 아이템 생성
                     _new_stage = _lbr['new_stage']
@@ -5800,9 +5801,11 @@ def testtools_trigger_lucky_item():
         m = db.execute("SELECT * FROM matches WHERE id=?", (match_id,)).fetchone()
         if not m: return jsonify(error='매치 없음'), 400
         m = dict(m)
+        import builtins as _dbi
+        _dbi._lucky_debug = {}
         _do_confirm_transfer(db, m)
         db.commit()
-        return jsonify(success=True)
+        return jsonify(success=True, debug=getattr(_dbi, '_lucky_debug', {}))
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
