@@ -5134,6 +5134,23 @@ def match_confirm_payment():
                         (_lucky_pair_id,)
                     )
 
+                else:
+                    # 1개 매치만 confirmed → 해당 seller 아이템 원래 단계를 buyer에게 개별 이전
+                    _s_item_id = dict(m).get('seller_item_id')
+                    if _s_item_id:
+                        _s_item = db.execute("SELECT * FROM items WHERE id=?", (_s_item_id,)).fetchone()
+                        if _s_item:
+                            db.execute("UPDATE items SET status='sold' WHERE id=?", (_s_item_id,))
+                            _dup = db.execute(
+                                "SELECT id FROM items WHERE user_id=? AND bar_type=? AND stage=? AND purchase_date=? AND lucky_pair_id=?",
+                                (m['buyer_id'], _s_item['bar_type'], _s_item['stage'] or 1, get_today().isoformat(), _lucky_pair_id)
+                            ).fetchone()
+                            if not _dup:
+                                db.execute(
+                                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date, lucky_pair_id) VALUES(?,?,?,'reservable',?,?)",
+                                    (m['buyer_id'], _s_item['bar_type'], _s_item['stage'] or 1, get_today().isoformat(), _lucky_pair_id)
+                                )
+
         db.commit()
         return jsonify(success=True, message='거래 완료')
     except Exception as e:
