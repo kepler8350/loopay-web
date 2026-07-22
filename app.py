@@ -161,8 +161,8 @@ def _do_confirm_transfer(db, m):
                     """SELECT m2.status FROM matches m2 WHERE m2.lucky_pair_id=?""",
                     (_lucky_pair_id,)
                 ).fetchall()
-                _all_confirmed = all(pm['status'] == 'confirmed' for pm in _pair_matches)
-                if _all_confirmed:
+                _any_confirmed = any(pm['status'] == 'confirmed' for pm in _pair_matches)
+                if _any_confirmed:
                     # 두 아이템으로 새 아이템 생성
                     _new_stage = _lbr['new_stage']
                     _new_buyer_id = m['buyer_id']
@@ -5099,8 +5099,8 @@ def match_confirm_payment():
                     "SELECT status FROM matches WHERE lucky_pair_id=?",
                     (_lucky_pair_id,)
                 ).fetchall()
-                _all_confirmed = all(pm['status'] == 'confirmed' for pm in _pair_matches)
-                if _all_confirmed:
+                _any_confirmed = any(pm['status'] == 'confirmed' for pm in _pair_matches)
+                if _any_confirmed:
                     from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
                     _pm = {
                         'bronze': {s:(b,sl) for s,b,sl in BRONZE_PRICES},
