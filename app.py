@@ -184,6 +184,24 @@ def _do_confirm_transfer(db, m):
                         """UPDATE reservations SET status='matched' WHERE lucky_pair_id=? AND status='pending'""",
                         (_lucky_pair_id,)
                     )
+                else:
+                    # 한 매치만 confirmed: 해당 판매자 아이템을 구매자 보유로 개별 이전
+                    _seller_item_id = dict(m).get('seller_item_id')
+                    if _seller_item_id:
+                        _s_item = db.execute("SELECT * FROM items WHERE id=?", (_seller_item_id,)).fetchone()
+                        if _s_item:
+                            # 판매자 아이템 sold
+                            db.execute("UPDATE items SET status='sold' WHERE id=?", (_seller_item_id,))
+                            # 구매자에게 개별 아이템 생성 (보유중)
+                            _dup = db.execute(
+                                "SELECT id FROM items WHERE user_id=? AND bar_type=? AND stage=? AND purchase_date=? AND lucky_pair_id=?",
+                                (m['buyer_id'], _s_item['bar_type'], _s_item['stage'] or 1, get_today().isoformat(), _lucky_pair_id)
+                            ).fetchone()
+                            if not _dup:
+                                db.execute(
+                                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date, lucky_pair_id) VALUES(?,?,?,'active',?,?)",
+                                    (m['buyer_id'], _s_item['bar_type'], _s_item['stage'] or 1, get_today().isoformat(), _lucky_pair_id)
+                                )
 
     except Exception as _te:
         pass  # 아이템 이전 실패해도 status 변경은 유지
@@ -5722,6 +5740,46 @@ def admin_reprocess_match():
         _do_confirm_transfer(db, dict(m))
         db.commit()
         return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/fix-lucky-confirmed', methods=['POST'])
+@jwt_required()
+def admin_fix_lucky_confirmed():
+    """행운구매 partially confirmed 아이템 소급 이전 처리"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    db = get_db()
+    try:
+        # confirmed 상태인 lucky 매치 중 구매자에게 아이템이 없는 것 찾기
+        confirmed_lucky = db.execute(
+            """SELECT m.id, m.buyer_id, m.seller_item_id, m.lucky_pair_id, m.bar_type, m.stage
+               FROM matches m
+               WHERE m.lucky_pair_id IS NOT NULL AND m.status='confirmed'
+               AND NOT EXISTS (
+                   SELECT 1 FROM items i WHERE i.user_id=m.buyer_id AND i.lucky_pair_id=m.lucky_pair_id
+               )"""
+        ).fetchall()
+        fixed = []
+        today = get_today().isoformat()
+        for m in confirmed_lucky:
+            m = dict(m)
+            s_item = db.execute("SELECT * FROM items WHERE id=?", (m['seller_item_id'],)).fetchone()
+            if not s_item: continue
+            # 판매자 아이템 sold
+            db.execute("UPDATE items SET status='sold' WHERE id=?", (m['seller_item_id'],))
+            # 구매자에게 아이템 생성
+            new_id = db.execute(
+                "INSERT INTO items(user_id, bar_type, stage, status, purchase_date, lucky_pair_id) VALUES(?,?,?,'active',?,?)",
+                (m['buyer_id'], s_item['bar_type'], s_item['stage'] or 1, today, m['lucky_pair_id'])
+            ).lastrowid
+            fixed.append({'match_id':m['id'],'new_item_id':new_id,'buyer_id':m['buyer_id']})
+        db.commit()
+        return jsonify(success=True, fixed=fixed)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
