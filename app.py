@@ -199,7 +199,7 @@ def _do_confirm_transfer(db, m):
                             ).fetchone()
                             if not _dup:
                                 db.execute(
-                                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date, lucky_pair_id) VALUES(?,?,?,'active',?,?)",
+                                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date, lucky_pair_id) VALUES(?,?,?,'reservable',?,?)",
                                     (m['buyer_id'], _s_item['bar_type'], _s_item['stage'] or 1, get_today().isoformat(), _lucky_pair_id)
                                 )
 
@@ -5774,7 +5774,7 @@ def admin_fix_lucky_confirmed():
             db.execute("UPDATE items SET status='sold' WHERE id=?", (m['seller_item_id'],))
             # 구매자에게 아이템 생성
             new_id = db.execute(
-                "INSERT INTO items(user_id, bar_type, stage, status, purchase_date, lucky_pair_id) VALUES(?,?,?,'active',?,?)",
+                "INSERT INTO items(user_id, bar_type, stage, status, purchase_date, lucky_pair_id) VALUES(?,?,?,'reservable',?,?)",
                 (m['buyer_id'], s_item['bar_type'], s_item['stage'] or 1, today, m['lucky_pair_id'])
             ).lastrowid
             fixed.append({'match_id':m['id'],'new_item_id':new_id,'buyer_id':m['buyer_id']})
