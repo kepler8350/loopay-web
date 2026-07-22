@@ -78,18 +78,17 @@ def _do_confirm_transfer(db, m):
         loopay_id = _loopay_row['id'] if _loopay_row else None
         # 중복 방지: buyer에게 이미 이 매치로 생성된 아이템이 있으면 스킵
         _today = get_today().isoformat()
-        # 이 매치로 이미 아이템이 생성됐는지 확인 (match_id 기반 - 더 정확)
-        _existing = db.execute(
-            """SELECT i.id FROM items i
-               JOIN matches mx ON mx.buyer_id=i.user_id
-               WHERE mx.id=? AND i.purchase_date=?
-               AND i.bar_type=? AND i.stage=?
-               AND i.status IN ('reservable','active','waiting')
-               LIMIT 1""",
-            (m['id'], _today, m['bar_type'], (m['stage'] or 1)+1)
-        ).fetchone()
+        # seller_item이 이미 sold이면 이전에 처리됨
+        _existing = None
+        if dict(m).get('seller_item_id'):
+            _si_check = db.execute(
+                "SELECT id FROM items WHERE id=? AND status='sold'",
+                (m['seller_item_id'],)
+            ).fetchone()
+            if _si_check:
+                _existing = _si_check
         if _existing:
-            return  # 이 매치로 이미 아이템 생성됨
+            return  # seller_item이 이미 sold → 처리됨
         seller_item = None
         if dict(m).get('seller_item_id'):
             seller_item = db.execute(
