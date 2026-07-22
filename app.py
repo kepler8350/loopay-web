@@ -5707,6 +5707,29 @@ def admin_loopay_sell_reservation():
         db.close()
 
 
+@app.route('/api/admin/reprocess-match', methods=['POST'])
+@jwt_required()
+def admin_reprocess_match():
+    """confirmed 매치 재처리 (아이템 이전 누락 수정용)"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='권한 없음'), 403
+    data = request.json or {}
+    match_id = int(data.get('match_id', 0))
+    if not match_id: return jsonify(error='match_id 필요'), 400
+    db = get_db()
+    try:
+        m = db.execute("SELECT * FROM matches WHERE id=? AND status='confirmed'", (match_id,)).fetchone()
+        if not m: return jsonify(error='confirmed 매치 없음'), 400
+        _do_confirm_transfer(db, dict(m))
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
