@@ -5805,7 +5805,8 @@ def testtools_trigger_lucky_item():
         _dbi._lucky_debug = {}
         _do_confirm_transfer(db, m)
         db.commit()
-        return jsonify(success=True, debug=getattr(_dbi, '_lucky_debug', {}))
+        return jsonify(success=True, debug=getattr(_dbi, '_lucky_debug', {}),
+                       match_data={'id':m['id'],'status':m.get('status'),'lucky_pair_id':m.get('lucky_pair_id'),'seller_item_id':m.get('seller_item_id')})
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
