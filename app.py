@@ -5874,12 +5874,15 @@ def testtools_create_pending_match():
         if not buyer: return jsonify(error='user not found'), 400
         import datetime as _tdt
         yesterday = (_tdt.date.today() - _tdt.timedelta(days=1)).isoformat()
+        # 외래키 제약 임시 해제
+        db.execute("PRAGMA foreign_keys=OFF")
         db.execute(
             """INSERT INTO matches(reservation_id,buyer_id,seller_id,bar_type,stage,
                 buy_price,sell_price,match_round,match_date,status)
-                VALUES(0,?,0,'bronze',1,0,0,1,?,'pending')""",
-            (buyer['id'], yesterday)
+                VALUES(0,?,?,'bronze',1,0,0,1,?,'pending')""",
+            (buyer['id'], buyer['id'], yesterday)
         )
+        db.execute("PRAGMA foreign_keys=ON")
         match_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
         db.commit()
         return jsonify(success=True, match_id=match_id, match_date=yesterday, buyer_id=buyer['id'])
