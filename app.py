@@ -247,21 +247,9 @@ def _auto_confirm_paid_matches(db):
         # 20:00~04:59 → 오늘 밤 매칭 시간 (처리 대상 없음, get_matching_date 반환)
         _ref_day = get_matching_date()
     match_ref_date = _ref_day.isoformat()
-    try:
-        import builtins as _sbi2
-        if hasattr(_sbi2, '_sched_debug'): _sbi2._sched_debug['match_ref_date'] = match_ref_date
-    except: pass
 
     targets_confirm = []
     targets_unpaid = []
-
-    # 디버그 저장
-    import builtins as _sbi
-    _sbi._sched_debug = {
-        'h': h, 'total_min': total_min,
-        'is_day': 5 <= h < 20,
-        'match_ref_date': None  # 아래에서 설정
-    }
 
     # 05:00~19:59 사이에만 전날 1차 매칭 처리 (입금확인/미입금)
     # 20:00~04:59는 당일 1차 매칭 시간이므로 전날 처리 스킵
@@ -717,12 +705,9 @@ def scheduler_auto_process():
         return jsonify(error='unauthorized'), 403
     db = get_db()
     try:
-        import builtins as _sbi
-        _sbi._sched_debug = {}
         _auto_confirm_paid_matches(db)
         db.commit()
-        _sd = getattr(_sbi, '_sched_debug', {})
-        return jsonify(success=True, time=get_now().isoformat(), debug=_sd)
+        return jsonify(success=True, time=get_now().isoformat())
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
