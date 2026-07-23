@@ -5882,6 +5882,20 @@ def testtools_create_pending_match():
         db.close()
 
 
+@app.route('/api/admin/testtools/clear-suspension', methods=['POST'])
+@jwt_required()
+def testtools_clear_suspension():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    db = get_db()
+    try:
+        db.execute("UPDATE users SET suspended_until=NULL, unpaid_count=0 WHERE username LIKE 'testuser%'")
+        db.commit()
+        return jsonify(success=True)
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
