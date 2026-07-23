@@ -4601,9 +4601,8 @@ def get_notifications():
         suspended_until = user_info['suspended_until'] if user_info else None
     except Exception:
         suspended_until = None
+    db.close()
     return jsonify(notifications=[dict(r) for r in rows], unread=unread, suspended_until=suspended_until)
-    finally:
-        db.close()
 
 
 @app.route('/api/user/notifications/read', methods=['POST'])
