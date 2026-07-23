@@ -1341,8 +1341,15 @@ function _clearMockStorage(){
 async function syncServerTime(){
   try{
     var fetchStart = Date.now();
-    var res = await fetch('/api/current-time');
+    var _syncTok = localStorage.getItem('lp_token');
+    var _syncOpts = _syncTok ? {headers:{'Authorization':'Bearer '+_syncTok}} : {};
+    var res = await fetch('/api/current-time', _syncOpts);
     var d = await res.json();
+    // ★ 거래정지 즉시 반영 (syncServerTime은 1.5초마다 반드시 실행)
+    if(d && typeof d.suspended_until !== 'undefined'){
+      if(window.userData) window.userData.suspended_until = d.suspended_until;
+      if(typeof checkSuspended === 'function') checkSuspended(d);
+    }
     var fetchEnd = Date.now();
     var latency = (fetchEnd - fetchStart) / 2;
     // 서버는 항상 KST(UTC+9) 반환 → '+09:00' 명시로 정확히 파싱
