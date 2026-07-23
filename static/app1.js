@@ -2392,7 +2392,7 @@ async function loadNotifications(){
 // ── 거래 정지 체크 ──────────────────────────────────────
 function checkSuspended(d){
   var now = getEffectiveDate ? getEffectiveDate() : new Date();
-  var suspendedUntil = d && d.suspended_until ? new Date(d.suspended_until.replace(' ','T')) : null;
+  var suspendedUntil = d && d.suspended_until ? new Date(d.suspended_until.replace(' ','T')+'+09:00') : null;
   var isSuspended = suspendedUntil && now < suspendedUntil;
 
   // ★ 거래 정지 시 모든 조건보다 우선하여 버튼 비활성화
