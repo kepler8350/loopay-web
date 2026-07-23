@@ -5858,7 +5858,8 @@ def testtools_create_pending_match():
         buyer = db.execute("SELECT id FROM users WHERE username=?", (buyer_username,)).fetchone()
         if not buyer: return jsonify(error='user not found'), 400
         import datetime as _tdt
-        yesterday = (_tdt.date.today() - _tdt.timedelta(days=1)).isoformat()
+        now_date = get_now().date()
+        yesterday = (now_date - _tdt.timedelta(days=1)).isoformat()
         # 외래키 제약 임시 해제
         db.execute("PRAGMA foreign_keys=OFF")
         db.execute(
