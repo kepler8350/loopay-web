@@ -2382,6 +2382,11 @@ function checkSuspended(d){
       var resumeTime = untilDate ? untilDate + ' 01:00' : '';
       banner.style.display='block';
       banner.innerHTML = '🚫 거래 정지 중 — 거래 재개: ' + resumeTime + ' | 패널티 탭에서 해제하세요';
+      // 처음 감지 시 toast 알림
+      if(!window._suspendToastShown){
+        window._suspendToastShown = true;
+        if(typeof toast==='function') toast('🚫 미입금으로 인해 거래가 정지되었습니다.', 'error');
+      }
     }
     // 로고 옆 거래정지 배지
     var badge = document.getElementById('suspend-badge');
@@ -2408,6 +2413,15 @@ function checkSuspended(d){
     if(banner) banner.style.display='none';
     var badge = document.getElementById('suspend-badge');
     if(badge) badge.style.display='none';
+  }
+  // 거래정지 상태가 새로 변경됐을 때 toast
+  if(isSuspended && !window._isSuspended){
+    // 방금 거래정지됨 → toast
+    window._suspendToastShown = false;
+  }
+  if(!isSuspended){
+    // 거래정지 해제 → toast 플래그 리셋
+    window._suspendToastShown = false;
   }
   window._isSuspended = isSuspended;
 }
