@@ -512,7 +512,7 @@ setInterval(function(){
     }
   }
 }, 5000);
-setInterval(loadNotifBadge, 20000);  // 20초마다 알림 체크 → 새 알림 시 포인트 갱신
+setInterval(loadNotifBadge, 5000);  // 5초마다 알림 체크 → 새 알림 시 포인트 갱신
 
 // 결합판매
 function getStatusBadge(s){
@@ -2296,17 +2296,14 @@ async function loadNotifBadge(){
       if(unread>0){badge.style.display='inline-block';badge.textContent=unread>99?'99+':unread;}
       else{badge.style.display='none';}
     }
-    // 정지 상태 주기적 확인 (30초 간격)
-    if(window._lastSuspendCheck === undefined || Date.now() - window._lastSuspendCheck > 30000){
-      window._lastSuspendCheck = Date.now();
-      try{
-        var _me = await api('/user/me');
-        if(_me && typeof _me.suspended_until !== 'undefined'){
-          if(window.userData) window.userData.suspended_until = _me.suspended_until;
-          checkSuspended(_me);
-        }
-      }catch(_e){}
-    }
+    // 정지 상태 즉시 확인 (매 호출마다)
+    try{
+      var _me = await api('/user/me');
+      if(_me && typeof _me.suspended_until !== 'undefined'){
+        if(window.userData) window.userData.suspended_until = _me.suspended_until;
+        checkSuspended(_me);
+      }
+    }catch(_e){}
     // 새 알림(매칭완료 등) 감지 시 포인트 즉시 갱신
     if(unread > _lastUnreadCount && _lastUnreadCount >= 0){
       await loadUserData();
