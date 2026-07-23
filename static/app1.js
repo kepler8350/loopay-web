@@ -2296,14 +2296,12 @@ async function loadNotifBadge(){
       if(unread>0){badge.style.display='inline-block';badge.textContent=unread>99?'99+':unread;}
       else{badge.style.display='none';}
     }
-    // 정지 상태 즉시 확인 (매 호출마다)
-    try{
-      var _me = await api('/user/me');
-      if(_me && typeof _me.suspended_until !== 'undefined'){
-        if(window.userData) window.userData.suspended_until = _me.suspended_until;
-        checkSuspended(_me);
-      }
-    }catch(_e){}
+    // 정지 상태 즉시 확인 (알림 API 응답에서 suspended_until 반영)
+    if(typeof d.suspended_until !== 'undefined'){
+      var _su = d.suspended_until;
+      if(window.userData) window.userData.suspended_until = _su;
+      checkSuspended({suspended_until: _su});
+    }
     // 새 알림(매칭완료 등) 감지 시 포인트 즉시 갱신
     if(unread > _lastUnreadCount && _lastUnreadCount >= 0){
       await loadUserData();

@@ -4596,7 +4596,9 @@ def get_notifications():
             (uid,)
         ).fetchone()[0]
     db.close()
-    return jsonify(notifications=[dict(r) for r in rows], unread=unread)
+    user_info = db.execute('SELECT suspended_until FROM users WHERE id=?', (uid,)).fetchone()
+        suspended_until = user_info['suspended_until'] if user_info else None
+        return jsonify(notifications=[dict(r) for r in rows], unread=unread, suspended_until=suspended_until)=unread)
 
 @app.route('/api/user/notifications/read', methods=['POST'])
 @jwt_required()
