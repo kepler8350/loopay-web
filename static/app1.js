@@ -504,6 +504,20 @@ async function checkMatchRefresh(){
   }catch(e){}
 }
 setInterval(checkMatchRefresh, 5000);  // 5초마다 포인트/매칭 상태 감지
+
+// 거래정지 전용 폴링 (5초, 독립적 - checkMatchRefresh 실패해도 작동)
+setInterval(function(){
+  var tok = localStorage.getItem('lp_token');
+  if(!tok) return;
+  fetch('/api/user/me', {headers:{'Authorization':'Bearer '+tok}})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d && typeof d.suspended_until !== 'undefined'){
+        if(window.userData) window.userData.suspended_until = d.suspended_until;
+        checkSuspended(d);
+      }
+    }).catch(function(){});
+}, 5000);
 // 판매탭 버튼 상태 갱신: 5초마다 renderSellTab 직접 호출 (시간 경계 즉시 반영)
 // paid 변화는 checkMatchRefresh에서 loadSellTab() 호출로 처리
 setInterval(function(){
