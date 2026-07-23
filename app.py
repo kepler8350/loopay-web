@@ -255,10 +255,13 @@ def _auto_confirm_paid_matches(db):
         targets_confirm.extend([dict(r) for r in rows])
 
         # pending → 자동 미입금 처리 (구매자가 14:00까지 송금 안 함)
+        # 생성 후 최소 3시간 이상 경과한 매치만 처리 (매칭 직후 즉시 처리 방지)
         unpaid_rows = db.execute(
             """SELECT m.* FROM matches m
                WHERE m.status='pending' AND m.match_round=1
-               AND m.match_date=?""",
+               AND m.match_date=?
+               AND (m.created_at IS NULL OR
+                    (strftime('%s','now') - strftime('%s', m.created_at)) >= 10800)""",
             (match_ref_date,)
         ).fetchall()
         targets_unpaid.extend([dict(r) for r in unpaid_rows])
@@ -277,7 +280,9 @@ def _auto_confirm_paid_matches(db):
         unpaid_rows2 = db.execute(
             """SELECT m.* FROM matches m
                WHERE m.status='pending' AND m.match_round=2
-               AND m.match_date=?""",
+               AND m.match_date=?
+               AND (m.created_at IS NULL OR
+                    (strftime('%s','now') - strftime('%s', m.created_at)) >= 10800)""",
             (match_ref_date,)
         ).fetchall()
         targets_unpaid.extend([dict(r) for r in unpaid_rows2])
