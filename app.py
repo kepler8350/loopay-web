@@ -5878,7 +5878,7 @@ def testtools_create_pending_match():
         item = db.execute("SELECT * FROM items WHERE user_id=? AND status IN ('reservable','active') LIMIT 1", (seller['id'],)).fetchone()
         today = get_today().isoformat()
         # 구매 예약
-        db.execute("INSERT INTO reservations(user_id,bar_type,stage,match_round,reserve_date,status,confirmed) VALUES(?,?,1,1,?,'pending',1)",
+        db.execute("INSERT INTO reservations(user_id,bar_type,match_round,reserve_date,status,confirmed) VALUES(?,?,1,?,'pending',1)",
                    (buyer['id'], 'bronze', today))
         buy_res_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
         # 판매 예약
