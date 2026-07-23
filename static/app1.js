@@ -62,7 +62,15 @@ function _updateSellBtnFromItems(items){
   }
   window._hasSellableItem = _flatItems.some(function(it){ return it.status_label==='판매가능'; });
   // 서버 시간 직접 조회 (오프셋 미설정 문제 방지)
-  fetch('/api/current-time').then(function(r){return r.json();}).then(function(ct){
+  var _ctHeaders = {};
+  var _ct_tok = localStorage.getItem('lp_token');
+  if(_ct_tok) _ctHeaders['Authorization'] = 'Bearer '+_ct_tok;
+  fetch('/api/current-time',{headers:_ctHeaders}).then(function(r){return r.json();}).then(function(ct){
+    // 거래정지 즉시 반영 (1.5초마다 체크)
+    if(ct && typeof ct.suspended_until !== 'undefined'){
+      if(window.userData) window.userData.suspended_until = ct.suspended_until;
+      if(typeof checkSuspended === 'function') checkSuspended({suspended_until: ct.suspended_until});
+    }
     var _nowH = ct.hour != null ? ct.hour : parseInt((ct.time||'00:00').slice(11,13));
     window._isReserveTimeCached = (_nowH >= 5 && _nowH < 20);
     _updateSellBtn(window._isReserveTimeCached);

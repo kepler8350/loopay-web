@@ -2181,15 +2181,30 @@ def admin_approve_user():
 
 @app.route('/api/current-time', methods=['GET'])
 def get_current_time():
-    """현재 서버 시간 반환 (mock 시간 포함, 항상 KST 기준)"""
+    """현재 서버 시간 반환 (mock 시간 포함, 항상 KST 기준) + 로그인 사용자 suspended_until"""
     mt = _get_mock_time_from_db()
-    # mock 없을 때는 get_now()와 동일하게 KST(UTC+9) 사용
     now = mt if mt else (datetime.datetime.utcnow() + datetime.timedelta(hours=9))
+    # 토큰이 있으면 suspended_until 함께 반환 (클라이언트 폴링 최소화)
+    suspended_until = None
+    try:
+        from flask_jwt_extended import decode_token
+        auth = request.headers.get('Authorization','')
+        if auth.startswith('Bearer '):
+            data = decode_token(auth[7:])
+            uid = int(data.get('sub',0))
+            if uid > 0:
+                db = get_db()
+                row = db.execute('SELECT suspended_until FROM users WHERE id=?',(uid,)).fetchone()
+                db.close()
+                if row: suspended_until = row['suspended_until']
+    except Exception:
+        pass
     return jsonify(
         time=now.strftime('%Y-%m-%d %H:%M:%S'),
         hour=now.hour,
         minute=now.minute,
-        is_mock=mt is not None
+        is_mock=mt is not None,
+        suspended_until=suspended_until
     )
 
 @app.route('/api/admin/set-time', methods=['POST'])
