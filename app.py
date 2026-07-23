@@ -4596,9 +4596,12 @@ def get_notifications():
             (uid,)
         ).fetchone()[0]
 
+    try:
         user_info = db.execute('SELECT suspended_until FROM users WHERE id=?', (uid,)).fetchone()
         suspended_until = user_info['suspended_until'] if user_info else None
-        return jsonify(notifications=[dict(r) for r in rows], unread=unread, suspended_until=suspended_until)
+    except Exception:
+        suspended_until = None
+    return jsonify(notifications=[dict(r) for r in rows], unread=unread, suspended_until=suspended_until)
     finally:
         db.close()
 
