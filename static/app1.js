@@ -1344,8 +1344,8 @@ async function syncServerTime(){
       var _hh = (_effNow.getUTCHours()+9)%24;
       var _mm = (_effNow.getUTCMinutes());
       var _ss = (_effNow.getUTCSeconds());
-      // 정각(00초~10초 이내) & 처리 시각(14, 19, 20시)
-      if(_ss <= 10 && (_hh===14||_hh===19||_hh===20)){
+      // 정각 1분 이내 & 처리 시각(14, 19, 20시)
+      if(_mm === 0 && (_hh===14||_hh===19||_hh===20)){
         var _schedKey = 'sched_'+_hh+'_'+_effNow.toISOString().slice(0,13);
         if(!window._lastSchedRun || window._lastSchedRun !== _schedKey){
           window._lastSchedRun = _schedKey;
