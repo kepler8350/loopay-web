@@ -1279,7 +1279,8 @@ def init_demo_items():
     uid = int(get_jwt_identity())
     conn = get_db()
     try:
-        today = get_today().isoformat()
+        import datetime as _tdt
+        today = (_tdt.date.today() - _tdt.timedelta(days=1)).isoformat()  # 어제 날짜로 생성
         yesterday = (get_today() - datetime.timedelta(days=3)).isoformat()
         # 기존 아이템 삭제 후 재추가
         conn.execute("DELETE FROM items WHERE user_id=?", (uid,))
@@ -5881,8 +5882,6 @@ def testtools_create_pending_match():
                    (buyer['id'], 'bronze', today))
         buy_res_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
         # 판매 예약
-        db.execute("INSERT INTO reservations(user_id,item_id,bar_type,stage,match_round,reserve_date,status,confirmed) VALUES(?,?,?,1,1,?,'matched',1)",
-                   (seller['id'], item['id'] if item else None, 'bronze', today))
         # 매치 생성
         db.execute("""INSERT INTO matches(reservation_id,buyer_id,seller_id,seller_item_id,bar_type,stage,
                       buy_price,sell_price,match_round,match_date,status)
