@@ -5860,6 +5860,44 @@ def testtools_trigger_lucky_item():
         db.close()
 
 
+@app.route('/api/admin/testtools/create-pending-match', methods=['POST'])
+@jwt_required()
+def testtools_create_pending_match():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    buyer_username = data.get('buyer_username', 'testuser01')
+    seller_username = data.get('seller_username', 'testuser02')
+    db = get_db()
+    try:
+        buyer = db.execute("SELECT id FROM users WHERE username=?", (buyer_username,)).fetchone()
+        seller = db.execute("SELECT id FROM users WHERE username=?", (seller_username,)).fetchone()
+        if not buyer or not seller: return jsonify(error='user not found'), 400
+        # 판매자 아이템 찾기
+        item = db.execute("SELECT * FROM items WHERE user_id=? AND status IN ('reservable','active') LIMIT 1", (seller['id'],)).fetchone()
+        today = get_today().isoformat()
+        # 구매 예약
+        db.execute("INSERT INTO reservations(user_id,bar_type,stage,match_round,reserve_date,status,confirmed) VALUES(?,?,1,1,?,'pending',1)",
+                   (buyer['id'], 'bronze', today))
+        buy_res_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+        # 판매 예약
+        db.execute("INSERT INTO reservations(user_id,item_id,bar_type,stage,match_round,reserve_date,status,confirmed) VALUES(?,?,?,1,1,?,'matched',1)",
+                   (seller['id'], item['id'] if item else None, 'bronze', today))
+        # 매치 생성
+        db.execute("""INSERT INTO matches(reservation_id,buyer_id,seller_id,seller_item_id,bar_type,stage,
+                      buy_price,sell_price,match_round,match_date,status)
+                      VALUES(?,?,?,?,'bronze',1,0,0,1,?,'pending')""",
+                   (buy_res_id, buyer['id'], seller['id'], item['id'] if item else None, today))
+        match_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+        db.commit()
+        return jsonify(success=True, match_id=match_id, match_date=today)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
