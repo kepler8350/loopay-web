@@ -1352,8 +1352,8 @@ async function syncServerTime(){
           fetch('/api/scheduler/auto-process',{method:'POST',
             headers:{'X-Scheduler-Key':'loopay-scheduler-2026'}
           }).then(function(){
-            // 스케줄러 실행 후 즉시 알림 체크
-            loadNotifBadge();
+            // 스케줄러 실행 후 1초 후 알림 체크 (DB 반영 대기)
+            setTimeout(function(){ loadNotifBadge(); }, 1000);
           }).catch(function(){});
         }
       }
