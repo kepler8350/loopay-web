@@ -1349,6 +1349,23 @@ async function syncServerTime(){
     if(d && typeof d.suspended_until !== 'undefined'){
       if(window.userData) window.userData.suspended_until = d.suspended_until;
       if(typeof checkSuspended === 'function') checkSuspended(d);
+    } else {
+      // suspended_until 없는 응답 (미로그인 등) → 30초마다 /user/me로 보조 체크
+      var _nowTs = Date.now();
+      if(!window._lastMeSuspendCheck || _nowTs - window._lastMeSuspendCheck > 30000){
+        window._lastMeSuspendCheck = _nowTs;
+        var _meTok = localStorage.getItem('lp_token');
+        if(_meTok){
+          fetch('/api/user/me',{headers:{'Authorization':'Bearer '+_meTok}})
+            .then(function(r){return r.json();})
+            .then(function(me){
+              if(me && typeof me.suspended_until !== 'undefined'){
+                if(window.userData) window.userData.suspended_until = me.suspended_until;
+                if(typeof checkSuspended === 'function') checkSuspended(me);
+              }
+            }).catch(function(){});
+        }
+      }
     }
     var fetchEnd = Date.now();
     var latency = (fetchEnd - fetchStart) / 2;
@@ -2408,6 +2425,8 @@ async function loadNotifications(){
 function checkSuspended(d){
   // suspended_until이 null이 아니면 거래정지 (서버가 null로 정리하므로 날짜 비교 불필요)
   var isSuspended = !!(d && d.suspended_until);
+  // 상태 변경 없으면 UI 조작 스킵 (깜박임 방지)
+  if(isSuspended === window._isSuspended) return;
 
   // ★ 거래 정지 시 모든 조건보다 우선하여 버튼 비활성화
   if(isSuspended){
