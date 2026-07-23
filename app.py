@@ -5847,6 +5847,41 @@ def testtools_trigger_lucky_item():
 
 
 
+@app.route('/api/admin/testtools/create-pending-match', methods=['POST'])
+@jwt_required()
+def testtools_create_pending_match():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    buyer_username = data.get('buyer_username', 'testuser01')
+    match_date = data.get('match_date')  # 없으면 어제
+    db = get_db()
+    try:
+        buyer = db.execute("SELECT id FROM users WHERE username=?", (buyer_username,)).fetchone()
+        if not buyer: return jsonify(error='user not found'), 400
+        import datetime as _tdt
+        if match_date:
+            ref_date = match_date
+        else:
+            ref_date = (get_now().date() - _tdt.timedelta(days=1)).isoformat()
+        db.execute("PRAGMA foreign_keys=OFF")
+        db.execute(
+            """INSERT INTO matches(reservation_id,buyer_id,seller_id,bar_type,stage,
+               buy_price,sell_price,match_round,match_date,status)
+               VALUES(0,?,?,'bronze',1,0,0,1,?,'pending')""",
+            (buyer['id'], buyer['id'], ref_date)
+        )
+        match_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+        db.execute("PRAGMA foreign_keys=ON")
+        db.commit()
+        return jsonify(success=True, match_id=match_id, match_date=ref_date, buyer_id=buyer['id'])
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
