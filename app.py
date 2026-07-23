@@ -235,16 +235,27 @@ def _auto_confirm_paid_matches(db):
     h, mn = now.hour, now.minute
     total_min = h * 60 + mn
 
-    # 매칭 기준 날짜: 가장 최근 매칭이 있는 날짜
-    _latest = db.execute(
-        """SELECT MAX(match_date) as d FROM matches
-           WHERE match_round=1 AND status IN ('pending','paid','confirmed','failed')"""    ).fetchone()
-    match_ref_date = _latest['d'] if _latest and _latest['d'] else get_matching_date().isoformat()
+    # 매칭 기준 날짜:
+    # - 05:00~19:59: 어제(전날 밤 매칭한 아이템) 처리
+    # - 20:00~04:59: 오늘 밤 매칭 시간이므로 아직 처리 대상 없음
+    #   → 실제로는 05:00~19:59 사이에만 입금확인/미입금/2차매칭 처리
+    import datetime as _dt
+    if 5 <= h < 20:
+        # 현재가 05:00~19:59 → 전날 밤 매칭한 것 처리 (어제 날짜)
+        _ref_day = (now - _dt.timedelta(days=1)).date()
+    else:
+        # 20:00~04:59 → 오늘 밤 매칭 시간 (처리 대상 없음, get_matching_date 반환)
+        _ref_day = get_matching_date()
+    match_ref_date = _ref_day.isoformat()
 
     targets_confirm = []
     targets_unpaid = []
 
-    if total_min >= 840:  # 14:00 이후
+    # 05:00~19:59 사이에만 전날 1차 매칭 처리 (입금확인/미입금)
+    # 20:00~04:59는 당일 1차 매칭 시간이므로 전날 처리 스킵
+    _is_day_processing = (5 <= h < 20)
+
+    if _is_day_processing and total_min >= 840:  # 14:00~19:59: 1차 미입금 처리
         # paid → 자동 입금확인
         rows = db.execute(
             """SELECT m.* FROM matches m
@@ -254,19 +265,16 @@ def _auto_confirm_paid_matches(db):
         ).fetchall()
         targets_confirm.extend([dict(r) for r in rows])
 
-        # pending → 자동 미입금 처리 (구매자가 14:00까지 송금 안 함)
-        # 생성 후 최소 3시간 이상 경과한 매치만 처리 (매칭 직후 즉시 처리 방지)
+        # pending → 자동 미입금 처리 (13:00~14:00 미입금 확인 후)
         unpaid_rows = db.execute(
             """SELECT m.* FROM matches m
                WHERE m.status='pending' AND m.match_round=1
-               AND m.match_date=?
-               AND (m.created_at IS NULL OR
-                    (strftime('%s','now') - strftime('%s', m.created_at)) >= 10800)""",
+               AND m.match_date=?""",
             (match_ref_date,)
         ).fetchall()
         targets_unpaid.extend([dict(r) for r in unpaid_rows])
 
-    if total_min >= 1200:  # 20:00 이후
+    if _is_day_processing and total_min >= 1140:  # 19:00~19:59: 2차 paid 자동 입금확인 + 2차 미입금
         # 2차 paid → 자동 입금확인
         rows2 = db.execute(
             """SELECT m.* FROM matches m
@@ -276,13 +284,11 @@ def _auto_confirm_paid_matches(db):
         ).fetchall()
         targets_confirm.extend([dict(r) for r in rows2])
 
-        # 2차 pending → 자동 미입금
+        # 2차 pending → 자동 미입금 (19:00~20:00)
         unpaid_rows2 = db.execute(
             """SELECT m.* FROM matches m
                WHERE m.status='pending' AND m.match_round=2
-               AND m.match_date=?
-               AND (m.created_at IS NULL OR
-                    (strftime('%s','now') - strftime('%s', m.created_at)) >= 10800)""",
+               AND m.match_date=?""",
             (match_ref_date,)
         ).fetchall()
         targets_unpaid.extend([dict(r) for r in unpaid_rows2])
