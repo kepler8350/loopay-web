@@ -448,6 +448,11 @@ async function checkMatchRefresh(){
     if(_sellVisible && typeof renderSellTab === 'function') renderSellTab();
 
     var d = await api('/user/me');
+    // 거래정지 즉시 반영
+    if(d && typeof d.suspended_until !== 'undefined'){
+      if(window.userData) window.userData.suspended_until = d.suspended_until;
+      checkSuspended(d);
+    }
     var curState = JSON.stringify({
       bronze: d.items?.bronze?.length,
       silver: d.items?.silver?.length,
@@ -2328,7 +2333,10 @@ async function loadNotifBadge(){
       if(window.userData) renderHeader(window.userData);
     }
     _lastUnreadCount = unread;
-  }catch(e){}
+  }catch(e){
+    // API 실패 시에도 기존 userData로 거래정지 체크 유지
+    if(window.userData) checkSuspended(window.userData);
+  }
 }
 
 async function loadNotifications(){
