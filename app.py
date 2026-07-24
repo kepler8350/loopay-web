@@ -5923,6 +5923,30 @@ def testtools_clear_suspension():
         db.close()
 
 
+@app.route('/api/admin/testtools/create-loopay-item', methods=['POST'])
+@jwt_required()
+def testtools_create_loopay_item():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    bar_type = data.get('bar_type', 'bronze')
+    stage = int(data.get('stage', 20))
+    db = get_db()
+    try:
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
+        if not loopay: return jsonify(error='loopay 계정 없음'), 400
+        db.execute("INSERT INTO items(user_id,bar_type,stage,status,purchase_date) VALUES(?,?,?,'matched',?)",
+                   (loopay['id'], bar_type, stage, get_today().isoformat()))
+        item_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+        db.commit()
+        return jsonify(success=True, item_id=item_id, stage=stage)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
