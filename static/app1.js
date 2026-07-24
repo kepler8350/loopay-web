@@ -2000,7 +2000,7 @@ async function disableReserveSection(){
   // +/- 버튼 모두 비활성화 (수정/루비/다이아)
   ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
     var el=document.getElementById(id);
-    if(el){el.disabled=true;el.style.opacity='0.3';el.style.cursor='not-allowed';}
+    if(el){el.disabled=true;el.style.opacity='0.3';}
   });
   // 수량 입력란도 비활성화 (readonly)
   ['bz-cnt','sv-cnt','gd-cnt'].forEach(function(id){
@@ -2425,8 +2425,8 @@ async function loadNotifications(){
 function checkSuspended(d){
   // suspended_until이 null이 아니면 거래정지 (서버가 null로 정리하므로 날짜 비교 불필요)
   var isSuspended = !!(d && d.suspended_until);
-  // 상태 변경 없으면 UI 조작 스킵 (깜박임 방지)
-  if(isSuspended === window._isSuspended) return;
+  // 이미 거래정지 중이면 스킵 (깜박임 방지), 해제/신규는 항상 실행
+  if(isSuspended && isSuspended === window._isSuspended) return;
 
   // ★ 거래 정지 시 모든 조건보다 우선하여 버튼 비활성화
   if(isSuspended){
