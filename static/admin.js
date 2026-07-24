@@ -296,8 +296,8 @@ async function updateMatchingBtn(){
     var r2BuyCount = (matchData.round2||{}).buy_count || 0;
     var _r2PendingCount = (matchData.r2_pending_count || 0);
     var _h2 = ct.hour || 0; var _m2 = ct.minute || 0;
-    // mock_time이 아닌 경우 브라우저 KST 시간도 함께 확인 (다른 PC 호환)
-    if(!ct.is_mock){
+    // 서버 시간 우선 사용 (항상), 브라우저 KST는 서버 응답 실패 시에만 fallback
+    if(!ct || ct.hour == null){
       var _kst2 = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
       _h2 = _kst2.getHours();
     }
