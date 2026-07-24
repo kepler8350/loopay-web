@@ -178,11 +178,6 @@ def _do_confirm_transfer(db, m):
                     # 기존 두 판매자 아이템 sold 처리
                     db.execute("UPDATE items SET status='sold' WHERE id=? OR id=?",
                                (_lbr['item_a_id'], _lbr['item_b_id']))
-                    # 1개 입금확인 시 생성된 개별 아이템도 삭제 (합성 아이템으로 대체)
-                    _cur_new_item = db.execute("SELECT last_insert_rowid() as id").fetchone()
-                    if _cur_new_item:
-                        db.execute("DELETE FROM items WHERE user_id=? AND lucky_pair_id=? AND id!=?",
-                                   (m['buyer_id'], _lucky_pair_id, _cur_new_item['id']))
 
                     # 두 판매예약도 matched 처리
                     db.execute(
@@ -5912,22 +5907,6 @@ def testtools_clear_suspension():
         db.execute("UPDATE users SET suspended_until=NULL, unpaid_count=0 WHERE username LIKE 'testuser%'")
         db.commit()
         return jsonify(success=True)
-    finally:
-        db.close()
-
-
-@app.route('/api/admin/testtools/delete-item', methods=['POST'])
-@jwt_required()
-def testtools_delete_item():
-    identity = get_jwt_identity()
-    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
-    data = request.json or {}
-    item_id = int(data.get('item_id', 0))
-    db = get_db()
-    try:
-        db.execute("DELETE FROM items WHERE id=?", (item_id,))
-        db.commit()
-        return jsonify(success=True, deleted=item_id)
     finally:
         db.close()
 
