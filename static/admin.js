@@ -296,7 +296,13 @@ async function updateMatchingBtn(){
     var r2BuyCount = (matchData.round2||{}).buy_count || 0;
     var _r2PendingCount = (matchData.r2_pending_count || 0);
     var _h2 = ct.hour || 0; var _m2 = ct.minute || 0;
-    var _inR2Window = (_h2 === 14); // 14:00~14:59
+    // mock_time이 아닌 경우 브라우저 KST 시간도 함께 확인 (다른 PC 호환)
+    if(!ct.is_mock){
+      var _kst2 = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+      _h2 = _kst2.getHours();
+    }
+    // 미입금이 있으면 14:00~20:00 전체 허용, 없으면 14:00~14:59만 허용
+    var _inR2Window = (failedCount > 0) ? (_h2 >= 14 && _h2 < 20) : (_h2 === 14);
     // r2_ran_today=false이면 _r2MatchingDone 플래그 리셋 (새 미입금 발생 후 재실행 가능)
     if(matchData && !matchData.r2_ran_today){ window._r2MatchingDone = false; }
     var _r2AlreadyRun = (_r2PendingCount > 0) || (!!(matchData && matchData.r2_ran_today) && failedCount === 0) || !!window._r2MatchingDone;
