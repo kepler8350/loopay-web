@@ -5914,6 +5914,22 @@ def testtools_clear_suspension():
         db.close()
 
 
+@app.route('/api/admin/testtools/delete-item', methods=['POST'])
+@jwt_required()
+def testtools_delete_item():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    item_id = int(data.get('item_id', 0))
+    db = get_db()
+    try:
+        db.execute("DELETE FROM items WHERE id=?", (item_id,))
+        db.commit()
+        return jsonify(success=True, deleted=item_id)
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
