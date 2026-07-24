@@ -1784,7 +1784,8 @@ async function loadMatchingStatus(){
     // ── 2차 매칭 ──
     var r2=d.round2||{};
     var mr2=r2.match_rate||0;
-    var _r2Done = (d.r2_ran_today === true) || !!window._r2MatchingDone;
+    var // failed_count>0(미입금 있음)이면 r2Done=false → 데이터 표시 유지
+    _r2Done = ((d.r2_ran_today === true) || !!window._r2MatchingDone) && !((d.failed_count||0) > 0);
     // 2차 탭 구매예약 수: 2차 매칭 실행 후 0 표시
     var _r1UnmatchedBuy = _r2Done ? 0 : ((d.r1_unmatched_buy!=null) ? d.r1_unmatched_buy : (r2.buy_count!=null?r2.buy_count:'-'));
     set('r2-buy', _r1UnmatchedBuy);
@@ -1946,6 +1947,11 @@ async function loadCurrentTime(){
       _mockBase=new Date(t.time.replace(' ','T'));
       _localBase=new Date();
       el.textContent=t.time;
+      // 매칭 페이지 활성 시 자동 갱신 (30초마다 확실하게)
+      var pg=document.getElementById('page-matching');
+      if(pg && pg.classList.contains('active')){
+        loadMatchingStatus(); updateMatchingBtn();
+      }
     }catch(e){}
   }
   await fetchServerTime();
