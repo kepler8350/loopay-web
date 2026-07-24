@@ -3490,6 +3490,8 @@ def admin_matching_status():
         "SELECT COUNT(*) as c FROM matches WHERE status='failed' AND match_date=?",
         (_failed_ref_date,)
     ).fetchone()['c']
+    # debug
+    _failed_debug = {'ref_date': _failed_ref_date, 'today': today, 'count': failed_count}
     # failed_list 쿼리용 조건 변수
     _failed_date_cond = (_failed_ref_date,)
     _failed_sql_cond = "match_date=?"
@@ -3564,6 +3566,7 @@ def admin_matching_status():
         'server_today': get_matching_date().isoformat(),
         'failed_count': failed_count,
         'failed_details': failed_details,
+        '_failed_debug': _failed_debug,
         'r1_unmatched_buy': r1_unmatched_buy,
         'r2_sell_by_type': r2_sell_by_type,
         'r2_sell_count': r2_sell_count_from_failed,
