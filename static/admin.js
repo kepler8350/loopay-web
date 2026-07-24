@@ -54,6 +54,17 @@ function showPage(name,el){var _mn=document.querySelector('.main');if(_mn){docum
     });
     // 매칭 페이지 진입 시 _r1MatchingDone 플래그 초기화 (새 날짜 데이터 정상 표시)
     loadMatchingStatus();updateMatchingBtn();
+    // 매칭 페이지 자동 갱신 (30초마다)
+    if(window._matchingAutoRefresh) clearInterval(window._matchingAutoRefresh);
+    window._matchingAutoRefresh = setInterval(function(){
+      var pg = document.getElementById('page-matching');
+      if(pg && pg.classList.contains('active')){
+        loadMatchingStatus(); updateMatchingBtn();
+      } else {
+        clearInterval(window._matchingAutoRefresh);
+        window._matchingAutoRefresh = null;
+      }
+    }, 10000);
   }else if(name==='notifications'){var pn=document.getElementById('page-notifications');var mn=document.querySelector('.main');if(pn&&mn&&pn.parentElement!==mn)mn.appendChild(pn);}else if(name==='reservations'){loadReservationStatus();loadExtraReservations();}else if(name==='system-items'){loadSystemItems();}else if(name==='testtools')loadTesttools();else if(name==='penalties')loadAdminPenalties();else if(name==='settings')loadSettings();}
 async function loadDashboard(){try{const s=await apiAdmin('/admin/stats');document.getElementById('s-users').textContent=s.total_users||0;document.getElementById('s-items').textContent=s.total_items||0;document.getElementById('s-charges').textContent=s.pending_charges||0;document.getElementById('s-reservations').textContent=s.today_reservations||0;const charges=await apiAdmin('/admin/charges');const pending=(charges.charges||[]).filter(c=>c.status==='pending').slice(0,5);const dc=document.getElementById('dash-charges');if(pending.length){dc.innerHTML='<table><thead><tr><th>&#45769;&#45348;&#51076;</th><th>&#44552;&#50529;</th><th>&#49345;&#53468;</th></tr></thead><tbody>'+pending.map(c=>'<tr><td>'+c.nickname+'</td><td>'+(c.points||0).toLocaleString()+'P<br><small style="color:#aaa">'+(c.amount||0).toLocaleString()+'원</small></td><td><span class="badge badge-warning">&#45824;&#44592;</span></td></tr>').join('')+'</tbody></table>';}else{dc.innerHTML='<div class="empty-state"><div>&#45824;&#44592; &#51473;&#51064; &#52649;&#51204; &#50630;&#51020;</div></div>';}const users=await apiAdmin('/admin/users');document.getElementById('dash-users').innerHTML=(users.users||[]).slice(0,5).map(u=>'<tr>'
   +'<td style="font-size:11px">'+(u.username||'-')+'</td>'
@@ -2547,7 +2558,7 @@ setInterval(async function(){
     // 30초 주기로 전체 재로드 (버튼 상태 + 데이터)
     loadSystemItems();
   }
-}, 30000);
+}, 10000);
 
 // ── 행운구매 ──────────────────────────────────────────
 var _luckyPairsData = {}; // 미리보기 결과 저장
