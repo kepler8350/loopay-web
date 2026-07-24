@@ -5973,6 +5973,32 @@ def testtools_create_loopay_item():
         db.close()
 
 
+@app.route('/api/admin/testtools/cancel-reservation', methods=['POST'])
+@jwt_required()
+def testtools_cancel_reservation():
+    """예약 취소 + 아이템 상태 복원"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    res_id = int(data.get('res_id', 0))
+    db = get_db()
+    try:
+        res = db.execute("SELECT * FROM reservations WHERE id=?", (res_id,)).fetchone()
+        if not res: return jsonify(error='예약 없음'), 400
+        # 아이템 상태 복원
+        if res['item_id']:
+            db.execute("UPDATE items SET status='reservable' WHERE id=?", (res['item_id'],))
+        # 예약 삭제
+        db.execute("DELETE FROM reservations WHERE id=?", (res_id,))
+        db.commit()
+        return jsonify(success=True, deleted_res=res_id)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
