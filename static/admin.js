@@ -288,7 +288,7 @@ async function updateMatchingBtn(){
     var _inR2Window = (_h2 === 14); // 14:00~14:59
     // r2_ran_today=false이면 _r2MatchingDone 플래그 리셋 (새 미입금 발생 후 재실행 가능)
     if(matchData && !matchData.r2_ran_today){ window._r2MatchingDone = false; }
-    var _r2AlreadyRun = (_r2PendingCount > 0) || !!(matchData && matchData.r2_ran_today) || !!window._r2MatchingDone;
+    var _r2AlreadyRun = (_r2PendingCount > 0) || (!!(matchData && matchData.r2_ran_today) && failedCount === 0) || !!window._r2MatchingDone;
     var isActive2 = (failedCount > 0 || r2BuyCount > 0) && _inR2Window && !_r2AlreadyRun;
     var btn2 = document.getElementById('btn-run-matching-2');
     var notice2 = document.getElementById('matching-time-notice-2');
