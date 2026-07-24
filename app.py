@@ -169,8 +169,7 @@ def _do_confirm_transfer(db, m):
                     _new_item = db.execute(
                         "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
                         (_new_buyer_id, _lbr['bar_type'], _new_stage, get_today().isoformat())
-                    )
-                    _new_iid_dct = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+                    ).lastrowid
                     # lucky_buy_results에 new_item_id, buyer_id, status 업데이트
                     db.execute(
                         "UPDATE lucky_buy_results SET new_item_id=?, buyer_id=?, status='completed' WHERE id=?",
@@ -179,9 +178,11 @@ def _do_confirm_transfer(db, m):
                     # 기존 두 판매자 아이템 sold 처리
                     db.execute("UPDATE items SET status='sold' WHERE id=? OR id=?",
                                (_lbr['item_a_id'], _lbr['item_b_id']))
-                    # 1개 입금확인 시 생성된 개별 아이템(else 블록)도 삭제 (합성 아이템으로 대체)
-                    db.execute("DELETE FROM items WHERE user_id=? AND lucky_pair_id=? AND id!=?",
-                               (m['buyer_id'], _lucky_pair_id, _new_iid_dct))
+                    # 1개 입금확인 시 생성된 개별 아이템도 삭제 (합성 아이템으로 대체)
+                    _cur_new_item = db.execute("SELECT last_insert_rowid() as id").fetchone()
+                    if _cur_new_item:
+                        db.execute("DELETE FROM items WHERE user_id=? AND lucky_pair_id=? AND id!=?",
+                                   (m['buyer_id'], _lucky_pair_id, _cur_new_item['id']))
 
                     # 두 판매예약도 matched 처리
                     db.execute(
