@@ -169,7 +169,7 @@ def _do_confirm_transfer(db, m):
                     _new_item = db.execute(
                         "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
                         (_new_buyer_id, _lbr['bar_type'], _new_stage, get_today().isoformat())
-                    ).lastrowid
+                    )
                     _new_iid_dct = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
                     # lucky_buy_results에 new_item_id, buyer_id, status 업데이트
                     db.execute(
