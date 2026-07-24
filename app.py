@@ -5935,7 +5935,7 @@ def testtools_create_loopay_item():
     try:
         loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC").fetchone()
         if not loopay: return jsonify(error='loopay 계정 없음'), 400
-        db.execute("INSERT INTO items(user_id,bar_type,stage,status,purchase_date) VALUES(?,?,?,'matched',?)",
+        db.execute("INSERT INTO items(user_id,bar_type,stage,status,purchase_date) VALUES(?,?,?,'reservable',?)",
                    (loopay['id'], bar_type, stage, get_today().isoformat()))
         item_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
         db.commit()
