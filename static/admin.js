@@ -59,7 +59,7 @@ function showPage(name,el){var _mn=document.querySelector('.main');if(_mn){docum
     window._matchingAutoRefresh = setInterval(function(){
       var pg = document.getElementById('page-matching');
       if(pg && pg.classList.contains('active')){
-        loadMatchingStatus(); updateMatchingBtn();
+        loadMatchingStatus(); updateMatchingBtn(t);
       } else {
         clearInterval(window._matchingAutoRefresh);
         window._matchingAutoRefresh = null;
@@ -249,25 +249,20 @@ async function deleteCharge(id){
   }catch(e){toast(e.message,'error');}
 }
 
-async function updateMatchingBtn(){
+async function updateMatchingBtn(preloadedCt){
   try{
     var tok = localStorage.getItem('admin_token');
-    // 시간 + failed_count를 한번에 가져오기
-    var ct = await fetch('/api/current-time', {headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
+    // 서버시간은 인자로 받거나 직접 호출 (항상 서버 시간 사용)
+    var ct = preloadedCt || await fetch('/api/current-time', {headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
     var matchData = await fetch('/api/admin/matching-status', {headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
 
-    var h = ct.hour; var m = ct.minute || 0; var totalMin = h * 60 + m;
+    var h = ct.hour != null ? ct.hour : 0; var m = ct.minute || 0; var totalMin = h * 60 + m;
     var failedCount = matchData.failed_count || 0;
 
     // 1차 매칭: 20:00~05:00 활성
     // mock_time이 설정된 경우(서버 시간 기준) 또는 브라우저 KST 기준
-    var _effH;
-    if(ct && ct.is_mock){
-      _effH = ct.hour; // mock_time은 서버 시간 그대로 사용
-    } else {
-      var _kst = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Seoul'}));
-      _effH = _kst.getHours();
-    }
+    // 항상 서버 시간 사용 (fetchServerTime에서 받은 ct)
+    var _effH = ct.hour != null ? ct.hour : 0;
     var isActive1 = (_effH >= 20 || _effH < 5);
     var btn1 = document.getElementById('btn-run-matching-1');
     var notice = document.getElementById('matching-time-notice');
@@ -295,12 +290,8 @@ async function updateMatchingBtn(){
     // 단, 이미 2차 매칭이 실행된 경우(r2 pending 있음)는 비활성화
     var r2BuyCount = (matchData.round2||{}).buy_count || 0;
     var _r2PendingCount = (matchData.r2_pending_count || 0);
-    var _h2 = ct.hour || 0; var _m2 = ct.minute || 0;
-    // 서버 시간 우선 사용 (항상), 브라우저 KST는 서버 응답 실패 시에만 fallback
-    if(!ct || ct.hour == null){
-      var _kst2 = new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
-      _h2 = _kst2.getHours();
-    }
+    var _h2 = ct.hour != null ? ct.hour : 0; var _m2 = ct.minute || 0;
+    // 항상 서버 시간 사용 (ct는 fetchServerTime에서 받은 서버시간)
     // 미입금이 있으면 14:00~20:00 전체 허용, 없으면 14:00~14:59만 허용
     var _inR2Window = (failedCount > 0) ? (_h2 >= 14 && _h2 < 20) : (_h2 === 14);
     // r2_ran_today=false이면 _r2MatchingDone 플래그 리셋 (새 미입금 발생 후 재실행 가능)
