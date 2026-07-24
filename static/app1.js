@@ -1618,15 +1618,17 @@ function toggleSellSelect(itemId, barType){
   var cd2 = clickedInfo ? clickedInfo.purchase_date : null;
   if(!_sellSelected[_id] && selectedIds.length > 0 && cd2){
     var _diffDate2=false;
+    var _clickedBarType2 = clickedInfo ? clickedInfo.bar_type : null;
     for(var i=0;i<selectedIds.length;i++){
       var k2=selectedIds[i];
       var info2=_itemCache[k2]||_itemCache[Number(k2)];
-      if(info2 && info2.purchase_date && info2.purchase_date!==cd2){_diffDate2=true;break;}
+      // 같은 bar_type 내에서만 날짜 비교
+      if(info2 && info2.bar_type===_clickedBarType2 && info2.purchase_date && info2.purchase_date!==cd2){_diffDate2=true;break;}
     }
     if(_diffDate2){
       showConfirm({
         title: '📅 날짜 불일치',
-        message: '구매일이 같은 날짜의 아이템만\n판매예약 할 수 있습니다.',
+        message: '같은 종류 아이템(수정/루비/다이아)은\n구매일이 같은 것끼리만 판매예약 할 수 있습니다.',
         okText: '확인',
         hideCancelBtn: true
       });
