@@ -25,6 +25,9 @@ window._isReserveTimeCached = false;
 function _updateSellBtn(isReserveTime){
   if(window._isSuspended) return;
   var _canSell = !!isReserveTime && !!window._hasSellableItem;
+  // 상태 변화 없으면 스킵 (깜박임 방지)
+  if(window._lastSellBtnState === _canSell) return;
+  window._lastSellBtnState = _canSell;
   var _title = !isReserveTime ? '구매·판매 예약은 05:00~20:00에만 가능합니다'
     : (!window._hasSellableItem ? '판매예약 가능한 아이템이 없습니다' : '');
   // 판매예약하기 버튼
@@ -62,6 +65,7 @@ function _updateSellBtnFromItems(items){
     Object.values(items).forEach(function(arr){ if(Array.isArray(arr)) _flatItems = _flatItems.concat(arr); });
   }
   window._hasSellableItem = _flatItems.some(function(it){ return it.status_label==='판매가능'; });
+  window._lastSellBtnState = undefined;  // 아이템 변경 시 버튼 강제 업데이트
   // 서버 시간 직접 조회 (오프셋 미설정 문제 방지)
   var _ctHeaders = {};
   var _ct_tok = localStorage.getItem('lp_token');
