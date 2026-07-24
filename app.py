@@ -178,6 +178,9 @@ def _do_confirm_transfer(db, m):
                     # 기존 두 판매자 아이템 sold 처리
                     db.execute("UPDATE items SET status='sold' WHERE id=? OR id=?",
                                (_lbr['item_a_id'], _lbr['item_b_id']))
+                    # 1개 입금확인 시 생성된 개별 아이템(else 블록)도 삭제 (합성 아이템으로 대체)
+                    db.execute("DELETE FROM items WHERE user_id=? AND lucky_pair_id=? AND id!=?",
+                               (m['buyer_id'], _lucky_pair_id, _new_iid))
 
                     # 두 판매예약도 matched 처리
                     db.execute(
