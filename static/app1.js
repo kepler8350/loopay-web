@@ -23,6 +23,7 @@ window.getMatchLabel = function(item) {
 window._hasSellableItem = false;  // 초기값: 아이템 로드 전까지 false(비활성)
 window._isReserveTimeCached = false;
 function _updateSellBtn(isReserveTime){
+  if(window._isSuspended) return;
   var _canSell = !!isReserveTime && !!window._hasSellableItem;
   var _title = !isReserveTime ? '구매·판매 예약은 05:00~20:00에만 가능합니다'
     : (!window._hasSellableItem ? '판매예약 가능한 아이템이 없습니다' : '');
