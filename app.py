@@ -1923,7 +1923,7 @@ def user_release_penalty():
         _release_dt = (_paid_now + timedelta(days=suspend_days + 1)).replace(
             hour=1, minute=0, second=0, microsecond=0)
         _release_str = _release_dt.strftime('%Y-%m-%d %H:%M:%S')
-        # release_paid=1, release_at 설정
+        # release_paid=1, release_at 설정 + suspended_until을 해제일로 업데이트
         try:
             db.execute("UPDATE penalties SET release_paid=1, release_at=? WHERE id=?",
                        (_release_str, penalty['id']))
@@ -1932,6 +1932,8 @@ def user_release_penalty():
                 db.execute("UPDATE penalties SET release_paid=1 WHERE id=?", (penalty['id'],))
             except Exception:
                 pass
+        # suspended_until을 해제 예정일로 업데이트 (해제일이 되면 자동 해제)
+        db.execute("UPDATE users SET suspended_until=? WHERE id=?", (_release_str, uid))
         # 사용자 알림
         _msg = (f'해제 포인트 {release_pts:,}P가 차감됐습니다.\n'
                 f'정지 {suspend_days}일 경과 후 {_release_str[:10]} 01:00에 자동으로 거래 정지가 해제됩니다.')
@@ -2202,7 +2204,20 @@ def get_current_time():
                 db = get_db()
                 row = db.execute('SELECT suspended_until FROM users WHERE id=?',(uid,)).fetchone()
                 db.close()
-                if row: suspended_until = row['suspended_until']
+                if row:
+                    su = row['suspended_until']
+                    if su:
+                        import datetime as _dt2
+                        su_dt = _dt2.datetime.strptime(su, '%Y-%m-%d %H:%M:%S')
+                        if now >= su_dt:
+                            # 만료됨 → 자동 해제
+                            db2 = get_db()
+                            db2.execute("UPDATE users SET suspended_until=NULL WHERE id=?", (uid,))
+                            db2.commit()
+                            db2.close()
+                            suspended_until = None
+                        else:
+                            suspended_until = su
     except Exception:
         pass
     return jsonify(

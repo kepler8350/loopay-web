@@ -2463,7 +2463,7 @@ function checkSuspended(d){
       var untilDate = (d.suspended_until||'').slice(0,10);
       var resumeTime = untilDate ? untilDate + ' 01:00' : '';
       banner.style.display='block';
-      banner.innerHTML = '🚫 거래 정지 중 — 거래 재개: ' + resumeTime + ' | 패널티 탭에서 해제하세요';
+      banner.innerHTML = '🚫 거래 정지 중 — 패널티 탭에서 해제하세요';
       // 처음 감지 시 toast 알림
       if(!window._suspendToastShown){
         window._suspendToastShown = true;
@@ -2573,7 +2573,7 @@ async function loadPenaltyTab(){
       if(detailText && d.suspended_until){
         detailText.innerHTML =
           '• 누적 미입금: ' + (d.unpaid_count||0) + '회<br>' +
-          '• 정지 해제일: ' + (d.suspended_until||'').slice(0,10) + '<br>' +
+          
           '• 해제 포인트: ' + (pending.release_points||0).toLocaleString() + 'P<br>' +
           (isWaitingApproval
             ? '• ⏳ ' + (resumeAt ? resumeAt.slice(0,10)+' 01:00' : '정지 '+suspendDays+'일 후') + ' 자동 해제됩니다.'
