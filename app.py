@@ -6056,6 +6056,29 @@ def testtools_query():
         db.close()
 
 
+@app.route('/api/admin/testtools/delete-orphan-matches', methods=['POST'])
+@jwt_required()
+def testtools_delete_orphan_matches():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    db = get_db()
+    try:
+        # buyer_id 또는 seller_id가 users에 없는 matches 삭제
+        rows = db.execute("""SELECT m.id FROM matches m
+            WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.id=m.buyer_id)
+               OR NOT EXISTS (SELECT 1 FROM users u WHERE u.id=m.seller_id)""").fetchall()
+        ids = [r['id'] for r in rows]
+        if ids:
+            db.execute("DELETE FROM matches WHERE id IN ({})".format(','.join('?'*len(ids))), ids)
+            db.commit()
+        return jsonify(success=True, deleted_count=len(ids), deleted_ids=ids)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
