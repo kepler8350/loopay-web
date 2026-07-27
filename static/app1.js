@@ -2478,7 +2478,11 @@ function checkSuspended(d){
     var badge = document.getElementById('suspend-badge');
     if(badge) badge.style.display='inline';
   } else {
-    // ★ 정지 해제 시: 판매예약/배너만 복원 (구매예약 버튼은 disableReserveSection이 관리)
+    // ★ 정지 해제 시: cursor만 복원 (disabled는 disableReserveSection이 관리)
+    ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el){ el.style.cursor=''; }
+    });
     document.querySelectorAll('.sell-reserve-btn,[onclick*="doSellReservation"],[onclick*="판매 예약하기"]').forEach(function(b){
       b.disabled=false; b.style.opacity=''; b.style.cursor='';
     });
