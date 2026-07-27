@@ -6185,13 +6185,13 @@ def admin_loopay_items():
                            seller.phone as seller_phone
                            FROM matches m
                            LEFT JOIN users seller ON m.seller_id = seller.id
-                           WHERE m.buyer_id = ? AND m.bar_type = ? AND m.stage = ?
+                           WHERE m.buyer_id = ? AND m.seller_item_id = ?
                              AND m.status IN ('pending', 'paid', 'confirmed')
                              AND m.id NOT IN ({})
                            ORDER BY m.match_round DESC, m.id DESC LIMIT 1""".format(
                                ','.join(str(x) for x in used_match_ids) if used_match_ids else '0'
                            ),
-                        (lid, bt, st)
+                        (lid, d['id'])
                     ).fetchone()
                 except Exception:
                     _buy_m = None
