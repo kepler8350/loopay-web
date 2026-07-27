@@ -2557,6 +2557,7 @@ async function loadPenaltyTab(){
       } else {
         // 미납부 → 해제 버튼 활성화
         if(btn){
+          btn.removeAttribute('disabled');
           btn.disabled = false;
           btn.style.opacity = '1';
           btn.style.cursor = 'pointer';
