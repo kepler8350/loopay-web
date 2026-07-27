@@ -6037,6 +6037,25 @@ def testtools_cancel_reservation():
         db.close()
 
 
+@app.route('/api/admin/testtools/query', methods=['POST'])
+@jwt_required()
+def testtools_query():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    sql = data.get('sql', '')
+    params = data.get('params', [])
+    if not sql or not sql.strip().upper().startswith('SELECT'): return jsonify(error='SELECT only'), 400
+    db = get_db()
+    try:
+        rows = db.execute(sql, params).fetchall()
+        return jsonify(rows=[dict(r) for r in rows])
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/loopay-items', methods=['GET'])
 @jwt_required()
 def admin_loopay_items():
