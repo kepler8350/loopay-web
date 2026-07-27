@@ -290,6 +290,16 @@ def _auto_confirm_paid_matches(db):
         ).fetchall()
         targets_confirm.extend([dict(r) for r in rows2])
 
+    # 21:00~21:59: 루페이 송금(paid)했지만 판매자 입금확인 안 한 2차 매치 자동 처리
+    if h == 21:
+        _r2_paid_late = db.execute(
+            """SELECT m.* FROM matches m
+               WHERE m.status='paid' AND m.match_round=2
+               AND m.match_date=?""",
+            (match_ref_date,)
+        ).fetchall()
+        targets_confirm.extend([dict(r) for r in _r2_paid_late])
+
         # 2차 pending → 자동 미입금 (19:00~20:00)
         unpaid_rows2 = db.execute(
             """SELECT m.* FROM matches m
