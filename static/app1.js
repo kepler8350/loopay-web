@@ -2432,8 +2432,8 @@ async function loadNotifications(){
 function checkSuspended(d){
   // suspended_until이 null이 아니면 거래정지 (서버가 null로 정리하므로 날짜 비교 불필요)
   var isSuspended = !!(d && d.suspended_until);
-  // 이미 거래정지 중이면 스킵 (깜박임 방지), 해제/신규는 항상 실행
-  if(isSuspended && isSuspended === window._isSuspended) return;
+  // 상태 변경 없으면 스킵 (깜박임 방지)
+  if(isSuspended === window._isSuspended) return;
 
   // ★ 거래 정지 시 모든 조건보다 우선하여 버튼 비활성화
   if(isSuspended){
@@ -2474,18 +2474,7 @@ function checkSuspended(d){
     var badge = document.getElementById('suspend-badge');
     if(badge) badge.style.display='inline';
   } else {
-    // ★ 정지 해제 시: 버튼 스타일 완전 복원
-    ['r-bz-m','r-bz-p','r-sv-m','r-sv-p','r-gd-m','r-gd-p'].forEach(function(id){
-      var el=document.getElementById(id);
-      if(el){ el.disabled=false; el.style.cursor=''; el.style.opacity=''; }
-    });
-    var reserveBtn = document.getElementById('reserve-btn');
-    if(reserveBtn){
-      reserveBtn.disabled=false;
-      reserveBtn.style.opacity='';
-      reserveBtn.style.cursor='';
-      reserveBtn.title='';
-    }
+    // ★ 정지 해제 시: 판매예약/배너만 복원 (구매예약 버튼은 disableReserveSection이 관리)
     document.querySelectorAll('.sell-reserve-btn,[onclick*="doSellReservation"],[onclick*="판매 예약하기"]').forEach(function(b){
       b.disabled=false; b.style.opacity=''; b.style.cursor='';
     });
