@@ -1263,13 +1263,17 @@ function updateTimeBar(){
     // 수량 0이면 무조건 비활성, 수량 있으면 포인트 체크
     var _noPoints = (_curTotal === 0) ? true : (_avail < _curCost);
     var _btnOk = isReserveTime && !_noPoints;
-    reserveBtn.disabled = !_btnOk;
-    reserveBtn.style.opacity = _btnOk ? '' : '0.4';
-    reserveBtn.style.background = '';  // CSS 클래스가 처리
-    reserveBtn.style.cursor = _btnOk ? '' : 'not-allowed';
-    if(!isReserveTime) reserveBtn.title = '구매·판매 예약은 05:00~20:00에만 가능합니다';
-    else if(_noPoints) reserveBtn.title = '포인트가 부족합니다';
-    else reserveBtn.title = '';
+    // 변경 시에만 DOM 업데이트 (깜박임 방지)
+    if(reserveBtn._lastBtnOk !== _btnOk){
+      reserveBtn._lastBtnOk = _btnOk;
+      reserveBtn.disabled = !_btnOk;
+      reserveBtn.style.opacity = _btnOk ? '' : '0.4';
+      reserveBtn.style.background = '';
+      reserveBtn.style.cursor = _btnOk ? '' : 'not-allowed';
+      if(!isReserveTime) reserveBtn.title = '구매·판매 예약은 05:00~20:00에만 가능합니다';
+      else if(_noPoints) reserveBtn.title = '포인트가 부족합니다';
+      else reserveBtn.title = '';
+    }
   }
   // 판매 예약하기 버튼
     _updateSellBtn(isReserveTime);
