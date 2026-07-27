@@ -2519,7 +2519,6 @@ async function loadPenaltyTab(){
     var detailText = document.getElementById('penalty-detail-text');
 
     if(pending && !pending.is_released && window._isSuspended){
-      var isWaitingApproval = pending.release_paid === 1 || pending.release_paid === true;
       var resumeAt = pending.release_at || null;
       var suspendDays = pending.suspend_days || 0;
       if(isWaitingApproval){
@@ -2580,7 +2579,8 @@ async function loadPenaltyTab(){
             : '• 해제 포인트 충전 후 해제 버튼을 눌러주세요.');
       }
     } else {
-      // 패널티 없거나 모두 해제됨 - 버튼 숨김, 누적횟수 표시
+      // 패널티 없거나 모두 해제됨 - 거래정지 박스 숨김, 버튼 숨김, 누적횟수 표시
+      if(infoBox) infoBox.style.display='none';
       if(btn){
         btn.style.display = 'none';
       }
