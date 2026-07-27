@@ -2220,6 +2220,13 @@ def get_current_time():
                             suspended_until = None
                         else:
                             suspended_until = su
+                    else:
+                        # suspended_until이 이미 null → release_paid=1인 미처리 패널티 정리
+                        db2 = get_db()
+                        db2.execute("UPDATE penalties SET is_released=1 WHERE user_id=? AND is_released=0 AND release_paid=1", (uid,))
+                        db2.commit()
+                        db2.close()
+                        suspended_until = None
     except Exception:
         pass
     return jsonify(
