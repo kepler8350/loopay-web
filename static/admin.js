@@ -993,9 +993,13 @@ function renderSystemItems(){
         var actionBtn = '';
         if(item.is_buy_matched && item.match_id && ms2 === 'pending'){
           actionBtn = '<button onclick="adminLoopayRemit('+item.match_id+',\''+sellerAccName+'\',\''+sellerAcc+'\',\''+sellerBank+'\')" style="padding:3px 10px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">💸 송금</button>';
-        } else if(ms2 === 'confirmed' || (!ms2 && item.is_buy_matched)){
-          // 거래완료 후 판매예약 버튼
-          actionBtn = '<button onclick="adminLoopayAddSellRes('+item.id+')" style="padding:3px 10px;background:#388e3c;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">📋 판매예약</button>';
+        } else if(ms2 === 'confirmed' || (!ms2 && item.is_buy_matched) || (item.status==='reservable' && !item.sell_reservation_id)){
+          // 거래완료 후 또는 판매가능 아이템 → 판매예약 버튼 (21단계 분할 안내 포함)
+          var _btnLabel = '📋 판매예약';
+          if(item.stage >= 21 && item.bar_type==='bronze') _btnLabel = '📋 분할 판매예약';
+          else if(item.stage >= 17 && item.bar_type==='silver') _btnLabel = '📋 분할 판매예약';
+          else if(item.stage >= 15 && item.bar_type==='gold') _btnLabel = '📋 분할 판매예약';
+          actionBtn = '<button onclick="adminLoopayAddSellRes('+item.id+')" style="padding:3px 10px;background:#388e3c;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">'+_btnLabel+'</button>';
         }
         return '<tr style="background:'+bg2+';border-bottom:1px solid #23243a">'
           +'<td style="padding:6px 8px;text-align:center"><input type="checkbox" class="si-buy-check" data-id="'+item.id+'" onchange="updateBuyDeleteBtn()" style="cursor:pointer"></td>'
