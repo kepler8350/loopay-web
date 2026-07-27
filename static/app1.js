@@ -2518,7 +2518,7 @@ async function loadPenaltyTab(){
     var infoBox = document.getElementById('my-penalty-info');
     var detailText = document.getElementById('penalty-detail-text');
 
-    if(pending && !pending.is_released){
+    if(pending && !pending.is_released && window._isSuspended){
       var isWaitingApproval = pending.release_paid === 1 || pending.release_paid === true;
       var resumeAt = pending.release_at || null;
       var suspendDays = pending.suspend_days || 0;

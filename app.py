@@ -2213,6 +2213,8 @@ def get_current_time():
                             # 만료됨 → 자동 해제
                             db2 = get_db()
                             db2.execute("UPDATE users SET suspended_until=NULL WHERE id=?", (uid,))
+                            # 패널티 is_released=1 처리
+                            db2.execute("UPDATE penalties SET is_released=1 WHERE user_id=? AND is_released=0 AND release_paid=1", (uid,))
                             db2.commit()
                             db2.close()
                             suspended_until = None
