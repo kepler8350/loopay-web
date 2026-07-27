@@ -491,17 +491,21 @@ def _auto_process_unpaid(db, m):
                             (m['seller_item_id'],)
                         ).fetchone()
                         # 4. match 레코드 생성 (loopay buyer, confirmed)
-                        db.execute(
-                            "INSERT INTO matches(reservation_id, buyer_id, seller_id, seller_item_id, bar_type, stage, buy_price, sell_price, match_round, match_date, status) VALUES(?,?,?,?,?,?,0,0,2,?,'pending')",
-                            (_sell_res['id'] if _sell_res else None, loopay_id,
-                             _item['user_id'], m['seller_item_id'],
-                             _bar, _stage, _today_str2)
-                        )
-                        # 5. loopay 구매예약 matched 처리
-                        _lbr = db.execute(
+                        _lbr_pre = db.execute(
                             "SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND match_round=2 AND status IN ('pending','unmatched') AND (item_id IS NULL OR item_id=0) LIMIT 1",
                             (loopay_id, _bar)
                         ).fetchone()
+                        _lbr_id = _lbr_pre['id'] if _lbr_pre else None
+                        db.execute(
+                            "INSERT INTO matches(reservation_id, buyer_id, seller_id, seller_item_id, bar_type, stage, buy_price, sell_price, match_round, match_date, status, buyer_res_id) VALUES(?,?,?,?,?,?,0,0,2,?,'pending',?)",
+                            (_sell_res['id'] if _sell_res else None, loopay_id,
+                             _item['user_id'], m['seller_item_id'],
+                             _bar, _stage, _today_str2, _lbr_id)
+                        )
+                        # 5. loopay 구매예약 matched 처리
+                        _lbr = db.execute(
+                            "SELECT id FROM reservations WHERE id=?", (_lbr_id,)
+                        ).fetchone() if _lbr_id else None
                         if _lbr:
                             db.execute("UPDATE reservations SET status='matched', item_id=? WHERE id=?",
                                        (_new_item_id, _lbr['id']))
@@ -5047,12 +5051,22 @@ def match_confirm_payment():
             # loopay가 buyer인 경우: 구매 reservation의 item_id 아이템 stage+1 업데이트
             if _buyer_is_loopay:
                 try:
-                    _lr = db.execute(
-                        "SELECT item_id FROM reservations WHERE id=?", (m['reservation_id'],)
-                    ).fetchone()
-                    _loopay_item_id = _lr['item_id'] if _lr else None
+                    _loopay_item_id = None
+                    # buyer_res_id (loopay 구매예약) → item_id 우선
+                    _buyer_res_id = dict(m).get('buyer_res_id')
+                    if _buyer_res_id:
+                        _lr2 = db.execute(
+                            "SELECT item_id FROM reservations WHERE id=?", (_buyer_res_id,)
+                        ).fetchone()
+                        if _lr2: _loopay_item_id = _lr2['item_id']
+                    # reservation_id fallback
+                    if not _loopay_item_id and m['reservation_id']:
+                        _lr = db.execute(
+                            "SELECT item_id FROM reservations WHERE id=?", (m['reservation_id'],)
+                        ).fetchone()
+                        if _lr: _loopay_item_id = _lr['item_id']
                     if not _loopay_item_id:
-                        # reservation에 item_id 없으면 loopay 소유 waiting 아이템에서 찾기
+                        # seller_item_id로 연결된 loopay waiting 아이템 찾기
                         _li = db.execute(
                             """SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='waiting'
                                ORDER BY id ASC LIMIT 1""",
