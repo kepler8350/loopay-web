@@ -2518,7 +2518,9 @@ async function loadPenaltyTab(){
     var infoBox = document.getElementById('my-penalty-info');
     var detailText = document.getElementById('penalty-detail-text');
 
-    if(pending && !pending.is_released && window._isSuspended){
+    // 거래정지 여부: window._isSuspended 또는 API 응답의 suspended_until로 판단
+    var _isSuspendedNow = !!(window._isSuspended || d.suspended_until);
+    if(pending && !pending.is_released && _isSuspendedNow){
       var resumeAt = pending.release_at || null;
       var suspendDays = pending.suspend_days || 0;
       if(isWaitingApproval){
