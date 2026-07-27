@@ -6118,6 +6118,16 @@ def admin_loopay_items():
 
         # 이미 매핑된 match_id 추적 (중복 방지)
         used_match_ids = set()
+        # sold 아이템과 연결된 매치도 미리 used로 등록 (중복 매핑 방지)
+        _sold_match_rows = db.execute(
+            """SELECT m.id FROM matches m
+               WHERE m.buyer_id=? AND m.status IN ('pending','paid','confirmed')
+               AND m.seller_item_id IN (
+                 SELECT id FROM items WHERE user_id=? AND status='sold'
+               )""", (lid, lid)
+        ).fetchall()
+        for _r in _sold_match_rows:
+            used_match_ids.add(_r['id'])
         STATUS_LABEL = {'reservable':'판매가능','matched':'판매매칭완료','active':'보유중','waiting':'대기중'}
         # loopay의 구매예약과 연결된 아이템 ID 목록
         buy_res_items = set(
