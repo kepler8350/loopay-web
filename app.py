@@ -6435,13 +6435,35 @@ def admin_loopay_sell_reserve():
         # 2차 참가 신청인 경우: 1차 예약으로 등록하고 join_round2=1
         actual_round = 1 if join_round2 else match_round
         # 아이템 상태를 reservable로 변경 + 판매예약 생성
-        db.execute("UPDATE items SET status='reservable' WHERE id=?", (item_id,))
-        db.execute(
-            "INSERT INTO reservations(user_id, item_id, bar_type, match_round, reserve_date, status, stage, confirmed, join_round2) VALUES(?,?,?,?,?,'pending',?,1,?)",
-            (lid, item_id, item['bar_type'], actual_round, today, item['stage'] or 1, join_round2)
-        )
-        db.commit()
-        return jsonify(success=True, item_id=item_id, bar_type=item['bar_type'], stage=item['stage'])
+        bar = item['bar_type']
+        stage = item['stage'] or 1
+        split_cfg = SPLIT_CONFIG.get(bar, {})
+        max_stage = split_cfg.get('max_stage', 9999)
+        pieces = split_cfg.get('pieces', [])
+        if stage >= max_stage and pieces:
+            # 분할: 원본 아이템 sold, 분할 아이템들로 판매예약
+            db.execute("UPDATE items SET status='sold' WHERE id=?", (item_id,))
+            for piece in pieces:
+                for _ in range(piece.get('count', 1)):
+                    db.execute(
+                        "INSERT INTO items(user_id,bar_type,stage,status,purchase_date) VALUES(?,?,?,'reservable',?)",
+                        (lid, bar, piece['stage'], today)
+                    )
+                    new_item_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+                    db.execute(
+                        "INSERT INTO reservations(user_id, item_id, bar_type, match_round, reserve_date, status, stage, confirmed, join_round2) VALUES(?,?,?,?,?,'pending',?,1,?)",
+                        (lid, new_item_id, bar, actual_round, today, piece['stage'], join_round2)
+                    )
+            db.commit()
+            return jsonify(success=True, split=True, message=f'분할 판매예약 완료 ({len(pieces)}종)')
+        else:
+            db.execute("UPDATE items SET status='reservable' WHERE id=?", (item_id,))
+            db.execute(
+                "INSERT INTO reservations(user_id, item_id, bar_type, match_round, reserve_date, status, stage, confirmed, join_round2) VALUES(?,?,?,?,?,'pending',?,1,?)",
+                (lid, item_id, bar, actual_round, today, stage, join_round2)
+            )
+            db.commit()
+            return jsonify(success=True, item_id=item_id, bar_type=item['bar_type'], stage=item['stage'])
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
