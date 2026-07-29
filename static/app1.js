@@ -1358,32 +1358,8 @@ async function syncServerTime(){
     var _syncOpts = _syncTok ? {headers:{'Authorization':'Bearer '+_syncTok}} : {};
     var res = await fetch('/api/current-time', _syncOpts);
     var d = await res.json();
-    // ★ 거래정지 즉시 반영 (syncServerTime은 1.5초마다 반드시 실행)
-    if(d && typeof d.suspended_until !== 'undefined'){
-      // user_id 검증: 현재 로그인 사용자와 일치할 때만 적용
-      var _suid = d.user_id, _scuid = window.userData ? window.userData.id : null;
-      if(!_suid || !_scuid || _suid === _scuid){
-        if(window.userData) window.userData.suspended_until = d.suspended_until;
-        if(typeof checkSuspended === 'function') checkSuspended(d);
-      }
-    } else {
-      // suspended_until 없는 응답 (미로그인 등) → 30초마다 /user/me로 보조 체크
-      var _nowTs = Date.now();
-      if(!window._lastMeSuspendCheck || _nowTs - window._lastMeSuspendCheck > 30000){
-        window._lastMeSuspendCheck = _nowTs;
-        var _meTok = localStorage.getItem('lp_token');
-        if(_meTok){
-          fetch('/api/user/me',{headers:{'Authorization':'Bearer '+_meTok}})
-            .then(function(r){return r.json();})
-            .then(function(me){
-              if(me && typeof me.suspended_until !== 'undefined'){
-                if(window.userData) window.userData.suspended_until = me.suspended_until;
-                if(typeof checkSuspended === 'function') checkSuspended(me);
-              }
-            }).catch(function(){});
-        }
-      }
-    }
+    // 거래정지 상태는 loadUserData에서만 처리 (5초마다 자동 갱신)
+    // syncServerTime은 시간 동기화만 담당
     var fetchEnd = Date.now();
     var latency = (fetchEnd - fetchStart) / 2;
     // 서버는 항상 KST(UTC+9) 반환 → '+09:00' 명시로 정확히 파싱
@@ -1457,6 +1433,26 @@ function startTimeBar(){
   window._tbInterval = setInterval(updateTimeBar, 1000);
   if(window._syncInterval) clearInterval(window._syncInterval);
   window._syncInterval = setInterval(syncServerTime, 1500);
+  // 5초마다 거래정지 상태만 체크 (/api/user/me의 suspended_until)
+  if(window._suspendCheckInterval) clearInterval(window._suspendCheckInterval);
+  window._suspendCheckInterval = setInterval(function(){
+    var _ck_tok = localStorage.getItem('lp_token');
+    if(!_ck_tok || !window.userData) return;
+    fetch('/api/user/me', {headers:{'Authorization':'Bearer '+_ck_tok}})
+      .then(function(r){ return r.json(); })
+      .then(function(me){
+        // 현재 userData.id와 me.id가 일치할 때만 적용
+        if(!me || !me.id || !window.userData || me.id !== window.userData.id) return;
+        if(me.suspended_until !== window.userData.suspended_until){
+          window.userData.suspended_until = me.suspended_until;
+          checkSuspended(me);
+          // 패널티 탭이 열려있으면 갱신
+          if(document.getElementById('tab-penalty')?.classList?.contains('active')){
+            if(typeof loadPenaltyTab === 'function') loadPenaltyTab();
+          }
+        }
+      }).catch(function(){});
+  }, 5000);
 }
 
 // ── 아이템 상세보기 (판매예약 포함) ──
@@ -2386,16 +2382,8 @@ async function loadNotifBadge(){
       if(unread>0){badge.style.display='inline-block';badge.textContent=unread>99?'99+':unread;}
       else{badge.style.display='none';}
     }
-    // 정지 상태 즉시 확인 (알림 API 응답에서 suspended_until 반영)
-    if(typeof d.suspended_until !== 'undefined'){
-      // user_id 검증: 현재 로그인 사용자와 일치할 때만 적용
-      var _nuid = d.user_id, _cuid = window.userData ? window.userData.id : null;
-      if(!_nuid || !_cuid || _nuid === _cuid){
-        var _su = d.suspended_until;
-        if(window.userData) window.userData.suspended_until = _su;
-        checkSuspended({suspended_until: _su});
-      }
-    }
+    // 거래정지 상태는 loadUserData에서만 처리
+    // (loadNotifBadge에서 checkSuspended 호출 제거 - 다른 사용자 토큰 오적용 방지)
     // 새 알림(매칭완료 등) 감지 시 포인트 즉시 갱신
     if(unread > _lastUnreadCount && _lastUnreadCount >= 0){
       await loadUserData();
@@ -2510,14 +2498,10 @@ function checkSuspended(d){
     window._suspendToastShown = false;
   }
   var _wasSupended = window._isSuspended;
-  // window._isSuspended 먼저 업데이트 (loadPenaltyTab 호출 전 설정 → 무한루프 방지)
+  // window._isSuspended 먼저 업데이트
   window._isSuspended = isSuspended;
   if(!isSuspended && _wasSupended){
-    // 거래정지 해제됨 → 패널티탭 자동 갱신 (다른 PC 즉시 반영)
     window._suspendToastShown = false;
-    if(document.getElementById('tab-penalty')?.classList?.contains('active')){
-      if(typeof loadPenaltyTab === 'function') loadPenaltyTab();
-    }
   } else if(!isSuspended){
     window._suspendToastShown = false;
   }
