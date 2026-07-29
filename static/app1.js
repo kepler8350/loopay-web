@@ -1360,8 +1360,15 @@ async function syncServerTime(){
     var d = await res.json();
     // ★ 거래정지 즉시 반영 (syncServerTime은 1.5초마다 반드시 실행)
     if(d && typeof d.suspended_until !== 'undefined'){
-      if(window.userData) window.userData.suspended_until = d.suspended_until;
-      if(typeof checkSuspended === 'function') checkSuspended(d);
+      // user_id 검증: 현재 로그인 사용자와 토큰 사용자가 일치할 때만 적용
+      var _tokenUserId = d.user_id;
+      var _currentUserId = window.userData ? window.userData.id : null;
+      if(_tokenUserId && _currentUserId && _tokenUserId !== _currentUserId){
+        // 토큰과 현재 사용자 불일치 → 무시 (다른 사용자 전환 중)
+      } else {
+        if(window.userData) window.userData.suspended_until = d.suspended_until;
+        if(typeof checkSuspended === 'function') checkSuspended(d);
+      }
     } else {
       // suspended_until 없는 응답 (미로그인 등) → 30초마다 /user/me로 보조 체크
       var _nowTs = Date.now();
@@ -2384,9 +2391,15 @@ async function loadNotifBadge(){
     }
     // 정지 상태 즉시 확인 (알림 API 응답에서 suspended_until 반영)
     if(typeof d.suspended_until !== 'undefined'){
-      var _su = d.suspended_until;
-      if(window.userData) window.userData.suspended_until = _su;
-      checkSuspended({suspended_until: _su});
+      // user_id 검증
+      var _nTokenUid = d.user_id;
+      var _nCurrentUid = window.userData ? window.userData.id : null;
+      if(!_nTokenUid || !_nCurrentUid || _nTokenUid === _nCurrentUid){
+        var _su = d.suspended_until;
+        if(window.userData) window.userData.suspended_until = _su;
+        checkSuspended({suspended_until: _su});
+      }
+    }
     }
     // 새 알림(매칭완료 등) 감지 시 포인트 즉시 갱신
     if(unread > _lastUnreadCount && _lastUnreadCount >= 0){

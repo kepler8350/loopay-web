@@ -2212,6 +2212,7 @@ def get_current_time():
     now = mt if mt else (datetime.datetime.utcnow() + datetime.timedelta(hours=9))
     # 토큰이 있으면 suspended_until 함께 반환 (클라이언트 폴링 최소화)
     suspended_until = None
+    uid = 0
     try:
         from flask_jwt_extended import decode_token
         auth = request.headers.get('Authorization','')
@@ -2252,7 +2253,8 @@ def get_current_time():
         hour=now.hour,
         minute=now.minute,
         is_mock=mt is not None,
-        suspended_until=suspended_until
+        suspended_until=suspended_until,
+        user_id=uid if uid and uid > 0 else None
     )
 
 @app.route('/api/admin/set-time', methods=['POST'])
@@ -4666,7 +4668,7 @@ def get_notifications():
     except Exception:
         suspended_until = None
     db.close()
-    return jsonify(notifications=[dict(r) for r in rows], unread=unread, suspended_until=suspended_until)
+    return jsonify(notifications=[dict(r) for r in rows], unread=unread, suspended_until=suspended_until, user_id=uid)
 
 
 @app.route('/api/user/notifications/read', methods=['POST'])
