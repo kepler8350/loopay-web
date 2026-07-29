@@ -949,7 +949,8 @@ def static_files(filename):
     resp = make_response(send_from_directory(STATIC_DIR, filename))
     # JS 파일은 버전 파라미터로 캐시 관리 - 장기 캐시 허용
     if filename.endswith('.js'):
-        resp.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        resp.headers['Cache-Control'] = 'no-cache, must-revalidate'
+        resp.headers['Pragma'] = 'no-cache'
     return resp
 
 @app.route('/admin')
