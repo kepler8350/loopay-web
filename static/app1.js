@@ -2523,6 +2523,7 @@ async function loadPenaltyTab(){
       if(isWaitingApproval){
         // 납부 완료 → 자동 해제 대기중
         if(btn){
+          btn.style.display = '';
           btn.disabled = true;
           btn.style.opacity = '0.5';
           btn.style.cursor = 'not-allowed';
@@ -2558,6 +2559,7 @@ async function loadPenaltyTab(){
         if(btn){
           btn.removeAttribute('disabled');
           btn.disabled = false;
+          btn.style.display = '';
           btn.style.opacity = '1';
           btn.style.cursor = 'pointer';
           btn.textContent = '🔓 패널티 해제하기';
