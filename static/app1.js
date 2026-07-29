@@ -2517,9 +2517,12 @@ function checkSuspended(d){
 
 // ── 패널티 탭 로드 ──────────────────────────────────────
 async function loadPenaltyTab(){
+  // 중복 실행 방지
+  if(loadPenaltyTab._running) return;
+  loadPenaltyTab._running = true;
   try {
     // 토큰 없으면 실행 안 함 (다른 PC에서 로그인 전 호출 방지)
-    if(!localStorage.getItem('lp_token')) return;
+    if(!localStorage.getItem('lp_token')){ loadPenaltyTab._running=false; return; }
     var d = await api('/user/penalties');
     // suspended_until로 userData만 동기화 (checkSuspended는 호출하지 않음 - 무한루프/부작용 방지)
     if(typeof d.suspended_until !== 'undefined' && window.userData){
@@ -2632,7 +2635,16 @@ async function loadPenaltyTab(){
         historyEl.textContent = '누적 미입금: 총 ' + totalAll + '회 (해제 완료)';
       }
     }
-  } catch(e) { console.error('loadPenaltyTab:', e); }
+  } catch(e) {
+    console.error('loadPenaltyTab:', e);
+    // API 실패 시 1.5초 후 재시도 (토큰 초기화 타이밍 문제 방지)
+    if(localStorage.getItem('lp_token') && !loadPenaltyTab._retrying){
+      loadPenaltyTab._retrying = true;
+      setTimeout(function(){ loadPenaltyTab._retrying=false; loadPenaltyTab(); }, 1500);
+    }
+  } finally {
+    loadPenaltyTab._running = false;
+  }
 }
 
 async function showPenaltyReleasePopup(){
