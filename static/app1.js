@@ -2502,8 +2502,13 @@ function checkSuspended(d){
     // 방금 거래정지됨 → toast
     window._suspendToastShown = false;
   }
-  if(!isSuspended){
-    // 거래정지 해제 → toast 플래그 리셋
+  if(!isSuspended && window._isSuspended){
+    // 거래정지 해제됨 → 패널티탭 자동 갱신 (다른 PC 즉시 반영)
+    window._suspendToastShown = false;
+    if(document.getElementById('tab-penalty')?.classList?.contains('active')){
+      if(typeof loadPenaltyTab === 'function') loadPenaltyTab();
+    }
+  } else if(!isSuspended){
     window._suspendToastShown = false;
   }
   window._isSuspended = isSuspended;
