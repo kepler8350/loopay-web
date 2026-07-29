@@ -2499,10 +2499,12 @@ function checkSuspended(d){
   }
   // 거래정지 상태가 새로 변경됐을 때 toast
   if(isSuspended && !window._isSuspended){
-    // 방금 거래정지됨 → toast
     window._suspendToastShown = false;
   }
-  if(!isSuspended && window._isSuspended){
+  var _wasSupended = window._isSuspended;
+  // window._isSuspended 먼저 업데이트 (loadPenaltyTab 호출 전 설정 → 무한루프 방지)
+  window._isSuspended = isSuspended;
+  if(!isSuspended && _wasSupended){
     // 거래정지 해제됨 → 패널티탭 자동 갱신 (다른 PC 즉시 반영)
     window._suspendToastShown = false;
     if(document.getElementById('tab-penalty')?.classList?.contains('active')){
@@ -2511,7 +2513,6 @@ function checkSuspended(d){
   } else if(!isSuspended){
     window._suspendToastShown = false;
   }
-  window._isSuspended = isSuspended;
 }
 
 // ── 패널티 탭 로드 ──────────────────────────────────────
