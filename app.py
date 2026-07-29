@@ -8940,12 +8940,34 @@ def admin_delete_reservations():
 # ── 서버 내장 스케줄러 (APScheduler) ────────────────────────────────────────
 # 브라우저 접속 없이도 매분 자동으로 스케줄러 실행 (거래정지, 미입금 처리 등)
 def _run_scheduler_job():
-    """매분 실행 - _auto_process_unpaid 직접 호출"""
+    """매분 실행 - 거래정지/미입금/입금확인 전체 처리 (중복 실행 방지)"""
     try:
         with app.app_context():
-            _auto_process_unpaid()
-    except Exception as e:
-        pass  # 오류는 무시 (서비스 중단 방지)
+            db = get_db()
+            try:
+                # 중복 실행 방지: 같은 분에 이미 실행됐으면 스킵
+                import datetime as _sdt
+                _now_key = _sdt.datetime.now().strftime('%Y%m%d%H%M')
+                _last = db.execute(
+                    "SELECT value FROM system_settings WHERE key='last_scheduler_run'"
+                ).fetchone()
+                if _last and _last['value'] == _now_key:
+                    return  # 이미 이 분에 실행됨
+                db.execute(
+                    "INSERT OR REPLACE INTO system_settings(key,value) VALUES('last_scheduler_run',?)",
+                    (_now_key,)
+                )
+                db.commit()
+                _auto_confirm_paid_matches(db)
+                db.commit()
+            except Exception:
+                try: db.rollback()
+                except: pass
+            finally:
+                try: db.close()
+                except: pass
+    except Exception:
+        pass
 
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
