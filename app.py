@@ -9007,7 +9007,7 @@ def _run_scheduler_job():
             try:
                 # 중복 실행 방지: 같은 분에 이미 실행됐으면 스킵
                 import datetime as _sdt
-                _now_key = _sdt.datetime.now().strftime('%Y%m%d%H%M')
+                _now_key = get_now().strftime('%Y%m%d%H%M')  # KST 기준
                 _last = db.execute(
                     "SELECT value FROM system_settings WHERE key='last_scheduler_run'"
                 ).fetchone()
@@ -9036,12 +9036,12 @@ def _start_scheduler():
         import atexit as _atexit
         _bg_scheduler = BackgroundScheduler(
             timezone='Asia/Seoul',
-            job_defaults={'misfire_grace_time': 30, 'coalesce': True, 'max_instances': 1}
+            job_defaults={'misfire_grace_time': 5, 'coalesce': True, 'max_instances': 1}
         )
         _bg_scheduler.add_job(
             func=_run_scheduler_job,
-            trigger='cron',
-            minute='*',          # 매분 실행
+            trigger='interval',
+            seconds=10,          # 10초마다 → 14:00 정각 이후 10초 이내 처리
             id='auto_process',
             replace_existing=True
         )
