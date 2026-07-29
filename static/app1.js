@@ -2531,8 +2531,8 @@ async function loadPenaltyTab(){
     var infoBox = document.getElementById('my-penalty-info');
     var detailText = document.getElementById('penalty-detail-text');
 
-    // 거래정지 여부: API 응답 suspended_until 우선, 없으면 window._isSuspended
-    var _isSuspendedNow = !!(d.suspended_until) || !!(window._isSuspended);
+    // 거래정지 여부: API 응답 suspended_until 기준으로만 판단 (window._isSuspended 타이밍 문제 방지)
+    var _isSuspendedNow = !!(d.suspended_until);
     if(_isSuspendedNow && !pending){
       // 거래정지는 됐지만 패널티 레코드가 없는 경우 - 버튼만 표시
       if(btn){
