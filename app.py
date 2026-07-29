@@ -4768,6 +4768,8 @@ def admin_delete_users():
                 db.execute("DELETE FROM items WHERE user_id=?", (uid,))
                 db.execute("DELETE FROM charge_requests WHERE user_id=?", (uid,))
                 db.execute("DELETE FROM matches WHERE buyer_id=? OR seller_id=?", (uid, uid))
+                db.execute("DELETE FROM penalties WHERE user_id=?", (uid,))
+                db.execute("DELETE FROM notifications WHERE user_id=?", (uid,))
                 db.execute("DELETE FROM lucky_buy_results WHERE seller_a_id=? OR seller_b_id=? OR buyer_id=?", (uid, uid, uid))
                 db.execute("DELETE FROM users WHERE id=? AND username NOT IN ('admin','loopay')", (uid,))
         else:
@@ -4776,6 +4778,8 @@ def admin_delete_users():
             db.execute("DELETE FROM charge_requests WHERE user_id IN (SELECT id FROM users WHERE username NOT IN ('admin','loopay') AND approved=1)")
             db.execute("DELETE FROM matches")
             db.execute("DELETE FROM lucky_buy_results")
+            db.execute("DELETE FROM penalties")
+            db.execute("DELETE FROM notifications WHERE user_id NOT IN (SELECT id FROM users)")
             # 고아 데이터 정리 (users에 없는 user_id의 데이터)
             db.execute("DELETE FROM items WHERE user_id NOT IN (SELECT id FROM users)")
             db.execute("DELETE FROM reservations WHERE user_id NOT IN (SELECT id FROM users)")
@@ -6085,6 +6089,25 @@ def testtools_delete_orphan_matches():
             db.execute("DELETE FROM matches WHERE id IN ({})".format(','.join('?'*len(ids))), ids)
             db.commit()
         return jsonify(success=True, deleted_count=len(ids), deleted_ids=ids)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/testtools/delete-orphan-penalties', methods=['POST'])
+@jwt_required()
+def testtools_delete_orphan_penalties():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    db = get_db()
+    try:
+        rows = db.execute("SELECT COUNT(*) as cnt FROM penalties WHERE user_id NOT IN (SELECT id FROM users)").fetchone()
+        cnt = rows['cnt'] if rows else 0
+        db.execute("DELETE FROM penalties WHERE user_id NOT IN (SELECT id FROM users)")
+        db.commit()
+        return jsonify(success=True, deleted_count=cnt)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
