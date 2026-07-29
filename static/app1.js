@@ -1751,7 +1751,8 @@ function renderMatchBuyList(items){
   el.innerHTML = items.map(function(m){
     var statusLabel = {waiting:'매칭대기',unmatched:'2차대기',lucky_waiting:'🍀 행운예약중',lucky_matched:'🍀 행운매칭완료',pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'✅ 거래완료',unpaid:'미입금',failed:'미입금'}[m.status]||m.status;
     var statusColor = {waiting:'#90caf9',unmatched:'#ff9800',lucky_waiting:'#7b1fa2',lucky_matched:'#7b1fa2',pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
-    var hasMatchInfo = !!(m.seller_phone || m.seller_bank || m.seller_account);
+    var _isLoopay = (m.seller_username==='loopay' || m.seller_nickname==='루페이');
+    var hasMatchInfo = _isLoopay || !!(m.seller_phone || m.seller_bank || m.seller_account);
     var dateTxt = m.source==='reservation'?m.reserve_date:(m.match_date||'');
     var isLucky = !!(m.lucky_pair_id);
     var luckyBadge = isLucky ? '<span style="display:inline-block;background:#7b1fa2;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:6px;vertical-align:middle">🍀 행운</span>' : '';
@@ -1762,6 +1763,12 @@ function renderMatchBuyList(items){
 
     var infoHtml = '';
     if(hasMatchInfo){
+      if(_isLoopay){
+        infoHtml = '<div style="font-size:12px;color:var(--text2);margin:6px 0;line-height:1.9">'
+          +'<div>🤖 <span style="color:#7b1fa2;font-weight:600">루페이</span> 판매 매칭 — 송금 후 입금확인 버튼을 눌러주세요</div>'
+          +'<div style="color:#f9a825;font-size:11px">※ 루페이 계좌로 이체 후 송금완료 처리하세요</div>'
+          +'</div>';
+      } else {
       var _sellerAcct = m.seller_account||'';
       infoHtml = '<div style="font-size:12px;color:var(--text2);margin:6px 0;line-height:1.9">'
         +'<div>🏦 은행: <span style="color:var(--text)">'+(m.seller_bank||'-')+'</span></div>'
@@ -1771,6 +1778,7 @@ function renderMatchBuyList(items){
         +'<div>👤 예금주: <span style="color:var(--text)">'+(m.seller_account_name||'-')+'</span></div>'
         +'<div>💰 입금액: <span style="color:#f9a825;font-weight:600">'+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</span></div>'
         +'</div>';
+      } // end else (non-loopay)
     } else if(m.status==='pending'||m.status==='matched'){
       infoHtml = '<div style="font-size:11px;color:#f9a825;margin:6px 0">매칭완료 — 판매자 정보 확인 중</div>';
     }
