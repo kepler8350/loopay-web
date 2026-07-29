@@ -340,7 +340,7 @@ async function requestCharge(){
   // ── 확인 팝업 ──
   showConfirm({
     title: '💳 충전 신청 확인',
-    message: '충전 포인트: <b>'+pts.toLocaleString()+'P</b><br>입금 금액: <b>'+won.toLocaleString()+'원</b><br><br><span style="font-size:12px">📌 입금 계좌번호는 신청 후 알림에서 확인하세요.</span>',
+    message: '충전 포인트: <b>'+pts.toLocaleString()+'P</b><br>입금 금액: <b>'+won.toLocaleString()+'원</b><br><br><span style="font-size:24px;font-weight:700">📌 입금 계좌번호는 신청 후 알림에서 확인하세요.</span>',
     okText: '신청하기',
     onOk: async function(){
       try{
