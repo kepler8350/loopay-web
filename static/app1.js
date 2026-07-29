@@ -2517,135 +2517,92 @@ function checkSuspended(d){
 
 // ── 패널티 탭 로드 ──────────────────────────────────────
 async function loadPenaltyTab(){
-  // 중복 실행 방지
-  if(loadPenaltyTab._running) return;
-  loadPenaltyTab._running = true;
+  if(!localStorage.getItem('lp_token')) return;
   try {
-    // 토큰 없으면 실행 안 함 (다른 PC에서 로그인 전 호출 방지)
-    if(!localStorage.getItem('lp_token')){ loadPenaltyTab._running=false; return; }
     var d = await api('/user/penalties');
-    // suspended_until로 userData만 동기화 (checkSuspended는 호출하지 않음 - 무한루프/부작용 방지)
     if(typeof d.suspended_until !== 'undefined' && window.userData){
       window.userData.suspended_until = d.suspended_until;
     }
     var pending = d.pending_penalty;
-    var btn = document.getElementById('penalty-release-btn');
+    var btn      = document.getElementById('penalty-release-btn');
     var statusText = document.getElementById('penalty-status-text');
-    var infoBox = document.getElementById('my-penalty-info');
+    var infoBox  = document.getElementById('my-penalty-info');
     var detailText = document.getElementById('penalty-detail-text');
+    var isWaitingApproval = !!(pending && (pending.release_paid === 1 || pending.release_paid === true));
+    var _isSuspendedNow   = !!(d.suspended_until);
 
-    // 거래정지 여부: API 응답 suspended_until 기준으로만 판단 (window._isSuspended 타이밍 문제 방지)
-    var _isSuspendedNow = !!(d.suspended_until);
-    if(_isSuspendedNow && !pending){
-      // 거래정지는 됐지만 패널티 레코드가 없는 경우 - 버튼만 표시
-      if(btn){
-        btn.removeAttribute('disabled');
-        btn.disabled = false;
-        btn.style.display = '';
-        btn.style.opacity = '1';
-        btn.style.cursor = 'pointer';
-        btn.textContent = '🔓 패널티 해제하기';
-        btn.style.background = '#c62828';
-      }
+    function _showBtn(){
+      if(!btn) return;
+      btn.removeAttribute('disabled');
+      btn.disabled = false;
+      btn.style.display = '';
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+      btn.textContent = '🔓 패널티 해제하기';
+      btn.style.background = '#c62828';
+    }
+    function _hideBtn(){
+      if(!btn) return;
+      btn.style.display = 'none';
+    }
+
+    if(_isSuspendedNow){
+      // 거래정지 중 → 반드시 버튼 표시
       if(infoBox) infoBox.style.display = 'block';
-      if(detailText) detailText.innerHTML = '• 거래정지 상태입니다.<br>• 해제 포인트 충전 후 해제 버튼을 눌러주세요.';
-    } else if(pending && !pending.is_released && _isSuspendedNow){
-      var resumeAt = pending.release_at || null;
-      var suspendDays = pending.suspend_days || 0;
-      if(isWaitingApproval){
-        // 납부 완료 → 자동 해제 대기중
+      if(!pending || pending.is_released){
+        // 패널티 레코드 없거나 이미 해제 (거래정지만 남은 경우)
+        _showBtn();
+        if(detailText) detailText.innerHTML = '• 거래정지 상태입니다.<br>• 해제 포인트 충전 후 해제 버튼을 눌러주세요.';
+        if(statusText){ statusText.textContent = ''; statusText.style.color = ''; }
+      } else if(isWaitingApproval){
+        // 포인트 납부 완료 → 대기중
         if(btn){
           btn.style.display = '';
           btn.disabled = true;
           btn.style.opacity = '0.5';
           btn.style.cursor = 'not-allowed';
+          var suspendDays = pending.suspend_days || 0;
           btn.textContent = '⏳ 정지 ' + suspendDays + '일 후 자동 해제 예정';
           btn.style.background = '#546e7a';
         }
-        // 남은 정지일수 계산
+        var resumeAt = pending.release_at || null;
         var remainText = '';
-        if(resumeAt) {
-          // 오늘 날짜(서버 기준)와 release_at 날짜만 비교하여 남은 일수 계산
-          var resumeDate = resumeAt.slice(0,10);
-          // 서버 시간 기반 today 사용 (UTC 오프셋 문제 방지)
+        if(resumeAt){
           var _effD = typeof getEffectiveDate==='function' ? getEffectiveDate() : new Date();
-          var todayStr = window._serverTodayStr ||
-            (_effD.getFullYear()+'-'+String(_effD.getMonth()+1).padStart(2,'0')+'-'+String(_effD.getDate()).padStart(2,'0'));
-          var todayMs = new Date(todayStr + 'T00:00:00').getTime();
-          var resumeMs = new Date(resumeDate + 'T00:00:00').getTime();
-          var diffDays = Math.round((resumeMs - todayMs) / (1000*60*60*24));
-          if(diffDays > 0) {
-            remainText = resumeDate + ' 01:00 자동 해제 (남은 ' + diffDays + '일)';
-          } else if(diffDays === 0) {
-            remainText = '오늘 01:00 자동 해제됩니다';
-          } else {
-            remainText = '곧 자동 해제됩니다';
-          }
+          var todayStr = _effD.getFullYear()+'-'+String(_effD.getMonth()+1).padStart(2,'0')+'-'+String(_effD.getDate()).padStart(2,'0');
+          var diffDays = Math.round((new Date(resumeAt.slice(0,10)+'T00:00:00') - new Date(todayStr+'T00:00:00')) / 86400000);
+          remainText = diffDays > 0 ? resumeAt.slice(0,10)+' 01:00 자동 해제 (남은 '+diffDays+'일)' : diffDays===0 ? '오늘 01:00 자동 해제됩니다' : '곧 자동 해제됩니다';
         }
-        if(statusText){
-          statusText.textContent = remainText || ('정지 ' + suspendDays + '일 경과 후 자동 해제');
-          statusText.style.color = '#f9a825';
-        }
+        if(statusText){ statusText.textContent = remainText || ('정지 '+(pending.suspend_days||0)+'일 경과 후 자동 해제'); statusText.style.color='#f9a825'; }
+        if(detailText) detailText.innerHTML = '• 누적 미입금: '+(d.unpaid_count||0)+'회<br>• 해제 포인트: '+(pending.release_points||0).toLocaleString()+'P<br>• ⏳ '+(resumeAt?resumeAt.slice(0,10)+' 01:00':'정지 '+(pending.suspend_days||0)+'일 후')+' 자동 해제됩니다.';
       } else {
         // 미납부 → 해제 버튼 활성화
-        if(btn){
-          btn.removeAttribute('disabled');
-          btn.disabled = false;
-          btn.style.display = '';
-          btn.style.opacity = '1';
-          btn.style.cursor = 'pointer';
-          btn.textContent = '🔓 패널티 해제하기';
-          btn.style.background = '#c62828';
-        }
-        if(statusText){
-          statusText.textContent = '미해제 패널티 있음 — 해제 포인트: ' + (pending.release_points||0).toLocaleString() + 'P';
-          statusText.style.color = '#ef5350';
-        }
-      }
-      if(infoBox) infoBox.style.display = 'block';
-      if(detailText && d.suspended_until){
-        detailText.innerHTML =
-          '• 누적 미입금: ' + (d.unpaid_count||0) + '회<br>' +
-          
-          '• 해제 포인트: ' + (pending.release_points||0).toLocaleString() + 'P<br>' +
-          (isWaitingApproval
-            ? '• ⏳ ' + (resumeAt ? resumeAt.slice(0,10)+' 01:00' : '정지 '+suspendDays+'일 후') + ' 자동 해제됩니다.'
-            : '• 해제 포인트 충전 후 해제 버튼을 눌러주세요.');
+        _showBtn();
+        if(statusText){ statusText.textContent = '미해제 패널티 있음 — 해제 포인트: '+(pending.release_points||0).toLocaleString()+'P'; statusText.style.color='#ef5350'; }
+        if(detailText) detailText.innerHTML = '• 누적 미입금: '+(d.unpaid_count||0)+'회<br>• 해제 포인트: '+(pending.release_points||0).toLocaleString()+'P<br>• 해제 포인트 충전 후 해제 버튼을 눌러주세요.';
       }
     } else {
-      // 패널티 없거나 모두 해제됨 - 거래정지 박스 숨김, 버튼 숨김, 누적횟수 표시
-      if(infoBox) infoBox.style.display='none';
-      if(btn){
-        btn.style.display = 'none';
-      }
-      if(statusText){ statusText.textContent = ''; }
+      // 거래정지 아님 → 버튼 숨김
       if(infoBox) infoBox.style.display = 'none';
-      // 누적 패널티 횟수 표시
-      var totalReleased = d.penalties ? d.penalties.filter(function(p){ return p.is_released; }).length : 0;
+      _hideBtn();
+      if(statusText) statusText.textContent = '';
       var totalAll = d.penalties ? d.penalties.length : 0;
-      if(totalAll > 0) {
+      if(totalAll > 0){
         var historyEl = document.getElementById('penalty-history-text');
-        if(!historyEl) {
-          historyEl = document.createElement('div');
-          historyEl.id = 'penalty-history-text';
-          historyEl.style.cssText = 'font-size:12px;color:#888;text-align:center;padding:8px;margin-bottom:8px';
-          var section = document.getElementById('penalty-release-section');
-          if(section) section.appendChild(historyEl);
-        }
-        historyEl.textContent = '누적 미입금: 총 ' + totalAll + '회 (해제 완료)';
+        if(!historyEl){ historyEl=document.createElement('div'); historyEl.id='penalty-history-text'; historyEl.style.cssText='font-size:12px;color:#888;text-align:center;padding:8px;margin-bottom:8px'; var section=document.getElementById('penalty-release-section'); if(section) section.appendChild(historyEl); }
+        historyEl.textContent = '누적 미입금: 총 '+totalAll+'회 (해제 완료)';
       }
     }
   } catch(e) {
     console.error('loadPenaltyTab:', e);
-    // API 실패 시 1.5초 후 재시도 (토큰 초기화 타이밍 문제 방지)
-    if(localStorage.getItem('lp_token') && !loadPenaltyTab._retrying){
-      loadPenaltyTab._retrying = true;
-      setTimeout(function(){ loadPenaltyTab._retrying=false; loadPenaltyTab(); }, 1500);
+    // 실패 시 1.5초 후 1회 재시도
+    if(localStorage.getItem('lp_token') && !loadPenaltyTab._retried){
+      loadPenaltyTab._retried = true;
+      setTimeout(function(){ loadPenaltyTab._retried=false; loadPenaltyTab(); }, 1500);
     }
-  } finally {
-    loadPenaltyTab._running = false;
   }
 }
+
 
 async function showPenaltyReleasePopup(){
   try {
