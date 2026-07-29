@@ -2531,7 +2531,20 @@ async function loadPenaltyTab(){
 
     // 거래정지 여부: window._isSuspended 또는 API 응답의 suspended_until로 판단
     var _isSuspendedNow = !!(window._isSuspended || d.suspended_until);
-    if(pending && !pending.is_released && _isSuspendedNow){
+    if(_isSuspendedNow && !pending){
+      // 거래정지는 됐지만 패널티 레코드가 없는 경우 - 버튼만 표시
+      if(btn){
+        btn.removeAttribute('disabled');
+        btn.disabled = false;
+        btn.style.display = '';
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btn.textContent = '🔓 패널티 해제하기';
+        btn.style.background = '#c62828';
+      }
+      if(infoBox) infoBox.style.display = 'block';
+      if(detailText) detailText.innerHTML = '• 거래정지 상태입니다.<br>• 해제 포인트 충전 후 해제 버튼을 눌러주세요.';
+    } else if(pending && !pending.is_released && _isSuspendedNow){
       var resumeAt = pending.release_at || null;
       var suspendDays = pending.suspend_days || 0;
       if(isWaitingApproval){
