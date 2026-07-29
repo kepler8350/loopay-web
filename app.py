@@ -2229,14 +2229,22 @@ def get_current_time():
                         import datetime as _dt2
                         su_dt = _dt2.datetime.strptime(su, '%Y-%m-%d %H:%M:%S')
                         if now >= su_dt:
-                            # 만료됨 → 자동 해제
+                            # 만료됨 → release_paid=1인 경우에만 자동 해제
                             db2 = get_db()
-                            db2.execute("UPDATE users SET suspended_until=NULL WHERE id=?", (uid,))
-                            # 패널티 is_released=1 처리
-                            db2.execute("UPDATE penalties SET is_released=1 WHERE user_id=? AND is_released=0 AND release_paid=1", (uid,))
-                            db2.commit()
+                            paid_pen = db2.execute(
+                                "SELECT id FROM penalties WHERE user_id=? AND is_released=0 AND release_paid=1",
+                                (uid,)
+                            ).fetchone()
+                            if paid_pen:
+                                # 포인트 납부 완료된 패널티가 있을 때만 해제
+                                db2.execute("UPDATE users SET suspended_until=NULL WHERE id=?", (uid,))
+                                db2.execute("UPDATE penalties SET is_released=1 WHERE user_id=? AND is_released=0 AND release_paid=1", (uid,))
+                                db2.commit()
+                                suspended_until = None
+                            else:
+                                # 납부 안 한 경우 → suspended_until 유지 (계속 정지)
+                                suspended_until = su
                             db2.close()
-                            suspended_until = None
                         else:
                             suspended_until = su
                     else:
