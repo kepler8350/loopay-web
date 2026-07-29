@@ -300,7 +300,8 @@ def _auto_confirm_paid_matches(db):
         ).fetchall()
         targets_confirm.extend([dict(r) for r in _r2_paid_late])
 
-        # 2차 pending → 자동 미입금 (19:00~20:00)
+    # 2차 pending → 자동 미입금 (20:00 이후)
+    if _is_day_processing and total_min >= 1200:  # 20:00~19:59
         unpaid_rows2 = db.execute(
             """SELECT m.* FROM matches m
                WHERE m.status='pending' AND m.match_round=2
