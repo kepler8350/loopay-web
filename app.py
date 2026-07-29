@@ -8936,3 +8936,29 @@ def admin_delete_reservations():
         return jsonify(error=str(e)), 500
     finally:
         db.close()
+
+# ── 서버 내장 스케줄러 (APScheduler) ────────────────────────────────────────
+# 브라우저 접속 없이도 매분 자동으로 스케줄러 실행 (거래정지, 미입금 처리 등)
+def _run_scheduler_job():
+    """매분 실행 - _auto_process_unpaid 직접 호출"""
+    try:
+        with app.app_context():
+            _auto_process_unpaid()
+    except Exception as e:
+        pass  # 오류는 무시 (서비스 중단 방지)
+
+try:
+    from apscheduler.schedulers.background import BackgroundScheduler
+    import atexit as _atexit
+    _bg_scheduler = BackgroundScheduler(timezone='Asia/Seoul')
+    _bg_scheduler.add_job(
+        func=_run_scheduler_job,
+        trigger='cron',
+        minute='*',          # 매분 실행
+        id='auto_process',
+        replace_existing=True
+    )
+    _bg_scheduler.start()
+    _atexit.register(lambda: _bg_scheduler.shutdown(wait=False))
+except Exception as _e:
+    pass  # APScheduler 없으면 기존 방식(클라이언트 트리거)으로 동작
