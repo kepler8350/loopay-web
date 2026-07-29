@@ -8969,18 +8969,29 @@ def _run_scheduler_job():
     except Exception:
         pass
 
-try:
-    from apscheduler.schedulers.background import BackgroundScheduler
-    import atexit as _atexit
-    _bg_scheduler = BackgroundScheduler(timezone='Asia/Seoul')
-    _bg_scheduler.add_job(
-        func=_run_scheduler_job,
-        trigger='cron',
-        minute='*',          # 매분 실행
-        id='auto_process',
-        replace_existing=True
-    )
-    _bg_scheduler.start()
-    _atexit.register(lambda: _bg_scheduler.shutdown(wait=False))
-except Exception as _e:
-    pass  # APScheduler 없으면 기존 방식(클라이언트 트리거)으로 동작
+def _start_scheduler():
+    """APScheduler 시작 - gunicorn worker 프로세스에서 호출"""
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        import atexit as _atexit
+        _bg_scheduler = BackgroundScheduler(
+            timezone='Asia/Seoul',
+            job_defaults={'misfire_grace_time': 30, 'coalesce': True, 'max_instances': 1}
+        )
+        _bg_scheduler.add_job(
+            func=_run_scheduler_job,
+            trigger='cron',
+            minute='*',          # 매분 실행
+            id='auto_process',
+            replace_existing=True
+        )
+        _bg_scheduler.start()
+        _atexit.register(lambda: _bg_scheduler.shutdown(wait=False))
+        return True
+    except Exception:
+        return False
+
+# gunicorn workers=1 또는 직접 실행 시 스케줄러 시작
+import os as _os
+# gunicorn이 아닌 경우(직접 실행)에도 시작
+_start_scheduler()
