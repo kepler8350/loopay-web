@@ -6932,6 +6932,7 @@ def user_matching():
         # ── 구매: 2) 매칭 완료 기록 ──
         buy_matches = db.execute(
             """SELECT m.*, su.nickname as seller_nickname,
+                      su.username as seller_username,
                       su.phone as seller_phone,
                       su.bank as seller_bank,
                       su.account_no as seller_account,
