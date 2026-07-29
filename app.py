@@ -5186,10 +5186,8 @@ def match_confirm_payment():
         except Exception:
             pass
 
-        # 6. 구매자 cumulative_count +1 + 레벨업 체크
+        # 6. 레벨업 체크 (cumulative_count는 예약 시점에만 증가 - 구매완료 시 중복 증가 방지)
         try:
-            db.execute("UPDATE users SET cumulative_count=cumulative_count+1 WHERE id=?", (m['buyer_id'],))
-            db.commit()
             leveled = check_and_level_up(db, m['buyer_id'])
         except Exception:
             pass
