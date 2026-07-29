@@ -2515,6 +2515,14 @@ async function loadPenaltyTab(){
     // 토큰 없으면 실행 안 함 (다른 PC에서 로그인 전 호출 방지)
     if(!localStorage.getItem('lp_token')) return;
     var d = await api('/user/penalties');
+    // API 응답의 suspended_until로 _isSuspended 직접 동기화 (타이밍 문제 방지)
+    if(typeof d.suspended_until !== 'undefined'){
+      var _suNow = !!(d.suspended_until);
+      if(_suNow !== window._isSuspended){
+        if(window.userData) window.userData.suspended_until = d.suspended_until;
+        if(typeof checkSuspended === 'function') checkSuspended(d);
+      }
+    }
     var pending = d.pending_penalty;
     var btn = document.getElementById('penalty-release-btn');
     var statusText = document.getElementById('penalty-status-text');
