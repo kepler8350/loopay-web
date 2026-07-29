@@ -540,6 +540,9 @@ def _auto_process_unpaid(db, m):
             _release_dt = _now + timedelta(days=suspend_days)
             _release_str = _release_dt.strftime('%Y-%m-%d %H:%M:%S')
             _now_str = _now.strftime('%Y-%m-%d %H:%M:%S')
+            # 중복 방지: 동일 match_id 패널티가 이미 있으면 스킵 (스케줄러 중복 실행 방지)
+            _dup_pen = db.execute("SELECT id FROM penalties WHERE match_id=? AND match_round=?", (match_id, match_round)).fetchone()
+            if _dup_pen: return
             db.execute("UPDATE users SET unpaid_count=?, suspended_until=? WHERE id=?",
                        (current_count, _release_str, buyer_id))
             db.execute(
@@ -6090,6 +6093,29 @@ def testtools_delete_orphan_matches():
             db.execute("DELETE FROM matches WHERE id IN ({})".format(','.join('?'*len(ids))), ids)
             db.commit()
         return jsonify(success=True, deleted_count=len(ids), deleted_ids=ids)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/testtools/fix-unpaid-count', methods=['POST'])
+@jwt_required()
+def testtools_fix_unpaid_count():
+    """users.unpaid_count를 실제 penalties 레코드 수와 동기화"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    db = get_db()
+    try:
+        rows = db.execute("""
+            UPDATE users SET unpaid_count = (
+                SELECT COUNT(*) FROM penalties WHERE user_id=users.id AND is_released=0
+            )
+            WHERE username NOT IN ('admin','loopay')
+        """)
+        db.commit()
+        return jsonify(success=True, updated=rows.rowcount)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
