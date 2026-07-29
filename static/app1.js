@@ -1764,9 +1764,18 @@ function renderMatchBuyList(items){
     var infoHtml = '';
     if(hasMatchInfo){
       if(_isLoopay){
+        var _lacct = m.seller_account||'';
+        var _lbank = m.seller_bank||'루페이';
+        var _lname = m.seller_account_name||'루페이';
+        var _lphone = m.seller_phone||'';
         infoHtml = '<div style="font-size:12px;color:var(--text2);margin:6px 0;line-height:1.9">'
-          +'<div>🤖 <span style="color:#7b1fa2;font-weight:600">루페이</span> 판매 매칭 — 송금 후 입금확인 버튼을 눌러주세요</div>'
-          +'<div style="color:#f9a825;font-size:11px">※ 루페이 계좌로 이체 후 송금완료 처리하세요</div>'
+          +'<div>🤖 <span style="color:#7b1fa2;font-weight:600">루페이</span> 판매 매칭</div>'
+          +'<div>🏦 은행: <span style="color:var(--text)">'+_lbank+'</span></div>'
+          +'<div>💳 계좌: <span style="color:var(--text);font-weight:600">'+(_lacct||'-')+'</span>'
+          +(_lacct ? ' <button onclick="_copyAcct(\''+_lacct+'\',this)" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0 4px" title="복사">📋</button>' : '')
+          +'</div>'
+          +'<div>👤 예금주: <span style="color:var(--text)">'+_lname+'</span></div>'
+          +(_lphone ? '<div>📞 전화: <span style="color:var(--text)">'+_lphone+'</span></div>' : '')
           +'</div>';
       } else {
       var _sellerAcct = m.seller_account||'';

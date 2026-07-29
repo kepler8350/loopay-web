@@ -7016,6 +7016,32 @@ def user_matching():
             d = dict(m)
             d['bar_name'] = names.get(d.get('bar_type',''), d.get('bar_type',''))
             d['role'] = role
+            # loopay 판매자인 경우 시스템 계좌 주입
+            if role == 'buyer' and d.get('seller_username') == 'loopay':
+                try:
+                    import json as _json
+                    _acc_row = db.execute("SELECT value FROM system_settings WHERE key='loopay_accounts'").fetchone()
+                    _sys_acct = None
+                    if _acc_row:
+                        _accs = _json.loads(_acc_row['value'])
+                        _sys_acct = next((a for a in _accs if a.get('type') == 'system'), _accs[0] if _accs else None)
+                    if _sys_acct:
+                        d['seller_bank']         = _sys_acct.get('bank', '')
+                        d['seller_account']      = _sys_acct.get('account', '')
+                        d['seller_account_name'] = _sys_acct.get('account_name', '루페이')
+                        d['seller_phone']        = _sys_acct.get('phone', '')
+                    else:
+                        # fallback: 개별 키
+                        _b = db.execute("SELECT value FROM system_settings WHERE key='loopay_bank'").fetchone()
+                        _a = db.execute("SELECT value FROM system_settings WHERE key='loopay_account'").fetchone()
+                        _n = db.execute("SELECT value FROM system_settings WHERE key='loopay_account_name'").fetchone()
+                        _p = db.execute("SELECT value FROM system_settings WHERE key='loopay_phone'").fetchone()
+                        d['seller_bank']         = _b['value'] if _b else ''
+                        d['seller_account']      = _a['value'] if _a else ''
+                        d['seller_account_name'] = _n['value'] if _n else '루페이'
+                        d['seller_phone']        = _p['value'] if _p else ''
+                except Exception:
+                    pass
             return d
 
         buy_list = [fmt_reservation(r) for r in buy_reservations] + [fmt_match(m,'buyer') for m in buy_matches]
