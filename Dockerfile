@@ -9,4 +9,4 @@ ARG CACHEBUST=1
 COPY . .
 
 EXPOSE 8080
-CMD ["python", "-c", "import os,subprocess; subprocess.run(['gunicorn','app:app','--bind','0.0.0.0:'+os.environ.get('PORT','8080'),'--workers','1','--threads','4','--timeout','120'])"]
+CMD ["gunicorn", "app:app", "--config", "gunicorn.conf.py", "--bind", "0.0.0.0:8080"]
