@@ -258,6 +258,10 @@ async function loadUserData(){
   }
   // 거래 정지 체크 - 모든 버튼 설정 후 마지막에 실행 (최우선 적용)
   checkSuspended(userData);
+  // 패널티 탭이 열려있으면 자동 갱신 (다른 PC에서 타이밍 문제 방지)
+  if(document.getElementById('tab-penalty')?.classList?.contains('active')){
+    loadPenaltyTab();
+  }
   loadPrices(); loadNotifBadge();
 }
 
@@ -2508,6 +2512,8 @@ function checkSuspended(d){
 // ── 패널티 탭 로드 ──────────────────────────────────────
 async function loadPenaltyTab(){
   try {
+    // 토큰 없으면 실행 안 함 (다른 PC에서 로그인 전 호출 방지)
+    if(!localStorage.getItem('lp_token')) return;
     var d = await api('/user/penalties');
     var pending = d.pending_penalty;
     var btn = document.getElementById('penalty-release-btn');
