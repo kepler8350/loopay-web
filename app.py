@@ -300,9 +300,9 @@ def _auto_confirm_paid_matches(db):
         ).fetchall()
         targets_confirm.extend([dict(r) for r in _r2_paid_late])
 
-    # 2차 pending → 자동 미입금 (20:00 이후)
+    # 2차 pending → 자동 미입금 (20:00 이후 ~ 04:59)
     # 2차 매칭은 전날 밤 1차 매칭 기준이므로 항상 어제 날짜
-    if _is_day_processing and total_min >= 1200:  # 20:00~19:59
+    if total_min >= 1200 or h < 5:  # 20:00~ 또는 00:00~04:59
         import datetime as _dt2
         _r2_ref_day = (now - _dt2.timedelta(days=1)).date().isoformat()
         unpaid_rows2 = db.execute(
