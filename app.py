@@ -123,10 +123,11 @@ def _do_confirm_transfer(db, m):
             _buyer_is_loopay = (m['buyer_id'] == loopay_id)
             _today = get_today().isoformat()
             if _buyer_is_loopay:
-                # 루페이 구매 시: buyer_res_id → 예약 아이템 조회
+                # 루페이 구매 시: buyer_res_id → 예약/아이템 조회 (단계별 처리)
                 _loopay_item_updated = False
                 _buyer_res_id = dict(m).get('buyer_res_id')
                 if _buyer_res_id:
+                    # 1) 예약으로 조회
                     _lr = db.execute(
                         "SELECT item_id FROM reservations WHERE id=?", (_buyer_res_id,)
                     ).fetchone()
@@ -137,8 +138,16 @@ def _do_confirm_transfer(db, m):
                         ).rowcount
                         if rows_updated > 0:
                             _loopay_item_updated = True
+                    if not _loopay_item_updated:
+                        # 2) buyer_res_id가 아이템 id인 경우 (루페이 예약 없이 자동 구매 시)
+                        rows_updated = db.execute(
+                            "UPDATE items SET stage=?, status='reservable', purchase_date=? WHERE id=? AND user_id=? AND status='matched'",
+                            (_stage, _today, _buyer_res_id, loopay_id)
+                        ).rowcount
+                        if rows_updated > 0:
+                            _loopay_item_updated = True
                 if not _loopay_item_updated:
-                    # buyer_res_id 없거나 실패 시: seller_item과 같은 bar_type/stage의 loopay matched 아이템 찾기
+                    # 3) seller_item과 같은 bar_type의 loopay matched 아이템 찾기
                     _bar = seller_item['bar_type'] if seller_item else dict(m).get('bar_type', 'bronze')
                     _loopay_matched = db.execute(
                         "SELECT id FROM items WHERE user_id=? AND bar_type=? AND status='matched' ORDER BY id DESC LIMIT 1",
@@ -151,7 +160,7 @@ def _do_confirm_transfer(db, m):
                         )
                         _loopay_item_updated = True
                 if not _loopay_item_updated:
-                    # 마지막 fallback: 새 아이템 생성
+                    # 4) 최후 fallback: 새 아이템 생성
                     _bar = seller_item['bar_type'] if seller_item else dict(m).get('bar_type', 'bronze')
                     db.execute(
                         "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
@@ -536,10 +545,11 @@ def _auto_process_unpaid(db, m):
                     _today_str2 = get_today().isoformat()
                     _stage = _item['stage'] or 1
                     _bar = _item['bar_type']
-                    # 중복 방지: 이미 loopay buyer match가 있으면 skip
+                    # 중복 방지: seller_item_id에 대해 loopay 구매 매치가 이미 있으면 skip
                     _dup_match = db.execute(
-                        "SELECT id FROM matches WHERE buyer_id=? AND seller_item_id=? AND match_round=2 AND status IN ('confirmed','pending','paid')",
+                        "SELECT id FROM matches WHERE buyer_id=? AND seller_item_id=? AND match_round=2",
                         (loopay_id, m['seller_item_id'])
+                    ).fetchone()
                     ).fetchone()
                     if not _dup_match:
                         # 1. 판매자 아이템 sold 처리
@@ -565,7 +575,7 @@ def _auto_process_unpaid(db, m):
                             "INSERT INTO matches(reservation_id, buyer_id, seller_id, seller_item_id, bar_type, stage, buy_price, sell_price, match_round, match_date, status, buyer_res_id) VALUES(?,?,?,?,?,?,0,0,2,?,'pending',?)",
                             (_sell_res['id'] if _sell_res else None, loopay_id,
                              _item['user_id'], m['seller_item_id'],
-                             _bar, _stage, _today_str2, _lbr_id)
+                             _bar, _stage, _today_str2, _lbr_id or _new_item_id)
                         )
                         # 5. loopay 구매예약 matched 처리
                         _lbr = db.execute(
