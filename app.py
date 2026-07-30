@@ -304,27 +304,28 @@ def _auto_confirm_paid_matches(db):
     # 21:00~21:59: 루페이 송금(paid)했지만 판매자 입금확인 안 한 2차 매치 자동 처리
     if h == 21:
         # 2차 paid → 자동 입금확인 (21:00)
-        # 2차 매칭은 전날 밤 기준이므로 어제 날짜
+        # match_date는 오늘(당일 저녁 매칭) 또는 어제(전날 남은 것) 둘 다 처리
         import datetime as _dt21
-        _r2_paid_ref = (now - _dt21.timedelta(days=1)).date().isoformat()
+        _r2_today = get_now().date().isoformat()
+        _r2_yesterday = (get_now() - _dt21.timedelta(days=1)).date().isoformat()
         _r2_paid_late = db.execute(
             """SELECT m.* FROM matches m
                WHERE m.status='paid' AND m.match_round=2
-               AND m.match_date=?""",
-            (_r2_paid_ref,)
+               AND m.match_date IN (?,?)""",
+            (_r2_today, _r2_yesterday)
         ).fetchall()
         targets_confirm.extend([dict(r) for r in _r2_paid_late])
 
     # 2차 pending → 자동 미입금 (20:00 이후 ~ 04:59)
-    # 2차 매칭은 전날 밤 1차 매칭 기준이므로 항상 어제 날짜
-    if total_min >= 1200 or h < 5:  # 20:00~ 또는 00:00~04:59
+    if total_min >= 1200 or h < 5:
         import datetime as _dt2
-        _r2_ref_day = (now - _dt2.timedelta(days=1)).date().isoformat()
+        _r2_today2 = get_now().date().isoformat()
+        _r2_yesterday2 = (get_now() - _dt2.timedelta(days=1)).date().isoformat()
         unpaid_rows2 = db.execute(
             """SELECT m.* FROM matches m
                WHERE m.status='pending' AND m.match_round=2
-               AND m.match_date=?""",
-            (_r2_ref_day,)
+               AND m.match_date IN (?,?)""",
+            (_r2_today2, _r2_yesterday2)
         ).fetchall()
         targets_unpaid.extend([dict(r) for r in unpaid_rows2])
 
