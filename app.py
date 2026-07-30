@@ -550,7 +550,6 @@ def _auto_process_unpaid(db, m):
                         "SELECT id FROM matches WHERE buyer_id=? AND seller_item_id=? AND match_round=2",
                         (loopay_id, m['seller_item_id'])
                     ).fetchone()
-                    ).fetchone()
                     if not _dup_match:
                         # 1. 판매자 아이템 sold 처리
                         db.execute("UPDATE items SET status='sold' WHERE id=?", (m['seller_item_id'],))
