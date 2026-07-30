@@ -123,13 +123,24 @@ def _do_confirm_transfer(db, m):
             _buyer_is_loopay = (m['buyer_id'] == loopay_id)
             _today = get_today().isoformat()
             if _buyer_is_loopay:
+                # 루페이 구매 시 buyer_res_id (루페이 구매예약)로 아이템 조회
+                _loopay_res_id = dict(m).get('buyer_res_id') or m['reservation_id']
                 _lr = db.execute(
-                    "SELECT item_id FROM reservations WHERE id=?", (m['reservation_id'],)
+                    "SELECT item_id FROM reservations WHERE id=?", (_loopay_res_id,)
                 ).fetchone()
                 if _lr and _lr['item_id']:
                     db.execute(
                         "UPDATE items SET stage=?, status='reservable', purchase_date=? WHERE id=? AND user_id=?",
                         (_stage, _today, _lr['item_id'], loopay_id)
+                    )
+                else:
+                    # buyer_res_id로도 못 찾으면 seller_item_id 기반으로 루페이 아이템 생성
+                    _m_dict = dict(m)
+                    _bar = _m_dict.get('bar_type', 'bronze')
+                    _stg = _m_dict.get('stage', 1)
+                    db.execute(
+                        "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
+                        (loopay_id, _bar, _stg, _today)
                     )
             else:
                 _inserted = False
