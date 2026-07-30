@@ -6154,10 +6154,12 @@ def testtools_create_r2_paid_match():
         seller = db.execute("SELECT id FROM users WHERE username=?", (seller_username,)).fetchone()
         if not loopay or not seller: return jsonify(error='user not found'), 404
         ref_date = (get_now().date() - __import__('datetime').timedelta(days=1)).isoformat()
+        db.execute("PRAGMA foreign_keys=OFF")
         db.execute("""INSERT INTO matches(reservation_id,buyer_id,seller_id,bar_type,stage,
                buy_price,sell_price,match_round,match_date,status)
                VALUES(0,?,?,'bronze',1,40000,38000,2,?,'paid')""",
                (loopay['id'], seller['id'], ref_date))
+        db.execute("PRAGMA foreign_keys=ON")
         db.commit()
         match_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
         return jsonify(success=True, match_id=match_id, match_date=ref_date)
