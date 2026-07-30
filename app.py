@@ -6182,6 +6182,26 @@ def testtools_create_r2_paid_match():
         db.close()
 
 
+@app.route('/api/admin/testtools/set-item-status', methods=['POST'])
+@jwt_required()
+def testtools_set_item_status():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    item_id = data.get('item_id')
+    status = data.get('status')
+    db = get_db()
+    try:
+        db.execute("UPDATE items SET status=? WHERE id=?", (status, item_id))
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/testtools/delete-orphan-penalties', methods=['POST'])
 @jwt_required()
 def testtools_delete_orphan_penalties():
