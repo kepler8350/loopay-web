@@ -5976,6 +5976,7 @@ def testtools_create_pending_match():
     data = request.json or {}
     buyer_username = data.get('buyer_username', 'testuser01')
     match_date = data.get('match_date')  # 없으면 어제
+    match_round = int(data.get('match_round', 1))  # 1차 또는 2차
     db = get_db()
     try:
         buyer = db.execute("SELECT id FROM users WHERE username=?", (buyer_username,)).fetchone()
@@ -5989,8 +5990,8 @@ def testtools_create_pending_match():
         db.execute(
             """INSERT INTO matches(reservation_id,buyer_id,seller_id,bar_type,stage,
                buy_price,sell_price,match_round,match_date,status)
-               VALUES(0,?,?,'bronze',1,0,0,1,?,'pending')""",
-            (buyer['id'], buyer['id'], ref_date)
+               VALUES(0,?,?,'bronze',1,0,0,?,?,'pending')""",
+            (buyer['id'], buyer['id'], match_round, ref_date)
         )
         match_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
         db.execute("PRAGMA foreign_keys=ON")
