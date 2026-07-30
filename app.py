@@ -143,7 +143,27 @@ def _do_confirm_transfer(db, m):
                         (loopay_id, _bar, _stg, _today)
                     )
             else:
-                _inserted = False
+                # 일반 구매자: buyer_res_id로 이미 생성된 matched 아이템 확인
+                _buyer_res = dict(m).get('buyer_res_id')
+                _existing_buyer_item = None
+                if _buyer_res:
+                    _br = db.execute(
+                        "SELECT item_id FROM reservations WHERE id=?", (_buyer_res,)
+                    ).fetchone()
+                    if _br and _br['item_id']:
+                        _existing_buyer_item = db.execute(
+                            "SELECT id FROM items WHERE id=? AND user_id=? AND status='matched'",
+                            (_br['item_id'], m['buyer_id'])
+                        ).fetchone()
+                if _existing_buyer_item:
+                    # 이미 matched 아이템 있음 → reservable로 업데이트
+                    db.execute(
+                        "UPDATE items SET status='reservable', purchase_date=? WHERE id=? AND user_id=?",
+                        (_today, _existing_buyer_item['id'], m['buyer_id'])
+                    )
+                    _inserted = True
+                else:
+                    _inserted = False
                 for _item_status in ('reservable', 'active', 'waiting'):
                     try:
                         db.execute(
