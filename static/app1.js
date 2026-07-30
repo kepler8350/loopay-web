@@ -510,7 +510,8 @@ async function checkMatchRefresh(){
         // 구매탭 갱신
         var _buyTabEl = document.getElementById('tab-matching');
         var _buyVisible = _buyTabEl && (_buyTabEl.classList.contains('active') || _buyTabEl.offsetHeight > 0);
-        if(_buyVisible && typeof loadMatchingTab === 'function') loadMatchingTab();
+        // 구매탭 갱신 - active 여부 무관하게 항상 갱신 (21:00 자동입금확인 즉시 반영)
+        if(typeof loadMatchingTab === 'function') loadMatchingTab();
         // 판매탭 갱신 (match_status=paid 변화 시 _myItems 새로 로드)
         var _sellTabEl2 = document.getElementById('tab-sell');
         var _sellVisible2 = _sellTabEl2 && _sellTabEl2.classList.contains('active');

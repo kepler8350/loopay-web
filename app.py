@@ -176,7 +176,7 @@ def _do_confirm_transfer(db, m):
                         continue
                 if not _inserted:
                     db.execute(
-                        "INSERT INTO items(user_id, bar_type, stage, purchase_date) VALUES(?,?,?,?)",
+                        "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
                         (m['buyer_id'], seller_item['bar_type'], _stage, _today)
                     )
         # 행운구매 처리: lucky_pair_id가 있는 매치인 경우
