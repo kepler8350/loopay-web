@@ -6140,6 +6140,34 @@ def testtools_fix_unpaid_count():
         db.close()
 
 
+@app.route('/api/admin/testtools/create-r2-paid-match', methods=['POST'])
+@jwt_required()
+def testtools_create_r2_paid_match():
+    """2차 paid 매치 생성 (자동 입금확인 테스트용)"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    seller_username = data.get('seller_username', 'testuser02')
+    db = get_db()
+    try:
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        seller = db.execute("SELECT id FROM users WHERE username=?", (seller_username,)).fetchone()
+        if not loopay or not seller: return jsonify(error='user not found'), 404
+        ref_date = (get_now().date() - __import__('datetime').timedelta(days=1)).isoformat()
+        db.execute("""INSERT INTO matches(reservation_id,buyer_id,seller_id,bar_type,stage,
+               buy_price,sell_price,match_round,match_date,status)
+               VALUES(0,?,?,'bronze',1,40000,38000,2,?,'paid')""",
+               (loopay['id'], seller['id'], ref_date))
+        db.commit()
+        match_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+        return jsonify(success=True, match_id=match_id, match_date=ref_date)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/testtools/delete-orphan-penalties', methods=['POST'])
 @jwt_required()
 def testtools_delete_orphan_penalties():
