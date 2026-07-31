@@ -6266,11 +6266,13 @@ def testtools_insert_reservation():
     data = request.json or {}
     db = get_db()
     try:
+        db.execute("PRAGMA foreign_keys=OFF")
         db.execute(
             """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed,item_id)
                VALUES(?,?,?,?,'pending',?,1,0)""",
             (data['user_id'], data['bar_type'], data.get('stage',1), data.get('match_round',1), data['reserve_date'])
         )
+        db.execute("PRAGMA foreign_keys=ON")
         db.commit()
         res_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
         return jsonify(success=True, reservation_id=res_id)
