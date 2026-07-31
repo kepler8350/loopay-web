@@ -2553,12 +2553,12 @@ def admin_run_matching():
                        AND status IN ('matched','reservable') ORDER BY id DESC LIMIT 1""",
                     (_seller_id, fm['bar_type'], fm['stage'] or 1)
                 ).fetchone()
-                    db.execute(
+                db.execute(
                         """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed,item_id)
-                           VALUES(?,?,?,2,'pending',?,1,?)""",
-                        (_seller_id, fm['bar_type'], fm['stage'] or 1, today,
-                         item['id'] if item else None)
-                    )
+                       VALUES(?,?,?,2,'pending',?,1,?)""",
+                    (_seller_id, fm['bar_type'], fm['stage'] or 1, today,
+                     item['id'] if item else None)
+                )
             db.commit()
 
             # 2차 판매예약 수 확인 - 없으면 failed 매치에서 자동 생성 시도
