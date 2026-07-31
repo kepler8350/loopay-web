@@ -87,8 +87,11 @@ def _do_confirm_transfer(db, m):
             ).fetchone()
             if _si_check:
                 _existing = _si_check
-        if _existing:
-            return  # seller_item이 이미 sold → 처리됨
+        # 루페이가 구매자인 경우: seller_item이 sold여도 루페이 아이템 처리 필요
+        _loopay_row_pre = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC LIMIT 1").fetchone()
+        _is_loopay_buyer_pre = _loopay_row_pre and (m['buyer_id'] == _loopay_row_pre['id'])
+        if _existing and not _is_loopay_buyer_pre:
+            return  # seller_item이 이미 sold → 처리됨 (루페이 구매자 제외)
         seller_item = None
         if dict(m).get('seller_item_id'):
             seller_item = db.execute(
