@@ -2546,18 +2546,17 @@ def admin_run_matching():
                 (today, today)
             ).fetchall()
             for fm in failed_matches:
-                # loopay가 seller인 경우만 2차 sell 예약 생성
-                if fm['seller_id'] == loopay_id:
-                    # 해당 아이템 찾기
-                    item = db.execute(
-                        """SELECT id FROM items WHERE user_id=? AND bar_type=? AND stage=?
-                           AND status IN ('matched','reservable') ORDER BY id DESC LIMIT 1""",
-                        (loopay_id, fm['bar_type'], fm['stage'] or 1)
-                    ).fetchone()
+                # 1차 미입금 판매자의 아이템을 2차 sell 예약으로 생성
+                _seller_id = fm['seller_id']
+                item = db.execute(
+                    """SELECT id FROM items WHERE user_id=? AND bar_type=? AND stage=?
+                       AND status IN ('matched','reservable') ORDER BY id DESC LIMIT 1""",
+                    (_seller_id, fm['bar_type'], fm['stage'] or 1)
+                ).fetchone()
                     db.execute(
                         """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed,item_id)
                            VALUES(?,?,?,2,'pending',?,1,?)""",
-                        (loopay_id, fm['bar_type'], fm['stage'] or 1, today,
+                        (_seller_id, fm['bar_type'], fm['stage'] or 1, today,
                          item['id'] if item else None)
                     )
             db.commit()
