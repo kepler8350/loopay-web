@@ -576,6 +576,11 @@ def _auto_process_unpaid(db, m):
                              _item['user_id'], m['seller_item_id'],
                              _bar, _stage, _today_str2, _lbr_id or _new_item_id)
                         )
+                        # 루페이 자동 구매 → 즉시 송금(paid) 처리
+                        _new_match_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+                        db.execute(
+                            "UPDATE matches SET status='paid' WHERE id=?", (_new_match_id,)
+                        )
                         # 5. loopay 구매예약 matched 처리
                         _lbr = db.execute(
                             "SELECT id FROM reservations WHERE id=?", (_lbr_id,)
