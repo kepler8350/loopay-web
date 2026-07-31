@@ -5062,16 +5062,27 @@ def match_confirm_payment():
         if not m:
             return jsonify(error='처리 불가'), 400
         # 시간 창 체크 (관리자 제외): 1차 05:00~13:00, 2차 15:00~19:00
-        # paid 상태(loopay 송금완료)면 시간 무관 허용
-        if not is_admin and dict(m).get('status') != 'paid':
+        # 단, 2차 루페이 구매(paid)는 19:00~20:00에만 판매자 입금확인 가능
+        if not is_admin:
             _now = get_now()
             _h, _mn = _now.hour, _now.minute
-            _total = _h*60+_mn
-            _mround = m['match_round'] or 1
-            if _mround == 1 and not (300 <= _total < 840):
-                return jsonify(error='입금확인은 05:00~14:00 사이에만 가능합니다'), 400
-            if _mround == 2 and not (900 <= _total < 1140):
-                return jsonify(error='입금확인은 15:00~19:00 사이에만 가능합니다'), 400
+            _total = _h * 60 + _mn
+            _m_round = dict(m).get('match_round', 1)
+            _loopay_row_c = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC LIMIT 1").fetchone()
+            _is_loopay_buy = _loopay_row_c and (dict(m).get('buyer_id') == _loopay_row_c['id'])
+            if dict(m).get('status') == 'paid' and _is_loopay_buy and _m_round == 2:
+                # 2차 루페이 구매: 19:00~20:00(1140~1200분)에만 허용
+                if not (1140 <= _total < 1200):
+                    return jsonify(error='2차 루페이 매칭 입금확인은 19:00~20:00에만 가능합니다'), 400
+            elif dict(m).get('status') != 'paid':
+                _now = get_now()
+                _h, _mn = _now.hour, _now.minute
+                _total = _h*60+_mn
+                _mround = m['match_round'] or 1
+                if _mround == 1 and not (300 <= _total < 840):
+                    return jsonify(error='입금확인은 05:00~14:00 사이에만 가능합니다'), 400
+                if _mround == 2 and not (900 <= _total < 1140):
+                    return jsonify(error='입금확인은 15:00~19:00 사이에만 가능합니다'), 400
 
         bar_names = {'bronze':'수정','silver':'루비','gold':'다이아'}
         bar_name = bar_names.get(m['bar_type'], m['bar_type'])
