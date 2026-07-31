@@ -2822,7 +2822,6 @@ def admin_run_matching():
                LEFT JOIN users u ON r.user_id = u.id
                WHERE r.status IN ('pending') AND r.match_round=?
                AND r.reserve_date<=?
-               AND u.username = 'loopay'
                AND (COALESCE(r.item_id,0)=0)""",
             (round_num, today)
         ).fetchall()
