@@ -358,15 +358,19 @@ def _auto_confirm_paid_matches(db):
         targets_confirm.extend([dict(r) for r in _r2_paid_late])
 
     # 2차 pending → 자동 미입금 (20:00 이후 ~ 04:59)
+    # 루페이가 구매자인 매치는 제외 (루페이 자동구매는 별도 처리)
     if total_min >= 1200 or h < 5:
         import datetime as _dt2
         _r2_today2 = get_now().date().isoformat()
         _r2_yesterday2 = (get_now() - _dt2.timedelta(days=1)).date().isoformat()
+        _loopay_row_u2 = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC LIMIT 1").fetchone()
+        _loopay_id_u2 = _loopay_row_u2['id'] if _loopay_row_u2 else -1
         unpaid_rows2 = db.execute(
             """SELECT m.* FROM matches m
                WHERE m.status='pending' AND m.match_round=2
-               AND m.match_date IN (?,?)""",
-            (_r2_today2, _r2_yesterday2)
+               AND m.match_date IN (?,?)
+               AND m.buyer_id != ?""",
+            (_r2_today2, _r2_yesterday2, _loopay_id_u2)
         ).fetchall()
         targets_unpaid.extend([dict(r) for r in unpaid_rows2])
 
