@@ -347,16 +347,10 @@ def _auto_confirm_paid_matches(db):
 
     # 21:00~21:59: 루페이 송금(paid)했지만 판매자 입금확인 안 한 2차 매치 자동 처리
     if h == 21:
-        # 2차 paid → 자동 입금확인 (21:00)
-        # match_date는 오늘(당일 저녁 매칭) 또는 어제(전날 남은 것) 둘 다 처리
-        import datetime as _dt21
-        _r2_today = get_now().date().isoformat()
-        _r2_yesterday = (get_now() - _dt21.timedelta(days=1)).date().isoformat()
+        # 2차 paid → 자동 입금확인 (21:00) - 날짜 무관하게 모든 미처리 paid 처리
         _r2_paid_late = db.execute(
             """SELECT m.* FROM matches m
-               WHERE m.status='paid' AND m.match_round=2
-               AND m.match_date IN (?,?)""",
-            (_r2_today, _r2_yesterday)
+               WHERE m.status='paid' AND m.match_round=2"""
         ).fetchall()
         targets_confirm.extend([dict(r) for r in _r2_paid_late])
 
