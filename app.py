@@ -2532,18 +2532,13 @@ def admin_run_matching():
 
         # 2차 매칭: 미입금확정(failed) 매치에서 loopay 판매예약 자동 생성
         if round_num == 2:
+            # 1차 failed 매치 전체 조회 (판매예약/구매예약 각각 중복 체크)
             failed_matches = db.execute(
                 """SELECT m.bar_type, m.stage, m.seller_id, m.buyer_id
                    FROM matches m
                    WHERE m.match_round=1 AND m.status='failed'
-                   AND m.match_date=?
-                   AND NOT EXISTS (
-                       SELECT 1 FROM reservations r
-                       WHERE r.user_id=m.seller_id AND r.bar_type=m.bar_type
-                       AND r.match_round=2 AND r.reserve_date=? AND r.status='pending'
-                       AND r.item_id IS NOT NULL
-                   )""",
-                (today, today)
+                   AND m.match_date=?""",
+                (today,)
             ).fetchall()
             for fm in failed_matches:
                 # 1차 미입금 판매자의 아이템을 2차 sell 예약으로 생성
@@ -6256,6 +6251,29 @@ def testtools_set_item_status():
         db.execute("UPDATE items SET status=? WHERE id=?", (status, item_id))
         db.commit()
         return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/testtools/insert-reservation', methods=['POST'])
+@jwt_required()
+def testtools_insert_reservation():
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    db = get_db()
+    try:
+        db.execute(
+            """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed)
+               VALUES(?,?,?,?,'pending',?,1)""",
+            (data['user_id'], data['bar_type'], data.get('stage',1), data.get('match_round',1), data['reserve_date'])
+        )
+        db.commit()
+        res_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+        return jsonify(success=True, reservation_id=res_id)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
