@@ -2569,8 +2569,8 @@ def admin_run_matching():
                     ).fetchone()
                     if not _dup_buy:
                         db.execute(
-                            """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed)
-                           VALUES(?,?,?,2,'pending',?,1)""",
+                            """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed,item_id)
+                           VALUES(?,?,?,2,'pending',?,1,0)""",
                             (_buyer_id, fm['bar_type'], fm['stage'] or 1, today)
                         )
             db.commit()
@@ -6267,8 +6267,8 @@ def testtools_insert_reservation():
     db = get_db()
     try:
         db.execute(
-            """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed)
-               VALUES(?,?,?,?,'pending',?,1)""",
+            """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed,item_id)
+               VALUES(?,?,?,?,'pending',?,1,0)""",
             (data['user_id'], data['bar_type'], data.get('stage',1), data.get('match_round',1), data['reserve_date'])
         )
         db.commit()
