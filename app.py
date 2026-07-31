@@ -573,11 +573,8 @@ def _auto_process_unpaid(db, m):
                              _item['user_id'], m['seller_item_id'],
                              _bar, _stage, _today_str2, _lbr_id or _new_item_id)
                         )
-                        # 루페이 자동 구매 → 즉시 송금(paid) 처리
+                        # 루페이 매치는 pending 상태로 생성 (관리자가 시스템 아이템현황에서 송금 후 paid 처리)
                         _new_match_id = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
-                        db.execute(
-                            "UPDATE matches SET status='paid' WHERE id=?", (_new_match_id,)
-                        )
                         # 5. loopay 구매예약 matched 처리
                         _lbr = db.execute(
                             "SELECT id FROM reservations WHERE id=?", (_lbr_id,)
@@ -5071,9 +5068,9 @@ def match_confirm_payment():
             _loopay_row_c = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC LIMIT 1").fetchone()
             _is_loopay_buy = _loopay_row_c and (dict(m).get('buyer_id') == _loopay_row_c['id'])
             if dict(m).get('status') == 'paid' and _is_loopay_buy and _m_round == 2:
-                # 2차 루페이 구매: 19:00~20:00(1140~1200분)에만 허용
-                if not (1140 <= _total < 1200):
-                    return jsonify(error='2차 루페이 매칭 입금확인은 19:00~20:00에만 가능합니다'), 400
+                # 2차 루페이 구매: 20:00~21:00(1200~1260분)에만 허용
+                if not (1200 <= _total < 1260):
+                    return jsonify(error='2차 루페이 매칭 입금확인은 20:00~21:00에만 가능합니다'), 400
             elif dict(m).get('status') != 'paid':
                 _now = get_now()
                 _h, _mn = _now.hour, _now.minute
@@ -6320,6 +6317,34 @@ def testtools_set_match_status():
     db = get_db()
     try:
         db.execute("UPDATE matches SET status=? WHERE id=?", (data['status'], data['match_id']))
+        db.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/match/mark-paid', methods=['POST'])
+@jwt_required()
+def admin_match_mark_paid():
+    """루페이 2차 매치 송금완료(pending→paid) 처리"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    match_id = int(data.get('match_id', 0))
+    db = get_db()
+    try:
+        # 루페이 2차 매치인지 확인
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay' AND approved=1 ORDER BY id ASC LIMIT 1").fetchone()
+        if not loopay: return jsonify(error='loopay 계정 없음'), 400
+        m = db.execute(
+            "SELECT id, status, match_round, buyer_id FROM matches WHERE id=? AND status='pending' AND match_round=2 AND buyer_id=?",
+            (match_id, loopay['id'])
+        ).fetchone()
+        if not m: return jsonify(error='처리할 수 없는 매치입니다 (pending 2차 루페이 매치만 가능)'), 400
+        db.execute("UPDATE matches SET status='paid' WHERE id=?", (match_id,))
         db.commit()
         return jsonify(success=True)
     except Exception as e:

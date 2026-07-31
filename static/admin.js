@@ -392,6 +392,22 @@ async function adminConfirmUnpaid(matchId){
   }catch(e){toast(e.message,'error');}
 }
 
+
+// ── 루페이 2차 매치 송금완료 처리 ──
+async function adminMarkPaid(matchId){
+  if(!confirm('송금완료 처리하시겠습니까?')) return;
+  try {
+    const tok = localStorage.getItem('admin_token');
+    const r = await fetch('/api/admin/match/mark-paid', {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+      body: JSON.stringify({match_id: matchId})
+    }).then(r=>r.json());
+    if(r.success){ alert('송금완료 처리됐습니다.'); loadSystemItems(); }
+    else alert('오류: '+(r.error||'처리 실패'));
+  } catch(e){ alert('오류: '+e.message); }
+}
+
 async function adminConfirmPayment(matchId){
   try{
     var tok=localStorage.getItem('admin_token');
@@ -888,14 +904,20 @@ function renderSystemItems(){
     // ── 3개 버튼: 시간 조건에 따라 활성/비활성 ──
     var actionBtns = '';
     if (item.match_id) {
-      // ① 입금확인: 송금완료(paid) + 05:00~13:00 일 때 활성
+      // 루페이 2차 매치 여부
+      var _isLoopayR2 = (item.match_round === 2 && item.buyer_username === 'loopay');
+      // 루페이 2차 매치 pending: 송금완료 버튼 표시
+      if (_isLoopayR2 && !_isPaid && !_isConfirmed) {
+        actionBtns += '<button onclick="adminMarkPaid(' + item.match_id + ')" style="padding:3px 8px;background:#1565c0;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">💸 송금완료</button>';
+      }
+      // ① 입금확인: 송금완료(paid) 일 때 활성
       // 이미지 버튼 (receipt_url 있으면)
       if(item.receipt_url){
         actionBtns += '<a href="'+item.receipt_url+'" target="_blank" style="padding:3px 8px;background:#37474f;color:#80cbc4;border:1px solid #546e7a;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px;text-decoration:none">🖼️ 이미지</a>';
       }
       if (_isPaid) {  // 관리자는 시간 무관하게 입금확인 가능
         actionBtns += '<button onclick="adminConfirmPayment('+item.match_id+')" style="padding:3px 8px;background:#1976d2;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">✅ 입금확인</button>';
-      } else {
+      } else if (!_isLoopayR2) {
         actionBtns += '<button disabled style="padding:3px 8px;background:#2a2a3a;color:#555;border:1px solid #333;border-radius:4px;font-size:11px;cursor:not-allowed;margin-right:4px">✅ 입금확인</button>';
       }
       // ② 입금요청: 입금확인 안됨 + 송금완료 아님 + 12:30~13:00(750~780) + 쿨타임OK → 활성
