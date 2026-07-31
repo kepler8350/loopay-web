@@ -2538,8 +2538,13 @@ def admin_run_matching():
             failed_matches = db.execute(
                 """SELECT m.bar_type, m.stage, m.seller_id, m.buyer_id
                    FROM matches m
+                   LEFT JOIN users bu ON m.buyer_id=bu.id
                    WHERE m.match_round=1 AND m.status='failed'
-                   AND m.match_date=?""",
+                   AND m.match_date=?
+                   AND (bu.suspended_until IS NULL OR bu.suspended_until <= datetime('now','localtime'))
+                   AND m.buyer_id NOT IN (
+                       SELECT p.user_id FROM penalties p WHERE p.is_released=0
+                   )""",
                 (today,)
             ).fetchall()
             for fm in failed_matches:
@@ -2842,7 +2847,11 @@ def admin_run_matching():
                LEFT JOIN users u ON r.user_id = u.id
                WHERE r.status IN ('pending') AND r.match_round=?
                AND r.reserve_date<=?
-               AND (COALESCE(r.item_id,0)=0)""",
+               AND (COALESCE(r.item_id,0)=0)
+               AND (u.suspended_until IS NULL OR u.suspended_until <= datetime('now','localtime'))
+               AND r.user_id NOT IN (
+                   SELECT p.user_id FROM penalties p WHERE p.is_released=0
+               )""",
             (round_num, today)
         ).fetchall()
         buy_rows = list(_normal_buy_rows) + list(_loopay_buy_rows)
