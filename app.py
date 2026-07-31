@@ -2561,7 +2561,7 @@ def admin_run_matching():
                          item['id'] if item else None)
                     )
                 # 1차 미입금 구매자도 2차 구매예약 자동 생성 (item_id 없음)
-                _buyer_id = fm.get('buyer_id')
+                _buyer_id = dict(fm).get('buyer_id')
                 if _buyer_id:
                     _dup_buy = db.execute(
                         "SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND match_round=2 AND reserve_date=? AND status='pending' AND (item_id IS NULL OR item_id=0)",
