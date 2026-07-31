@@ -2533,7 +2533,7 @@ def admin_run_matching():
         # 2차 매칭: 미입금확정(failed) 매치에서 loopay 판매예약 자동 생성
         if round_num == 2:
             failed_matches = db.execute(
-                """SELECT m.bar_type, m.stage, m.seller_id
+                """SELECT m.bar_type, m.stage, m.seller_id, m.buyer_id
                    FROM matches m
                    WHERE m.match_round=1 AND m.status='failed'
                    AND m.match_date=?
@@ -2553,12 +2553,31 @@ def admin_run_matching():
                        AND status IN ('matched','reservable') ORDER BY id DESC LIMIT 1""",
                     (_seller_id, fm['bar_type'], fm['stage'] or 1)
                 ).fetchone()
-                db.execute(
+                # 판매예약 중복 방지
+                _dup_sell = db.execute(
+                    "SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND match_round=2 AND reserve_date=? AND status='pending'",
+                    (_seller_id, fm['bar_type'], today)
+                ).fetchone()
+                if not _dup_sell:
+                    db.execute(
                         """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed,item_id)
                        VALUES(?,?,?,2,'pending',?,1,?)""",
-                    (_seller_id, fm['bar_type'], fm['stage'] or 1, today,
-                     item['id'] if item else None)
-                )
+                        (_seller_id, fm['bar_type'], fm['stage'] or 1, today,
+                         item['id'] if item else None)
+                    )
+                # 1차 미입금 구매자도 2차 구매예약 자동 생성 (item_id 없음)
+                _buyer_id = fm.get('buyer_id')
+                if _buyer_id:
+                    _dup_buy = db.execute(
+                        "SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND match_round=2 AND reserve_date=? AND status='pending' AND (item_id IS NULL OR item_id=0)",
+                        (_buyer_id, fm['bar_type'], today)
+                    ).fetchone()
+                    if not _dup_buy:
+                        db.execute(
+                            """INSERT INTO reservations(user_id,bar_type,stage,match_round,status,reserve_date,confirmed)
+                           VALUES(?,?,?,2,'pending',?,1)""",
+                            (_buyer_id, fm['bar_type'], fm['stage'] or 1, today)
+                        )
             db.commit()
 
             # 2차 판매예약 수 확인 - 없으면 failed 매치에서 자동 생성 시도
