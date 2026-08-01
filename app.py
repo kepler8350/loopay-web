@@ -6346,6 +6346,59 @@ def admin_match_mark_paid():
         db.close()
 
 
+@app.route('/api/admin/db-export', methods=['GET'])
+@jwt_required()
+def admin_db_export():
+    """DB 전체 데이터 JSON 덤프 (스테이징 복사용)"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    db = get_db()
+    try:
+        tables = db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").fetchall()
+        dump = {}
+        for t in tables:
+            tname = t['name']
+            if tname == 'sqlite_sequence': continue
+            rows = db.execute(f"SELECT * FROM {tname}").fetchall()
+            dump[tname] = [dict(r) for r in rows]
+        return jsonify(success=True, dump=dump, version='1.0')
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/db-import', methods=['POST'])
+@jwt_required()
+def admin_db_import():
+    """DB 전체 데이터 JSON 복원 (스테이징 복사용)"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    dump = data.get('dump', {})
+    if not dump: return jsonify(error='dump 데이터 없음'), 400
+    db = get_db()
+    try:
+        db.execute("PRAGMA foreign_keys=OFF")
+        for tname, rows in dump.items():
+            if not rows: continue
+            db.execute(f"DELETE FROM {tname}")
+            if not rows: continue
+            cols = list(rows[0].keys())
+            placeholders = ','.join(['?'] * len(cols))
+            col_names = ','.join(cols)
+            for row in rows:
+                vals = [row.get(c) for c in cols]
+                db.execute(f"INSERT OR REPLACE INTO {tname}({col_names}) VALUES({placeholders})", vals)
+        db.execute("PRAGMA foreign_keys=ON")
+        db.commit()
+        counts = {t: len(rows) for t, rows in dump.items()}
+        return jsonify(success=True, imported=counts)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/testtools/delete-orphan-penalties', methods=['POST'])
 @jwt_required()
 def testtools_delete_orphan_penalties():
