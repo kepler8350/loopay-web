@@ -5279,18 +5279,6 @@ def match_confirm_payment():
         except Exception:
             insert_notification(db, m['seller_id'], 'confirmed', '송금 확인 완료', f'{bar_name} {m["stage"]}단계 판매 완료. 구매자 입금 확인되었습니다.')
 
-        # 5. 판매자 포인트 지급 (판매금액 기준)
-        try:
-            _sell_p = dict(m).get('sell_price') or 0
-            if _sell_p and m['seller_id']:
-                # 포인트 지급: sell_price 금액을 exchange_points로 지급
-                db.execute(
-                    "UPDATE users SET exchange_points=exchange_points+? WHERE id=?",
-                    (_sell_p, m['seller_id'])
-                )
-        except Exception:
-            pass
-
         # 6. 레벨업 체크 (cumulative_count는 예약 시점에만 증가 - 구매완료 시 중복 증가 방지)
         try:
             leveled = check_and_level_up(db, m['buyer_id'])
