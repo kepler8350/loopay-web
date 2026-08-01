@@ -2909,7 +2909,7 @@ async function userConfirmPayment(matchId){
   if(clickedEl){ clickedEl.disabled=true; clickedEl.style.opacity='0.5'; clickedEl.style.cursor='not-allowed'; }
   try {
     var r = await api('/match/confirm-payment', {method:'POST', body:JSON.stringify({match_id:matchId})});
-    if(r.success) { toast('입금확인 완료!','success'); loadSellTab(); }
+    if(r.success) { toast('입금확인 완료!','success'); loadSellTab(); loadUserData(); }
     else { toast(r.error||'처리 실패','error'); loadSellTab(); }
   } catch(e){ toast('오류: '+e.message,'error'); loadSellTab(); }
 }
