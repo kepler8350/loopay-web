@@ -6380,14 +6380,24 @@ def admin_db_import():
         db.execute("PRAGMA foreign_keys=OFF")
         for tname, rows in dump.items():
             if not rows: continue
+            # 현재 테이블의 실제 컬럼 확인
+            try:
+                existing_cols_info = db.execute(f"PRAGMA table_info({tname})").fetchall()
+                existing_cols = {c['name'] for c in existing_cols_info}
+            except Exception:
+                existing_cols = None
             db.execute(f"DELETE FROM {tname}")
-            if not rows: continue
-            cols = list(rows[0].keys())
+            # 존재하는 컬럼만 사용 (스키마 차이 대응)
+            cols = [c for c in rows[0].keys() if existing_cols is None or c in existing_cols]
+            if not cols: continue
             placeholders = ','.join(['?'] * len(cols))
             col_names = ','.join(cols)
             for row in rows:
                 vals = [row.get(c) for c in cols]
-                db.execute(f"INSERT OR REPLACE INTO {tname}({col_names}) VALUES({placeholders})", vals)
+                try:
+                    db.execute(f"INSERT OR REPLACE INTO {tname}({col_names}) VALUES({placeholders})", vals)
+                except Exception:
+                    pass
         db.execute("PRAGMA foreign_keys=ON")
         db.commit()
         counts = {t: len(rows) for t, rows in dump.items()}
