@@ -2420,20 +2420,20 @@ def admin_create_test_users():
                 _rdate = get_matching_date().isoformat()
                 for _bar, _total in [('bronze', _bronze), ('silver', _silver), ('gold', _gold)]:
                     if _total <= 0: continue
-                    for _idx in range(_total):
-                        _uid = _uids[_idx % len(_uids)]
-                        db.execute("PRAGMA foreign_keys=OFF")
-                        db.execute(
-                            "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
-                            (_uid, _bar, _stage, _rdate)
-                        )
-                        _iid = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
-                        db.execute(
-                            "INSERT INTO reservations(user_id, bar_type, stage, match_round, status, reserve_date, confirmed, item_id) VALUES(?,?,?,1,'pending',?,1,?)",
-                            (_uid, _bar, _stage, _rdate, _iid)
-                        )
-                        db.execute("PRAGMA foreign_keys=ON")
-                        reservations_created += 1
+                    for _uid in _uids:           # 각 사용자마다
+                            for _ in range(_total):  # 설정 수량씩
+                                db.execute("PRAGMA foreign_keys=OFF")
+                                db.execute(
+                                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
+                                    (_uid, _bar, _stage, _rdate)
+                                )
+                                _iid = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+                                db.execute(
+                                    "INSERT INTO reservations(user_id, bar_type, stage, match_round, status, reserve_date, confirmed, item_id) VALUES(?,?,?,1,'pending',?,1,?)",
+                                    (_uid, _bar, _stage, _rdate, _iid)
+                                )
+                                db.execute("PRAGMA foreign_keys=ON")
+                                reservations_created += 1
                 db.commit()
 
         return jsonify(success=True, created=created, skipped=skipped, password='test1234', points=points, reservations_created=reservations_created)
