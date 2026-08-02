@@ -2429,9 +2429,9 @@ def admin_create_test_users():
                     for _uid in _uids:           # 각 사용자마다
                             for _ in range(_total):  # 설정 수량씩
                                 db.execute("PRAGMA foreign_keys=OFF")
-                                # 구매예약: item_id=0 (판매예약은 item_id 필요)
+                                # 구매예약: confirmed=0 (일반 예약과 동일)
                                 db.execute(
-                                    "INSERT INTO reservations(user_id, bar_type, stage, match_round, status, reserve_date, confirmed, item_id) VALUES(?,?,?,1,'pending',?,1,0)",
+                                    "INSERT INTO reservations(user_id, bar_type, stage, match_round, status, reserve_date, confirmed, item_id) VALUES(?,?,?,1,'pending',?,0,0)",
                                     (_uid, _bar, _stage, _rdate)
                                 )
                                 db.execute("PRAGMA foreign_keys=ON")
