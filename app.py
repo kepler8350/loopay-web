@@ -6435,6 +6435,26 @@ def admin_db_import():
         db.close()
 
 
+@app.route('/api/admin/testtools/fix-test-reservations', methods=['POST'])
+@jwt_required()
+def testtools_fix_test_reservations():
+    """테스트 일괄생성으로 잘못 만들어진 예약 confirmed=0으로 수정"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    db = get_db()
+    try:
+        result = db.execute(
+            "UPDATE reservations SET confirmed=0 WHERE confirmed=1 AND (item_id=0 OR item_id IS NULL) AND status='pending'"
+        )
+        db.commit()
+        return jsonify(success=True, fixed=result.rowcount)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/testtools/delete-orphan-penalties', methods=['POST'])
 @jwt_required()
 def testtools_delete_orphan_penalties():
