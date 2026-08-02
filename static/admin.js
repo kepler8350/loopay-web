@@ -2580,7 +2580,7 @@ async function loadTesttools(){
   // 테스트도구 페이지는 별도 로드 불필요
 
   // 구매예약 날짜 기본값 초기화
-  var _rdEl=document.getElementById('res-date'); if(_rdEl&&!_rdEl.value){ var _now=window._lastServerTime||''; _rdEl.value=_now?_now.split(' ')[0]:new Date().toISOString().slice(0,10); }
+  var _rdEl=document.getElementById('res-date'); if(_rdEl&&!_rdEl.value){ var _now=window._lastServerTime||''; _rdEl.value=_now?_now.replace(' ','T').slice(0,16):new Date().toISOString().slice(0,16); }
 }
 
 

@@ -6445,9 +6445,9 @@ def testtools_bulk_reservations():
     if not bronze and not silver and not gold:
         return jsonify(error='예약 수량을 1개 이상 입력하세요'), 400
 
-    # 기준 날짜 결정
+    # 기준 날짜 결정 (datetime-local 형식 'YYYY-MM-DDTHH:MM' 또는 'YYYY-MM-DD' 모두 처리)
     if date_str:
-        reserve_date = date_str
+        reserve_date = date_str[:10]  # 날짜 부분만 추출
     else:
         reserve_date = get_matching_date().isoformat()
 
