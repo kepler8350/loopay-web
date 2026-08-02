@@ -2075,19 +2075,49 @@ async function resetAllData(){
   }catch(e){ if(res) res.innerHTML='<span style="color:#ef5350">❌ '+e.message+'</span>'; }
 }
 
+
+// ── 구매예약 일괄 생성 ──
+async function createBulkReservations(){
+  var res = document.getElementById('bulk-res-result');
+  var from = parseInt(document.getElementById('res-user-from')?.value||'1')||1;
+  var to   = parseInt(document.getElementById('res-user-to')?.value||'10')||10;
+  var date = document.getElementById('res-date')?.value||'';
+  var bronze = parseInt(document.getElementById('res-bronze-count')?.value||'0')||0;
+  var silver = parseInt(document.getElementById('res-silver-count')?.value||'0')||0;
+  var gold   = parseInt(document.getElementById('res-gold-count')?.value||'0')||0;
+  if(from > to){ toast('시작번호가 끝번호보다 클 수 없습니다','error'); return; }
+  if(!bronze && !silver && !gold){ toast('예약 수량을 1개 이상 입력하세요','error'); return; }
+  if(res) res.textContent='예약 생성 중...';
+  var tok = localStorage.getItem('admin_token');
+  var r = await fetch('/api/admin/testtools/bulk-reservations',{method:'POST',
+    headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+    body:JSON.stringify({from,to,date,bronze,silver,gold})});
+  var d = await r.json();
+  if(res){
+    if(d.success){
+      var msg = '✅ 예약 '+d.created+'건 생성 완료';
+      msg += '<br><span style="color:#888;font-size:12px">대상: testuser'+String(from).padStart(2,'0')+'~testuser'+String(to).padStart(2,'0')+' ('+d.users+'명)</span>';
+      if(d.skipped>0) msg += '<br><span style="color:#f9a825;font-size:12px">건너뜀(미존재): '+d.skipped+'명</span>';
+      res.innerHTML='<span style="color:#4fc3f7">'+msg+'</span>';
+      toast('✅ 예약 '+d.created+'건 생성 완료','success');
+    } else {
+      res.innerHTML='<span style="color:#c62828">❌ '+(d.error||'실패')+'</span>';
+      toast(d.error||'실패','error');
+    }
+  }
+}
+
 async function createTestUsers(){
   var res=document.getElementById('test-users-result');
   var count=parseInt(document.getElementById('test-user-count')?.value||'10')||10;
   var points=parseInt(document.getElementById('test-user-points')?.value||'0')||0;
-  var bronze=parseInt(document.getElementById('test-bronze-count')?.value||'0')||0;
-  var silver=parseInt(document.getElementById('test-silver-count')?.value||'0')||0;
-  var gold=parseInt(document.getElementById('test-gold-count')?.value||'0')||0;
+  var bronze=0, silver=0, gold=0;
 
   if(res) res.textContent='생성 중... ('+count+'명)';
   var tok=localStorage.getItem('admin_token');
   var r=await fetch('/api/admin/create-test-users',{method:'POST',
     headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-    body:JSON.stringify({count,points,bronze,silver,gold})});
+    body:JSON.stringify({count,points})});
   var d=await r.json();
   if(res){
     if(d.success){
@@ -2096,7 +2126,6 @@ async function createTestUsers(){
       if(d.created.length) msg+='<br><span style="color:#888;font-size:12px">'+d.created.join(', ')+'</span>';
       if(d.skipped.length) msg+='<br><span style="color:#f9a825;font-size:12px">기존(건너뜀): '+d.skipped.join(', ')+'</span>';
       msg+='<br><span style="font-size:12px">비밀번호: <strong>'+d.password+'</strong></span>';
-      if(d.reservations_created>0) msg+='<br><span style="color:#4fc3f7;font-size:12px">📋 예약 '+d.reservations_created+'건 생성 완료</span>';
       res.innerHTML='<span style="color:#4fc3f7">'+msg+'</span>';
       toast('✅ 테스트 회원 '+d.created.length+'명 생성 완료', 'success');
     } else {
@@ -2549,6 +2578,9 @@ async function saveSettings(){
 
 async function loadTesttools(){
   // 테스트도구 페이지는 별도 로드 불필요
+
+  // 구매예약 날짜 기본값 초기화
+  var _rdEl=document.getElementById('res-date'); if(_rdEl&&!_rdEl.value){ var _now=window._lastServerTime||''; _rdEl.value=_now?_now.split(' ')[0]:new Date().toISOString().slice(0,10); }
 }
 
 

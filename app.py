@@ -2409,36 +2409,7 @@ def admin_create_test_users():
             )
         db.commit()
 
-        # 아이템 생성 + 판매예약 (생성 시간 기준 날짜)
-        _bronze = int(data.get('bronze', 0))
-        _silver = int(data.get('silver', 0))
-        _gold   = int(data.get('gold', 0))
-        _stage  = 1  # 구매예약에는 단계 불필요 - 1단계 고정
-        reservations_created = 0
-
-        if (_bronze > 0 or _silver > 0 or _gold > 0) and created:
-            _urows = db.execute(
-                "SELECT id FROM users WHERE username IN ({})".format(','.join(['?']*len(created))),
-                created
-            ).fetchall()
-            _uids = [u['id'] for u in _urows]
-            if _uids:
-                _rdate = get_matching_date().isoformat()
-                for _bar, _total in [('bronze', _bronze), ('silver', _silver), ('gold', _gold)]:
-                    if _total <= 0: continue
-                    for _uid in _uids:           # 각 사용자마다
-                            for _ in range(_total):  # 설정 수량씩
-                                db.execute("PRAGMA foreign_keys=OFF")
-                                # 구매예약: confirmed=0 (일반 예약과 동일)
-                                db.execute(
-                                    "INSERT INTO reservations(user_id, bar_type, stage, match_round, status, reserve_date, confirmed, item_id) VALUES(?,?,?,1,'pending',?,0,0)",
-                                    (_uid, _bar, _stage, _rdate)
-                                )
-                                db.execute("PRAGMA foreign_keys=ON")
-                                reservations_created += 1
-                db.commit()
-
-        return jsonify(success=True, created=created, skipped=skipped, password='test1234', points=points, reservations_created=reservations_created)
+        return jsonify(success=True, created=created, skipped=skipped, password='test1234', points=points)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
@@ -6448,6 +6419,67 @@ def testtools_fix_test_reservations():
         )
         db.commit()
         return jsonify(success=True, fixed=result.rowcount)
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/testtools/bulk-reservations', methods=['POST'])
+@jwt_required()
+def testtools_bulk_reservations():
+    """testuser 범위 선택하여 구매예약 일괄 생성"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    from_num = int(data.get('from', 1))
+    to_num   = int(data.get('to', 10))
+    bronze   = int(data.get('bronze', 0))
+    silver   = int(data.get('silver', 0))
+    gold     = int(data.get('gold', 0))
+    date_str = data.get('date', '')
+
+    if from_num > to_num:
+        return jsonify(error='시작번호가 끝번호보다 클 수 없습니다'), 400
+    if not bronze and not silver and not gold:
+        return jsonify(error='예약 수량을 1개 이상 입력하세요'), 400
+
+    # 기준 날짜 결정
+    if date_str:
+        reserve_date = date_str
+    else:
+        reserve_date = get_matching_date().isoformat()
+
+    db = get_db()
+    try:
+        # 대상 사용자 조회
+        usernames = [f'testuser{str(i).zfill(2)}' for i in range(from_num, to_num+1)]
+        placeholders = ','.join(['?']*len(usernames))
+        users = db.execute(
+            f"SELECT id, username FROM users WHERE username IN ({placeholders}) AND approved=1",
+            usernames
+        ).fetchall()
+
+        found_names = {u['username'] for u in users}
+        skipped = len(usernames) - len(users)
+        created = 0
+
+        for u in users:
+            uid = u['id']
+            for bar_type, total in [('bronze', bronze), ('silver', silver), ('gold', gold)]:
+                if total <= 0: continue
+                for _ in range(total):
+                    db.execute("PRAGMA foreign_keys=OFF")
+                    db.execute(
+                        "INSERT INTO reservations(user_id, bar_type, stage, match_round, status, reserve_date, confirmed, item_id) VALUES(?,?,?,1,'pending',?,0,0)",
+                        (uid, bar_type, 1, reserve_date)
+                    )
+                    db.execute("PRAGMA foreign_keys=ON")
+                    created += 1
+
+        db.commit()
+        return jsonify(success=True, created=created, users=len(users), skipped=skipped, date=reserve_date)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
