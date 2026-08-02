@@ -2081,7 +2081,6 @@ async function createBulkReservations(){
   var res = document.getElementById('bulk-res-result');
   var from = parseInt(document.getElementById('res-user-from')?.value||'1')||1;
   var to   = parseInt(document.getElementById('res-user-to')?.value||'10')||10;
-  var date = document.getElementById('res-date')?.value||'';
   var bronze = parseInt(document.getElementById('res-bronze-count')?.value||'0')||0;
   var silver = parseInt(document.getElementById('res-silver-count')?.value||'0')||0;
   var gold   = parseInt(document.getElementById('res-gold-count')?.value||'0')||0;
@@ -2091,7 +2090,7 @@ async function createBulkReservations(){
   var tok = localStorage.getItem('admin_token');
   var r = await fetch('/api/admin/testtools/bulk-reservations',{method:'POST',
     headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-    body:JSON.stringify({from,to,date,bronze,silver,gold})});
+    body:JSON.stringify({from,to,bronze,silver,gold})});
   var d = await r.json();
   if(res){
     if(d.success){

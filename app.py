@@ -6438,18 +6438,14 @@ def testtools_bulk_reservations():
     bronze   = int(data.get('bronze', 0))
     silver   = int(data.get('silver', 0))
     gold     = int(data.get('gold', 0))
-    date_str = data.get('date', '')
 
     if from_num > to_num:
         return jsonify(error='시작번호가 끝번호보다 클 수 없습니다'), 400
     if not bronze and not silver and not gold:
         return jsonify(error='예약 수량을 1개 이상 입력하세요'), 400
 
-    # 기준 날짜 결정 (datetime-local 형식 'YYYY-MM-DDTHH:MM' 또는 'YYYY-MM-DD' 모두 처리)
-    if date_str:
-        reserve_date = date_str[:10]  # 날짜 부분만 추출
-    else:
-        reserve_date = get_matching_date().isoformat()
+    # 시스템 시간조작 기준 날짜 사용
+    reserve_date = get_matching_date().isoformat()
 
     db = get_db()
     try:
