@@ -2082,12 +2082,12 @@ async function createTestUsers(){
   var bronze=parseInt(document.getElementById('test-bronze-count')?.value||'0')||0;
   var silver=parseInt(document.getElementById('test-silver-count')?.value||'0')||0;
   var gold=parseInt(document.getElementById('test-gold-count')?.value||'0')||0;
-  var stage=parseInt(document.getElementById('test-item-stage')?.value||'2')||2;
+
   if(res) res.textContent='생성 중... ('+count+'명)';
   var tok=localStorage.getItem('admin_token');
   var r=await fetch('/api/admin/create-test-users',{method:'POST',
     headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-    body:JSON.stringify({count,points,bronze,silver,gold,stage})});
+    body:JSON.stringify({count,points,bronze,silver,gold})});
   var d=await r.json();
   if(res){
     if(d.success){

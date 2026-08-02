@@ -2407,7 +2407,7 @@ def admin_create_test_users():
         _bronze = int(data.get('bronze', 0))
         _silver = int(data.get('silver', 0))
         _gold   = int(data.get('gold', 0))
-        _stage  = max(1, min(int(data.get('stage', 2)), 4))
+        _stage  = 1  # 구매예약에는 단계 불필요 - 1단계 고정
         reservations_created = 0
 
         if (_bronze > 0 or _silver > 0 or _gold > 0) and created:
