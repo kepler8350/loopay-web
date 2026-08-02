@@ -2423,14 +2423,10 @@ def admin_create_test_users():
                     for _uid in _uids:           # 각 사용자마다
                             for _ in range(_total):  # 설정 수량씩
                                 db.execute("PRAGMA foreign_keys=OFF")
+                                # 구매예약: item_id=0 (판매예약은 item_id 필요)
                                 db.execute(
-                                    "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
+                                    "INSERT INTO reservations(user_id, bar_type, stage, match_round, status, reserve_date, confirmed, item_id) VALUES(?,?,?,1,'pending',?,1,0)",
                                     (_uid, _bar, _stage, _rdate)
-                                )
-                                _iid = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
-                                db.execute(
-                                    "INSERT INTO reservations(user_id, bar_type, stage, match_round, status, reserve_date, confirmed, item_id) VALUES(?,?,?,1,'pending',?,1,?)",
-                                    (_uid, _bar, _stage, _rdate, _iid)
                                 )
                                 db.execute("PRAGMA foreign_keys=ON")
                                 reservations_created += 1
