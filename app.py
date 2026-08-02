@@ -2401,6 +2401,12 @@ def admin_create_test_users():
                 (username,pw,name,phone,bank,account,acname,points)
             )
             created.append(username)
+        # 생성된 회원 자동 승인
+        if created:
+            db.execute(
+                "UPDATE users SET approved=1 WHERE username IN ({})".format(','.join(['?']*len(created))),
+                created
+            )
         db.commit()
 
         # 아이템 생성 + 판매예약 (생성 시간 기준 날짜)
