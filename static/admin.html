@@ -944,6 +944,29 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
           <label style="font-size:11px;color:#888;display:block;margin-bottom:4px">충전 포인트 (일괄)</label>
           <input id="test-user-points" type="number" value="0" min="0" step="100" style="width:120px;padding:8px 10px;background:#1a1d2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:13px;text-align:center" placeholder="0P">
         </div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+        <div>
+          <label style="font-size:11px;color:#cd7f32;display:block;margin-bottom:4px">🔵 수정(bronze) 판매예약 수</label>
+          <input id="test-bronze-count" type="number" value="0" min="0" max="200" style="width:90px;padding:8px 10px;background:#1a1d2e;border:1px solid #cd7f3266;border-radius:6px;color:#cdd6f4;font-size:13px;text-align:center">
+        </div>
+        <div>
+          <label style="font-size:11px;color:#e0a0c0;display:block;margin-bottom:4px">🔴 루비(silver) 판매예약 수</label>
+          <input id="test-silver-count" type="number" value="0" min="0" max="200" style="width:90px;padding:8px 10px;background:#1a1d2e;border:1px solid #e0a0c066;border-radius:6px;color:#cdd6f4;font-size:13px;text-align:center">
+        </div>
+        <div>
+          <label style="font-size:11px;color:#a0c4e0;display:block;margin-bottom:4px">💎 다이아(gold) 판매예약 수</label>
+          <input id="test-gold-count" type="number" value="0" min="0" max="200" style="width:90px;padding:8px 10px;background:#1a1d2e;border:1px solid #a0c4e066;border-radius:6px;color:#cdd6f4;font-size:13px;text-align:center">
+        </div>
+        <div>
+          <label style="font-size:11px;color:#888;display:block;margin-bottom:4px">아이템 단계</label>
+          <select id="test-item-stage" style="padding:8px 10px;background:#1a1d2e;border:1px solid #2d2d5e;border-radius:6px;color:#cdd6f4;font-size:13px">
+            <option value="1">1단계</option>
+            <option value="2" selected>2단계</option>
+            <option value="3">3단계</option>
+            <option value="4">4단계</option>
+          </select>
+        </div>
         <div style="display:flex;gap:8px;padding-bottom:1px">
           <button onclick="createTestUsers()" style="padding:9px 20px;background:#1976d2;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">생성</button>
           <button onclick="approveAllTest()" style="padding:9px 20px;background:#2e7d32;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">전체 승인</button>
@@ -966,7 +989,7 @@ input,select{background:#0f1117;border:1px solid #2a2d3e;border-radius:6px;color
 </div>
 </div></div>
 <div class="toast" id="toast"></div>
-<script src="/admin.js?v=20260731022457"></script>
+<script src="/admin.js?v=20260802022928"></script>
 
 <div id="user-detail-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;overflow-y:auto">
   <div style="background:#1e1e2e;margin:30px auto;max-width:700px;border-radius:12px;padding:24px;position:relative">

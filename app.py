@@ -2402,7 +2402,41 @@ def admin_create_test_users():
             )
             created.append(username)
         db.commit()
-        return jsonify(success=True, created=created, skipped=skipped, password='test1234', points=points)
+
+        # 아이템 생성 + 판매예약 (생성 시간 기준 날짜)
+        _bronze = int(data.get('bronze', 0))
+        _silver = int(data.get('silver', 0))
+        _gold   = int(data.get('gold', 0))
+        _stage  = max(1, min(int(data.get('stage', 2)), 4))
+        reservations_created = 0
+
+        if (_bronze > 0 or _silver > 0 or _gold > 0) and created:
+            _urows = db.execute(
+                "SELECT id FROM users WHERE username IN ({})".format(','.join(['?']*len(created))),
+                created
+            ).fetchall()
+            _uids = [u['id'] for u in _urows]
+            if _uids:
+                _rdate = get_matching_date().isoformat()
+                for _bar, _total in [('bronze', _bronze), ('silver', _silver), ('gold', _gold)]:
+                    if _total <= 0: continue
+                    for _idx in range(_total):
+                        _uid = _uids[_idx % len(_uids)]
+                        db.execute("PRAGMA foreign_keys=OFF")
+                        db.execute(
+                            "INSERT INTO items(user_id, bar_type, stage, status, purchase_date) VALUES(?,?,?,'reservable',?)",
+                            (_uid, _bar, _stage, _rdate)
+                        )
+                        _iid = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+                        db.execute(
+                            "INSERT INTO reservations(user_id, bar_type, stage, match_round, status, reserve_date, confirmed, item_id) VALUES(?,?,?,1,'pending',?,1,?)",
+                            (_uid, _bar, _stage, _rdate, _iid)
+                        )
+                        db.execute("PRAGMA foreign_keys=ON")
+                        reservations_created += 1
+                db.commit()
+
+        return jsonify(success=True, created=created, skipped=skipped, password='test1234', points=points, reservations_created=reservations_created)
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500

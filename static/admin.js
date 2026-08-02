@@ -2079,11 +2079,15 @@ async function createTestUsers(){
   var res=document.getElementById('test-users-result');
   var count=parseInt(document.getElementById('test-user-count')?.value||'10')||10;
   var points=parseInt(document.getElementById('test-user-points')?.value||'0')||0;
+  var bronze=parseInt(document.getElementById('test-bronze-count')?.value||'0')||0;
+  var silver=parseInt(document.getElementById('test-silver-count')?.value||'0')||0;
+  var gold=parseInt(document.getElementById('test-gold-count')?.value||'0')||0;
+  var stage=parseInt(document.getElementById('test-item-stage')?.value||'2')||2;
   if(res) res.textContent='생성 중... ('+count+'명)';
   var tok=localStorage.getItem('admin_token');
   var r=await fetch('/api/admin/create-test-users',{method:'POST',
     headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-    body:JSON.stringify({count,points})});
+    body:JSON.stringify({count,points,bronze,silver,gold,stage})});
   var d=await r.json();
   if(res){
     if(d.success){
@@ -2092,6 +2096,7 @@ async function createTestUsers(){
       if(d.created.length) msg+='<br><span style="color:#888;font-size:12px">'+d.created.join(', ')+'</span>';
       if(d.skipped.length) msg+='<br><span style="color:#f9a825;font-size:12px">기존(건너뜀): '+d.skipped.join(', ')+'</span>';
       msg+='<br><span style="font-size:12px">비밀번호: <strong>'+d.password+'</strong></span>';
+      if(d.reservations_created>0) msg+='<br><span style="color:#4fc3f7;font-size:12px">📋 예약 '+d.reservations_created+'건 생성 완료</span>';
       res.innerHTML='<span style="color:#4fc3f7">'+msg+'</span>';
       toast('✅ 테스트 회원 '+d.created.length+'명 생성 완료', 'success');
     } else {
