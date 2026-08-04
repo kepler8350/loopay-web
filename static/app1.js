@@ -1773,17 +1773,18 @@ function renderMatchBuyList(items){
           +'<div>🤖 <span style="color:#7b1fa2;font-weight:600">루페이</span> 판매 매칭</div>'
           +'<div>🏦 은행: <span style="color:var(--text)">'+_lbank+'</span></div>'
           +'<div>💳 계좌: <span style="color:var(--text);font-weight:600">'+(_lacct||'-')+'</span>'
-          +(_lacct ? ' <button onclick="_copyAcct(\''+_lacct+'\',this)" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0 4px" title="복사">📋</button>' : '')
+          +(_lacct ? ' <button onclick="_copyAcct(\''+_lacct+'\',this)" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0 4px" title="복사">📋 계좌번호 복사</button>' : '')
           +'</div>'
           +'<div>👤 예금주: <span style="color:var(--text)">'+_lname+'</span></div>'
           +(_lphone ? '<div>📞 전화: <span style="color:var(--text)">'+_lphone+'</span></div>' : '')
+           +(m.buy_price?'<div>💰 송금금액: <span style="color:#f9a825;font-weight:600">'+m.buy_price.toLocaleString()+'원</span></div>':'')
           +'</div>';
       } else {
       var _sellerAcct = m.seller_account||'';
       infoHtml = '<div style="font-size:12px;color:var(--text2);margin:6px 0;line-height:1.9">'
         +'<div>🏦 은행: <span style="color:var(--text)">'+(m.seller_bank||'-')+'</span></div>'
         +'<div>💳 계좌: <span style="color:var(--text);font-weight:600">'+(_sellerAcct||'-')+'</span>'
-        +(_sellerAcct ? ' <button onclick="_copyAcct(\'' + _sellerAcct + '\',this)" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 6px;color:#90caf9;vertical-align:middle;display:inline-flex;align-items:center;gap:3px;" title="계좌번호 복사">📋 계좌번호복사</button>' : '')
+        +(_sellerAcct ? ' <button onclick="_copyAcct(\'' + _sellerAcct + '\',this)" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 6px;color:#90caf9;vertical-align:middle;display:inline-flex;align-items:center;gap:3px;" title="계좌번호 복사">📋 계좌번호 복사</button>' : '')
         +'</div>'
         +'<div>👤 예금주: <span style="color:var(--text)">'+(m.seller_account_name||'-')+'</span></div>'
         +'<div>💰 입금액: <span style="color:#f9a825;font-weight:600">'+(m.sell_price?m.sell_price.toLocaleString()+'원':'-')+'</span></div>'
