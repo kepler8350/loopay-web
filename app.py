@@ -6483,6 +6483,36 @@ def testtools_bulk_reservations():
         db.close()
 
 
+@app.route('/api/admin/testtools/fix-bad-sell-reservations', methods=['POST'])
+@jwt_required()
+def testtools_fix_bad_sell_reservations():
+    """테스트 일괄생성으로 잘못 만들어진 판매예약 삭제 (item_id 있는 pending 예약 중 매칭 이력 없는 것)"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    data = request.json or {}
+    res_ids = data.get('ids', [])
+    if not res_ids: return jsonify(error='ids 필요'), 400
+    db = get_db()
+    try:
+        # 안전 체크: 매칭 연결된 예약은 제외
+        safe_ids = []
+        for rid in res_ids:
+            linked = db.execute(
+                "SELECT id FROM matches WHERE reservation_id=? OR buyer_res_id=?", (rid, rid)
+            ).fetchone()
+            if not linked:
+                safe_ids.append(rid)
+        if safe_ids:
+            db.execute(f"DELETE FROM reservations WHERE id IN ({','.join(['?']*len(safe_ids))})", safe_ids)
+            db.commit()
+        return jsonify(success=True, deleted=len(safe_ids), skipped=len(res_ids)-len(safe_ids))
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/testtools/delete-orphan-penalties', methods=['POST'])
 @jwt_required()
 def testtools_delete_orphan_penalties():
