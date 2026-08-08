@@ -2289,6 +2289,57 @@ function updateReserveDefaults(lv){
   var GD_MIN_A=(cfg.gd_min!=null?cfg.gd_min:0), GD_MAX_A=cfg.gd_max||0;
   updateResUI(BZ_MIN, BZ_MAX, SV_MIN_A, SV_MAX_A, GD_MIN_A, GD_MAX_A);
 }
+
+// ── 레벨 조정 ──────────────────────────────────────────
+async function adjustLevel(delta){
+  var lv = (userData && userData.level) || 1;
+  var maxLv = (userData && userData.original_level) || lv;
+  // 현재 레벨보다 강등된 경우 원래레벨이 max
+  var topLv = Math.max(lv, maxLv);
+  var newLv = lv + delta;
+  if(newLv < 1 || newLv > topLv){ toast('조정 범위를 벗어났습니다 (1 ~ '+topLv+'레벨)', 'error'); return; }
+  if(!confirm(lv+'레벨 → '+newLv+'레벨로 조정하시겠습니까?\n(예약 수량이 새 레벨 범위로 자동 조정됩니다)')) return;
+  try{
+    var r = await api('/user/adjust-level', {method:'POST', body:JSON.stringify({level: newLv})});
+    if(r.success){
+      toast(newLv+'레벨로 조정됐습니다', 'success');
+      await loadUserData();
+      renderLevelTab();
+    } else { toast(r.error||'조정 실패', 'error'); }
+  } catch(e){ toast('오류: '+e.message, 'error'); }
+}
+
+function _updateLevelAdjustUI(){
+  var lv = (userData && userData.level) || 1;
+  var origLv = (userData && userData.original_level) || lv;
+  var consecutive = (userData && userData.consecutive_reserve_days) || 0;
+  var topLv = Math.max(lv, origLv);
+
+  var curLabel = document.getElementById('lv-current-label');
+  var rangeLabel = document.getElementById('lv-range-label');
+  var demotionLabel = document.getElementById('lv-demotion-label');
+  var upBtn = document.getElementById('lv-up-btn');
+  var downBtn = document.getElementById('lv-down-btn');
+
+  if(curLabel) curLabel.textContent = lv + '레벨';
+  if(rangeLabel){
+    var cfg = (typeof LEVEL_CFG_JS !== 'undefined') ? LEVEL_CFG_JS[lv] : null;
+    if(cfg) rangeLabel.textContent = '수정 '+cfg.bz_min+'~'+cfg.bz_max+'개 · 루비 '+(cfg.sv_max||0)+'개이하 · 다이아 '+(cfg.gd_max||0)+'개이하';
+  }
+  if(demotionLabel){
+    if(origLv && lv < origLv){
+      demotionLabel.textContent = '⚠️ 강등상태 (원래 '+origLv+'레벨) · 4일 연속 예약 시 회복 (현재 '+consecutive+'일)';
+      demotionLabel.style.color = '#ef5350';
+    } else {
+      var remaining = 4 - (consecutive % 4);
+      demotionLabel.textContent = '연속 예약 '+consecutive+'일 · '+remaining+'일 미예약 시 1레벨 강등';
+      demotionLabel.style.color = consecutive >= 3 ? '#66bb6a' : '#f9a825';
+    }
+  }
+  if(upBtn) upBtn.disabled = (lv >= topLv);
+  if(downBtn) downBtn.disabled = (lv <= 1);
+}
+
 function renderLevelTab(){
   var lv=(userData&&userData.level)||1;
   var cfg=LEVEL_CFG_JS[lv]||LEVEL_CFG_JS[1];
@@ -2339,7 +2390,8 @@ function renderLevelTab(){
     else
       gdEl.textContent='• 다이아: 현재 레벨에서 예약 불가';
   }
-}
+
+  _updateLevelAdjustUI();}
 
 
 

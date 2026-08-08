@@ -1511,7 +1511,9 @@ def get_me():
             unpaid_count=int(_ud.get('unpaid_count') or 0),
             level_trade_active=_level_trade_active,
             level_paid_at=_level_paid_at,
-            level_cost=_level_cost)
+            level_cost=_level_cost,
+            original_level=_ud.get('original_level'),
+            consecutive_reserve_days=_ud.get('consecutive_reserve_days', 0))
     except Exception as _e:
         import traceback; traceback.print_exc()
         return jsonify(error='me_error: '+str(_e)), 500
@@ -7761,6 +7763,55 @@ def user_level_status():
             changeable_levels=list(range(1, original_level + 1))
         )
     except Exception as e:
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/user/adjust-level', methods=['POST'])
+@jwt_required()
+def user_adjust_level():
+    """사용자가 레벨을 직접 조정 (최고레벨 이하로만, 예약 수량 자동 조정)"""
+    uid = int(get_jwt_identity())
+    data = request.json or {}
+    new_level = int(data.get('level', 0))
+    if new_level < 1 or new_level > 7:
+        return jsonify(error='유효하지 않은 레벨입니다'), 400
+    db = get_db()
+    try:
+        user = db.execute("SELECT level, original_level FROM users WHERE id=?", (uid,)).fetchone()
+        if not user:
+            return jsonify(error='사용자 없음'), 404
+        cur_level = user['level']
+        orig_level = user['original_level'] or cur_level
+        top_level = max(cur_level, orig_level)
+        if new_level > top_level:
+            return jsonify(error=f'최고 레벨({top_level})을 초과할 수 없습니다'), 400
+
+        db.execute("UPDATE users SET level=? WHERE id=?", (new_level, uid))
+
+        # 새 레벨에 맞게 예약 수량 조정
+        cfg = LEVEL_CONFIG.get(new_level, {})
+        today = get_matching_date().isoformat()
+        for bar_type, max_key in [('bronze','bz_max'), ('silver','sv_max'), ('gold','gd_max')]:
+            max_qty = cfg.get(max_key, 0)
+            # 현재 미매칭 pending 예약 수 확인
+            pending = db.execute(
+                "SELECT id FROM reservations WHERE user_id=? AND bar_type=? AND status='pending' AND match_round=1 ORDER BY id DESC",
+                (uid, bar_type)
+            ).fetchall()
+            if len(pending) > max_qty:
+                # 초과분 삭제 (최신 순으로 초과분 제거)
+                excess_ids = [r['id'] for r in pending[:len(pending)-max_qty]]
+                db.execute(f"DELETE FROM reservations WHERE id IN ({','.join(['?']*len(excess_ids))})", excess_ids)
+
+        db.commit()
+        # 갱신된 사용자 정보 반환
+        u = db.execute("SELECT level, original_level, consecutive_reserve_days FROM users WHERE id=?", (uid,)).fetchone()
+        return jsonify(success=True, level=u['level'], original_level=u['original_level'],
+                       consecutive=u['consecutive_reserve_days'])
+    except Exception as e:
+        db.rollback()
         return jsonify(error=str(e)), 500
     finally:
         db.close()
