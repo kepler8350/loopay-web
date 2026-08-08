@@ -122,7 +122,13 @@ def _do_confirm_transfer(db, m):
                 ).fetchone()
         if seller_item:
             db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
-            _stage = int(seller_item['stage'] or m['stage'] or 1) + 1
+            # 루페이가 판매자 → 구매자는 1단계 신규 아이템 수령
+            # 일반 사용자가 판매자 → 구매자는 판매자 단계+1 아이템 수령
+            _seller_is_loopay = (m.get('seller_id') == loopay_id)
+            if _seller_is_loopay:
+                _stage = 1
+            else:
+                _stage = int(seller_item['stage'] or m['stage'] or 1) + 1
             _buyer_is_loopay = (m['buyer_id'] == loopay_id)
             _today = get_today().isoformat()
             if _buyer_is_loopay:
@@ -3019,8 +3025,10 @@ def admin_run_matching():
             # 매칭 INSERT
             for _seller, _buyer_res in _lp_match_list:
                 _st = _seller.get('stage') or 1
-                _bp = price_map.get(bt, {}).get(_st, (0, 0))[0]
-                _sp = price_map.get(bt, {}).get(_st, (0, 0))[1]
+                # 루페이 판매자면 1단계 가격, 아니면 판매자 단계 가격
+                _lp_price_stage = 1 if (_seller.get('seller_id') == loopay_id) else _st
+                _bp = price_map.get(bt, {}).get(_lp_price_stage, (0, 0))[0]
+                _sp = price_map.get(bt, {}).get(_lp_price_stage, (0, 0))[1]
                 _seller_iid = _seller.get('item_id')
                 s_phone = _seller.get('seller_phone', '')
                 s_bank = _seller.get('seller_bank', '')
@@ -3139,8 +3147,10 @@ def admin_run_matching():
                 _buyer = dict(_buyer)
                 _buyer['res_id'] = _correct['id']
 
-            _bp = price_map.get(_bt, {}).get(_st, (0, 0))[0]
-            _sp = price_map.get(_bt, {}).get(_st, (0, 0))[1]
+            # 루페이 판매자면 1단계 가격, 아니면 판매자 단계 가격
+            _price_stage = 1 if (_seller.get('seller_id') == loopay_id) else _st
+            _bp = price_map.get(_bt, {}).get(_price_stage, (0, 0))[0]
+            _sp = price_map.get(_bt, {}).get(_price_stage, (0, 0))[1]
             _seller_iid = _seller.get('item_id')
             s_phone = _seller.get('seller_phone', '')
             s_bank = _seller.get('seller_bank', '')
