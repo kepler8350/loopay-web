@@ -2610,18 +2610,20 @@ setInterval(async function(){
   }catch(e){}
 }, 60000);
 
-// 시스템아이템현황: 30초마다 버튼 상태 자동 갱신 (12:30 시간대 즉시 반영)
+// 시스템아이템현황: 10초마다 데이터 변경 감지 → 변경 시에만 재렌더 (깜빡임 방지)
+var _siLastHash = '';
 setInterval(async function(){
   var page = document.getElementById('page-system-items');
   if(page && page.classList.contains('active')){
-    // 서버 시간만 먼저 업데이트 후 버튼 재렌더
     try{
       var tok=localStorage.getItem('admin_token');
       var ct=await fetch('/api/current-time',{headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
       _serverHour=ct.hour||0; _serverMin=ct.minute||0;
+      // 데이터 변경 여부만 확인 - 변경된 경우에만 재렌더 (깜빡임 방지)
+      var si=await fetch('/api/admin/loopay-items',{headers:{'Authorization':'Bearer '+tok}}).then(r=>r.json());
+      var newHash=JSON.stringify({total:si.total,items:(si.items||[]).map(function(i){return i.id+':'+i.status+':'+(i.match_status||'');})});
+      if(newHash !== _siLastHash){ _siLastHash=newHash; loadSystemItems(); }
     }catch(e){}
-    // 30초 주기로 전체 재로드 (버튼 상태 + 데이터)
-    loadSystemItems();
   }
 }, 10000);
 
