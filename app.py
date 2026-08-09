@@ -1511,9 +1511,7 @@ def get_me():
             unpaid_count=int(_ud.get('unpaid_count') or 0),
             level_trade_active=_level_trade_active,
             level_paid_at=_level_paid_at,
-            level_cost=_level_cost,
-            original_level=_ud.get('original_level'),
-            consecutive_reserve_days=_ud.get('consecutive_reserve_days', 0))
+            level_cost=_level_cost)
     except Exception as _e:
         import traceback; traceback.print_exc()
         return jsonify(error='me_error: '+str(_e)), 500
