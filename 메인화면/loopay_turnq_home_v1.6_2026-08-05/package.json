@@ -1,0 +1,8 @@
+{
+  "name": "loopay-turnq-company-site-v1-6",
+  "version": "1.6.0",
+  "private": true,
+  "description": "루페이 주식회사 분할 화면 및 회사 홈페이지",
+  "scripts": {"start": "node server.js"},
+  "engines": {"node": ">=18"}
+}
