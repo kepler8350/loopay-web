@@ -995,29 +995,57 @@ def _check_daily_demotion(db):
 
 
 @app.route('/')
-def index():
+def entry():
+    """진입 화면 - TurnQ 서비스 or 루페이 홈페이지 선택"""
+    import os
+    path = os.path.join(STATIC_DIR, 'home', 'entry.html')
+    with open(path, 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache'}
+
+
+@app.route('/app')
+@app.route('/app/')
+def app_index():
+    """TurnQ 사용자 앱"""
     from flask import make_response, Response
     import os
     path = os.path.join(STATIC_DIR, 'index.html')
     with open(path, 'r', encoding='utf-8') as f:
         content = f.read()
-    # 환경 배너 주입
     _env = os.environ.get('ENVIRONMENT', 'production').lower()
     if _env == 'staging':
-        _banner = (
-            '<div id="env-banner" style="position:fixed;top:0;left:0;right:0;z-index:99999;'
-            'background:#e65100;color:#fff;text-align:center;padding:6px 12px;font-size:13px;'
-            'font-weight:700;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,0.4)">'
-            '🧪 테스트 서버 — 이 서버의 데이터는 운영에 반영되지 않습니다'
-            '</div>'
-            '<style>body,#app{padding-top:36px!important}</style>'
-        )
+        _banner = ('<div id="env-banner" style="position:fixed;top:0;left:0;right:0;z-index:99999;'
+                   'background:#e65100;color:#fff;text-align:center;padding:6px 12px;font-size:13px;'
+                   'font-weight:700;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,0.4)">'
+                   '🚧 스테이징 환경</div>')
         content = content.replace('<body>', '<body>' + _banner, 1)
-    resp = make_response(Response(content, mimetype='text/html'))
+    resp = make_response(content)
+    resp.headers['Content-Type'] = 'text/html; charset=utf-8'
     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     resp.headers['Pragma'] = 'no-cache'
-    resp.headers['Expires'] = '0'
     return resp
+
+
+@app.route('/company')
+@app.route('/company/')
+def company_index():
+    """루페이 주식회사 홈페이지"""
+    import os
+    path = os.path.join(STATIC_DIR, 'company', 'index.html')
+    with open(path, 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache'}
+
+
+@app.route('/company/policy/<path:filename>')
+def company_policy(filename):
+    """루페이 홈페이지 정책 문서"""
+    import os
+    from flask import send_from_directory
+    policy_dir = os.path.join(STATIC_DIR, 'company', 'policy')
+    return send_from_directory(policy_dir, filename)
+
+
+
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
