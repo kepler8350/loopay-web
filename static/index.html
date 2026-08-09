@@ -281,7 +281,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 }
 .notif-blink{animation:notif-blink-anim 1s ease-in-out infinite!important;}
 </style>
-<script src="/static/app1.js?v=20260809031015"></script>
+<script src="/static/app1.js?v=20260809031614"></script>
 </head>
 <body>
 <div class="app" id="app">
@@ -309,7 +309,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
       <div style="text-align:center;font-size:13px;color:#555;margin-bottom:2px">루페이에 오신 것을 환영합니다</div>
       <div style="text-align:center;font-size:16px;font-weight:700;color:#1976d2;margin-bottom:16px">회원가입</div>
-
       <input id="reg-real-name" type="text" class="login-input" placeholder="본인 이름 (실명 필수)" maxlength="20">
       <input id="reg-birthday" type="text" class="login-input" placeholder="생년월일 (YYYY-MM-DD)" maxlength="10" inputmode="numeric" oninput="onBirthday(this)">
       <input id="reg-username" type="text" class="login-input" placeholder="아이디 (영문/숫자, 6~16자)" autocomplete="username" maxlength="16" oninput="onUsername(this)">
@@ -317,71 +316,58 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div id="reg-username-error" style="color:#c62828;font-size:12px;margin-top:-6px;margin-bottom:6px;min-height:14px"></div>
       <input id="reg-password" type="password" class="login-input" placeholder="비밀번호 (영문/숫자/특수문자, 8~20자)" autocomplete="new-password" maxlength="20">
       <input id="reg-password2" type="password" class="login-input" placeholder="비밀번호 확인" autocomplete="new-password" maxlength="20">
-      <div style="position:relative">
-        <input id="reg-phone" type="text" class="login-input" maxlength="11" placeholder="휴대폰번호 입력" inputmode="numeric" oninput="onlyDigits(this)" style="padding-right:0">
+      <div>
+        <input id="reg-phone" type="text" class="login-input" maxlength="11" placeholder="휴대폰번호 입력" inputmode="numeric" oninput="onlyDigits(this)">
         <div style="font-size:11px;color:#e65100;background:#fff3e0;border-radius:5px;padding:5px 8px;margin-top:-6px;margin-bottom:10px">⚠️ 입력이 올바르지 않으면 인증번호를 받을 수 없습니다.</div>
       </div>
       <select id="reg-bank" class="login-input" style="appearance:auto;-webkit-appearance:auto"><option value="">은행 선택</option><option value="국민은행">국민은행</option><option value="신한은행">신한은행</option><option value="하나은행">하나은행</option><option value="우리은행">우리은행</option><option value="농협은행">농협은행</option><option value="기업은행">기업은행</option><option value="산업은행">산업은행</option><option value="수협">수협</option><option value="신협">신협</option><option value="전북은행">전북은행</option><option value="경남은행">경남은행</option><option value="광주은행">광주은행</option><option value="제주은행">제주은행</option><option value="전남은행">전남은행</option><option value="케이뱅크">케이뱅크</option><option value="토스뱅크">토스뱅크</option><option value="카카오뱅크">카카오뱅크</option><option value="씨티은행">씨티은행</option><option value="SC제일은행">SC제일은행</option><option value="우체국">우체국</option><option value="새마을금고">새마을금고</option><option value="산림조합">산림조합</option></select>
-      <div style="position:relative">
+      <div>
         <input id="reg-account-no" type="text" class="login-input" placeholder="계좌번호 입력" inputmode="numeric" oninput="onlyDigits(this)">
         <div style="font-size:11px;color:#e65100;background:#fff3e0;border-radius:5px;padding:5px 8px;margin-top:-6px;margin-bottom:10px">⚠️ 입력이 올바르지 않으면 인증이 진행되지 않습니다.</div>
       </div>
       <input id="reg-account-name" type="text" class="login-input" placeholder="예금주명">
-
-      <!-- 약관 동의 -->
       <div style="border:1px solid #e0e0e0;border-radius:8px;padding:12px;margin:10px 0">
-        <!-- 전체 동의 -->
         <label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #eee;margin-bottom:8px;cursor:pointer">
           <input type="checkbox" id="agree-all" onchange="onAgreeAll(this)" style="width:16px;height:16px;accent-color:#1976d2">
           <span style="font-weight:600;font-size:14px">전체 동의</span>
           <span style="font-size:11px;color:#888;margin-left:auto">전체 동의 시 필수 항목에 모두 동의하게 됩니다.</span>
         </label>
-        <!-- 만 19세 이상 -->
         <label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer">
           <input type="checkbox" id="agree-age" onchange="onAgreeChange()" style="width:15px;height:15px;accent-color:#1976d2">
           <span style="font-size:13px"><span style="color:#e53935;font-weight:600">[필수]</span> 만 19세 이상 성인임을 확인합니다.</span>
         </label>
-        <!-- 이용약관 -->
         <label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer">
           <input type="checkbox" id="agree-terms" onchange="onAgreeChange()" style="width:15px;height:15px;accent-color:#1976d2">
           <span style="font-size:13px"><span style="color:#e53935;font-weight:600">[필수]</span> 루페이 이용약관에 동의합니다.</span>
           <button type="button" onclick="showTermsModal('terms')" style="margin-left:auto;padding:2px 10px;background:#e3f2fd;color:#1976d2;border:1px solid #90caf9;border-radius:4px;font-size:12px;cursor:pointer">보기</button>
         </label>
-        <!-- 운영정책 -->
         <label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer">
           <input type="checkbox" id="agree-policy" onchange="onAgreeChange()" style="width:15px;height:15px;accent-color:#1976d2">
           <span style="font-size:13px"><span style="color:#e53935;font-weight:600">[필수]</span> 루페이 운영정책에 동의합니다.</span>
           <button type="button" onclick="showTermsModal('policy')" style="margin-left:auto;padding:2px 10px;background:#e3f2fd;color:#1976d2;border:1px solid #90caf9;border-radius:4px;font-size:12px;cursor:pointer">보기</button>
         </label>
-        <!-- 개인정보처리방침 -->
         <label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer">
           <input type="checkbox" id="agree-privacy" onchange="onAgreeChange()" style="width:15px;height:15px;accent-color:#1976d2">
           <span style="font-size:13px"><span style="color:#e53935;font-weight:600">[필수]</span> 개인정보처리방침에 동의합니다.</span>
           <button type="button" onclick="showTermsModal('privacy')" style="margin-left:auto;padding:2px 10px;background:#e3f2fd;color:#1976d2;border:1px solid #90caf9;border-radius:4px;font-size:12px;cursor:pointer">보기</button>
         </label>
-        <!-- 계좌정보 제공 동의 -->
         <label style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;cursor:pointer">
           <input type="checkbox" id="agree-account" onchange="onAgreeChange()" style="width:15px;height:15px;accent-color:#1976d2;margin-top:2px">
           <span style="font-size:13px"><span style="color:#e53935;font-weight:600">[필수]</span> 직접송금 거래 진행을 위해 거래 상대방에게<br>계좌정보가 제공되는 것에 동의합니다.</span>
         </label>
-        <!-- 거래구조 확인 -->
         <label style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;cursor:pointer">
           <input type="checkbox" id="agree-structure" onchange="onAgreeChange()" style="width:15px;height:15px;accent-color:#1976d2;margin-top:2px">
           <span style="font-size:13px"><span style="color:#e53935;font-weight:600">[필수]</span> 직접송금 거래 구조를 확인하였으며 이에 동의합니다.<br><span style="font-size:11px;color:#888">• 매칭 후 구매자는 판매자에게 직접 송금합니다.</span></span>
         </label>
-        <!-- 투자 아님 확인 -->
         <label style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;cursor:pointer">
           <input type="checkbox" id="agree-invest" onchange="onAgreeChange()" style="width:15px;height:15px;accent-color:#1976d2;margin-top:2px">
           <span style="font-size:13px"><span style="color:#e53935;font-weight:600">[필수]</span> 본 서비스는 투자상품이 아니며<br><strong>원금 및 수익을 보장하지 않음을 확인합니다.</strong><br><span style="font-size:11px;color:#888">• 아이템 거래의 결과 및 수익은 시장 상황 및 거래 조건에 따라 달라질 수 있습니다.</span></span>
         </label>
       </div>
-
       <div id="register-error" style="color:#c62828;font-size:13px;text-align:center;min-height:18px;margin-bottom:4px"></div>
       <button class="login-btn-primary" onclick="doRegister()">회원가입 신청</button>
       <button onclick="showLogin()" style="width:100%;padding:12px;background:none;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer;margin-top:8px;color:#666">로그인으로 돌아가기</button>
       <div style="text-align:center;font-size:11px;color:#aaa;margin-top:12px">🔒 회원가입 시 입력하신 정보는 안전하게 보호됩니다.</div>
-    </div>
-
     <!-- 회원가입 완료 -->
     <div id="register-done" style="display:none;text-align:center;padding:24px 0">
       <div style="font-size:36px;margin-bottom:10px">✅</div>
