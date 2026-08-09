@@ -393,7 +393,7 @@ async function adminConfirmUnpaid(matchId){
 }
 
 
-// ── 루페이 2차 매치 송금완료 처리 ──
+// ── 턴큐 2차 매치 송금완료 처리 ──
 async function adminMarkPaid(matchId){
   if(!confirm('송금완료 처리하시겠습니까?')) return;
   try {
@@ -643,7 +643,7 @@ async function adminReleasePenalty(penaltyId){
 }
 
 
-// ── 루페이 판매아이템 직접 판매예약 ──
+// ── 턴큐 판매아이템 직접 판매예약 ──
 // 시스템아이템 판매예약 팝업
 var _siSellItemId = null;
 function adminLoopayDirectSell(itemId, barType, stage){
@@ -683,7 +683,7 @@ async function doSiSellReserve(){
   }catch(e){toast('오류: '+e.message,'error');}
 }
 
-// ── 루페이 구매아이템 송금 모달 (사용자 화면 openPaymentModal과 동일 구조) ──
+// ── 턴큐 구매아이템 송금 모달 (사용자 화면 openPaymentModal과 동일 구조) ──
 var _adminRemitMatchId = null;
 async function adminLoopayAddSellRes(itemId){
   if(!confirm('이 아이템을 판매예약 등록하겠습니까?')) return;
@@ -704,7 +704,7 @@ function adminLoopayRemit(matchId, sellerAccName, sellerAcc, sellerBank){
     document.body.appendChild(modal);
   }
   modal.innerHTML = '<div style="background:#1a1d2e;border-radius:14px;padding:24px;width:90%;max-width:420px;border:1px solid #2a2d40;color:#e0e0e0">'
-    +'<div style="font-size:16px;font-weight:700;margin-bottom:16px;color:#64b5f6">💸 루페이 송금완료 확인</div>'
+    +'<div style="font-size:16px;font-weight:700;margin-bottom:16px;color:#64b5f6">💸 턴큐 송금완료 확인</div>'
     +'<div style="background:#12121f;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px">'
     +'<div style="color:#aaa;margin-bottom:4px">판매자 계좌 (송금 대상)</div>'
     +'<div style="color:#a5d6a7;font-weight:700">'+sellerAccName+' '+(sellerBank||'')+'</div>'
@@ -904,9 +904,9 @@ function renderSystemItems(){
     // ── 3개 버튼: 시간 조건에 따라 활성/비활성 ──
     var actionBtns = '';
     if (item.match_id) {
-      // 루페이 2차 매치 여부
+      // 턴큐 2차 매치 여부
       var _isLoopayR2 = (item.match_round === 2 && item.buyer_username === 'loopay');
-      // 루페이 2차 매치 pending: 송금완료 버튼 표시
+      // 턴큐 2차 매치 pending: 송금완료 버튼 표시
       if (_isLoopayR2 && !_isPaid && !_isConfirmed) {
         actionBtns += '<button onclick="adminMarkPaid(' + item.match_id + ')" style="padding:3px 8px;background:#1565c0;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">💸 송금완료</button>';
       }
@@ -1534,7 +1534,7 @@ async function deleteAllMatches(){
 }
 
 function switchRound(num,el){document.querySelectorAll('#page-matching .btn').forEach(function(b){if(b.id&&b.id.startsWith('round-tab-')){b.classList.remove('btn-primary');b.classList.add('btn-secondary');}});el.classList.remove('btn-secondary');el.classList.add('btn-primary');document.getElementById('round-panel-1').style.display=num===1?'block':'none';document.getElementById('round-panel-2').style.display=num===2?'block':'none';loadMatchingStatus();}
-// ── 추가예약 (루페이 계정) ────────────────────────────────
+// ── 추가예약 (턴큐 계정) ────────────────────────────────
 async function addReservation(){
   var barType = document.getElementById('add-res-type').value;
   var kind = document.getElementById('add-res-kind').value;
@@ -2363,7 +2363,7 @@ async function loadSettings(){
     const autoApprove = (d.settings?.auto_approve === '1');
     _currentApproveMode = autoApprove ? 'auto' : 'manual';
     updateSettingsUI(_currentApproveMode);
-    // 루페이 계좌 목록 렌더링
+    // 턴큐 계좌 목록 렌더링
     var s = d.settings || {};
     try {
       var accts = s.loopay_accounts ? JSON.parse(s.loopay_accounts) : [];
@@ -2403,7 +2403,7 @@ function updateSettingsUI(mode){
 }
 
 
-// ── 루페이 계좌 관리 ──────────────────────────────────────────────────
+// ── 턴큐 계좌 관리 ──────────────────────────────────────────────────
 var _loopayAccounts = [];
 
 function renderLoopayAccounts(){
