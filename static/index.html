@@ -2015,16 +2015,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<script>
-// 판매탭 쿨타임 전역 변수 (app1.js 로딩 보장)
-if(typeof _sellUnpaidClickedAt === 'undefined') window._sellUnpaidClickedAt = {};
-if(typeof _sellServerHour === 'undefined') window._sellServerHour = 0;
-if(typeof _sellServerMin === 'undefined') window._sellServerMin = 0;
-if(typeof _confirmedUnpaidMatchIds === 'undefined') window._confirmedUnpaidMatchIds = {};
-if(typeof _sellSelected === 'undefined') window._sellSelected = {};
-if(typeof _itemCache === 'undefined') window._itemCache = {};
-</script>
-
 <div id="terms-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:99999" onclick="if(event.target===this)closeTermsModal()">
   <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;width:calc(100% - 32px);max-width:520px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="padding:14px 16px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between">
@@ -2051,6 +2041,19 @@ window.onAgreeChange=function(){var all=["agree-age","agree-terms","agree-policy
 window.onBirthday=function(el){var v=el.value.replace(/[^0-9]/g,"");if(v.length>4)v=v.slice(0,4)+"-"+v.slice(4);if(v.length>7)v=v.slice(0,7)+"-"+v.slice(7);el.value=v.slice(0,10);};
 })();
 </script>
+
+
+
+<script>
+// 판매탭 쿨타임 전역 변수 (app1.js 로딩 보장)
+if(typeof _sellUnpaidClickedAt === 'undefined') window._sellUnpaidClickedAt = {};
+if(typeof _sellServerHour === 'undefined') window._sellServerHour = 0;
+if(typeof _sellServerMin === 'undefined') window._sellServerMin = 0;
+if(typeof _confirmedUnpaidMatchIds === 'undefined') window._confirmedUnpaidMatchIds = {};
+if(typeof _sellSelected === 'undefined') window._sellSelected = {};
+if(typeof _itemCache === 'undefined') window._itemCache = {};
+</script>
+
 
 
 </body>
