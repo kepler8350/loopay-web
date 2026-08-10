@@ -1752,7 +1752,7 @@ function renderMatchBuyList(items){
   el.innerHTML = items.map(function(m){
     var statusLabel = {waiting:'매칭대기',unmatched:'2차대기',lucky_waiting:'🍀 행운예약중',lucky_matched:'🍀 행운매칭완료',pending:'매칭완료',matched:'매칭완료',paid:'송금완료',confirmed:'✅ 거래완료',unpaid:'미입금',failed:'미입금'}[m.status]||m.status;
     var statusColor = {waiting:'#90caf9',unmatched:'#ff9800',lucky_waiting:'#7b1fa2',lucky_matched:'#7b1fa2',pending:'#f9a825',matched:'#f9a825',paid:'#1976d2',confirmed:'#66bb6a',unpaid:'#ef5350'}[m.status]||'#aaa';
-    var _isLoopay = (m.seller_username==='loopay' || m.seller_nickname==='턴큐');
+    var _isLoopay = (m.seller_username==='loopay' || m.seller_nickname==='루페이');
     var hasMatchInfo = _isLoopay || !!(m.seller_phone || m.seller_bank || m.seller_account);
     var dateTxt = m.source==='reservation'?m.reserve_date:(m.match_date||'');
     var isLucky = !!(m.lucky_pair_id);
@@ -1766,11 +1766,11 @@ function renderMatchBuyList(items){
     if(hasMatchInfo){
       if(_isLoopay){
         var _lacct = m.seller_account||'';
-        var _lbank = m.seller_bank||'턴큐';
-        var _lname = m.seller_account_name||'턴큐';
+        var _lbank = m.seller_bank||'루페이';
+        var _lname = m.seller_account_name||'루페이';
         var _lphone = m.seller_phone||'';
         infoHtml = '<div style="font-size:12px;color:var(--text2);margin:6px 0;line-height:1.9">'
-          +'<div>🤖 <span style="color:#7b1fa2;font-weight:600">턴큐</span> 판매 매칭</div>'
+          +'<div>🤖 <span style="color:#7b1fa2;font-weight:600">루페이</span> 판매 매칭</div>'
           +'<div>🏦 은행: <span style="color:var(--text)">'+_lbank+'</span></div>'
           +'<div>💳 계좌: <span style="color:var(--text);font-weight:600">'+(_lacct||'-')+'</span>'
           +(_lacct ? ' <button onclick="_copyAcct(\''+_lacct+'\',this)" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0 4px" title="복사">📋 계좌번호 복사</button>' : '')
