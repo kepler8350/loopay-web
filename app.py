@@ -996,9 +996,11 @@ def _check_daily_demotion(db):
 
 @app.route('/')
 def entry():
-    """진입 화면 - /app으로 바로 이동 (기존 사용자 호환)"""
-    from flask import redirect
-    return redirect('/app')
+    """진입 화면 - TurnQ 서비스 or 루페이 홈페이지 선택"""
+    import os
+    path = os.path.join(STATIC_DIR, 'home', 'entry.html')
+    with open(path, 'r', encoding='utf-8') as f:
+        return f.read(), 200, {'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache'}
 
 
 @app.route('/home')
