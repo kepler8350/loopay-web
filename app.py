@@ -124,7 +124,7 @@ def _do_confirm_transfer(db, m):
             db.execute("UPDATE items SET status='sold' WHERE id=?", (seller_item['id'],))
             # 루페이가 판매자 → 구매자는 1단계 신규 아이템 수령
             # 일반 사용자가 판매자 → 구매자는 판매자 단계+1 아이템 수령
-            _seller_is_loopay = (m.get('seller_id') == loopay_id)
+            _seller_is_loopay = (m['seller_id'] == loopay_id)
             if _seller_is_loopay:
                 _stage = 1
             else:
@@ -1704,26 +1704,9 @@ def get_items():
                 else:
                     pending_set.add(_iid2)
 
-        # buy_price → stage 매핑 (올바른 stage 계산용)
-        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
-        _p2s = {}
-        for _bar, _rows in [('bronze',BRONZE_PRICES),('silver',SILVER_PRICES),('gold',GOLD_PRICES)]:
-            for _st, _bp, _sp in _rows:
-                _p2s[(_bar, _bp)] = _st
-
         result = []
         for it in rows:
-            # confirmed 매치의 buy_price로 실제 stage 보정
-            _match = db.execute(
-                "SELECT buy_price FROM matches WHERE buyer_id=? AND bar_type=? "
-                "AND DATE(match_date)=DATE(?) AND status='confirmed' LIMIT 1",
-                (uid, it['bar_type'], it['purchase_date'])
-            ).fetchone()
-            _real_stage = _p2s.get((it['bar_type'], _match['buy_price']), it['stage']) if _match else it['stage']
-            # DB stage도 보정값으로 갱신
-            if _real_stage != it['stage']:
-                db.execute("UPDATE items SET stage=? WHERE id=?", (_real_stage, it['id']))
-            buy, sell = get_price(it['bar_type'], _real_stage)
+            buy, sell = get_price(it['bar_type'], it['stage'])
             # 판매예약중인 아이템은 status_label을 오버라이드
             if it['id'] in lucky_matched_set2:
                 s_label = '🍀 행운매칭완료'
@@ -1736,11 +1719,11 @@ def get_items():
             # 결합아이템(waiting)은 combine_buy_price를 buy_price로 표시
             _buy_price = it['combine_buy_price'] if (it['status'] == 'waiting' and it['combine_buy_price']) else buy
             _cfg = SPLIT_CONFIG.get(it['bar_type'], {})
-            _is_max = (_cfg.get('max_stage') == _real_stage)
+            _is_max = (_cfg.get('max_stage') == it['stage'])
             result.append({
                 'id': it['id'],
                 'bar_type': it['bar_type'],
-                'stage': _real_stage,
+                'stage': it['stage'],
                 'status': it['status'],
                 'purchase_date': it['purchase_date'],
                 'days': days_since(it['purchase_date']),
@@ -6551,41 +6534,42 @@ def testtools_bulk_reservations():
 @app.route('/api/admin/testtools/fix-loopay-item-stage', methods=['POST'])
 @jwt_required()
 def fix_loopay_item_stage():
-    """매치 buy_price 기준으로 아이템 stage 수정"""
+    """confirmed 매치 buy_price 기준으로 구매자 아이템 stage 직접 수정"""
     identity = get_jwt_identity()
     if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
     db = get_db()
     try:
         from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
-        # (bar_type, buy_price) → correct stage
         p2s = {}
         for bar, rows in [('bronze',BRONZE_PRICES),('silver',SILVER_PRICES),('gold',GOLD_PRICES)]:
             for stage, buy, sell in rows:
                 p2s[(bar, buy)] = stage
 
-        # confirmed 매치에서 buy_price로 구매자 아이템의 올바른 stage 계산
+        # confirmed 매치 전체
         matches = db.execute(
-            "SELECT buyer_id, bar_type, buy_price, match_date FROM matches WHERE status='confirmed'"
+            "SELECT id, buyer_id, bar_type, buy_price, match_date FROM matches WHERE status='confirmed'"
         ).fetchall()
 
         fixed = 0
         details = []
         for m in matches:
             correct = p2s.get((m['bar_type'], m['buy_price']))
-            if correct is None: continue
-            # 해당 구매자가 match_date에 받은 아이템 중 stage가 다른 것
+            if correct is None:
+                continue
+            # 구매자가 해당 날짜에 보유한 동일 bar_type 아이템 중 stage가 다른 것
             items = db.execute(
-                "SELECT id, stage FROM items WHERE user_id=? AND bar_type=? "
-                "AND DATE(purchase_date)=DATE(?) AND stage!=?",
-                (m['buyer_id'], m['bar_type'], m['match_date'], correct)
+                "SELECT id, stage FROM items "
+                "WHERE user_id=? AND bar_type=? AND stage!=? "
+                "AND (DATE(purchase_date)=DATE(?) OR DATE(purchase_date)=DATE(?,'+1 day'))",
+                (m['buyer_id'], m['bar_type'], correct, m['match_date'], m['match_date'])
             ).fetchall()
             for it in items:
-                details.append({'id':it['id'],'old':it['stage'],'new':correct,'bar':m['bar_type']})
+                details.append({'item_id':it['id'],'old_stage':it['stage'],'new_stage':correct})
                 db.execute("UPDATE items SET stage=? WHERE id=?", (correct, it['id']))
                 fixed += 1
 
         db.commit()
-        return jsonify(success=True, fixed=fixed, details=details[:30])
+        return jsonify(success=True, fixed=fixed, details=details[:50])
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
