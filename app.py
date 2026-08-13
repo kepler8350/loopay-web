@@ -1704,9 +1704,40 @@ def get_items():
                 else:
                     pending_set.add(_iid2)
 
+        # buy_price → stage 매핑
+        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
+        _p2s = {}
+        for _bar, _rows in [('bronze',BRONZE_PRICES),('silver',SILVER_PRICES),('gold',GOLD_PRICES)]:
+            for _st, _bp, _sp in _rows:
+                _p2s[(_bar, _bp)] = _st
+        # 이 사용자의 confirmed 매치를 미리 로드 (bar_type별 buy_price 목록)
+        _my_matches = db.execute(
+            "SELECT bar_type, buy_price, match_date FROM matches "
+            "WHERE buyer_id=? AND status='confirmed' ORDER BY id",
+            (uid,)
+        ).fetchall()
+        # (bar_type, match_date날짜) → buy_price
+        _match_map = {}
+        for _mm in _my_matches:
+            _key = (_mm['bar_type'], str(_mm['match_date'])[:10])
+            _match_map[_key] = _mm['buy_price']
+
         result = []
         for it in rows:
-            buy, sell = get_price(it['bar_type'], it['stage'])
+            # 아이템 purchase_date 기준으로 매치 buy_price 조회
+            _pdate = str(it['purchase_date'] or '')[:10]
+            _buy_price_from_match = _match_map.get((it['bar_type'], _pdate))
+            # 하루 차이 허용 (매치 당일 또는 다음날 아이템 생성)
+            if _buy_price_from_match is None:
+                from datetime import date, timedelta
+                try:
+                    _d = date.fromisoformat(_pdate)
+                    _prev = str(_d - timedelta(days=1))
+                    _buy_price_from_match = _match_map.get((it['bar_type'], _prev))
+                except Exception:
+                    pass
+            _stage = _p2s.get((it['bar_type'], _buy_price_from_match), it['stage']) if _buy_price_from_match else it['stage']
+            buy, sell = get_price(it['bar_type'], _stage)
             # 판매예약중인 아이템은 status_label을 오버라이드
             if it['id'] in lucky_matched_set2:
                 s_label = '🍀 행운매칭완료'
@@ -1719,11 +1750,11 @@ def get_items():
             # 결합아이템(waiting)은 combine_buy_price를 buy_price로 표시
             _buy_price = it['combine_buy_price'] if (it['status'] == 'waiting' and it['combine_buy_price']) else buy
             _cfg = SPLIT_CONFIG.get(it['bar_type'], {})
-            _is_max = (_cfg.get('max_stage') == it['stage'])
+            _is_max = (_cfg.get('max_stage') == _stage)
             result.append({
                 'id': it['id'],
                 'bar_type': it['bar_type'],
-                'stage': it['stage'],
+                'stage': _stage,
                 'status': it['status'],
                 'purchase_date': it['purchase_date'],
                 'days': days_since(it['purchase_date']),
