@@ -1704,9 +1704,26 @@ def get_items():
                 else:
                     pending_set.add(_iid2)
 
+        # buy_price → stage 매핑 (올바른 stage 계산용)
+        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
+        _p2s = {}
+        for _bar, _rows in [('bronze',BRONZE_PRICES),('silver',SILVER_PRICES),('gold',GOLD_PRICES)]:
+            for _st, _bp, _sp in _rows:
+                _p2s[(_bar, _bp)] = _st
+
         result = []
         for it in rows:
-            buy, sell = get_price(it['bar_type'], it['stage'])
+            # confirmed 매치의 buy_price로 실제 stage 보정
+            _match = db.execute(
+                "SELECT buy_price FROM matches WHERE buyer_id=? AND bar_type=? "
+                "AND DATE(match_date)=DATE(?) AND status='confirmed' LIMIT 1",
+                (uid, it['bar_type'], it['purchase_date'])
+            ).fetchone()
+            _real_stage = _p2s.get((it['bar_type'], _match['buy_price']), it['stage']) if _match else it['stage']
+            # DB stage도 보정값으로 갱신
+            if _real_stage != it['stage']:
+                db.execute("UPDATE items SET stage=? WHERE id=?", (_real_stage, it['id']))
+            buy, sell = get_price(it['bar_type'], _real_stage)
             # 판매예약중인 아이템은 status_label을 오버라이드
             if it['id'] in lucky_matched_set2:
                 s_label = '🍀 행운매칭완료'
@@ -1719,11 +1736,11 @@ def get_items():
             # 결합아이템(waiting)은 combine_buy_price를 buy_price로 표시
             _buy_price = it['combine_buy_price'] if (it['status'] == 'waiting' and it['combine_buy_price']) else buy
             _cfg = SPLIT_CONFIG.get(it['bar_type'], {})
-            _is_max = (_cfg.get('max_stage') == it['stage'])
+            _is_max = (_cfg.get('max_stage') == _real_stage)
             result.append({
                 'id': it['id'],
                 'bar_type': it['bar_type'],
-                'stage': it['stage'],
+                'stage': _real_stage,
                 'status': it['status'],
                 'purchase_date': it['purchase_date'],
                 'days': days_since(it['purchase_date']),
