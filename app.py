@@ -6534,7 +6534,7 @@ def testtools_bulk_reservations():
 @app.route('/api/admin/testtools/fix-loopay-item-stage', methods=['POST'])
 @jwt_required()
 def fix_loopay_item_stage():
-    """루페이 판매 매치로 생성된 아이템 stage 확인 및 수정"""
+    """루페이 1단계 판매로 구매자가 받은 아이템 stage 수정 (2→1)"""
     identity = get_jwt_identity()
     if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
     db = get_db()
@@ -6543,24 +6543,46 @@ def fix_loopay_item_stage():
         if not loopay: return jsonify(error='loopay 계정 없음'), 404
         loopay_id = loopay['id']
         dry_run = (request.json or {}).get('dry_run', True)
-        # 루페이가 seller인 confirmed 매치 → 구매자 아이템 중 stage>1
-        sql = """
-            SELECT i.id, i.user_id, i.bar_type, i.stage, i.status, i.purchase_date
-            FROM matches m
-            JOIN items i ON i.user_id=m.buyer_id AND i.bar_type=m.bar_type
-                AND DATE(i.purchase_date)=DATE(m.match_date)
-            WHERE m.seller_id=? AND m.status='confirmed' AND i.stage>1
-        """
-        bad_items = db.execute(sql, (loopay_id,)).fetchall()
-        items_list = [dict(r) for r in bad_items]
+
+        # 루페이가 seller인 confirmed 매치에서 buy_price로 원래 단계 파악
+        # buy_price=5000(1단계) → 구매자 아이템은 stage=1이어야 함
+        # buy_price=10500(2단계) → 구매자 아이템은 stage=2이어야 함
+        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
+        # buy_price → 정확한 stage 매핑
+        price_to_stage = {}
+        for rows in [BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES]:
+            for stage, buy, sell in rows:
+                price_to_stage[buy] = stage
+
+        # 루페이 판매 confirmed 매치 전체
+        matches = db.execute(
+            "SELECT id, buyer_id, bar_type, buy_price, match_date FROM matches "
+            "WHERE seller_id=? AND status='confirmed'", (loopay_id,)
+        ).fetchall()
+
+        to_fix = []
+        for m in matches:
+            correct_stage = price_to_stage.get(m['buy_price'], 1)  # buy_price로 정확한 stage
+            # 해당 구매자가 매치일에 받은 아이템 중 stage가 다른 것
+            items = db.execute(
+                "SELECT id, stage FROM items WHERE user_id=? AND bar_type=? "
+                "AND DATE(purchase_date)=DATE(?) AND stage!=?",
+                (m['buyer_id'], m['bar_type'], m['match_date'], correct_stage)
+            ).fetchall()
+            for it in items:
+                to_fix.append({'item_id': it['id'], 'current_stage': it['stage'],
+                               'correct_stage': correct_stage, 'bar_type': m['bar_type']})
+
         fixed = 0
         if not dry_run:
-            for item in items_list:
-                db.execute("UPDATE items SET stage=1 WHERE id=?", (item['id'],))
+            for fix in to_fix:
+                db.execute("UPDATE items SET stage=? WHERE id=?",
+                           (fix['correct_stage'], fix['item_id']))
                 fixed += 1
             db.commit()
-        return jsonify(success=True, found=len(items_list), fixed=fixed,
-                       dry_run=dry_run, items=items_list[:20])
+
+        return jsonify(success=True, found=len(to_fix), fixed=fixed,
+                       dry_run=dry_run, items=to_fix[:30])
     except Exception as e:
         db.rollback()
         return jsonify(error=str(e)), 500
