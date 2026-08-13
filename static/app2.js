@@ -350,6 +350,31 @@ async function loadProfileForm(){
   }
   // 레벨 상태 로딩
   await loadLevelStatus();
+
+  // 레벨 조정 카드 동적 생성 (내정보 탭에만 표시)
+  var existCard = document.getElementById('lv-adjust-card');
+  if (!existCard) {
+    var profileTab = document.getElementById('tab-profile');
+    if (profileTab) {
+      var card = document.createElement('div');
+      card.id = 'lv-adjust-card';
+      card.style.cssText = 'margin-top:14px;padding:12px 14px;background:#1a1d2e;border-radius:10px;border:1px solid #2d2d5e';
+      card.innerHTML = '<div style="font-weight:700;margin-bottom:10px;color:#90caf9;font-size:14px">🎚️ 레벨 조정</div>'
+        + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+        + '<button id="lv-down-btn" onclick="adjustLevel(-1)" style="width:36px;height:36px;border-radius:50%;background:#37474f;color:#fff;border:none;font-size:18px;cursor:pointer;font-weight:700">▼</button>'
+        + '<div style="text-align:center;min-width:80px">'
+        + '<div id="lv-current-label" style="font-size:22px;font-weight:700;color:#4fc3f7">-</div>'
+        + '<div style="font-size:11px;color:#888">현재 레벨</div>'
+        + '</div>'
+        + '<button id="lv-up-btn" onclick="adjustLevel(1)" style="width:36px;height:36px;border-radius:50%;background:#1976d2;color:#fff;border:none;font-size:18px;cursor:pointer;font-weight:700">▲</button>'
+        + '<div style="flex:1;min-width:160px">'
+        + '<div id="lv-range-label" style="font-size:12px;color:#aaa;margin-bottom:4px"></div>'
+        + '<div id="lv-demotion-label" style="font-size:11px;color:#f9a825"></div>'
+        + '</div></div>';
+      profileTab.appendChild(card);
+    }
+  }
+  if (typeof _updateLevelAdjustUI === 'function') _updateLevelAdjustUI();
 }
 
 async function loadLevelStatus(){
@@ -737,6 +762,9 @@ function showTab(id,btn){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   var tabEl = document.getElementById('tab-'+id); if(tabEl) tabEl.classList.add('active');
   if(btn) btn.classList.add('active');
+
+  // 내정보 탭 아닐 때 레벨 조정 카드 제거
+  if(id !== 'profile'){var card=document.getElementById('lv-adjust-card');if(card)card.remove();}
 
   if(id === 'combine') setTimeout(loadCombineItems, 100);
   if(id === 'matching') loadMatchingTab();
