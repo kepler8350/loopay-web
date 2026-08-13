@@ -5770,8 +5770,34 @@ def user_my_items():
             (uid,)
         ).fetchall()
         result = []
+        # buy_price → stage 매핑
+        from db import BRONZE_PRICES, SILVER_PRICES, GOLD_PRICES
+        _p2s_mi = {}
+        for _bar, _rows in [('bronze',BRONZE_PRICES),('silver',SILVER_PRICES),('gold',GOLD_PRICES)]:
+            for _st, _bp, _sp in _rows:
+                _p2s_mi[(_bar, _bp)] = _st
+        # 이 사용자의 confirmed 매치 (bar_type, match_date) → buy_price
+        _mi_matches = db.execute(
+            "SELECT bar_type, buy_price, match_date FROM matches "
+            "WHERE buyer_id=? AND status='confirmed' ORDER BY id", (uid,)
+        ).fetchall()
+        _mi_match_map = {}
+        for _mm in _mi_matches:
+            _mi_match_map[(_mm['bar_type'], str(_mm['match_date'])[:10])] = _mm['buy_price']
+
         for item in items:
             row = dict(item)
+            # 매칭의 buy_price로 올바른 stage 결정
+            _pdate = str(row.get('purchase_date') or '')[:10]
+            _mi_bp = _mi_match_map.get((row['bar_type'], _pdate))
+            if _mi_bp is None:
+                from datetime import date as _date, timedelta as _td
+                try:
+                    _mi_bp = _mi_match_map.get((row['bar_type'], str(_date.fromisoformat(_pdate) - _td(days=1))))
+                except Exception:
+                    pass
+            if _mi_bp is not None:
+                row['stage'] = _p2s_mi.get((row['bar_type'], _mi_bp), row['stage'])
             # 매칭 정보
             match_status = None
             match_round = None
