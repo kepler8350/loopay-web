@@ -6531,6 +6531,43 @@ def testtools_bulk_reservations():
         db.close()
 
 
+@app.route('/api/admin/testtools/fix-loopay-item-stage', methods=['POST'])
+@jwt_required()
+def fix_loopay_item_stage():
+    """루페이 판매 매치로 생성된 아이템 stage 확인 및 수정"""
+    identity = get_jwt_identity()
+    if not str(identity).startswith('admin:'): return jsonify(error='forbidden'), 403
+    db = get_db()
+    try:
+        loopay = db.execute("SELECT id FROM users WHERE username='loopay'").fetchone()
+        if not loopay: return jsonify(error='loopay 계정 없음'), 404
+        loopay_id = loopay['id']
+        dry_run = (request.json or {}).get('dry_run', True)
+        # 루페이가 seller인 confirmed 매치 → 구매자 아이템 중 stage>1
+        sql = """
+            SELECT i.id, i.user_id, i.bar_type, i.stage, i.status, i.purchase_date
+            FROM matches m
+            JOIN items i ON i.user_id=m.buyer_id AND i.bar_type=m.bar_type
+                AND DATE(i.purchase_date)=DATE(m.match_date)
+            WHERE m.seller_id=? AND m.status='confirmed' AND i.stage>1
+        """
+        bad_items = db.execute(sql, (loopay_id,)).fetchall()
+        items_list = [dict(r) for r in bad_items]
+        fixed = 0
+        if not dry_run:
+            for item in items_list:
+                db.execute("UPDATE items SET stage=1 WHERE id=?", (item['id'],))
+                fixed += 1
+            db.commit()
+        return jsonify(success=True, found=len(items_list), fixed=fixed,
+                       dry_run=dry_run, items=items_list[:20])
+    except Exception as e:
+        db.rollback()
+        return jsonify(error=str(e)), 500
+    finally:
+        db.close()
+
+
 @app.route('/api/admin/testtools/fix-bad-sell-reservations', methods=['POST'])
 @jwt_required()
 def testtools_fix_bad_sell_reservations():
